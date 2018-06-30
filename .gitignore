@@ -1,0 +1,8 @@
+.vs/
+.idea/
+**/bin/*
+**/obj/*
+.vscode/
+FundaMl/appsettings.local.json
+FundaMl/Properties/PublishProfiles/
+**/publish/*

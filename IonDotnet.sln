@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet", "IonDotnet\IonDotnet.csproj", "{21393746-00BE-4B80-9645-D31D9959EC92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Tests", "IonDotnet.Tests\IonDotnet.Tests.csproj", "{01004275-6BBF-4BB4-9ADB-C968691B5E0D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{21393746-00BE-4B80-9645-D31D9959EC92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21393746-00BE-4B80-9645-D31D9959EC92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21393746-00BE-4B80-9645-D31D9959EC92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21393746-00BE-4B80-9645-D31D9959EC92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01004275-6BBF-4BB4-9ADB-C968691B5E0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01004275-6BBF-4BB4-9ADB-C968691B5E0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01004275-6BBF-4BB4-9ADB-C968691B5E0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01004275-6BBF-4BB4-9ADB-C968691B5E0D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
