@@ -8,7 +8,6 @@
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Internals" />
     <Folder Include="System" />
   </ItemGroup>
 </Project>

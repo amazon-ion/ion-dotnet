@@ -2,11 +2,10 @@
 
 namespace IonDotnet
 {
-    /// <inheritdoc />
     /// <summary>
     /// A symbol table maps symbols between their textual form and an integer ID used in the binary encoding.
     /// </summary>
-    public interface ISymbolTable : IEnumerable<string>
+    public interface ISymbolTable
     {
         /// <summary>
         /// The unique name of this symbol table.
@@ -116,5 +115,12 @@ namespace IonDotnet
         /// Writes an Ion representation of this symbol table
         /// </summary>
         void WriteTo(IIonWriter writer);
+
+        /// <summary>
+        /// Creates an iterator that will return all non-imported symbol names, in order of their symbol IDs. 
+        /// The iterator will return Null where there is an undefined sid.
+        /// </summary>
+        /// <returns></returns>
+        IIterator<string> IterateDeclaredSymbolNames();
     }
 }

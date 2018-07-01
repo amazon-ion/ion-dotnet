@@ -2,6 +2,7 @@
 {
     public enum IonType
     {
+        None,
         Null,
         Bool,
         Int,

@@ -6,6 +6,11 @@
     public enum IntegerSize
     {
         /// <summary>
+        /// Nothing
+        /// </summary>
+        None,
+        
+        /// <summary>
         /// Fit in C# 4-byte int
         /// </summary>
         Int,

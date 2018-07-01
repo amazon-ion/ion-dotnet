@@ -24,6 +24,8 @@
 
         public const int Ion10Sid = 2;
 
+        public const string IonSymbolTable = "$ion_symbol_table";
+
         public const int IonSymbolTableSid = 3;
 
         public const string Name = "name";
