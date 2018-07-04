@@ -2,7 +2,7 @@ using System;
 using IonDotnet.Internals;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests
+namespace IonDotnet.Tests.Internals
 {
     [TestClass]
     public class PeekIteratorTest

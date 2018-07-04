@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 
 namespace IonDotnet.Internals
 {
@@ -59,7 +57,7 @@ namespace IonDotnet.Internals
         public bool IsLocal { get; } = false;
         public bool IsShared { get; } = true;
         public bool IsSubstitute { get; } = false;
-        public bool IsSystem => SystemSymbols.Ion == Name;
+        public bool IsSystem => Name == SystemSymbols.Ion;
         public bool IsReadOnly { get; } = true;
 
         public void MakeReadOnly()
@@ -122,6 +120,50 @@ namespace IonDotnet.Internals
         {
             if (version != 1) throw new ArgumentException("only Ion 1.0 system symbols are supported");
             return Ion10SystemSymtab;
+        }
+
+        internal static ISymbolTable NewSharedSymbolTable(string name, int version, ISymbolTable priorSymtab, IEnumerable<string> symbols)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name), "Must not be empty");
+            if (symbols == null) throw new ArgumentNullException(nameof(symbols), "Must not be null");
+            if (version < 1) throw new ArgumentException("Must be at least 1", nameof(version));
+
+            var (symbolList, symbolMap) = PrepSymbolListAndMap(priorSymtab, symbols);
+            return new SharedSymbolTable(name, version, symbolList, symbolMap);
+        }
+
+        private static (List<string> symbolList, Dictionary<string, int> symbolMap) PrepSymbolListAndMap(
+            ISymbolTable priorSymtab, IEnumerable<string> symbols)
+        {
+            var sid = 1;
+            var symbolList = new List<string>();
+            var symbolMap = new Dictionary<string, int>();
+            if (priorSymtab != null)
+            {
+                var priorSymbols = priorSymtab.IterateDeclaredSymbolNames();
+                while (priorSymbols.HasNext())
+                {
+                    var text = priorSymbols.Next();
+                    if (text != null && !symbolMap.ContainsKey(text))
+                    {
+                        symbolMap[text] = sid;
+                    }
+
+                    symbolList.Add(text);
+                    sid++;
+                }
+            }
+
+            foreach (var symbol in symbols)
+            {
+                // TODO What about empty symbols?
+                if (symbolMap.ContainsKey(symbol)) continue;
+                symbolMap[symbol] = sid;
+                symbolList.Add(symbol);
+                sid++;
+            }
+
+            return (symbolList, symbolMap);
         }
     }
 }

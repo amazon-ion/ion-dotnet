@@ -71,6 +71,14 @@ namespace IonDotnet
 
         ISymbolTable[] GetImportedTables();
 
+        /// <summary>
+        /// Gets the highest symbol id reserved by this table's imports (including system symbols)
+        /// </summary>
+        /// <returns>Max imported id</returns>
+        /// <remarks>
+        /// Any id higher than this value is a local symbol declared by this table. This value is zero for shared symbol tables,
+        /// since they do not utilize imports.
+        /// </remarks>
         int GetImportedMaxId();
 
         /// <summary>

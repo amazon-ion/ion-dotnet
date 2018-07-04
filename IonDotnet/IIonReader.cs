@@ -3,6 +3,9 @@ using System.Numerics;
 
 namespace IonDotnet
 {
+    /// <summary>
+    /// Provides stream-based access to Ion data independent of its underlying representation (text, binary, or {@link IonValue} tree).
+    /// </summary>
     public interface IIonReader
     {
         /// <summary>
