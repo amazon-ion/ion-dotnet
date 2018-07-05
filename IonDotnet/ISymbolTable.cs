@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace IonDotnet
+﻿namespace IonDotnet
 {
     /// <summary>
     /// A symbol table maps symbols between their textual form and an integer ID used in the binary encoding.

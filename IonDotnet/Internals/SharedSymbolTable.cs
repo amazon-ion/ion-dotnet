@@ -116,7 +116,7 @@ namespace IonDotnet.Internals
 
         public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_symbolNames);
 
-        internal static ISymbolTable GetSystemSymbolTable(int version)
+        internal static ISymbolTable GetSystem(int version)
         {
             if (version != 1) throw new ArgumentException("only Ion 1.0 system symbols are supported");
             return Ion10SystemSymtab;

@@ -31,7 +31,7 @@
         /// <remarks>
         /// A read-only IonValue is thread-safe
         /// </remarks>
-        bool IsReadOnly { get; }
+        bool ReadOnly { get; }
 
         /// <summary>
         /// The symbol table used to encode this value.
