@@ -3,7 +3,7 @@
     /// <summary>
     /// An Ion bool value
     /// </summary>
-    public interface IIonBool : IIonValue
+    public interface IIonBool : IIonValue<IIonBool>
     {
         /// <summary>
         /// The boolean value of this <see cref="IIonValue"/>
@@ -16,10 +16,5 @@
         /// </summary>
         /// <param name="val">New value for this 'bool', might be null</param>
         void SetValue(bool? val);
-
-        /// <summary>
-        /// Clone this IonBool
-        /// </summary>
-        IIonBool CloneBool();
     }
 }

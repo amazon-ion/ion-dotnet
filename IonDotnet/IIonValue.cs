@@ -34,6 +34,11 @@
         bool ReadOnly { get; }
 
         /// <summary>
+        /// System that constructed this value
+        /// </summary>
+        IIonSystem System { get; }
+
+        /// <summary>
         /// The symbol table used to encode this value.
         /// </summary>
         ISymbolTable SymbolTable { get; }
@@ -69,11 +74,6 @@
         /// </summary>
         /// <returns></returns>
         string ToPrettyString();
-
-        /// <summary>
-        /// Checks if this container is empty
-        /// </summary>
-        bool IsEmpty { get; }
 
         /// <summary>
         /// Gets this value's user type annotations as text.

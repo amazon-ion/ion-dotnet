@@ -7,7 +7,7 @@ namespace IonDotnet
     /// <summary>
     /// Entry point to all things Ion
     /// </summary>
-    public interface IIonSystem
+    public interface IIonSystem : IValueFactory
     {
         /// <summary>
         /// Get the default system table

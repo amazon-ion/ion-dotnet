@@ -12,5 +12,10 @@ namespace IonDotnet
         /// Sets the contents of this container to an Ion null
         /// </summary>
         void MakeNull();
+        
+        /// <summary>
+        /// Checks if this container is empty
+        /// </summary>
+        bool IsEmpty { get; }
     }
 }

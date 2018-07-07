@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using IonDotnet.System;
 using static System.Diagnostics.Debug;
 
 namespace IonDotnet.Systems
@@ -13,24 +12,20 @@ namespace IonDotnet.Systems
     /// </summary>
     public class SimpleCatalog : IMutableCatalog, IEnumerable<ISymbolTable>
     {
-        private class TableVersionComparer : IComparer<ISymbolTable>
+        private class MaxFirstComparer : IComparer<int>
         {
-            public int Compare(ISymbolTable x, ISymbolTable y)
-            {
-                if (x == null || y == null) throw new ArgumentNullException();
-                return x.Version.CompareTo(y.Version);
-            }
+            public int Compare(int x, int y) => y.CompareTo(x);
         }
 
-        private static TableVersionComparer _comparer = new TableVersionComparer();
+        private static readonly MaxFirstComparer Comparer = new MaxFirstComparer();
 
-        private readonly Dictionary<string, SortedDictionary<int, ISymbolTable>> _tablesByName
-            = new Dictionary<string, SortedDictionary<int, ISymbolTable>>();
+        private readonly Dictionary<string, SortedList<int, ISymbolTable>> _tablesByName
+            = new Dictionary<string, SortedList<int, ISymbolTable>>();
 
         public ISymbolTable GetTable(string name)
         {
             if (string.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));
-            SortedDictionary<int, ISymbolTable> versions;
+            SortedList<int, ISymbolTable> versions;
             lock (_tablesByName)
             {
                 if (!_tablesByName.TryGetValue(name, out versions)) return null;
@@ -38,7 +33,7 @@ namespace IonDotnet.Systems
 
             lock (versions)
             {
-                return versions.Max().Value;
+                return versions.First().Value;
             }
         }
 
@@ -47,7 +42,7 @@ namespace IonDotnet.Systems
             if (string.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));
             if (version < 1) throw new ArgumentException("Must be >=1", nameof(version));
 
-            SortedDictionary<int, ISymbolTable> versions;
+            SortedList<int, ISymbolTable> versions;
             lock (_tablesByName)
             {
                 if (!_tablesByName.TryGetValue(name, out versions)) return null;
@@ -81,7 +76,7 @@ namespace IonDotnet.Systems
             {
                 if (!_tablesByName.TryGetValue(name, out var versions))
                 {
-                    versions = new SortedDictionary<int, ISymbolTable>();
+                    versions = new SortedList<int, ISymbolTable>(Comparer);
                     _tablesByName.Add(name, versions);
                 }
 
@@ -113,7 +108,7 @@ namespace IonDotnet.Systems
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        private static int GetBestMatchOfVersion(int requestedVersion, SortedDictionary<int, ISymbolTable>.KeyCollection versionsKeys)
+        private static int GetBestMatchOfVersion(int requestedVersion, IEnumerable<int> versionsKeys)
         {
             //no idea what's going on here
             var best = requestedVersion;

@@ -1,4 +1,4 @@
-﻿namespace IonDotnet.System
+﻿namespace IonDotnet.Systems
 {
     public interface IMutableCatalog : ICatalog
     {
