@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using IonDotnet.Utils;
 
@@ -8,6 +10,8 @@ namespace IonDotnet.Internals.Lite
 {
     internal abstract class IonValueLite : IPrivateIonValue
     {
+        private const int TypeAnnotationHashSignature = 620086508;
+
         internal class LazySymbolTableProvider : ISymbolTableProvider
         {
             private ISymbolTable _symbolTable;
@@ -39,6 +43,12 @@ namespace IonDotnet.Internals.Lite
 
         private int _fieldId = SymbolToken.UnknownSymbolId;
         private string _fieldName;
+
+        /// <summary>
+        /// The annotation sequence. This array is overallocated and may have nulls at the end denoting unused slots.
+        /// </summary>
+        private SymbolToken[] _annotations;
+
         protected IContext _context;
 
         protected IonValueLite(ContainerlessContext containerlessContext, bool isNull)
@@ -212,6 +222,58 @@ namespace IonDotnet.Internals.Lite
 
         protected abstract int GetHashCode(ISymbolTableProvider symbolTableProvider);
         protected abstract IonValueLite Clone(IContext parentContext);
+        protected abstract void WriteBodyTo(IIonWriter writer, ISymbolTableProvider symbolTableProvider);
+
+        protected int HashTypeAnnotations(int original, ISymbolTableProvider symbolTableProvider)
+        {
+            var tokens = GetTypeAnnotationSymbols(symbolTableProvider);
+            if (tokens.Length == 0)
+            {
+                return original;
+            }
+
+            const int sidHashSalt = 127; // prime to salt sid of annotation
+            const int textHashSalt = 31; // prime to salt text of annotation
+            const int prime = 8191;
+            var result = prime * original + tokens.Length;
+
+            foreach (var token in tokens)
+            {
+                var text = token.Text;
+                var tokenHashCode = text?.GetHashCode() * textHashSalt ?? token.Sid * sidHashSalt;
+
+                // mixing to account for small text and sid deltas
+                tokenHashCode ^= (tokenHashCode << 19) ^ (tokenHashCode >> 13);
+                result = prime * result + tokenHashCode;
+
+                // mixing at each step to make the hash code order-dependent
+                result ^= (result << 25) ^ (result >> 7);
+            }
+
+            return result;
+        }
+
+        private void WriteTo(IPrivateWriter writer, ISymbolTableProvider symbolTableProvider)
+        {
+            if (writer.IsInStruct && !writer.IsFieldNameSet())
+            {
+                var token = GetFieldNameSymbol(symbolTableProvider);
+                if (token == SymbolToken.None) throw new InvalidOperationException("Fieldname not set");
+
+                writer.SetFieldNameSymbol(token);
+            }
+
+            var annotations = GetTypeAnnotationSymbols();
+            writer.SetTypeAnnotationSymbols(annotations);
+            try
+            {
+                WriteBodyTo(writer, symbolTableProvider);
+            }
+            catch (IOException e)
+            {
+                throw new IonException(e);
+            }
+        }
 
         public abstract IonType Type { get; }
 
@@ -225,18 +287,56 @@ namespace IonDotnet.Internals.Lite
 
         public SymbolToken GetFieldNameSymbol(ISymbolTableProvider symbolTableProvider)
         {
-            throw new NotImplementedException();
+            var sid = _fieldId;
+            var text = _fieldName;
+            if (text != null)
+            {
+                if (sid != SymbolToken.UnknownSymbolId) return new SymbolToken(text, sid);
+
+                var token = symbolTableProvider.GetSystemTable().Find(text);
+                if (token != SymbolToken.None) return token;
+            }
+            else if (sid > 0)
+            {
+                text = symbolTableProvider.GetSystemTable().FindKnownSymbol(sid);
+            }
+            else if (sid != 0)
+            {
+                return SymbolToken.None;
+            }
+
+            return new SymbolToken(text, sid);
         }
 
         public ISymbolTable SymbolTable { get; set; }
 
-        public ISymbolTable GetAssignedSymbolTable()
+        public ISymbolTable GetAssignedSymbolTable() => _context.GetContextSymbolTable();
+
+        public SymbolToken[] GetTypeAnnotationSymbols(ISymbolTableProvider symbolTableProvider)
         {
-            throw new NotImplementedException();
+            if (_annotations == null) return SymbolToken.EmptyArray;
+            var count = _annotations.TakeWhile(a => a != SymbolToken.None).Count();
+            if (count == 0) return SymbolToken.EmptyArray;
+
+            // TODO do we need this in C#?
+            for (var i = 0; i < count; i++)
+            {
+                var token = _annotations[i];
+                if (token.Text == null || token.Sid != SymbolToken.UnknownSymbolId) continue;
+
+                var interned = symbolTableProvider.GetSystemTable().Find(token.Text);
+                if (interned != SymbolToken.None)
+                {
+                    _annotations[i] = token;
+                }
+            }
+
+            return _annotations;
         }
 
         public string FieldName
         {
+            set => _fieldName = value;
             get
             {
                 if (_fieldName != null) return _fieldName;
@@ -245,7 +345,16 @@ namespace IonDotnet.Internals.Lite
             }
         }
 
-        public SymbolToken FieldNameSymbol { get; }
+        public SymbolToken FieldNameSymbol
+        {
+            get => GetFieldNameSymbol(new LazySymbolTableProvider(this));
+            set
+            {
+                _fieldId = value.Sid;
+                _fieldName = value.Text;
+            }
+        }
+
         public IIonContainer Container => _context.GetContextContainer();
 
         public bool RemoveFromContainer()
@@ -277,17 +386,18 @@ namespace IonDotnet.Internals.Lite
 
         public string[] GetTypeAnnotations()
         {
-            throw new NotImplementedException();
+            var count = _annotations.TakeWhile(a => a != SymbolToken.None).Count();
+            return PrivateHelper.ToTextArray(_annotations, count);
         }
 
-        public SymbolToken[] GetTypeAnnotationSymbols()
-        {
-            throw new NotImplementedException();
-        }
+        public ArraySegment<SymbolToken> GetTypeAnnotationSymbols() => new ArraySegment<SymbolToken>(_annotations);
 
         public bool HasTypeAnnotation(string annotation)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(annotation)) throw new ArgumentNullException(nameof(annotation));
+            if (_annotations == null) return false;
+
+            return Array.FindIndex(_annotations, a => a != SymbolToken.None && annotation == a.Text) >= 0;
         }
 
         public void SetTypeAnnotations(params string[] annotations)
@@ -296,9 +406,7 @@ namespace IonDotnet.Internals.Lite
         }
 
         public void SetTypeAnnotationSymbols(params SymbolToken[] annotations)
-        {
-            throw new NotImplementedException();
-        }
+            => _annotations = (annotations == null || annotations.Length == 0) ? SymbolToken.EmptyArray : (SymbolToken[]) annotations.Clone();
 
         public void ClearTypeAnnotations()
         {
@@ -317,7 +425,10 @@ namespace IonDotnet.Internals.Lite
 
         public void WriteTo(IIonWriter writer)
         {
-            throw new NotImplementedException();
+            if (!(writer is IPrivateWriter privateWriter))
+                throw new NotSupportedException($"{nameof(IonValueLite)} can only write to {nameof(IPrivateWriter)}");
+
+            WriteTo(privateWriter, new LazySymbolTableProvider(this));
         }
 
         public abstract void Accept(IValueVisitor visitor);
@@ -327,16 +438,13 @@ namespace IonDotnet.Internals.Lite
             throw new NotImplementedException();
         }
 
-        public override bool Equals(object obj)
+        public sealed override bool Equals(object obj)
         {
             if (obj == this) return true;
             if (obj is IIonValue other) return IonComparison.IonEquals(this, other);
             return false;
         }
 
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
+        public sealed override int GetHashCode() => GetHashCode(new LazySymbolTableProvider(this));
     }
 }

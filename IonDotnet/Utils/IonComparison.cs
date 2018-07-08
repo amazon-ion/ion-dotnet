@@ -52,7 +52,7 @@ namespace IonDotnet.Utils
         /// <returns>True if 2 values are equal</returns>
         public static bool IonContentEquals(IIonValue v1, IIonValue v2) => IonEquals(v1, v2, false);
 
-        private static int CompareAnnotations(SymbolToken[] ann1, SymbolToken[] ann2)
+        private static int CompareAnnotations(Span<SymbolToken> ann1, Span<SymbolToken> ann2)
         {
             var len = ann1.Length;
             var result = len - ann2.Length;
@@ -106,7 +106,7 @@ namespace IonDotnet.Utils
             var multiset = ConvertToMultiset(s1, strict);
             foreach (var s2Field in s2)
             {
-                var field = new Field(s2, strict);
+                var field = new Field(s2Field, strict);
                 if (!multiset.TryGetValue(field, out var mapped) || mapped.Count <= 0) return -1;
                 mapped.Count--;
             }
@@ -175,7 +175,7 @@ namespace IonDotnet.Utils
         {
             if (v1 == null || v2 == null)
             {
-                if (v1 == v2) return 0;
+                if (v1 == null && v2 == null) return 0;
                 return v1 == null ? -1 : 1;
             }
 
@@ -200,7 +200,7 @@ namespace IonDotnet.Utils
             {
                 switch (v1.Type)
                 {
-                    case IonType.None:
+                    case IonType.Null:
                         break;
                     case IonType.Bool:
                         result = ((IIonBool) v1).BooleanValue.CompareTo(((IIonBool) v2).BooleanValue);

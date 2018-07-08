@@ -1,4 +1,6 @@
-﻿namespace IonDotnet
+﻿using System;
+
+namespace IonDotnet
 {
     public interface IIonValue<out T> : IIonValue where T : IIonValue
     {
@@ -85,7 +87,7 @@
         /// Gets this value's user type annotations as interned <see cref="T:IonDotnet.SymbolToken" />
         /// </summary>
         /// <returns></returns>
-        SymbolToken[] GetTypeAnnotationSymbols();
+        ArraySegment<SymbolToken> GetTypeAnnotationSymbols();
 
         /// <summary>
         /// Determines whether or not the value is annotated with a particular user type annotation.

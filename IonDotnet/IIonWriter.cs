@@ -78,5 +78,11 @@ namespace IonDotnet
         void WriteClob(byte[] value);
 
         void WriteClob(ArraySegment<byte> value);
+
+        void SetTypeAnnotations(params string[] annotations);
+
+        void SetTypeAnnotationSymbols(ArraySegment<SymbolToken> annotations);
+
+        void AddTypeAnnotation(string annotation);
     }
 }

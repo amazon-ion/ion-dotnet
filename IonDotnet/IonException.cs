@@ -9,13 +9,16 @@ namespace IonDotnet
     /// </summary>
     public class IonException : Exception
     {
-        public IonException() : base()
+        protected IonException() : base()
+        {
+        }
+
+        public IonException(Exception inner) : base("Exception caused by another", inner)
         {
         }
 
         public IonException(string message) : base(message)
         {
-            
         }
 
         public IonException(string message, Exception innerException) : base(message, innerException)

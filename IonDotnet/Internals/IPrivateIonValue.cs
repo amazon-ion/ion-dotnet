@@ -33,5 +33,13 @@
         /// Values that are not top-level will return null as they don't actually own their own symbol table.
         /// </remarks>
         ISymbolTable GetAssignedSymbolTable();
+        
+        /// <summary>
+        /// Overrides <see cref="IIonValue.GetTypeAnnotationSymbols"/> for use when there exists a
+        /// SymbolTableProvider implementation for this IonValue.
+        /// </summary>
+        /// <param name="symbolTableProvider">provides this IonValue's symbol table</param>
+        /// <returns>the type annotation SymbolTokens</returns>
+        SymbolToken[] GetTypeAnnotationSymbols(ISymbolTableProvider symbolTableProvider);
     }
 }

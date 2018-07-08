@@ -4,6 +4,7 @@
     {
         public const int UnknownSymbolId = -1;
         public static readonly SymbolToken None = new SymbolToken(null, UnknownSymbolId);
+        public static readonly SymbolToken[] EmptyArray = new SymbolToken[0];
 
         public SymbolToken(string text, int sid)
         {
