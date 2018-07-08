@@ -3,7 +3,7 @@ using System.IO;
 
 namespace IonDotnet
 {
-    public interface IIonLob<out T> : IIonValue<T> where T : IIonValue
+    public interface IIonLob : IIonValue
     {
         Stream OpenInputStream();
 

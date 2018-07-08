@@ -2,6 +2,7 @@
 using System.Data;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Lite
 {
@@ -210,6 +211,7 @@ namespace IonDotnet.Internals.Lite
         }
 
         protected abstract int GetHashCode(ISymbolTableProvider symbolTableProvider);
+        protected abstract IonValueLite Clone(IContext parentContext);
 
         public abstract IonType Type { get; }
 
@@ -244,7 +246,7 @@ namespace IonDotnet.Internals.Lite
         }
 
         public SymbolToken FieldNameSymbol { get; }
-        public IIonContainer Container { get; }
+        public IIonContainer Container => _context.GetContextContainer();
 
         public bool RemoveFromContainer()
         {
@@ -321,6 +323,18 @@ namespace IonDotnet.Internals.Lite
         public abstract void Accept(IValueVisitor visitor);
 
         public void MakeReadOnly()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == this) return true;
+            if (obj is IIonValue other) return IonComparison.IonEquals(this, other);
+            return false;
+        }
+
+        public override int GetHashCode()
         {
             throw new NotImplementedException();
         }

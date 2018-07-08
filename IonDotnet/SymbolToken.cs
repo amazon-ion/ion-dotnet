@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet
 {
-    public struct SymbolToken
+    public readonly struct SymbolToken
     {
         public const int UnknownSymbolId = -1;
         public static readonly SymbolToken None = new SymbolToken(null, UnknownSymbolId);

@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet
 {
-    public interface IIonBlob : IIonLob<IIonBlob>
+    public interface IIonBlob : IIonLob, IIonValue<IIonBlob>
     {
         void PrintBase64();
     }

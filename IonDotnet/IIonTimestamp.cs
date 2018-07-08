@@ -4,7 +4,7 @@ namespace IonDotnet
 {
     public interface IIonTimestamp : IIonValue<IIonTimestamp>
     {
-        DateTimeOffset TimeStampValue { get; set; }
+        DateTime TimeStampValue { get; set; }
 
         void SetMillis(long epochMillis);
 

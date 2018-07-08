@@ -12,6 +12,8 @@ namespace IonDotnet
     /// </remarks>
     public interface IIonStruct : IIonContainer
     {
+        int Size { get; }
+
         bool ContainsKey(string fieldName);
 
         bool ContainsValue(IIonValue value);

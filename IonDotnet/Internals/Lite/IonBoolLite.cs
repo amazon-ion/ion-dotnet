@@ -6,16 +6,12 @@
         {
         }
 
-        public IonBoolLite(IonValueLite existing, IContext context) : base(existing, context)
+        public IonBoolLite(IonBoolLite existing, IContext context) : base(existing, context)
         {
         }
 
-        public IIonBool Clone() => new IonBoolLite(this, new ContainerlessContext(GetIonSystemLite()));
+        public IIonBool Clone() => ClonePrivate(this, new ContainerlessContext(GetIonSystemLite()));
 
-        protected override int GetHashCode(ISymbolTableProvider symbolTableProvider)
-        {
-            throw new System.NotImplementedException();
-        }
 
         public override IonType Type { get; } = IonType.Bool;
 
@@ -43,5 +39,15 @@
 
             BooleanValue = val.Value;
         }
+
+
+        protected override int GetHashCode(ISymbolTableProvider symbolTableProvider)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected override IonValueLite Clone(IContext parentContext) => ClonePrivate(this, parentContext);
+
+        private static IonBoolLite ClonePrivate(IonBoolLite prototype, IContext parentContext) => new IonBoolLite(prototype, parentContext);
     }
 }
