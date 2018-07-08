@@ -3,26 +3,26 @@
     /// <summary>
     /// Indicates the smallest-possible C# type of an IonInt value
     /// </summary>
-    public enum IntegerSize
+    public enum IntegerSize : int
     {
         /// <summary>
-        /// Nothing
+        /// Unknown
         /// </summary>
-        None,
-        
+        Unknown = -1,
+
         /// <summary>
         /// Fit in C# 4-byte int
         /// </summary>
-        Int,
+        Int = 0,
 
         /// <summary>
         /// Fit in C# 8-byte long
         /// </summary>
-        Long,
+        Long = 1,
 
         /// <summary>
         /// Larger than 8-byte values
         /// </summary>
-        BigInteger,
+        BigInteger = 2,
     }
 }

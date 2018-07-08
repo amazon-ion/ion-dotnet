@@ -22,7 +22,7 @@
 
         public IIonNull Clone() => ClonePrivate(this, new ContainerlessContext(GetIonSystemLite()));
 
-        public override IonType Type { get; } = IonType.Null;
+        public override IonType Type => IonType.Null;
 
         public override void Accept(IValueVisitor visitor)
         {

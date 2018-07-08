@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet
 {
-    public interface IIonString : IIonText<IIonString>
+    public interface IIonString : IIonText, IIonValue<IIonString>
     {
     }
 }

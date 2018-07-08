@@ -3,7 +3,7 @@
     /// <summary>
     /// Common functionality of IonString and IonSymbol
     /// </summary>
-    public interface IIonText<T> : IIonValue<T> where T : IIonValue
+    public interface IIonText : IIonValue
     {
         string StringValue { get; set; }
     }

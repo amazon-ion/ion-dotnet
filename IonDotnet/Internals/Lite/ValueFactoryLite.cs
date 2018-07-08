@@ -163,12 +163,13 @@ namespace IonDotnet.Internals.Lite
 
         public IIonValue NewString(string value)
         {
-            throw new NotImplementedException();
-        }
+            var ionString = new IonStringLite(_context, value == null);
+            if (value != null)
+            {
+                ionString.StringValue = value;
+            }
 
-        public IIonValue NewString(Span<char> value)
-        {
-            throw new NotImplementedException();
+            return ionString;
         }
 
         public IIonStruct NewNullStruct()

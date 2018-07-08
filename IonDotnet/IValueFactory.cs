@@ -105,8 +105,6 @@ namespace IonDotnet
 
         IIonValue NewString(string value);
 
-        IIonValue NewString(Span<char> value);
-
         #endregion
 
         #region Struct

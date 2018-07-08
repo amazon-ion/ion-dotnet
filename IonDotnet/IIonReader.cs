@@ -54,7 +54,7 @@ namespace IonDotnet
         IonType GetCurrentType();
 
         /// <returns>
-        /// Smallest possible size representing the smallest-possible, or <see cref="IntegerSize.None"/>
+        /// Smallest possible size representing the smallest-possible, or <see cref="IntegerSize.Unknown"/>
         /// if there is no current value or the current value is a 'null'
         /// </returns>
         IntegerSize GetIntegerSize();

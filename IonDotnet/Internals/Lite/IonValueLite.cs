@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -13,7 +12,7 @@ namespace IonDotnet.Internals.Lite
     {
         private const int TypeAnnotationHashSignature = 620086508;
 
-        internal class LazySymbolTableProvider : ISymbolTableProvider
+        private class LazySymbolTableProvider : ISymbolTableProvider
         {
             private ISymbolTable _symbolTable;
             private readonly IIonValue _ionValue;
@@ -23,21 +22,21 @@ namespace IonDotnet.Internals.Lite
             public ISymbolTable GetSystemTable() => _symbolTable ?? (_symbolTable = _ionValue.SymbolTable);
         }
 
-        protected const uint LockedFlag = 0x01;
-        protected const uint SystemValueFlag = 0x02;
-        protected const uint NullFlag = 0x04;
-        protected const uint BoolTrueFlag = 0x08;
-        protected const uint IvmFlag = 0x10;
-        protected const uint AutoCreatedFlag = 0x20;
-        protected const uint SymbolPresentFlag = 0x40;
+        private const uint LockedFlag = 0x01;
+        private const uint SystemValueFlag = 0x02;
+        private const uint NullFlag = 0x04;
+        private const uint BoolTrueFlag = 0x08;
+        private const uint IvmFlag = 0x10;
+        private const uint AutoCreatedFlag = 0x20;
+        private const uint SymbolPresentFlag = 0x40;
 
         //mask first 8 bits, the rest 0s. lower 8 bits is flags, the rest 24bits is element id
         private const uint ElementMask = 0xff;
-        protected const int ElementShift = 8;
+        private const int ElementShift = 8;
 
         /// <summary>
         /// This field stores information about different value properties, and element Id
-        /// First 6 bits for common props, bit 7and8 are for specific type to use
+        /// First byte for flags
         /// The rest 24bit for element id
         /// </summary>
         private uint _flags;
@@ -50,7 +49,7 @@ namespace IonDotnet.Internals.Lite
         /// </summary>
         private SymbolToken[] _annotations;
 
-        protected IContext _context;
+        private IContext _context;
 
         protected IonValueLite(ContainerlessContext containerlessContext, bool isNull)
         {
@@ -84,7 +83,7 @@ namespace IonDotnet.Internals.Lite
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected int GetElementId() => (int) (_flags >> ElementShift);
+        private int GetElementId() => (int) (_flags >> ElementShift);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool HasFlag(uint flagBit) => (_flags & flagBit) != 0;
@@ -96,9 +95,9 @@ namespace IonDotnet.Internals.Lite
         private void ClearFlag(uint flagBit) => _flags &= ~flagBit;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsLocked() => HasFlag(LockedFlag);
+        private bool IsLocked() => HasFlag(LockedFlag);
 
-        protected bool IsLocked(bool value)
+        private bool IsLocked(bool value)
         {
             if (value)
             {
@@ -301,6 +300,11 @@ namespace IonDotnet.Internals.Lite
             }
         }
 
+        protected void ThrowIfNull()
+        {
+            if (IsNullValue()) throw new NullValueException();
+        }
+
         public void DetachFromContainer()
         {
             CheckLocked();
@@ -388,6 +392,7 @@ namespace IonDotnet.Internals.Lite
             get => GetFieldNameSymbol(new LazySymbolTableProvider(this));
             set
             {
+                Debug.Assert(_fieldId == SymbolToken.UnknownSid && _fieldName == null);
                 _fieldId = value.Sid;
                 _fieldName = value.Text;
             }
@@ -545,9 +550,6 @@ namespace IonDotnet.Internals.Lite
         /// <param name="name">is not retained by this value, but both fields are copied.</param>
         public void SetFieldNameSymbol(SymbolToken name)
         {
-            Debug.Assert(_fieldId == SymbolToken.UnknownSid && _fieldName == null);
-            _fieldName = name.Text;
-            _fieldId = name.Sid;
         }
 
         public sealed override int GetHashCode() => GetHashCode(new LazySymbolTableProvider(this));

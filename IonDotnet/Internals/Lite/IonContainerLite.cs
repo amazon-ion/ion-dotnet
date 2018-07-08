@@ -37,7 +37,7 @@ namespace IonDotnet.Internals.Lite
                         // when name is null it could be a sid 0 so we need to perform the full
                         // symbol token lookup.
                         // this is expensive so only do it when necessary
-                        copy.SetFieldNameSymbol(child.GetKnownFieldNameSymbol());
+                        copy.FieldNameSymbol = child.GetKnownFieldNameSymbol();
                     }
                     else
                     {

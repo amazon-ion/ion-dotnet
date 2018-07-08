@@ -315,7 +315,7 @@ namespace IonDotnet.Internals
 
         public IonType GetCurrentType() => StateType(_currentState);
 
-        public IntegerSize GetIntegerSize() => StateType(_currentState) == IonType.Int ? IntegerSize.Int : IntegerSize.None;
+        public IntegerSize GetIntegerSize() => StateType(_currentState) == IonType.Int ? IntegerSize.Int : IntegerSize.Unknown;
 
         public string GetFieldName()
         {
