@@ -5,44 +5,205 @@ namespace IonDotnet.Internals.Lite
 {
     internal abstract class ValueFactoryLite : IPrivateValueFactory
     {
-        public abstract T Clone<T>(T value) where T : IIonValue;
-        public abstract IIonBlob NewNullBlob();
-        public abstract IIonBlob NewBlob(byte[] bytes);
-        public abstract IIonBlob NewBlob(ArraySegment<byte> bytes);
-        public abstract IIonBlob NewBlob(Span<byte> bytes);
-        public abstract IIonBool NewNullBool();
-        public abstract IIonBool NewBool(bool value);
-        public abstract IIonClob NewNullClob();
-        public abstract IIonClob NewClob(byte[] data);
-        public abstract IIonClob NewClob(ArraySegment<byte> data);
-        public abstract IIonClob NewClob(Span<byte> data);
-        public abstract IIonDecimal NewNullDecimal();
-        public abstract IIonDecimal NewDecimal(decimal value);
-        public abstract IIonDecimal NewDecimal(long value);
-        public abstract IIonDecimal NewDecimal(double value);
-        public abstract IIonFloat NewNullFloat();
-        public abstract IIonFloat NewFloat(double value);
-        public abstract IIonFloat NewFloat(long value);
-        public abstract IIonInt NewNullInt();
-        public abstract IIonInt NewInt(int value);
-        public abstract IIonInt NewInt(long value);
-        public abstract IIonList NewNullList();
-        public abstract IIonList NewEmptyList();
-        public abstract IIonList NewList(IIonSequence children);
-        public abstract IIonList NewList(params IIonValue[] children);
-        public abstract IIonList NewList(IEnumerable<int> values);
-        public abstract IIonList NewList(IEnumerable<long> values);
-        public abstract IIonNull NewNull();
-        public abstract IIonValue NewNull(IonType type);
-        public abstract IIonValue NewNullString();
-        public abstract IIonValue NewString(string value);
-        public abstract IIonValue NewString(Span<char> value);
-        public abstract IIonStruct NewNullStruct();
-        public abstract IIonStruct NewStruct();
-        public abstract IIonSymbol NewNullSymbol();
-        public abstract IIonSymbol NewSymbol(string text);
-        public abstract IIonSymbol NewSymbol(SymbolToken token);
-        public abstract IIonTimestamp NewNullTimestamp();
-        public abstract IIonTimestamp NewTimestamp(DateTimeOffset dateTimeOffset);
+        private ContainerlessContext _context;
+
+        protected ValueFactoryLite(ContainerlessContext context)
+        {
+            _context = context;
+        }
+
+
+        public T Clone<T>(T value) where T : IIonValue
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonBlob NewNullBlob()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonBlob NewBlob(byte[] bytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonBlob NewBlob(ArraySegment<byte> bytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonBlob NewBlob(Span<byte> bytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonBool NewNullBool() => new IonBoolLite(_context, true);
+
+        public IIonBool NewBool(bool value)
+        {
+            var ionBool = new IonBoolLite(_context, false)
+            {
+                BooleanValue = value
+            };
+            return ionBool;
+        }
+
+        public IIonClob NewNullClob()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonClob NewClob(byte[] data)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonClob NewClob(ArraySegment<byte> data)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonClob NewClob(Span<byte> data)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonDecimal NewNullDecimal()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonDecimal NewDecimal(decimal value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonDecimal NewDecimal(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonDecimal NewDecimal(double value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonFloat NewNullFloat()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonFloat NewFloat(double value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonFloat NewFloat(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonInt NewNullInt()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonInt NewInt(int value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonInt NewInt(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonList NewNullList()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonList NewEmptyList()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonList NewList(IIonSequence children)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonList NewList(params IIonValue[] children)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonList NewList(IEnumerable<int> values)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonList NewList(IEnumerable<long> values)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonNull NewNull() => new IonNullLite(_context);
+
+        public IIonValue NewNull(IonType type)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonValue NewNullString()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonValue NewString(string value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonValue NewString(Span<char> value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonStruct NewNullStruct()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonStruct NewStruct()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonSymbol NewNullSymbol()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonSymbol NewSymbol(string text)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonSymbol NewSymbol(SymbolToken token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonTimestamp NewNullTimestamp()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIonTimestamp NewTimestamp(DateTimeOffset dateTimeOffset)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

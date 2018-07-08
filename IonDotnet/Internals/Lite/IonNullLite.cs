@@ -4,7 +4,7 @@
     {
         private const int HashSignature = -1535290537;
 
-        public IonNullLite(ContainerlessContext containerlessContext, bool isNull) : base(containerlessContext, isNull)
+        public IonNullLite(ContainerlessContext containerlessContext) : base(containerlessContext, true)
         {
         }
 
@@ -15,7 +15,7 @@
         protected override int GetHashCode(ISymbolTableProvider symbolTableProvider)
             => HashTypeAnnotations(HashSignature, symbolTableProvider);
 
-        protected override IonValueLite Clone(IContext parentContext)
+        public override IonValueLite Clone(IContext parentContext)
             => ClonePrivate(this, parentContext);
 
         protected override void WriteBodyTo(IIonWriter writer, ISymbolTableProvider symbolTableProvider) => writer.WriteNull();

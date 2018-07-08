@@ -100,7 +100,7 @@ namespace IonDotnet.Internals
             return new SymbolToken(internedText, sid);
         }
 
-        public int FindSymbol(string name) => !_symbolsMap.TryGetValue(name, out var sid) ? SymbolToken.UnknownSymbolId : sid;
+        public int FindSymbol(string name) => !_symbolsMap.TryGetValue(name, out var sid) ? SymbolToken.UnknownSid : sid;
 
         public string FindKnownSymbol(int id)
         {

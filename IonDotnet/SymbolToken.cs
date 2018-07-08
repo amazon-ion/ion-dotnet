@@ -10,25 +10,38 @@
     /// </remarks>
     public readonly struct SymbolToken
     {
-        public const int UnknownSymbolId = -1;
-        public static readonly SymbolToken None = new SymbolToken(null, UnknownSymbolId);
+        public const int UnknownSid = -1;
+        public static readonly SymbolToken None = new SymbolToken(null, UnknownSid);
         public static readonly SymbolToken[] EmptyArray = new SymbolToken[0];
 
+        private readonly int _sid;
+
+        /// <summary>
+        /// Create a new symbol token
+        /// </summary>
+        /// <param name="text">Text</param>
+        /// <param name="sid">Sid</param>
         public SymbolToken(string text, int sid)
         {
+            /**
+             * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
+             * Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
+             * returned value
+             */
+
             Text = text;
-            Sid = sid;
+            _sid = sid + 1;
         }
 
         /// <summary>
         /// The text of this symbol.
         /// </summary>
         public string Text { get; }
-        
+
         /// <summary>
         /// The ID of this symbol token.
         /// </summary>
-        public int Sid { get; }
+        public int Sid => _sid - 1;
 
         /// <returns>Symbol Text</returns>
         /// <exception cref="UnknownSymbolException">If the text is null</exception>

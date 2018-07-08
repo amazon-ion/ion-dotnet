@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -41,7 +42,7 @@ namespace IonDotnet.Internals.Lite
         /// </summary>
         private uint _flags;
 
-        private int _fieldId = SymbolToken.UnknownSymbolId;
+        private int _fieldId = SymbolToken.UnknownSid;
         private string _fieldName;
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace IonDotnet.Internals.Lite
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void SetElementId(int elementId)
+        public void SetElementId(int elementId)
         {
             _flags &= ElementMask;
             _flags |= (uint) elementId << ElementShift;
@@ -221,7 +222,7 @@ namespace IonDotnet.Internals.Lite
         }
 
         protected abstract int GetHashCode(ISymbolTableProvider symbolTableProvider);
-        protected abstract IonValueLite Clone(IContext parentContext);
+        public abstract IonValueLite Clone(IContext parentContext);
         protected abstract void WriteBodyTo(IIonWriter writer, ISymbolTableProvider symbolTableProvider);
 
         protected int HashTypeAnnotations(int original, ISymbolTableProvider symbolTableProvider)
@@ -275,6 +276,43 @@ namespace IonDotnet.Internals.Lite
             }
         }
 
+        private void MakeReadOnlyPrivate()
+        {
+            ClearSymbolIds();
+            IsLocked(true);
+        }
+
+        private void ClearSymbolIds()
+        {
+            if (_fieldName != null)
+            {
+                _fieldId = SymbolToken.UnknownSid;
+            }
+
+            if (_annotations == null) return;
+
+            for (var i = 0; i < _annotations.Length; i++)
+            {
+                var a = _annotations[i];
+                if (a.Text != null && a.Sid != SymbolToken.UnknownSid)
+                {
+                    _annotations[i] = new SymbolToken(a.Text, SymbolToken.UnknownSid);
+                }
+            }
+        }
+
+        public void DetachFromContainer()
+        {
+            CheckLocked();
+
+            ClearSymbolIds();
+            _context = new ContainerlessContext(GetIonSystemLite());
+
+            _fieldName = null;
+            _fieldId = SymbolToken.UnknownSid;
+            SetElementId(0);
+        }
+
         public abstract IonType Type { get; }
 
         public bool IsNull => IsNullValue();
@@ -291,7 +329,7 @@ namespace IonDotnet.Internals.Lite
             var text = _fieldName;
             if (text != null)
             {
-                if (sid != SymbolToken.UnknownSymbolId) return new SymbolToken(text, sid);
+                if (sid != SymbolToken.UnknownSid) return new SymbolToken(text, sid);
 
                 var token = symbolTableProvider.GetSystemTable().Find(text);
                 if (token != SymbolToken.None) return token;
@@ -322,7 +360,7 @@ namespace IonDotnet.Internals.Lite
             for (var i = 0; i < count; i++)
             {
                 var token = _annotations[i];
-                if (token.Text == null || token.Sid != SymbolToken.UnknownSymbolId) continue;
+                if (token.Text == null || token.Sid != SymbolToken.UnknownSid) continue;
 
                 var interned = symbolTableProvider.GetSystemTable().Find(token.Text);
                 if (interned != SymbolToken.None)
@@ -359,7 +397,10 @@ namespace IonDotnet.Internals.Lite
 
         public bool RemoveFromContainer()
         {
-            throw new NotImplementedException();
+            CheckLocked();
+
+            var parent = _context.GetContextContainer();
+            return parent != null && parent.Remove(this);
         }
 
         public IIonValue TopLevelValue
@@ -415,7 +456,29 @@ namespace IonDotnet.Internals.Lite
 
         public void AddTypeAnnotation(string annotation)
         {
-            throw new NotImplementedException();
+            CheckLocked();
+
+            if (string.IsNullOrEmpty(annotation)) throw new ArgumentNullException(nameof(annotation));
+            if (HasTypeAnnotation(annotation)) return;
+
+            var token = new SymbolToken(annotation, SymbolToken.UnknownSid);
+            var oldLength = _annotations?.Length ?? 0;
+            if (oldLength > 0)
+            {
+                for (var i = 0; i < oldLength; i++)
+                {
+                    Debug.Assert(_annotations != null);
+                    if (_annotations[i] != SymbolToken.None) continue;
+                    _annotations[i] = token;
+                    return;
+                }
+            }
+
+            //if we reach here, oldLength is not enough
+            var newLength = oldLength == 0 ? 1 : oldLength * 2;
+            // TODO consider using ArrayPool here
+            Array.Resize(ref _annotations, newLength);
+            _annotations[oldLength] = token;
         }
 
         public void RemoveTypeAnnotation(string annotation)
@@ -435,7 +498,38 @@ namespace IonDotnet.Internals.Lite
 
         public void MakeReadOnly()
         {
-            throw new NotImplementedException();
+            if (IsLocked()) return;
+            MakeReadOnlyPrivate();
+        }
+
+        public SymbolToken GetKnownFieldNameSymbol()
+        {
+            var token = this.GetFieldNameSymbol();
+            if (token.Text == null && token.Sid != 0)
+            {
+                throw new UnknownSymbolException(_fieldId);
+            }
+
+            return token;
+        }
+
+        public SymbolToken GetFieldNameSymbol()
+        {
+            // TODO amzn/ion-java#27 We should memoize the results of symtab lookups.
+            // BUT: that could cause thread-safety problems for read-only values.
+            // I think makeReadOnly should populate the tokens fully
+            // so that we only need to lookup from mutable instances.
+            // However, the current invariants on these fields are nonexistant so
+            // I do not trust that its safe to alter them here.
+
+            return GetFieldNameSymbol(new LazySymbolTableProvider(this));
+        }
+
+        public void SetContext(IContext context)
+        {
+            CheckLocked();
+            ClearSymbolIds();
+            _context = context;
         }
 
         public sealed override bool Equals(object obj)
@@ -443,6 +537,17 @@ namespace IonDotnet.Internals.Lite
             if (obj == this) return true;
             if (obj is IIonValue other) return IonComparison.IonEquals(this, other);
             return false;
+        }
+
+        /// <summary>
+        /// Sets the field name and ID based on a SymbolToken. Both parts of the SymbolToken are trusted!
+        /// </summary>
+        /// <param name="name">is not retained by this value, but both fields are copied.</param>
+        public void SetFieldNameSymbol(SymbolToken name)
+        {
+            Debug.Assert(_fieldId == SymbolToken.UnknownSid && _fieldName == null);
+            _fieldName = name.Text;
+            _fieldId = name.Sid;
         }
 
         public sealed override int GetHashCode() => GetHashCode(new LazySymbolTableProvider(this));

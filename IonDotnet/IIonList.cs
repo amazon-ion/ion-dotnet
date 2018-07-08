@@ -1,7 +1,6 @@
 ﻿namespace IonDotnet
 {
-    public interface IIonList : IIonSequence
+    public interface IIonList : IIonSequence, IIonValue<IIonList>
     {
-        IIonList Clone();
     }
 }

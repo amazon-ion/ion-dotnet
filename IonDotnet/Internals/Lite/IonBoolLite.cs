@@ -50,7 +50,7 @@
             return HashTypeAnnotations(HashSignature, symbolTableProvider);
         }
 
-        protected override IonValueLite Clone(IContext parentContext) => ClonePrivate(this, parentContext);
+        public override IonValueLite Clone(IContext parentContext) => ClonePrivate(this, parentContext);
         
         protected override void WriteBodyTo(IIonWriter writer, ISymbolTableProvider symbolTableProvider)
         {

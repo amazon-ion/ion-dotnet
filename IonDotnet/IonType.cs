@@ -1,22 +1,22 @@
 ﻿namespace IonDotnet
 {
-    public enum IonType
+    public enum IonType : int
     {
-        None,
-        Null,
-        Bool,
-        Int,
-        Float,
-        Decimal,
-        Timestamp,
-        Symbol,
-        String,
-        Clob,
-        Blob,
-        List,
-        Sexp,
-        Struct,
-        Datagram
+        None = -1,
+        Null = 0,
+        Bool = 1,
+        Int = 2,
+        Float = 3,
+        Decimal = 4,
+        Timestamp = 5,
+        Symbol = 6,
+        String = 7,
+        Clob = 8,
+        Blob = 9,
+        List = 10,
+        Sexp = 11,
+        Struct = 12,
+        Datagram = 13
     }
 
     public static class IonTypeExtensions

@@ -107,7 +107,7 @@
         /// Gets the symbol ID associated with a given symbol name
         /// </summary>
         /// <param name="name">Symbol name</param>
-        /// <returns>the id of the requested symbol or <see cref="SymbolToken.UnknownSymbolId"/> if not defined</returns>
+        /// <returns>the id of the requested symbol or <see cref="SymbolToken.UnknownSid"/> if not defined</returns>
         int FindSymbol(string name);
 
         /// <summary>

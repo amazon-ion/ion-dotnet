@@ -12,7 +12,7 @@ namespace IonDotnet.Tests.Common
                 return;
             }
 
-            if (sid != SymbolToken.UnknownSymbolId)
+            if (sid != SymbolToken.UnknownSid)
             {
                 Assert.AreEqual(text, symbolTable.FindKnownSymbol(sid));
             }
