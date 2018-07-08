@@ -1,5 +1,13 @@
 ﻿namespace IonDotnet
 {
+    /// <summary>
+    /// A SymbolToken providing both the symbol text and the assigned symbol ID. 
+    ///  Symbol tokens may be interned into a <see cref="ISymbolTable"/> <br/>
+    /// </summary>
+    /// <remarks>
+    /// This is implemented differently from the java implemenation using a readonly struct 
+    /// to avoid creating heap objects
+    /// </remarks>
     public readonly struct SymbolToken
     {
         public const int UnknownSymbolId = -1;
@@ -12,9 +20,18 @@
             Sid = sid;
         }
 
+        /// <summary>
+        /// The text of this symbol.
+        /// </summary>
         public string Text { get; }
+        
+        /// <summary>
+        /// The ID of this symbol token.
+        /// </summary>
         public int Sid { get; }
 
+        /// <returns>Symbol Text</returns>
+        /// <exception cref="UnknownSymbolException">If the text is null</exception>
         public string AssumeText()
         {
             if (Text == null) throw new UnknownSymbolException(Sid);
