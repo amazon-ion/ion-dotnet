@@ -20,7 +20,7 @@ namespace IonDotnet.Internals.Lite
         {
         }
 
-        public IonIntLite(IonIntLite existing, IContext context) : base(existing, context)
+        private IonIntLite(IonIntLite existing, IContext context) : base(existing, context)
         {
         }
 

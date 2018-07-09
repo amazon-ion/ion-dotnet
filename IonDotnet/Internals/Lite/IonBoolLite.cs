@@ -10,7 +10,7 @@
         {
         }
 
-        public IonBoolLite(IonBoolLite existing, IContext context) : base(existing, context)
+        private IonBoolLite(IonBoolLite existing, IContext context) : base(existing, context)
         {
         }
 

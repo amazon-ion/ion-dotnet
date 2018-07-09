@@ -8,7 +8,7 @@
         {
         }
 
-        public IonStringLite(IonStringLite existing, IContext context) : base(existing, context)
+        private IonStringLite(IonStringLite existing, IContext context) : base(existing, context)
         {
         }
 

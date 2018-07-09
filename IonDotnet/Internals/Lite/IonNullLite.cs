@@ -8,7 +8,7 @@
         {
         }
 
-        public IonNullLite(IonNullLite existing, IContext context) : base(existing, context)
+        private IonNullLite(IonNullLite existing, IContext context) : base(existing, context)
         {
         }
 
