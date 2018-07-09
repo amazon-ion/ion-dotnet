@@ -98,8 +98,8 @@ namespace IonDotnet.Internals.Lite
                 _longValue = value;
                 _bigInteger = null;
                 SetSize(value < int.MinValue || value > int.MaxValue
-                    ? IntegerSize.Int
-                    : IntegerSize.Long);
+                    ? IntegerSize.Long
+                    : IntegerSize.Int);
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace IonDotnet.Internals.Lite
 {
@@ -106,17 +107,35 @@ namespace IonDotnet.Internals.Lite
 
         public IIonInt NewNullInt()
         {
-            throw new NotImplementedException();
+            var ionValue = new IonIntLite(_context, true);
+            return ionValue;
         }
 
         public IIonInt NewInt(int value)
         {
-            throw new NotImplementedException();
+            var ionValue = new IonIntLite(_context, false)
+            {
+                IntValue = value
+            };
+            return ionValue;
         }
 
         public IIonInt NewInt(long value)
         {
-            throw new NotImplementedException();
+            var ionValue = new IonIntLite(_context, false)
+            {
+                LongValue = value
+            };
+            return ionValue;
+        }
+
+        public IIonInt NewInt(BigInteger value)
+        {
+            var ionValue = new IonIntLite(_context, false)
+            {
+                BigIntegerValue = value
+            };
+            return ionValue;
         }
 
         public IIonList NewNullList()
@@ -152,6 +171,42 @@ namespace IonDotnet.Internals.Lite
         public IIonNull NewNull() => new IonNullLite(_context);
 
         public IIonValue NewNull(IonType type)
+        {
+            switch (type)
+            {
+                default:
+                    //shoudn't happen
+                    throw new ArgumentOutOfRangeException();
+                case IonType.Null:
+                    return NewNull();
+                case IonType.Bool:
+                    return NewNullBool();
+                case IonType.Int:
+                    return NewNullInt();
+                case IonType.Float:
+                    return NewNullFloat();
+                case IonType.Decimal:
+                    return NewNullDecimal();
+                case IonType.Timestamp:
+                    return NewNullTimestamp();
+                case IonType.Symbol:
+                    return NewNullSymbol();
+                case IonType.String:
+                    return NewNullString();
+                case IonType.Clob:
+                    return NewNullClob();
+                case IonType.Blob:
+                    return NewNullBlob();
+                case IonType.List:
+                    return NewNullList();
+                case IonType.Sexp:
+                    return NewNullSexp();
+                case IonType.Struct:
+                    return NewNullStruct();
+            }
+        }
+
+        public IIonSexp NewNullSexp()
         {
             throw new NotImplementedException();
         }

@@ -59,7 +59,29 @@ namespace IonDotnet.Internals.Lite
 
         protected IonValueLite(IonValueLite existing, IContext context)
         {
-            // TODO annotation stuffs
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+
+            if (null != existing._annotations)
+            {
+                _annotations = new SymbolToken[existing._annotations.Length];
+                for (int i = 0, s = _annotations.Length; i < s; i++)
+                {
+                    var existingToken = existing._annotations[i];
+                    if (existingToken == SymbolToken.None) continue;
+
+                    var text = existingToken.Text;
+                    if (text != null)
+                    {
+                        _annotations[i] = new SymbolToken(text, SymbolToken.UnknownSid);
+                    }
+                    else
+                    {
+                        // TODO this is clearly wrong; however was the existing behavior as existing under #getAnnotationTypeSymbols();
+                        _annotations[i] = existing._annotations[i];
+                    }
+                }
+            }
+
             _flags = existing._flags;
             _context = context;
             ClearFlag(LockedFlag);
@@ -509,7 +531,7 @@ namespace IonDotnet.Internals.Lite
 
         public SymbolToken GetKnownFieldNameSymbol()
         {
-            var token = this.GetFieldNameSymbol();
+            var token = GetFieldNameSymbol();
             if (token.Text == null && token.Sid != 0)
             {
                 throw new UnknownSymbolException(_fieldId);

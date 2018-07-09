@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace IonDotnet
 {
@@ -69,6 +70,8 @@ namespace IonDotnet
 
         IIonInt NewInt(long value);
 
+        IIonInt NewInt(BigInteger value);
+
         #endregion
 
         #region List
@@ -96,6 +99,8 @@ namespace IonDotnet
         #endregion
 
         #region Sexp
+
+        IIonSexp NewNullSexp();
 
         #endregion
 
