@@ -6,13 +6,7 @@ namespace IonDotnet.Internals.Lite
 {
     internal abstract class ValueFactoryLite : IPrivateValueFactory
     {
-        private ContainerlessContext _context;
-
-        protected ValueFactoryLite(ContainerlessContext context)
-        {
-            _context = context;
-        }
-
+        protected ContainerlessContext Context;
 
         public T Clone<T>(T value) where T : IIonValue
         {
@@ -39,11 +33,11 @@ namespace IonDotnet.Internals.Lite
             throw new NotImplementedException();
         }
 
-        public IIonBool NewNullBool() => new IonBoolLite(_context, true);
+        public IIonBool NewNullBool() => new IonBoolLite(Context, true);
 
         public IIonBool NewBool(bool value)
         {
-            var ionBool = new IonBoolLite(_context, false)
+            var ionBool = new IonBoolLite(Context, false)
             {
                 BooleanValue = value
             };
@@ -107,13 +101,13 @@ namespace IonDotnet.Internals.Lite
 
         public IIonInt NewNullInt()
         {
-            var ionValue = new IonIntLite(_context, true);
+            var ionValue = new IonIntLite(Context, true);
             return ionValue;
         }
 
         public IIonInt NewInt(int value)
         {
-            var ionValue = new IonIntLite(_context, false)
+            var ionValue = new IonIntLite(Context, false)
             {
                 IntValue = value
             };
@@ -122,7 +116,7 @@ namespace IonDotnet.Internals.Lite
 
         public IIonInt NewInt(long value)
         {
-            var ionValue = new IonIntLite(_context, false)
+            var ionValue = new IonIntLite(Context, false)
             {
                 LongValue = value
             };
@@ -131,7 +125,7 @@ namespace IonDotnet.Internals.Lite
 
         public IIonInt NewInt(BigInteger value)
         {
-            var ionValue = new IonIntLite(_context, false)
+            var ionValue = new IonIntLite(Context, false)
             {
                 BigIntegerValue = value
             };
@@ -168,7 +162,7 @@ namespace IonDotnet.Internals.Lite
             throw new NotImplementedException();
         }
 
-        public IIonNull NewNull() => new IonNullLite(_context);
+        public IIonNull NewNull() => new IonNullLite(Context);
 
         public IIonValue NewNull(IonType type)
         {
@@ -218,7 +212,7 @@ namespace IonDotnet.Internals.Lite
 
         public IIonValue NewString(string value)
         {
-            var ionString = new IonStringLite(_context, value == null);
+            var ionString = new IonStringLite(Context, value == null);
             if (value != null)
             {
                 ionString.StringValue = value;

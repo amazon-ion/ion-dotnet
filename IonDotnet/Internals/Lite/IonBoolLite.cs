@@ -3,8 +3,8 @@
     internal sealed class IonBoolLite : IonValueLite, IIonBool
     {
         private static readonly int HashSignature = IonType.Bool.ToString().GetHashCode();
-        private static readonly int TrueHash = HashSignature ^ (unchecked(16777619 * 1231));
-        private static readonly int FalseHash = HashSignature ^ (unchecked(16777619 * 1237));
+        private static readonly int TrueHash = HashSignature ^ unchecked(16777619 * 1231);
+        private static readonly int FalseHash = HashSignature ^ unchecked(16777619 * 1237);
 
         public IonBoolLite(ContainerlessContext containerlessContext, bool isNull) : base(containerlessContext, isNull)
         {
