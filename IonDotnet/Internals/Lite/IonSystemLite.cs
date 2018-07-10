@@ -13,6 +13,14 @@ namespace IonDotnet.Internals.Lite
         private readonly IonReaderBuilder _readerBuilder;
         private readonly ISymbolTable _systemSymbolTable;
 
+        /// <summary>
+        /// Mostly for testing
+        /// </summary>
+        internal IonSystemLite(ContainerlessContext ctx)
+        {
+            Context = ctx;
+        }
+
         public IonSystemLite(IonTextWriterBuilder textWriterBuilder, PrivateIonBinaryWriterBuilder binaryWriterBuilder,
             IonReaderBuilder readerBuilder)
         {
