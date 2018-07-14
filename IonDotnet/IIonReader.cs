@@ -66,9 +66,8 @@ namespace IonDotnet
 
         SymbolToken GetFieldNameSymbol();
 
-        bool CurrentIsNull();
-
-        bool IsInStruct();
+        bool CurrentIsNull { get; }
+        bool IsInStruct { get; }
 
         bool BoolValue();
 
@@ -88,7 +87,7 @@ namespace IonDotnet
 
         SymbolToken SymbolValue();
 
-        int LobByteSize();
+        int GetLobByteSize();
 
         byte[] NewByteArray();
 

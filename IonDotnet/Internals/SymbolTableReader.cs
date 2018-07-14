@@ -401,90 +401,96 @@ namespace IonDotnet.Internals
             }
         }
 
-        public bool CurrentIsNull()
+        public bool CurrentIsNull
         {
-            switch (_currentState)
+            get
             {
-                case S_STRUCT:
-                case S_IN_STRUCT:
-                case S_NAME:
-                case S_VERSION:
-                case S_MAX_ID:
-                case S_IMPORT_LIST:
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_NAME:
-                case S_IMPORT_VERSION:
-                case S_IMPORT_MAX_ID:
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                    // these values are either present and non-null
-                    // or entirely absent (in which case they will
-                    // have been skipped and we won't be in a state
-                    // to return them).
-                    return false;
+                switch (_currentState)
+                {
+                    case S_STRUCT:
+                    case S_IN_STRUCT:
+                    case S_NAME:
+                    case S_VERSION:
+                    case S_MAX_ID:
+                    case S_IMPORT_LIST:
+                    case S_IN_IMPORTS:
+                    case S_IMPORT_STRUCT:
+                    case S_IN_IMPORT_STRUCT:
+                    case S_IMPORT_NAME:
+                    case S_IMPORT_VERSION:
+                    case S_IMPORT_MAX_ID:
+                    case S_IN_SYMBOLS:
+                    case S_SYMBOL:
+                        // these values are either present and non-null
+                        // or entirely absent (in which case they will
+                        // have been skipped and we won't be in a state
+                        // to return them).
+                        return false;
 
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
-                case S_AFTER_IMPORT_LIST:
-                case S_SYMBOL_LIST:
-                case S_SYMBOL_LIST_CLOSE:
-                case S_STRUCT_CLOSE:
-                case S_EOF:
-                    // here we're not really on a value, so we're not
-                    // on a value that is a null - so false again.
-                    return false;
+                    case S_IMPORT_STRUCT_CLOSE:
+                    case S_IMPORT_LIST_CLOSE:
+                    case S_AFTER_IMPORT_LIST:
+                    case S_SYMBOL_LIST:
+                    case S_SYMBOL_LIST_CLOSE:
+                    case S_STRUCT_CLOSE:
+                    case S_EOF:
+                        // here we're not really on a value, so we're not
+                        // on a value that is a null - so false again.
+                        return false;
 
-                default:
-                    throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {_currentState}");
+                    default:
+                        throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {_currentState}");
+                }
             }
         }
 
-        public bool IsInStruct()
+        public bool IsInStruct
         {
-            switch (_currentState)
+            get
             {
-                case S_STRUCT:
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                    // these values are either not contained, or
-                    // contained in a list. So we aren't in a
-                    // struct if they're pending.
-                    return false;
+                switch (_currentState)
+                {
+                    case S_STRUCT:
+                    case S_IN_IMPORTS:
+                    case S_IMPORT_STRUCT:
+                    case S_IN_SYMBOLS:
+                    case S_SYMBOL:
+                        // these values are either not contained, or
+                        // contained in a list. So we aren't in a
+                        // struct if they're pending.
+                        return false;
 
-                case S_IN_STRUCT:
-                case S_NAME:
-                case S_VERSION:
-                case S_MAX_ID:
-                case S_IMPORT_LIST:
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_NAME:
-                case S_IMPORT_VERSION:
-                case S_IMPORT_MAX_ID:
-                case S_AFTER_IMPORT_LIST:
-                case S_SYMBOL_LIST:
-                    // the values above are all members
-                    // of a struct, so we must be in a
-                    // struct to have them pending
-                    return true;
+                    case S_IN_STRUCT:
+                    case S_NAME:
+                    case S_VERSION:
+                    case S_MAX_ID:
+                    case S_IMPORT_LIST:
+                    case S_IN_IMPORT_STRUCT:
+                    case S_IMPORT_NAME:
+                    case S_IMPORT_VERSION:
+                    case S_IMPORT_MAX_ID:
+                    case S_AFTER_IMPORT_LIST:
+                    case S_SYMBOL_LIST:
+                        // the values above are all members
+                        // of a struct, so we must be in a
+                        // struct to have them pending
+                        return true;
 
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_STRUCT_CLOSE:
-                    // if we're closing a struct we're in a struct
-                    return true;
+                    case S_IMPORT_STRUCT_CLOSE:
+                    case S_STRUCT_CLOSE:
+                        // if we're closing a struct we're in a struct
+                        return true;
 
-                case S_IMPORT_LIST_CLOSE:
-                case S_SYMBOL_LIST_CLOSE:
-                case S_EOF:
-                    // if we're closing a list we in a list, not a struct
-                    // and EOF is not in a struct
-                    return false;
+                    case S_IMPORT_LIST_CLOSE:
+                    case S_SYMBOL_LIST_CLOSE:
+                    case S_EOF:
+                        // if we're closing a list we in a list, not a struct
+                        // and EOF is not in a struct
+                        return false;
 
-                default:
-                    throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {_currentState}");
+                    default:
+                        throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {_currentState}");
+                }
             }
         }
 
@@ -506,7 +512,7 @@ namespace IonDotnet.Internals
 
         public SymbolToken SymbolValue() => throw new InvalidOperationException("only valid if the value is a Symbol");
 
-        public int LobByteSize() => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
+        public int GetLobByteSize() => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
         public byte[] NewByteArray() => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 

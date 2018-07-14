@@ -41,5 +41,7 @@
         /// <param name="t">IonType enum</param>
         /// <returns>true when t is Blob or Clob</returns>
         public static bool IsLob(this IonType t) => t == IonType.Blob || t == IonType.Clob;
+
+        public static bool IsScalar(this IonType t) => t > IonType.None && t < IonType.Clob;
     }
 }

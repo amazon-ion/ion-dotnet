@@ -1,58 +1,23 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using System.Text;
 using System.Threading;
+using IonDotnet.Systems;
 using static System.Diagnostics.Debug;
 
 namespace IonDotnet.Internals
 {
-    internal abstract class IonRawBinaryReader : IIonReader
+    /// <summary>
+    /// Base functionalities for Ion binary readers <see href="http://amzn.github.io/ion-docs/docs/binary.html"/>
+    /// This handles going through the stream and reading TIDs, length
+    /// </summary>
+    internal abstract class RawBinaryReader : IIonReader
     {
-        protected class ContainerStack
-        {
-            private const int DefaultContainerStackSize = 6;
-            private readonly Stack<(long position, int localRemaining, int typeTid)> _stack;
-
-            public ContainerStack()
-            {
-                _stack = new Stack<(long position, int localRemaining, int typeTid)>(DefaultContainerStackSize);
-            }
-
-            public void Push(int typeTid, long position, int localRemaining)
-            {
-                _stack.Push((position, localRemaining, typeTid));
-            }
-
-            public long GetTopPosition()
-            {
-                Assert(_stack.Count > 0);
-                return _stack.Peek().position;
-            }
-
-            public int GetTopType()
-            {
-                Assert(_stack.Count > 0);
-                var type = _stack.Peek().typeTid;
-                if (type < 0) throw new IonException("invalid type id in parent stack");
-                return type;
-            }
-
-            public int GetTopLocalRemaining()
-            {
-                Assert(_stack.Count > 0);
-                return _stack.Peek().localRemaining;
-            }
-
-            public (long position, int localRemaining, int typeTid) Pop()
-            {
-                Assert(_stack.Count > 0);
-                return _stack.Pop();
-            }
-        }
-
         private const int NoLimit = int.MinValue;
-
+        private const int DefaultContainerStackSize = 6;
 
         protected enum State
         {
@@ -78,10 +43,12 @@ namespace IonDotnet.Internals
         protected int _valueFieldId;
         protected int _valueTid;
         protected int _valueLength;
-        protected bool _isInStruct;
         protected int _parentTid;
         protected bool _hasNextNeeded;
         protected bool _structIsOrdered;
+
+        protected bool _valueLobReady;
+        protected int _valueLobRemaining;
 
         // top of the container stack
         protected int _containerTop;
@@ -92,9 +59,9 @@ namespace IonDotnet.Internals
         // A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         // position is stored in the first 'long' of the stack item
         // 
-        protected ContainerStack _containerStack;
+        private readonly Stack<(long position, int localRemaining, int typeTid)> _containerStack;
 
-        protected IonRawBinaryReader(Stream input)
+        protected RawBinaryReader(Stream input)
         {
             _input = input;
 
@@ -106,10 +73,10 @@ namespace IonDotnet.Internals
             _hasNextNeeded = true;
             _valueIsNull = false;
             _valueIsTrue = false;
-            _isInStruct = false;
+            IsInStruct = false;
             _parentTid = 0;
             _containerTop = 0;
-            _containerStack = new ContainerStack();
+            _containerStack = new Stack<(long position, int localRemaining, int typeTid)>();
 
             _positionStart = -1;
         }
@@ -184,7 +151,7 @@ namespace IonDotnet.Internals
                             //bvm tid happens to be typedecl
                             if (_valueLength == BinaryVersionMarkerLen)
                             {
-//                                load_version_marker();
+                                //                                load_version_marker();
                                 _valueType = IonType.Symbol;
                             }
                             else
@@ -206,7 +173,7 @@ namespace IonDotnet.Internals
                         Skip(_valueLength);
                         goto case State.AfterValue;
                     case State.AfterValue:
-                        _state = _isInStruct ? State.BeforeField : State.BeforeTid;
+                        _state = IsInStruct ? State.BeforeField : State.BeforeTid;
                         break;
                     case State.Eof:
                         break;
@@ -271,7 +238,7 @@ namespace IonDotnet.Internals
 
             if (length > _localRemaining)
             {
-                if (_localRemaining < 1) throw new IonException("Unexpected eof");
+                if (_localRemaining < 1) throw new UnexpectedEofException(_input.Position);
                 length = _localRemaining;
             }
 
@@ -287,7 +254,7 @@ namespace IonDotnet.Internals
         private int ReadFieldId() => ReadVarUintOrEOF();
 
         /// <summary>
-        /// Read the TID bytes <see href="http://amzn.github.io/ion-docs/docs/binary.html"/>
+        /// Read the TID bytes 
         /// </summary>
         /// <returns>Tid (type code)</returns>
         /// <exception cref="IonException">If invalid states occurs</exception>
@@ -308,7 +275,7 @@ namespace IonDotnet.Internals
                     len = ReadVarUint();
                 }
 
-                _state = _isInStruct ? State.BeforeField : State.BeforeTid;
+                _state = IsInStruct ? State.BeforeField : State.BeforeTid;
                 tid = IonConstants.TidNopPad;
             }
             else if (len == IonConstants.LnIsVarLen)
@@ -368,7 +335,7 @@ namespace IonDotnet.Internals
             for (var i = 0; i < 4; i++)
             {
                 var b = ReadByte();
-                if (b < 0) throw new IonException($"Unexpected EOF at position {_input.Position}");
+                if (b < 0) throw new UnexpectedEofException(_input.Position);
 
                 ret = (ret << 7) | (b & 0x7F);
                 if ((b & 0x80) != 0) goto Done;
@@ -377,7 +344,7 @@ namespace IonDotnet.Internals
             //if we get here we have more bits that we have room for
             throw new OverflowException($"VarUint overflow at {_input.Position}");
 
-            Done:
+        Done:
             return ret;
         }
 
@@ -396,7 +363,7 @@ namespace IonDotnet.Internals
             //try reading for up to 4 more bytes
             for (var i = 0; i < 4; i++)
             {
-                if ((b = ReadByte()) < 0) throw new IonException($"Unexpected EOF at position {_input.Position}");
+                if ((b = ReadByte()) < 0) throw new UnexpectedEofException(_input.Position);
                 ret = (ret << 7) | (b & 0x7F);
                 if ((b & 0x80) != 0) goto Done;
             }
@@ -404,8 +371,103 @@ namespace IonDotnet.Internals
             //if we get here we have more bits that we have room for
             throw new OverflowException($"VarUint overflow at {_input.Position}");
 
-            Done:
+        Done:
             return ret;
+        }
+
+        /// <summary>
+        /// Read <paramref name="length"/> bytes, store results in a long
+        /// </summary>
+        /// <returns>'long' representation of the value</returns>
+        /// <param name="length">number of bytes to read</param>
+        /// <remarks>If the result is less than 0, 64bit is not enough</remarks>
+        protected long ReadUInt64(int length)
+        {
+            long ret = 0;
+            int b;
+            switch (length)
+            {
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(length), "length must be <=8");
+                case 8:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 7;
+                case 7:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 6;
+                case 6:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 5;
+                case 5:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 4;
+                case 4:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 3;
+                case 3:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 2;
+                case 2:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 1;
+                case 1:
+                    if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                    ret = (ret << 8) | (uint)b;
+                    goto case 0;
+                case 0:
+                    break;
+            }
+            return ret;
+        }
+
+        protected BigInteger ReadBigInteger(int length, bool isNegative)
+        {
+            if (length == 0) return BigInteger.Zero;
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Read the string value at the current position (and advance the stream by <paramref name="length"/>)
+        /// </summary>
+        /// <param name="length">Length of the string representation in bytes</param>
+        /// <returns>Read string</returns>
+        protected String ReadString(int length)
+        {
+            Assert(_state == State.BeforeValue);
+            //TODO consider using pipelines to avoid rebuffering
+            var alloc = ArrayPool<byte>.Shared.Rent(length);
+            ReadAll(new ArraySegment<byte>(alloc, 0, length), length);
+
+            var strValue = Encoding.UTF8.GetString(alloc, 0, length);
+            ArrayPool<byte>.Shared.Return(alloc);
+            return strValue;
+        }
+
+        /// <summary>
+        /// Reads <paramref name="length"/> bytes to the buffer, blocking till done
+        /// </summary>
+        /// <param name="buffer">Buffer to read data in</param>
+        /// <param name="length">Number of bytes to read</param>
+        /// <exception cref="UnexpectedEofException">If EOF occurs before all bytes are read</exception>
+        private void ReadAll(ArraySegment<byte> buffer, int length)
+        {
+            Assert(length >= buffer.Count);
+            var offset = buffer.Offset;
+            while (length > 0)
+            {
+                var amount = _input.Read(buffer.Array, buffer.Offset, length);
+                if (amount <= 0) throw new UnexpectedEofException(_input.Position);
+
+                length -= amount;
+                offset += amount;
+            }
         }
 
         private int ReadByte()
@@ -419,91 +481,76 @@ namespace IonDotnet.Internals
             return _input.ReadByte();
         }
 
-        public int CurrentDepth => throw new NotImplementedException();
-
-        public BigInteger BigIntegerValue()
+        private int ReadBytesIntoBuffer(ArraySegment<byte> buffer, int length)
         {
-            throw new NotImplementedException();
+            if (_localRemaining == NoLimit) return _input.Read(buffer.Array, buffer.Offset, length);
+
+            if (length > _localRemaining)
+            {
+                if (_localRemaining < 1) throw new UnexpectedEofException(_input.Position);
+                length = _localRemaining;
+            }
+
+            var bytesRead = _input.Read(buffer.Array, buffer.Offset, length);
+            _localRemaining -= bytesRead;
+            return bytesRead;
         }
 
-        public bool BoolValue()
-        {
-            throw new NotImplementedException();
-        }
+        public int CurrentDepth => _containerStack.Count;
 
-        public bool CurrentIsNull()
-        {
-            throw new NotImplementedException();
-        }
-
-        public DateTime DateTimeValue()
-        {
-            throw new NotImplementedException();
-        }
-
-        public decimal DecimalValue()
-        {
-            throw new NotImplementedException();
-        }
-
-        public double DoubleValue()
-        {
-            throw new NotImplementedException();
-        }
+        public bool CurrentIsNull => _valueIsNull;
 
         public int GetBytes(ArraySegment<byte> buffer)
         {
-            throw new NotImplementedException();
+            var length = GetLobByteSize();
+            if (length > buffer.Count)
+            {
+                length = buffer.Count;
+            }
+
+            if (_valueLobRemaining < 1) return 0;
+
+            var readBytes = ReadBytesIntoBuffer(buffer, length);
+            _valueLobRemaining -= readBytes;
+            if (_valueLobRemaining == 0)
+            {
+                _state = State.AfterValue;
+            }
+            else
+            {
+                _valueLength = _valueLobRemaining;
+            }
+            return readBytes;
         }
 
-        public IonType GetCurrentType()
+        public IonType GetCurrentType() => _valueType;
+
+
+        public bool IsInStruct { get; protected set; }
+
+        public int GetLobByteSize()
         {
-            throw new NotImplementedException();
+            //TODO should we do sth abt this code?
+            if (_valueType != IonType.Blob && _valueType != IonType.Clob)
+                throw new InvalidOperationException($"No byte size for type {_valueType}");
+
+            if (!_valueLobReady)
+            {
+                _valueLobRemaining = _valueIsNull ? 0 : _valueLength;
+                _valueLobReady = true;
+            }
+            return _valueLobRemaining;
         }
 
-        public string GetFieldName()
-        {
-            throw new NotImplementedException();
-        }
-
-        public SymbolToken GetFieldNameSymbol()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IntegerSize GetIntegerSize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISymbolTable GetSymbolTable()
-        {
-            throw new NotImplementedException();
-        }
-
-        public int IntValue()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool IsInStruct()
-        {
-            throw new NotImplementedException();
-        }
-
-        public int LobByteSize()
-        {
-            throw new NotImplementedException();
-        }
-
-        public long LongValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract long LongValue();
 
         public byte[] NewByteArray()
         {
-            throw new NotImplementedException();
+            var length = GetLobByteSize();
+            if (_valueIsNull) return null;
+            var bytes = new byte[length];
+            GetBytes(new ArraySegment<byte>(bytes, 0, length));
+            return bytes;
         }
 
         public IonType Next()
@@ -528,10 +575,10 @@ namespace IonDotnet.Internals
 
         public void StepIn()
         {
-            if (_eof
-                || _valueType != IonType.List
-                || _valueType != IonType.Struct
-                || _valueType != IonType.Sexp)
+            if (_eof) throw new InvalidOperationException("Reached the end of the stream");
+            if (_valueType != IonType.List
+                && _valueType != IonType.Struct
+                && _valueType != IonType.Sexp)
             {
                 throw new InvalidOperationException($"Cannot step in value {_valueType}");
             }
@@ -545,10 +592,10 @@ namespace IonDotnet.Internals
                 nextRemaining = Math.Max(0, nextRemaining - _valueLength);
             }
 
-            _containerStack.Push(_parentTid, nextPosition, nextRemaining);
-            _isInStruct = _valueTid == IonConstants.TidStruct;
+            _containerStack.Push((nextPosition, nextRemaining, _parentTid));
+            IsInStruct = _valueTid == IonConstants.TidStruct;
             _localRemaining = _valueLength;
-            _state = _isInStruct ? State.BeforeField : State.BeforeTid;
+            _state = IsInStruct ? State.BeforeField : State.BeforeTid;
             _parentTid = _valueTid;
             ClearValue();
             _hasNextNeeded = true;
@@ -556,17 +603,64 @@ namespace IonDotnet.Internals
 
         public void StepOut()
         {
-            throw new NotImplementedException();
+            if (CurrentDepth < 1) throw new InvalidOperationException("Cannot step out, current depth is 0");
+
+            var (nextPosition, localRemaining, parentTid) = _containerStack.Pop();
+            _eof = false;
+            _parentTid = parentTid;
+            IsInStruct = _parentTid == IonConstants.TidStruct;
+            _state = IsInStruct ? State.BeforeField : State.BeforeTid;
+            _hasNextNeeded = true;
+            ClearValue();
+
+            var currentPosition = _input.Position;
+            if (nextPosition > currentPosition)
+            {
+                //didn't read all the previous container
+                //skip all the remaining bytes
+                var distance = nextPosition - currentPosition;
+                var maxSkip = int.MaxValue - 1;
+                while (distance > maxSkip)
+                {
+                    Skip(maxSkip);
+                    distance -= maxSkip;
+                }
+                if (distance > 0)
+                {
+                    Assert(distance < int.MaxValue);
+                    Skip((int)distance);
+                }
+            }
+            else if (nextPosition < currentPosition)
+            {
+                throw new IonException($"Invalid position during stepout, curr:{currentPosition}, next:{nextPosition}");
+            }
+
+            _localRemaining = localRemaining;
         }
 
-        public string StringValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract string StringValue();
 
-        public SymbolToken SymbolValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract SymbolToken SymbolValue();
+
+        public abstract string GetFieldName();
+
+        public abstract SymbolToken GetFieldNameSymbol();
+
+        public abstract IntegerSize GetIntegerSize();
+
+        public abstract ISymbolTable GetSymbolTable();
+
+        public abstract int IntValue();
+
+        public abstract BigInteger BigIntegerValue();
+
+        public abstract bool BoolValue();
+
+        public abstract DateTime DateTimeValue();
+
+        public abstract decimal DecimalValue();
+
+        public abstract double DoubleValue();
     }
 }
