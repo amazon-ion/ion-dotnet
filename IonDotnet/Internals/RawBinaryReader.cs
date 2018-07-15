@@ -2,9 +2,9 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading;
 using IonDotnet.Systems;
 using static System.Diagnostics.Debug;
 
@@ -36,6 +36,8 @@ namespace IonDotnet.Internals
         /// </summary>
         protected int _localRemaining;
 
+        protected ValueVariant _v;
+
         protected bool _eof;
         protected IonType _valueType;
         protected bool _valueIsNull;
@@ -55,6 +57,8 @@ namespace IonDotnet.Internals
 
         protected long _positionStart;
         protected long _positionLength;
+
+        protected int[] _annotationIds;
 
         // A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         // position is stored in the first 'long' of the stack item
@@ -81,7 +85,7 @@ namespace IonDotnet.Internals
             _positionStart = -1;
         }
 
-
+        // TODO this doesnt make a lot of sense, should be MoveNext()
         protected bool HasNext()
         {
             if (_eof || !_hasNextNeeded) return !_eof;
@@ -344,7 +348,7 @@ namespace IonDotnet.Internals
             //if we get here we have more bits that we have room for
             throw new OverflowException($"VarUint overflow at {_input.Position}");
 
-        Done:
+            Done:
             return ret;
         }
 
@@ -371,7 +375,7 @@ namespace IonDotnet.Internals
             //if we get here we have more bits that we have room for
             throw new OverflowException($"VarUint overflow at {_input.Position}");
 
-        Done:
+            Done:
             return ret;
         }
 
@@ -381,7 +385,7 @@ namespace IonDotnet.Internals
         /// <returns>'long' representation of the value</returns>
         /// <param name="length">number of bytes to read</param>
         /// <remarks>If the result is less than 0, 64bit is not enough</remarks>
-        protected long ReadUInt64(int length)
+        protected long ReadLong(int length)
         {
             long ret = 0;
             int b;
@@ -391,47 +395,90 @@ namespace IonDotnet.Internals
                     throw new ArgumentOutOfRangeException(nameof(length), "length must be <=8");
                 case 8:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 7;
                 case 7:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 6;
                 case 6:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 5;
                 case 5:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 4;
                 case 4:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 3;
                 case 3:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 2;
                 case 2:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 1;
                 case 1:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 0;
                 case 0:
                     break;
             }
+
             return ret;
         }
 
+        /// <summary>
+        /// Read <paramref name="length"/> bytes into a <see cref="BigInteger"/>
+        /// </summary>
+        /// <returns>The big integer.</returns>
+        /// <param name="length">Number of bytes</param>
+        /// <param name="isNegative">Sign of the value</param>
         protected BigInteger ReadBigInteger(int length, bool isNegative)
         {
+            //TODO this is bad, do better
             if (length == 0) return BigInteger.Zero;
+
+            var bytes = new byte[length];
+            ReadAll(new ArraySegment<byte>(bytes, 0, length), length);
+            Array.Reverse(bytes);
+            var bigInt = new BigInteger(bytes);
+            return isNegative ? BigInteger.Negate(bigInt) : bigInt;
+        }
+
+        /// <summary>
+        /// Read <paramref name="length"/> bytes into a float
+        /// </summary>
+        /// <returns>The float.</returns>
+        /// <param name="length">Length.</param>
+        protected double ReadFloat(int length)
+        {
+            if (length == 0) return 0;
+
+            if (length != 4 && length != 8) throw new IonException($"Float length must be 0|4|8, length is {length}");
+            var bits = ReadLong(length);
+            return length == 4 ? Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
+        }
+
+        /// <summary>
+        /// Load the annotations of the current value into
+        /// </summary>
+        /// <returns>Number of annotations</returns>
+        protected int LoadAnnotations()
+        {
+            // the java impl allows skipping the annotations so we can read it even if
+            // _state == AfterValue. We don't allow that here
+            if (_state != State.BeforeValue) throw new InvalidOperationException("Value is not ready");
+
             throw new NotImplementedException();
         }
+
+        // Probably the fastest way
+        private static unsafe float Int32BitsToSingle(int value) => *(float*) (&value);
 
         /// <summary>
         /// Read the string value at the current position (and advance the stream by <paramref name="length"/>)
@@ -520,6 +567,7 @@ namespace IonDotnet.Internals
             {
                 _valueLength = _valueLobRemaining;
             }
+
             return readBytes;
         }
 
@@ -539,6 +587,7 @@ namespace IonDotnet.Internals
                 _valueLobRemaining = _valueIsNull ? 0 : _valueLength;
                 _valueLobReady = true;
             }
+
             return _valueLobRemaining;
         }
 
@@ -625,10 +674,11 @@ namespace IonDotnet.Internals
                     Skip(maxSkip);
                     distance -= maxSkip;
                 }
+
                 if (distance > 0)
                 {
                     Assert(distance < int.MaxValue);
-                    Skip((int)distance);
+                    Skip((int) distance);
                 }
             }
             else if (nextPosition < currentPosition)

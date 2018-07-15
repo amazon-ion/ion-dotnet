@@ -10,17 +10,20 @@ namespace IonDotnet.Bench
 
         public static void Main(string[] args)
         {
-            unchecked
-            {
-                var longVal = long.MaxValue - 4;
-                var ulongVal = (ulong)longVal;
-                ulongVal += 10;
-                longVal = (long)ulongVal;
+            var intVal = (int.MaxValue / 5);
+            var ll = (float)intVal;
+            Console.WriteLine(ll);
+            //Console.WriteLine(Int32BitsToSingle(intVal));
+            Console.WriteLine(BitConverter.Int32BitsToSingle(intVal));
 
-                longVal = (longVal << 1) >> 1;
-                var big = BigInteger.Add(TwoPow63, longVal);
-                Console.WriteLine(big - ulongVal);
-            }
+            //long longVal = long.MaxValue / 12;
+            //Console.WriteLine(longVal);
+
+        }
+
+        private static unsafe float Int32BitsToSingle(int value)
+        {
+           return *(float*)(&value);
         }
     }
 }

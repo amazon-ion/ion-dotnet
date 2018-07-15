@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Numerics;
 
 namespace IonDotnet.Internals
@@ -7,7 +6,7 @@ namespace IonDotnet.Internals
     public struct ValueVariant
     {
         [Flags]
-        internal enum AsType
+        public enum ScalarType
         {
             Nothing = 0,
             Null = 1 << 0,
@@ -21,35 +20,27 @@ namespace IonDotnet.Internals
             DateTime = 1 << 8
         }
 
-        private AsType _typeSet;
-        private AsType _authoritativeType;
-        private bool _boolValue;
-        private int _intValue;
-        private long _longValue;
-        private double _doubleValue;
+        public ScalarType TypeSet { get; private set; }
+        public ScalarType AuthoritativeType { get; private set; }
+
+        public bool BoolValue { get; private set; }
+        public int IntValue { get; private set; }
+        public long LongValue { get; private set; }
+        public double DoubleValue { get; private set; }
         public string StringValue { get; private set; }
-        private BigInteger _bigIntegerValue;
-        private decimal _decimalValue;
-        private DateTime _datetimeValue;
+        public BigInteger BigIntegerValue { get; private set; }
+        public decimal DecimalValue { get; private set; }
+        public DateTime DatetimeValue { get; private set; }
         //TODO datetime
 
-        public bool IsEmpty => _authoritativeType == AsType.Nothing;
+        public bool IsEmpty => AuthoritativeType == ScalarType.Nothing;
 
         public void Clear()
         {
-            _authoritativeType = AsType.Nothing;
-            _typeSet = AsType.Nothing;
+            AuthoritativeType = ScalarType.Nothing;
+            TypeSet = ScalarType.Nothing;
+            StringValue = null;
         }
-
-        public bool HasNull => _typeSet.HasFlag(AsType.Null);
-        public bool HasBool => _typeSet.HasFlag(AsType.Bool);
-        public bool HasInt => _typeSet.HasFlag(AsType.Int);
-        public bool HasLong => _typeSet.HasFlag(AsType.Long);
-        public bool HasBigInteger => _typeSet.HasFlag(AsType.BigInteger);
-        public bool HasDecimal => _typeSet.HasFlag(AsType.Decimal);
-        public bool HasDouble => _typeSet.HasFlag(AsType.Double);
-        public bool HasString => _typeSet.HasFlag(AsType.String);
-        public bool HasDateTime => _typeSet.HasFlag(AsType.DateTime);
 
         internal void SetNull(IonType ionType)
         {
@@ -58,31 +49,31 @@ namespace IonDotnet.Internals
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ionType));
                 case IonType.Int:
-                    _authoritativeType = AsType.Int;
+                    AuthoritativeType = ScalarType.Int;
                     break;
                 case IonType.Decimal:
-                    _authoritativeType = AsType.Decimal;
+                    AuthoritativeType = ScalarType.Decimal;
                     break;
                 case IonType.Null:
-                    _authoritativeType = AsType.Null;
+                    AuthoritativeType = ScalarType.Null;
                     break;
                 case IonType.Bool:
-                    _authoritativeType = AsType.Bool;
+                    AuthoritativeType = ScalarType.Bool;
                     break;
                 case IonType.String:
-                    _authoritativeType = AsType.String;
+                    AuthoritativeType = ScalarType.String;
                     break;
                 case IonType.Timestamp:
-                    _authoritativeType = AsType.DateTime;
+                    AuthoritativeType = ScalarType.DateTime;
                     break;
                 case IonType.Symbol:
-                    _authoritativeType = AsType.Int;
+                    AuthoritativeType = ScalarType.Int;
                     break;
                 case IonType.Float:
-                    _authoritativeType = AsType.Double;
+                    AuthoritativeType = ScalarType.Double;
                     break;
             }
-            _typeSet = AsType.Null;
+            TypeSet = ScalarType.Null;
         }
 
         internal void AddValue<T>(T value)
@@ -92,36 +83,36 @@ namespace IonDotnet.Internals
                 default:
                     throw new ArgumentOutOfRangeException($"Cannot set type {value.GetType()}");
                 case bool boolValue:
-                    _boolValue = boolValue;
-                    _typeSet |= AsType.Bool;
+                    BoolValue = boolValue;
+                    TypeSet |= ScalarType.Bool;
                     break;
                 case int intValue:
-                    _intValue = intValue;
-                    _typeSet |= AsType.Int;
+                    IntValue = intValue;
+                    TypeSet |= ScalarType.Int;
                     break;
                 case long longVal:
-                    _longValue = longVal;
-                    _typeSet |= AsType.Long;
+                    LongValue = longVal;
+                    TypeSet |= ScalarType.Long;
                     break;
                 case BigInteger bigInt:
-                    _bigIntegerValue = bigInt;
-                    _typeSet |= AsType.BigInteger;
+                    BigIntegerValue = bigInt;
+                    TypeSet |= ScalarType.BigInteger;
                     break;
                 case decimal decimalValue:
-                    _decimalValue = decimalValue;
-                    _typeSet |= AsType.Decimal;
+                    DecimalValue = decimalValue;
+                    TypeSet |= ScalarType.Decimal;
                     break;
                 case double doubleVal:
-                    _doubleValue = doubleVal;
-                    _typeSet |= AsType.Double;
+                    DoubleValue = doubleVal;
+                    TypeSet |= ScalarType.Double;
                     break;
                 case string stringVal:
                     StringValue = stringVal;
-                    _typeSet |= AsType.String;
+                    TypeSet |= ScalarType.String;
                     break;
                 case DateTime dateTime:
-                    _datetimeValue = dateTime;
-                    _typeSet |= AsType.DateTime;
+                    DatetimeValue = dateTime;
+                    TypeSet |= ScalarType.DateTime;
                     break;
             }
         }
@@ -133,44 +124,44 @@ namespace IonDotnet.Internals
                 default:
                     throw new ArgumentOutOfRangeException($"Cannot set type {value.GetType()}");
                 case bool boolValue:
-                    _boolValue = boolValue;
-                    _typeSet = AsType.Bool;
-                    _authoritativeType = AsType.Bool;
+                    BoolValue = boolValue;
+                    TypeSet = ScalarType.Bool;
+                    AuthoritativeType = ScalarType.Bool;
                     break;
                 case int intValue:
-                    _intValue = intValue;
-                    _typeSet = AsType.Int;
-                    _authoritativeType = AsType.Int;
+                    IntValue = intValue;
+                    TypeSet = ScalarType.Int;
+                    AuthoritativeType = ScalarType.Int;
                     break;
                 case long longVal:
-                    _longValue = longVal;
-                    _typeSet = AsType.Long;
-                    _authoritativeType = AsType.Long;
+                    LongValue = longVal;
+                    TypeSet = ScalarType.Long;
+                    AuthoritativeType = ScalarType.Long;
                     break;
                 case BigInteger bigInt:
-                    _bigIntegerValue = bigInt;
-                    _typeSet = AsType.BigInteger;
-                    _authoritativeType = AsType.BigInteger;
+                    BigIntegerValue = bigInt;
+                    TypeSet = ScalarType.BigInteger;
+                    AuthoritativeType = ScalarType.BigInteger;
                     break;
                 case decimal decimalValue:
-                    _decimalValue = decimalValue;
-                    _typeSet = AsType.Decimal;
-                    _authoritativeType = AsType.Decimal;
+                    DecimalValue = decimalValue;
+                    TypeSet = ScalarType.Decimal;
+                    AuthoritativeType = ScalarType.Decimal;
                     break;
                 case double doubleVal:
-                    _doubleValue = doubleVal;
-                    _typeSet = AsType.Double;
-                    _authoritativeType = AsType.Double;
+                    DoubleValue = doubleVal;
+                    TypeSet = ScalarType.Double;
+                    AuthoritativeType = ScalarType.Double;
                     break;
                 case string stringVal:
                     StringValue = stringVal;
-                    _typeSet = AsType.String;
-                    _authoritativeType = AsType.String;
+                    TypeSet = ScalarType.String;
+                    AuthoritativeType = ScalarType.String;
                     break;
                 case DateTime dateTime:
-                    _datetimeValue = dateTime;
-                    _typeSet = AsType.DateTime;
-                    _authoritativeType = AsType.DateTime;
+                    DatetimeValue = dateTime;
+                    TypeSet = ScalarType.DateTime;
+                    AuthoritativeType = ScalarType.DateTime;
                     break;
             }
         }
@@ -179,15 +170,15 @@ namespace IonDotnet.Internals
         {
             get
             {
-                switch (_authoritativeType)
+                switch (AuthoritativeType)
                 {
                     default:
                         return IntegerSize.Unknown;
-                    case AsType.Long:
+                    case ScalarType.Long:
                         return IntegerSize.Long;
-                    case AsType.Int:
+                    case ScalarType.Int:
                         return IntegerSize.Int;
-                    case AsType.BigInteger:
+                    case ScalarType.BigInteger:
                         return IntegerSize.BigInteger;
                 }
             }

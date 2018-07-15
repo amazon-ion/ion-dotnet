@@ -13,18 +13,26 @@ namespace IonDotnet.Internals
         private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long)1 << 62, 2);
 
         protected ISymbolTable _symbolTable;
-        private ValueVariant _v;
+        private IScalarConverter _scalarConverter;
 
-        internal SystemBinaryReader(Stream input) : this(input, SharedSymbolTable.GetSystem(1))
+        internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter)
+            : this(input, SharedSymbolTable.GetSystem(1), scalarConverter)
         {
         }
 
-        protected SystemBinaryReader(Stream input, ISymbolTable symboltable) : base(input)
+        protected SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter) : base(input)
         {
             _symbolTable = symboltable;
+            _scalarConverter = scalarConverter;
         }
 
-        private void LoadOnce()
+        private void PrepareValue()
+        {
+            LoadOnce();
+            //TODO stuffs with annotations
+        }
+
+        protected void LoadOnce()
         {
             //load only once
             if (!_v.IsEmpty) return;
@@ -59,7 +67,7 @@ namespace IonDotnet.Internals
                     if (_valueLength < sizeof(long))
                     {
                         //long might be enough
-                        var longVal = ReadUInt64(_valueLength);
+                        var longVal = ReadLong(_valueLength);
                         if (longVal < 0)
                         {
                             //this might not fit in a long
@@ -88,32 +96,53 @@ namespace IonDotnet.Internals
                     var bigInt = ReadBigInteger(_valueLength, isNegative);
                     _v.SetValue(bigInt);
                     break;
+                case IonType.Float:
+                    var d = ReadFloat(_valueLength);
+                    _v.SetValue(d);
+                    break;
+                case IonType.Decimal:
+                case IonType.Timestamp:
+                case IonType.Symbol:
+                    throw new NotImplementedException();
+                case IonType.String:
+                    var s = ReadString(_valueLength);
+                    _v.SetValue(s);
+                    break;
             }
+            _state = State.AfterValue;
         }
 
         public override BigInteger BigIntegerValue()
         {
-            throw new NotImplementedException();
+            if (!_valueType.IsNumeric()) throw new InvalidOperationException($"Current value is not numeric, type {_valueType}");
+            if (_valueIsNull) throw new NullValueException();
+
+            PrepareValue();
+            return _scalarConverter.ToBigInteger(_v, _symbolTable);
         }
 
         public override bool BoolValue()
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            return _scalarConverter.ToBool(_v, _symbolTable);
         }
 
         public override DateTime DateTimeValue()
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            return _scalarConverter.ToDateTime(_v, _symbolTable);
         }
 
         public override decimal DecimalValue()
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            return _scalarConverter.ToDecimal(_v, _symbolTable);
         }
 
         public override double DoubleValue()
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            return _scalarConverter.ToDouble(_v, _symbolTable);
         }
 
         public override string GetFieldName()
@@ -137,27 +166,44 @@ namespace IonDotnet.Internals
 
         public override IntegerSize GetIntegerSize()
         {
-            throw new NotImplementedException();
+            LoadOnce();
+            if (_valueType != IonType.Int || _valueIsNull) return IntegerSize.Unknown;
+
+            return _v.IntegerSize;
         }
 
-        public override ISymbolTable GetSymbolTable()
-        {
-            throw new NotImplementedException();
-        }
+        public override ISymbolTable GetSymbolTable() => _symbolTable;
 
         public override int IntValue()
         {
-            throw new NotImplementedException();
+            if (!_valueType.IsNumeric()) throw new InvalidOperationException($"Current value is not numeric, type {_valueType}");
+
+            PrepareValue();
+            return _scalarConverter.ToInt(_v, _symbolTable);
         }
 
         public override long LongValue()
         {
-            throw new NotImplementedException();
+            if (!_valueType.IsNumeric()) throw new InvalidOperationException($"Current value is not numeric, type {_valueType}");
+
+            PrepareValue();
+            return _scalarConverter.ToLong(_v, _symbolTable);
         }
 
         public override string StringValue()
         {
-            throw new NotImplementedException();
+            if (!_valueType.IsText()) throw new InvalidOperationException($"Current value is not text, type {_valueType}");
+            if (_valueIsNull) return null;
+
+            if (_valueType == IonType.Symbol)
+            {
+                //TODO symbols stuff
+            }
+            else
+            {
+                PrepareValue();
+            }
+            return _v.StringValue;
         }
 
         public override SymbolToken SymbolValue()

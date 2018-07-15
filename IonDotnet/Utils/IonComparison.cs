@@ -168,7 +168,7 @@ namespace IonDotnet.Utils
             return result;
         }
 
-        private static bool IonEquals(IIonValue ionValue, in IIonValue other, bool strict)
+        private static bool IonEquals(IIonValue ionValue, IIonValue other, bool strict)
             => IonCompare(ionValue, other, strict) == 0;
 
         private static int IonCompare(IIonValue v1, IIonValue v2, bool strict)

@@ -36,12 +36,24 @@
         public static bool IsText(this IonType t) => t == IonType.String || t == IonType.Symbol;
 
         /// <summary>
-        /// Determines whether a type represents an Ion LOB scalar, namely
+        /// Determines whether a type represents an Ion LOB
         /// </summary>
         /// <param name="t">IonType enum</param>
         /// <returns>true when t is Blob or Clob</returns>
         public static bool IsLob(this IonType t) => t == IonType.Blob || t == IonType.Clob;
 
+        /// <summary>
+        /// Determines whether a type represents a scalar value type
+        /// </summary>
+        /// <param name="t">IonType enum</param>
+        /// <returns>true when the this is a scalar type</returns>
         public static bool IsScalar(this IonType t) => t > IonType.None && t < IonType.Clob;
+
+        /// <summary>
+        /// Determines whether a type represents a numeric type
+        /// </summary>
+        /// <param name="t">IonType enum</param>
+        /// <returns>true when this type is numeric</returns>
+        public static bool IsNumeric(this IonType t) => t == IonType.Int || t == IonType.Float || t == IonType.Decimal;
     }
 }

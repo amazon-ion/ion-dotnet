@@ -21,7 +21,7 @@
         Long = 1,
 
         /// <summary>
-        /// Larger than 8-byte values
+        /// Larger than 8-byte
         /// </summary>
         BigInteger = 2,
     }
