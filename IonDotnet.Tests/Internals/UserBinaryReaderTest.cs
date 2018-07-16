@@ -21,11 +21,34 @@ namespace IonDotnet.Tests.Internals
         //double:2213.1267567f
         private static byte[] _flatScalar;
 
+        //empty struct {}
+        private static byte[] _trivial;
+
         [ClassInitialize]
         public static void Init(TestContext context)
         {
             _oneBool = DirStructure.ReadDataFile("onebool.bindat");
             _flatScalar = DirStructure.ReadDataFile("flat_scalar.bindat");
+            _trivial = DirStructure.ReadDataFile("trivial.bindat");
+        }
+
+        [TestMethod]
+        public void Trivial()
+        {
+            using (var reader = new UserBinaryReader(new MemoryStream(_trivial), new DefaultScalarConverter()))
+            {
+                reader.Next();
+                Assert.AreEqual(IonType.Struct, reader.GetCurrentType());
+                reader.StepIn();
+                Assert.AreEqual(1, reader.CurrentDepth);
+                Assert.AreEqual(IonType.None, reader.Next());
+                for (var i = 0; i < 10; i++)
+                {
+                    Assert.AreEqual(IonType.None, reader.Next());
+                }
+                reader.StepOut();
+                Assert.AreEqual(0, reader.CurrentDepth);
+            }
         }
 
         [TestMethod]
@@ -86,7 +109,7 @@ namespace IonDotnet.Tests.Internals
                 Assert.AreEqual("double", reader.GetFieldName());
                 Assert.AreEqual(IonType.Float, reader.GetCurrentType());
                 Assert.AreEqual(2213.1267567, reader.DoubleValue());
-                
+
                 Assert.AreEqual(IonType.None, reader.Next());
                 reader.StepOut();
                 Assert.AreEqual(0, reader.CurrentDepth);
