@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using static System.Diagnostics.Debug;
@@ -85,7 +86,7 @@ namespace IonDotnet.Internals
                 SetFlag(HAS_MAX_ID, true);
             }
 
-            _importedTables = _symbolTable.GetImportedTables();
+            _importedTables = _symbolTable.GetImportedTables().ToArray();
             if (_importedTables != null && _importedTables.Length > 0)
             {
                 SetFlag(HAS_IMPORT_LIST, true);

@@ -11,12 +11,30 @@ namespace IonDotnet.Internals
     {
         internal UserBinaryReader(Stream input, IScalarConverter scalarConverter) : base(input, scalarConverter)
         {
+        }
 
+        public override IonType Next()
+        {
+            if (!HasNext()) return IonType.None;
+            _hasNextNeeded = true;
+            return _valueType;
+        }
+
+        protected override bool HasNext()
+        {
+            if (_eof || !_hasNextNeeded) return !_eof;
+
+            while (!_eof && _hasNextNeeded)
+            {
+                HasNextUser();
+            }
+
+            return !_eof;
         }
 
         private void HasNextUser()
         {
-            HasNext();
+            base.HasNext();
 
             // if we're not at the top (datagram) level or the next value is null
             if (CurrentDepth != 0 || _valueIsNull) return;
@@ -32,16 +50,25 @@ namespace IonDotnet.Internals
                 {
                     LoadOnce();
                 }
+
                 // just get it straight from the holder, no conversion needed
                 var sid = _v.IntValue;
                 if (sid != SystemSymbols.Ion10Sid) return;
-                
+
                 _symbolTable = SharedSymbolTable.GetSystem(1);
                 _hasNextNeeded = true;
             }
             else if (_valueTid == IonConstants.TidStruct)
             {
-                
+                //trying to read the local symboltable here
+                var count = LoadAnnotations();
+                for (var i = 0; i < count; i++)
+                {
+                    if (_annotationIds[i] != SystemSymbols.IonSymbolTableSid) continue;
+                    _symbolTable = LocalSymbolTable.Read(this, false);
+                    _hasNextNeeded = true;
+                    break;
+                }
             }
         }
     }

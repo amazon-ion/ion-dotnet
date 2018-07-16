@@ -10,8 +10,9 @@ using static System.Diagnostics.Debug;
 
 namespace IonDotnet.Internals
 {
+    /// <inheritdoc />
     /// <summary>
-    /// Base functionalities for Ion binary readers <see href="http://amzn.github.io/ion-docs/docs/binary.html"/>
+    /// Base functionalities for Ion binary readers <see href="http://amzn.github.io/ion-docs/docs/binary.html" />
     /// This handles going through the stream and reading TIDs, length
     /// </summary>
     internal abstract class RawBinaryReader : IIonReader
@@ -54,6 +55,7 @@ namespace IonDotnet.Internals
 
         // top of the container stack
         protected int _containerTop;
+        protected int _annotationCount;
 
         protected long _positionStart;
         protected long _positionLength;
@@ -86,7 +88,7 @@ namespace IonDotnet.Internals
         }
 
         // TODO this doesnt make a lot of sense, should be MoveNext()
-        protected bool HasNext()
+        protected virtual bool HasNext()
         {
             if (_eof || !_hasNextNeeded) return !_eof;
 
@@ -111,7 +113,9 @@ namespace IonDotnet.Internals
             _valueType = IonType.None;
             _valueTid = -1;
             _valueIsNull = false;
+            _v.Clear();
             _valueFieldId = SymbolToken.UnknownSid;
+            _annotationCount = 0;
         }
 
         private void HasNextRaw()
@@ -155,11 +159,15 @@ namespace IonDotnet.Internals
                             //bvm tid happens to be typedecl
                             if (_valueLength == BinaryVersionMarkerLen)
                             {
-                                //                                load_version_marker();
+                                LoadAnnotations();
+                                // this isn't valid for any type descriptor except the first byte
+                                // of a 4 byte version marker - so lets read the rest
+                                LoadVersionMarker();
                                 _valueType = IonType.Symbol;
                             }
                             else
                             {
+                                //TODO handle annotations
                                 // if it's not a bvm then it's an ordinary annotated value
 
                                 // The next call changes our positions to that of the
@@ -186,6 +194,23 @@ namespace IonDotnet.Internals
 
             // we always get here
             _hasNextNeeded = false;
+        }
+
+        private void LoadVersionMarker()
+        {
+            if (ReadByte() != 0x01) throw new IonException("Invalid binary format");
+            if (ReadByte() != 0x00) throw new IonException("Invalid binary format");
+            if (ReadByte() != 0xea) throw new IonException("Invalid binary format");
+
+            // so it's a 4 byte version marker - make it look like
+            // the symbol $ion_1_0 ...
+            _valueTid = IonConstants.TidSymbol;
+            _valueLength = 0;
+            _v.SetValue(SystemSymbols.Ion10Sid);
+            _valueIsNull = false;
+            _valueLobReady = false;
+            _valueFieldId = SymbolToken.UnknownSid;
+            _state = State.AfterValue;
         }
 
         private static IonType GetIonTypeFromCode(int tid)
@@ -255,7 +280,7 @@ namespace IonDotnet.Internals
         }
 
         // TODO add docs IOException
-        private int ReadFieldId() => ReadVarUintOrEOF();
+        private int ReadFieldId() => ReadVarUintOrEof();
 
         /// <summary>
         /// Read the TID bytes 
@@ -333,7 +358,7 @@ namespace IonDotnet.Internals
             return tid;
         }
 
-        protected int ReadVarUint()
+        private int ReadVarUint()
         {
             var ret = 0;
             for (var i = 0; i < 4; i++)
@@ -359,7 +384,7 @@ namespace IonDotnet.Internals
         /// <returns>Int value</returns>
         /// <exception cref="IonException">When unexpected EOF occurs</exception>
         /// <exception cref="OverflowException">If the int does not self-limit</exception>
-        protected int ReadVarUintOrEOF()
+        private int ReadVarUintOrEof()
         {
             var ret = 0;
             int b;
@@ -474,7 +499,41 @@ namespace IonDotnet.Internals
             // _state == AfterValue. We don't allow that here
             if (_state != State.BeforeValue) throw new InvalidOperationException("Value is not ready");
 
-            throw new NotImplementedException();
+            //reset the annotation list
+            _annotationCount = 0;
+
+            int a;
+            while ((a = ReadVarUintOrEof()) != IonConstants.Eof)
+            {
+                AppendAnnotation(a);
+            }
+
+            return _annotationCount;
+        }
+
+        /// <summary>
+        /// Append <paramref name="a"/> to the annotation list and increase the annotation count
+        /// </summary>
+        /// <param name="a">Annotation symbol id</param>
+        private void AppendAnnotation(int a)
+        {
+            if (_annotationIds == null)
+            {
+                _annotationIds = ArrayPool<int>.Shared.Rent(1);
+            }
+            else
+            {
+                var oldLength = _annotationIds.Length;
+                if (_annotationCount >= oldLength)
+                {
+                    var temp = _annotationIds = ArrayPool<int>.Shared.Rent(oldLength * 2);
+                    Array.Copy(_annotationIds, temp, oldLength);
+                    ArrayPool<int>.Shared.Return(_annotationIds);
+                    _annotationIds = temp;
+                }
+            }
+
+            _annotationIds[_annotationCount++] = a;
         }
 
         // Probably the fastest way
@@ -602,7 +661,7 @@ namespace IonDotnet.Internals
             return bytes;
         }
 
-        public IonType Next()
+        public virtual IonType Next()
         {
             if (_eof) return IonType.None;
             if (_hasNextNeeded)

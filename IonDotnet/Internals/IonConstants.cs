@@ -44,5 +44,7 @@ namespace IonDotnet.Internals
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetLowNibble(int tid) => tid & 0xf;
+
+        public const int Bvm10 = unchecked((int) 0xE00100EA);
     }
 }

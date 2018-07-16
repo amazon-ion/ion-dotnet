@@ -2,7 +2,7 @@
 {
     internal static class PrivateHelper
     {
-        private static readonly string[] EmptyStringArray = new string[0];
+        public static readonly string[] EmptyStringArray = new string[0];
 
         public static string[] ToTextArray(SymbolToken[] symbols, int count)
         {

@@ -1,4 +1,6 @@
-﻿namespace IonDotnet
+﻿using System.Collections.Generic;
+
+namespace IonDotnet
 {
     /// <summary>
     /// A symbol table maps symbols between their textual form and an integer ID used in the binary encoding.
@@ -67,7 +69,7 @@
         /// <remarks>The version identifier is a string of the form "ion_X_Y".</remarks>
         string IonVersionId { get; }
 
-        ISymbolTable[] GetImportedTables();
+        IEnumerable<ISymbolTable> GetImportedTables();
 
         /// <summary>
         /// Gets the highest symbol id reserved by this table's imports (including system symbols)
@@ -106,9 +108,9 @@
         /// <summary>
         /// Gets the symbol ID associated with a given symbol name
         /// </summary>
-        /// <param name="name">Symbol name</param>
+        /// <param name="text">Symbol name</param>
         /// <returns>the id of the requested symbol or <see cref="SymbolToken.UnknownSid"/> if not defined</returns>
-        int FindSymbol(string name);
+        int FindSymbol(string text);
 
         /// <summary>
         /// Gets the interned text for a symbol ID

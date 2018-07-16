@@ -77,7 +77,10 @@ namespace IonDotnet.Internals
             }
         }
 
-        public ISymbolTable[] GetImportedTables() => null;
+        IEnumerable<ISymbolTable> ISymbolTable.GetImportedTables()
+        {
+            yield break;
+        }
 
         public int GetImportedMaxId() => 0;
 
