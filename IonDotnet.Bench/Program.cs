@@ -13,11 +13,15 @@ namespace IonDotnet.Bench
         {
             var fs = new FileStream("javaout", FileMode.Open);
             var reader = new UserBinaryReader(fs, new DefaultScalarConverter());
+
+            reader.Next();
+            Console.WriteLine(reader.GetCurrentType());
             reader.StepIn();
-            while ((reader.Next()) != IonType.None)
-            {
-                Console.WriteLine(reader.GetCurrentType());
-            }
+            reader.Next();
+            Console.WriteLine(reader.CurrentDepth);
+            Console.WriteLine(reader.GetCurrentType());
+            Console.WriteLine(reader.GetFieldName());
+            Console.WriteLine(reader.BoolValue());
         }
     }
 }

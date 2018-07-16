@@ -46,15 +46,15 @@ namespace IonDotnet.Internals
         protected int _valueFieldId;
         protected int _valueTid;
         protected int _valueLength;
-        protected int _parentTid;
+        private int _parentTid;
         protected bool _hasNextNeeded;
-        protected bool _structIsOrdered;
-
-        protected bool _valueLobReady;
-        protected int _valueLobRemaining;
+        private bool _structIsOrdered;
+        private bool _annotationRequested;
+        private bool _valueLobReady;
+        private int _valueLobRemaining;
+        protected bool _hasSymbolTableAnnotation;
 
         // top of the container stack
-        protected int _containerTop;
         protected int _annotationCount;
 
         protected long _positionStart;
@@ -81,7 +81,7 @@ namespace IonDotnet.Internals
             _valueIsTrue = false;
             IsInStruct = false;
             _parentTid = 0;
-            _containerTop = 0;
+            _annotationRequested = false;
             _containerStack = new Stack<(long position, int localRemaining, int typeTid)>();
 
             _positionStart = -1;
@@ -116,6 +116,7 @@ namespace IonDotnet.Internals
             _v.Clear();
             _valueFieldId = SymbolToken.UnknownSid;
             _annotationCount = 0;
+            _hasSymbolTableAnnotation = false;
         }
 
         private void HasNextRaw()
@@ -159,7 +160,6 @@ namespace IonDotnet.Internals
                             //bvm tid happens to be typedecl
                             if (_valueLength == BinaryVersionMarkerLen)
                             {
-                                LoadAnnotations();
                                 // this isn't valid for any type descriptor except the first byte
                                 // of a 4 byte version marker - so lets read the rest
                                 LoadVersionMarker();
@@ -170,9 +170,7 @@ namespace IonDotnet.Internals
                                 //TODO handle annotations
                                 // if it's not a bvm then it's an ordinary annotated value
 
-                                // The next call changes our positions to that of the
-                                // wrapped value, but we need to remember the overall
-                                // wrapper position.
+                                _valueType = LoadAnnotationsGotoValueType();
                             }
                         }
                         else
@@ -280,7 +278,11 @@ namespace IonDotnet.Internals
         }
 
         // TODO add docs IOException
-        private int ReadFieldId() => ReadVarUintOrEof();
+        private int ReadFieldId()
+        {
+            if (ReadVarUintOrEof(out var i) < 0) return IonConstants.Eof;
+            return i;
+        }
 
         /// <summary>
         /// Read the TID bytes 
@@ -381,19 +383,24 @@ namespace IonDotnet.Internals
         /// <summary>
         /// Try read an VarUint or returns EOF
         /// </summary>
-        /// <returns>Int value</returns>
+        /// <param name="output">Out to store the read int</param>
+        /// <returns>Number of bytes read, or EOF</returns>
         /// <exception cref="IonException">When unexpected EOF occurs</exception>
         /// <exception cref="OverflowException">If the int does not self-limit</exception>
-        private int ReadVarUintOrEof()
+        private int ReadVarUintOrEof(out int output)
         {
-            var ret = 0;
+            output = 0;
             int b;
             if ((b = ReadByte()) < 0) return IonConstants.Eof;
+            output = (output << 7) | (b & 0x7F);
+            var bn = 1;
+            if ((b & 0x80) != 0) goto Done;
             //try reading for up to 4 more bytes
             for (var i = 0; i < 4; i++)
             {
                 if ((b = ReadByte()) < 0) throw new UnexpectedEofException(_input.Position);
-                ret = (ret << 7) | (b & 0x7F);
+                output = (output << 7) | (b & 0x7F);
+                bn++;
                 if ((b & 0x80) != 0) goto Done;
             }
 
@@ -401,7 +408,7 @@ namespace IonDotnet.Internals
             throw new OverflowException($"VarUint overflow at {_input.Position}");
 
             Done:
-            return ret;
+            return bn;
         }
 
         /// <summary>
@@ -493,7 +500,7 @@ namespace IonDotnet.Internals
         /// Load the annotations of the current value into
         /// </summary>
         /// <returns>Number of annotations</returns>
-        protected int LoadAnnotations()
+        private void LoadAnnotations(int annotLength, bool save)
         {
             // the java impl allows skipping the annotations so we can read it even if
             // _state == AfterValue. We don't allow that here
@@ -502,20 +509,60 @@ namespace IonDotnet.Internals
             //reset the annotation list
             _annotationCount = 0;
 
-            int a;
-            while ((a = ReadVarUintOrEof()) != IonConstants.Eof)
+            int l;
+            while (annotLength > 0 && (l = ReadVarUintOrEof(out var a)) != IonConstants.Eof)
             {
-                AppendAnnotation(a);
-            }
+                annotLength -= l;
+                if (a == SystemSymbols.IonSymbolTableSid)
+                {
+                    _hasSymbolTableAnnotation = true;
+                }
 
-            return _annotationCount;
+                if (save)
+                {
+                    AppendAnnotationAndIncreaseCount(a);
+                    continue;
+                }
+
+                _annotationCount++;
+            }
+        }
+
+        /// <summary>
+        /// This method will read the annotations, and load them if requested
+        /// Then it will skip to the value
+        /// </summary>
+        /// <returns>Type of the value</returns>
+        private IonType LoadAnnotationsGotoValueType()
+        {
+            //Values can be wrapped by annotations http://amzn.github.io/ion-docs/docs/binary.html#annotations
+            //This is invoked when we get a typedecl tid, which means there are potentially annotations
+            //Depending on the options we might load them or not, the default should be not to load them
+            //In which case we'll just go through to the wrapped value
+            //Unlike the java impl, there is no save point here, so this either loads the annotations, or it doesnt
+            var annotLength = ReadVarUint();
+            LoadAnnotations(annotLength, _annotationRequested);
+
+            // this will both get the type id and it will reset the
+            // length as well (over-writing the len + annotations value
+            // that is there now, before the call)
+            _valueTid = ReadTypeId();
+            if (_valueTid == IonConstants.TidNopPad)
+                throw new IonException("NOP padding is not allowed within annotation wrappers");
+            if (_valueTid == IonConstants.Eof)
+                throw new UnexpectedEofException();
+            if (_valueTid == IonConstants.TidTypedecl)
+                throw new IonException("An annotation wrapper may not contain another annotation wrapper.");
+
+            var valueType = GetIonTypeFromCode(_valueTid);
+            return valueType;
         }
 
         /// <summary>
         /// Append <paramref name="a"/> to the annotation list and increase the annotation count
         /// </summary>
         /// <param name="a">Annotation symbol id</param>
-        private void AppendAnnotation(int a)
+        private void AppendAnnotationAndIncreaseCount(int a)
         {
             if (_annotationIds == null)
             {
@@ -553,6 +600,7 @@ namespace IonDotnet.Internals
 
             var strValue = Encoding.UTF8.GetString(alloc, 0, length);
             ArrayPool<byte>.Shared.Return(alloc);
+            _localRemaining -= length;
             return strValue;
         }
 
@@ -568,7 +616,7 @@ namespace IonDotnet.Internals
             var offset = buffer.Offset;
             while (length > 0)
             {
-                var amount = _input.Read(buffer.Array, buffer.Offset, length);
+                var amount = _input.Read(buffer.Array, offset, length);
                 if (amount <= 0) throw new UnexpectedEofException(_input.Position);
 
                 length -= amount;
@@ -633,7 +681,7 @@ namespace IonDotnet.Internals
         public IonType GetCurrentType() => _valueType;
 
 
-        public bool IsInStruct { get; protected set; }
+        public bool IsInStruct { get; private set; }
 
         public int GetLobByteSize()
         {

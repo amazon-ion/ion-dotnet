@@ -17,7 +17,7 @@ namespace IonDotnet.Internals
             _imports = new ISymbolTable[imports.Count];
             for (var i = 0; i < imports.Count; i++)
             {
-                var symtab = _imports[i];
+                var symtab = imports[i];
                 if (symtab.IsLocal)
                 {
                     //TODO handle local imports

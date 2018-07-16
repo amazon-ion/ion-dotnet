@@ -44,7 +44,8 @@ namespace IonDotnet.Internals
             {
                 // trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
-                if (LoadAnnotations() != 0) return;
+                // we already count the number of annotations
+                if (_annotationCount != 0) return;
 
                 if (!_v.IsEmpty)
                 {
@@ -61,13 +62,10 @@ namespace IonDotnet.Internals
             else if (_valueTid == IonConstants.TidStruct)
             {
                 //trying to read the local symboltable here
-                var count = LoadAnnotations();
-                for (var i = 0; i < count; i++)
+                if (_hasSymbolTableAnnotation)
                 {
-                    if (_annotationIds[i] != SystemSymbols.IonSymbolTableSid) continue;
                     _symbolTable = LocalSymbolTable.Read(this, false);
                     _hasNextNeeded = true;
-                    break;
                 }
             }
         }
