@@ -3,7 +3,7 @@
     /// <summary>
     /// Indicates the smallest-possible C# type of an IonInt value
     /// </summary>
-    public enum IntegerSize : int
+    public enum IntegerSize
     {
         /// <summary>
         /// Unknown

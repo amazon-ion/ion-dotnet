@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 
 namespace IonDotnet
 {
@@ -9,7 +8,7 @@ namespace IonDotnet
     /// </summary>
     public class IonException : Exception
     {
-        protected IonException() : base()
+        protected IonException()
         {
         }
 

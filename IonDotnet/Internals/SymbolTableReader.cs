@@ -314,7 +314,7 @@ namespace IonDotnet.Internals
 
         public ISymbolTable GetSymbolTable() => _symbolTable;
 
-        public IonType GetCurrentType() => StateType(_currentState);
+        public IonType CurrentType => StateType(_currentState);
 
         public IntegerSize GetIntegerSize() => StateType(_currentState) == IonType.Int ? IntegerSize.Int : IntegerSize.Unknown;
 

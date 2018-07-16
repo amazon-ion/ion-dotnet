@@ -50,7 +50,7 @@ namespace IonDotnet.Tests.Internals
         public void MovePastRange_ThrowsException(string[] array)
         {
             var enumerator = new PeekIterator<string>(array);
-            foreach (var t in array)
+            foreach (var unused in array)
             {
                 enumerator.Next();
             }

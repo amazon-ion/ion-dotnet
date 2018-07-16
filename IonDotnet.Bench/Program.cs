@@ -15,11 +15,11 @@ namespace IonDotnet.Bench
             var reader = new UserBinaryReader(fs, new DefaultScalarConverter());
 
             reader.Next();
-            Console.WriteLine(reader.GetCurrentType());
+            Console.WriteLine(reader.CurrentType);
             reader.StepIn();
             reader.Next();
             Console.WriteLine(reader.CurrentDepth);
-            Console.WriteLine(reader.GetCurrentType());
+            Console.WriteLine(reader.CurrentType);
             Console.WriteLine(reader.GetFieldName());
             Console.WriteLine(reader.BoolValue());
         }

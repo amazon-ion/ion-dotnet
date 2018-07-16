@@ -3,7 +3,7 @@ using System.IO;
 
 namespace IonDotnet.Internals.Lite
 {
-    internal class IonDatagramLite : IonSequenceLite, IPrivateDatagram, IContext
+    internal class IonDatagramLite : IonSequenceLite, IPrivateDatagram
     {
         public IonDatagramLite(ContainerlessContext containerlessContext, bool isNull) : base(containerlessContext, isNull)
         {

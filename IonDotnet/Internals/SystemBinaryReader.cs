@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Numerics;
-using static IonDotnet.Internals.ValueVariant;
 
 namespace IonDotnet.Internals
 {

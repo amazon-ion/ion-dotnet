@@ -24,12 +24,16 @@ namespace IonDotnet.Tests.Internals
         //empty struct {}
         private static byte[] _trivial;
 
+        //a flat list of ints [123,456,789]
+        private static byte[] _flatListInt;
+
         [ClassInitialize]
         public static void Init(TestContext context)
         {
             _oneBool = DirStructure.ReadDataFile("onebool.bindat");
             _flatScalar = DirStructure.ReadDataFile("flat_scalar.bindat");
             _trivial = DirStructure.ReadDataFile("trivial.bindat");
+            _flatListInt = DirStructure.ReadDataFile("flatlist_int.bindat");
         }
 
         [TestMethod]
@@ -38,7 +42,7 @@ namespace IonDotnet.Tests.Internals
             using (var reader = new UserBinaryReader(new MemoryStream(_trivial), new DefaultScalarConverter()))
             {
                 reader.Next();
-                Assert.AreEqual(IonType.Struct, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Struct, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
                 Assert.AreEqual(IonType.None, reader.Next());
@@ -46,6 +50,7 @@ namespace IonDotnet.Tests.Internals
                 {
                     Assert.AreEqual(IonType.None, reader.Next());
                 }
+
                 reader.StepOut();
                 Assert.AreEqual(0, reader.CurrentDepth);
             }
@@ -57,11 +62,11 @@ namespace IonDotnet.Tests.Internals
             using (var reader = new UserBinaryReader(new MemoryStream(_oneBool), new DefaultScalarConverter()))
             {
                 reader.Next();
-                Assert.AreEqual(IonType.Struct, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Struct, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
                 reader.Next();
-                Assert.AreEqual(IonType.Bool, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Bool, reader.CurrentType);
                 Assert.AreEqual("yolo", reader.GetFieldName());
                 Assert.AreEqual(true, reader.BoolValue());
                 Assert.AreEqual(IonType.None, reader.Next());
@@ -76,39 +81,67 @@ namespace IonDotnet.Tests.Internals
             using (var reader = new UserBinaryReader(new MemoryStream(_flatScalar), new DefaultScalarConverter()))
             {
                 reader.Next();
-                Assert.AreEqual(IonType.Struct, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Struct, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
 
                 reader.Next();
                 Assert.AreEqual("boolean", reader.GetFieldName());
-                Assert.AreEqual(IonType.Bool, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Bool, reader.CurrentType);
                 Assert.IsTrue(reader.BoolValue());
 
                 reader.Next();
                 Assert.AreEqual("str", reader.GetFieldName());
-                Assert.AreEqual(IonType.String, reader.GetCurrentType());
+                Assert.AreEqual(IonType.String, reader.CurrentType);
                 Assert.AreEqual("yes", reader.StringValue());
 
                 reader.Next();
                 Assert.AreEqual("integer", reader.GetFieldName());
-                Assert.AreEqual(IonType.Int, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(123456, reader.IntValue());
 
                 reader.Next();
                 Assert.AreEqual("longInt", reader.GetFieldName());
-                Assert.AreEqual(IonType.Int, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual((long) int.MaxValue * 2, reader.LongValue());
 
                 reader.Next();
                 Assert.AreEqual("bigInt", reader.GetFieldName());
-                Assert.AreEqual(IonType.Int, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(BigInteger.Multiply(new BigInteger(long.MaxValue), 10), reader.BigIntegerValue());
 
                 reader.Next();
                 Assert.AreEqual("double", reader.GetFieldName());
-                Assert.AreEqual(IonType.Float, reader.GetCurrentType());
+                Assert.AreEqual(IonType.Float, reader.CurrentType);
                 Assert.AreEqual(2213.1267567, reader.DoubleValue());
+
+                Assert.AreEqual(IonType.None, reader.Next());
+                reader.StepOut();
+                Assert.AreEqual(0, reader.CurrentDepth);
+            }
+        }
+
+        [TestMethod]
+        public void FlatIntList()
+        {
+            using (var reader = new UserBinaryReader(new MemoryStream(_flatListInt), new DefaultScalarConverter()))
+            {
+                reader.Next();
+                Assert.AreEqual(IonType.List, reader.CurrentType);
+                reader.StepIn();
+                Assert.AreEqual(1, reader.CurrentDepth);
+
+                reader.Next();
+                Assert.AreEqual(IonType.Int, reader.CurrentType);
+                Assert.AreEqual(123, reader.IntValue());
+
+                reader.Next();
+                Assert.AreEqual(IonType.Int, reader.CurrentType);
+                Assert.AreEqual(456, reader.IntValue());
+
+                reader.Next();
+                Assert.AreEqual(IonType.Int, reader.CurrentType);
+                Assert.AreEqual(789, reader.IntValue());
 
                 Assert.AreEqual(IonType.None, reader.Next());
                 reader.StepOut();

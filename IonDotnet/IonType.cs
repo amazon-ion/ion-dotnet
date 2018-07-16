@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet
 {
-    public enum IonType : int
+    public enum IonType
     {
         None = -1,
         Null = 0,

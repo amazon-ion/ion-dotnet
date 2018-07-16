@@ -3,8 +3,9 @@ using System.IO;
 
 namespace IonDotnet.Internals
 {
+    /// <inheritdoc />
     /// <summary>
-    /// The user binary reader.
+    /// This reader is used to read user datagram
     /// </summary>
     /// <remarks>Starts out as a system bin reader</remarks>
     internal sealed class UserBinaryReader : SystemBinaryReader

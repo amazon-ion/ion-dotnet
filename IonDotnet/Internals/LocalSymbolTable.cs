@@ -141,7 +141,7 @@ namespace IonDotnet.Internals
                 reader.Next();
             }
 
-            Debug.Assert(reader.GetCurrentType() == IonType.Struct);
+            Debug.Assert(reader.CurrentType== IonType.Struct);
 
             // assume that we're standing before a struct
             reader.StepIn();

@@ -2,7 +2,6 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Text;
 using IonDotnet.Systems;
@@ -82,7 +81,7 @@ namespace IonDotnet.Internals
             IsInStruct = false;
             _parentTid = 0;
             _annotationRequested = false;
-            _containerStack = new Stack<(long position, int localRemaining, int typeTid)>();
+            _containerStack = new Stack<(long position, int localRemaining, int typeTid)>(DefaultContainerStackSize);
 
             _positionStart = -1;
         }
@@ -160,6 +159,7 @@ namespace IonDotnet.Internals
                             //bvm tid happens to be typedecl
                             if (_valueLength == BinaryVersionMarkerLen)
                             {
+                                Assert(_valueTid == BinaryVersionMarkerTid);
                                 // this isn't valid for any type descriptor except the first byte
                                 // of a 4 byte version marker - so lets read the rest
                                 LoadVersionMarker();
@@ -678,7 +678,7 @@ namespace IonDotnet.Internals
             return readBytes;
         }
 
-        public IonType GetCurrentType() => _valueType;
+        public IonType CurrentType => _valueType;
 
 
         public bool IsInStruct { get; private set; }
@@ -775,7 +775,7 @@ namespace IonDotnet.Internals
                 //didn't read all the previous container
                 //skip all the remaining bytes
                 var distance = nextPosition - currentPosition;
-                var maxSkip = int.MaxValue - 1;
+                const int maxSkip = int.MaxValue - 1;
                 while (distance > maxSkip)
                 {
                     Skip(maxSkip);
