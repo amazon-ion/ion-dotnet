@@ -6,7 +6,7 @@ namespace IonDotnet
     /// <summary>
     /// Provides stream-based access to Ion data independent of its underlying representation (text, binary, or {@link IonValue} tree).
     /// </summary>
-    public interface IIonReader
+    public interface IIonReader : IDisposable
     {
         /// <summary>
         /// Positions this reader on the next sibling after the current value

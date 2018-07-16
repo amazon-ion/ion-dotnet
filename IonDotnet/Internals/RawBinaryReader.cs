@@ -819,5 +819,16 @@ namespace IonDotnet.Internals
         public abstract decimal DecimalValue();
 
         public abstract double DoubleValue();
+
+        public void Dispose()
+        {
+            _input?.Dispose();
+            _containerStack?.Clear();
+            if (_annotationIds != null)
+            {
+                ArrayPool<int>.Shared.Return(_annotationIds);
+                _annotationIds = null;
+            }
+        }
     }
 }

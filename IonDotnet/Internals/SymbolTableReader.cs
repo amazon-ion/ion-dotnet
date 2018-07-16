@@ -766,5 +766,11 @@ namespace IonDotnet.Internals
 
         private static void ThrowUnrecognizedState(int state)
             => throw new IonException($"SymbolTableReader is in an unrecognize state: {state}");
+
+        public void Dispose()
+        {
+            _importTablesIterator?.Dispose();
+            _localSymbolsIterator?.Dispose();
+        }
     }
 }

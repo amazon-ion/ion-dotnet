@@ -13,14 +13,14 @@ namespace IonDotnet.Internals
         private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long)1 << 62, 2);
 
         protected ISymbolTable _symbolTable;
-        private IScalarConverter _scalarConverter;
+        private readonly IScalarConverter _scalarConverter;
 
         internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter)
             : this(input, SharedSymbolTable.GetSystem(1), scalarConverter)
         {
         }
 
-        protected SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter) : base(input)
+        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter) : base(input)
         {
             _symbolTable = symboltable;
             _scalarConverter = scalarConverter;
