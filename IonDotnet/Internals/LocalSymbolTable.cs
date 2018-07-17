@@ -106,10 +106,10 @@ namespace IonDotnet.Internals
         public int FindSymbol(string text)
         {
             var sid = _imports.FindSymbol(text);
-            return sid != SymbolToken.UnknownSid ? sid : FindLocalSymbol(text);
+            return sid != SymbolToken.UnknownSid ? sid : FindLocalSymbolPrivate(text);
         }
 
-        private int FindLocalSymbol(string text)
+        private int FindLocalSymbolPrivate(string text)
             => _symbolMap.TryGetValue(text, out var sid) ? sid : SymbolToken.UnknownSid;
 
         public string FindKnownSymbol(int id)
