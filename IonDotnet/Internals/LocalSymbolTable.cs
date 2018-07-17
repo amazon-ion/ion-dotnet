@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -14,8 +15,9 @@ namespace IonDotnet.Internals
         private int _mySymbolCount;
         private readonly IDictionary<string, int> _symbolMap;
 
-        private LocalSymbolTable(LocalSymbolTableImports imports, ICollection<string> symbolList)
+        private LocalSymbolTable(LocalSymbolTableImports imports, ICollection<string> symbolList, bool readOnly)
         {
+            IsReadOnly = readOnly;
             _imports = imports;
             _firstLocalId = _imports.MaxId + 1;
             if (symbolList == null || symbolList.Count == 0)
@@ -34,8 +36,17 @@ namespace IonDotnet.Internals
 
         private IDictionary<string, int> BuildSymbolMap()
         {
+            IDictionary<string, int> map;
             var sid = _firstLocalId;
-            var map = new Dictionary<string, int>();
+            if (IsReadOnly)
+            {
+                map = new Dictionary<string, int>();
+            }
+            else
+            {
+                map = new ConcurrentDictionary<string, int>();
+            }
+
             for (var i = 0; i < _mySymbolNames.Length; i++, sid++)
             {
                 var symbolText = _mySymbolNames[i];
@@ -89,13 +100,7 @@ namespace IonDotnet.Internals
             var token = _imports.Find(text);
             if (token != SymbolToken.None) return token;
 
-            lock (this)
-            {
-                //TODO is this really necessary? maybe use ConcurrentDict?
-                if (_symbolMap.TryGetValue(text, out var sid)) return new SymbolToken(text, sid);
-            }
-
-            return SymbolToken.None;
+            return _symbolMap.TryGetValue(text, out var sid) ? new SymbolToken(text, sid) : SymbolToken.None;
         }
 
         public int FindSymbol(string text)
@@ -105,12 +110,7 @@ namespace IonDotnet.Internals
         }
 
         private int FindLocalSymbol(string text)
-        {
-            lock (this)
-            {
-                return _symbolMap.TryGetValue(text, out var sid) ? sid : SymbolToken.UnknownSid;
-            }
-        }
+            => _symbolMap.TryGetValue(text, out var sid) ? sid : SymbolToken.UnknownSid;
 
         public string FindKnownSymbol(int id)
         {
@@ -119,10 +119,18 @@ namespace IonDotnet.Internals
             if (id < _firstLocalId) return _imports.FindKnownSymbol(id);
 
             string[] names;
-            lock (this)
+            //avoid locking if possible
+            if (IsReadOnly)
             {
-                //this is to avoid array resizing effect, I guess
                 names = _mySymbolNames;
+            }
+            else
+            {
+                lock (this)
+                {
+                    //this is to avoid array resizing effect, I guess
+                    names = _mySymbolNames;
+                }
             }
 
             var offset = id - _firstLocalId;
@@ -141,7 +149,7 @@ namespace IonDotnet.Internals
                 reader.Next();
             }
 
-            Debug.Assert(reader.CurrentType== IonType.Struct);
+            Debug.Assert(reader.CurrentType == IonType.Struct);
 
             // assume that we're standing before a struct
             reader.StepIn();
@@ -197,7 +205,7 @@ namespace IonDotnet.Internals
         public static LocalSymbolTable Read(IIonReader reader, bool isOnStruct)
         {
             var imports = ReadLocalSymbolTableImports(reader, isOnStruct, out var symbolList);
-            return new LocalSymbolTable(imports, symbolList);
+            return new LocalSymbolTable(imports, symbolList, true);
         }
     }
 }
