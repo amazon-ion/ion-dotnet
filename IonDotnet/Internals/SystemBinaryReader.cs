@@ -1,15 +1,17 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 
 namespace IonDotnet.Internals
 {
+    /// <inheritdoc />
     /// <summary>
     /// This class handles the reading and conversion of scalar values (value-type fields)
     /// </summary>
     internal class SystemBinaryReader : RawBinaryReader
     {
-        private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long)1 << 62, 2);
+        private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long) 1 << 62, 2);
 
         protected ISymbolTable _symbolTable;
         private readonly IScalarConverter _scalarConverter;
@@ -28,7 +30,7 @@ namespace IonDotnet.Internals
         private void PrepareValue()
         {
             LoadOnce();
-            //TODO stuffs with annotations
+            //we don't allow casting here, so this should end
         }
 
         protected void LoadOnce()
@@ -62,11 +64,12 @@ namespace IonDotnet.Internals
                         _v.SetValue(0);
                         break;
                     }
+
                     var isNegative = _valueTid == IonConstants.TidNegInt;
                     if (_valueLength < sizeof(long))
                     {
                         //long might be enough
-                        var longVal = ReadLong(_valueLength);
+                        var longVal = ReadUlong(_valueLength);
                         if (longVal < 0)
                         {
                             //this might not fit in a long
@@ -80,17 +83,20 @@ namespace IonDotnet.Internals
                             {
                                 longVal = -longVal;
                             }
+
                             if (longVal < int.MinValue || longVal > int.MaxValue)
                             {
                                 _v.SetValue(longVal);
                             }
                             else
                             {
-                                _v.SetValue((int)longVal);
+                                _v.SetValue((int) longVal);
                             }
                         }
+
                         break;
                     }
+
                     //here means the int value has to be in bigInt
                     var bigInt = ReadBigInteger(_valueLength, isNegative);
                     _v.SetValue(bigInt);
@@ -99,68 +105,112 @@ namespace IonDotnet.Internals
                     var d = ReadFloat(_valueLength);
                     _v.SetValue(d);
                     break;
+                case IonType.Symbol:
+                    //treat the symbol as int32, since it's cheap and there's no lookup
+                    //until the text is required
+                    var sid = ReadUlong(_valueLength);
+                    if (sid < 0 || sid > int.MaxValue) throw new IonException("Sid is not an uint32");
+                    _v.SetValue((int) sid);
+                    break;
                 case IonType.Decimal:
                 case IonType.Timestamp:
-                case IonType.Symbol:
                     throw new NotImplementedException();
                 case IonType.String:
                     var s = ReadString(_valueLength);
                     _v.SetValue(s);
                     break;
             }
+
             _state = State.AfterValue;
+            OnValueEnd();
+        }
+
+        /// <summary>
+        /// Load the symbol string from the symbol table to _v
+        /// </summary>
+        /// <remarks>This assumes LoadOnce() has been called and _v already has the sid as Int</remarks>
+        /// <exception cref="UnknownSymbolException">The Sid does not exist in the table</exception>
+        private void LoadSymbolValue()
+        {
+            Debug.Assert(_v.TypeSet.HasFlag(ScalarType.Int));
+            Debug.Assert(_v.AuthoritativeType == ScalarType.Int);
+
+            if (_v.TypeSet.HasFlag(ScalarType.String)) return;
+
+            var text = _symbolTable.FindKnownSymbol(_v.IntValue);
+            if (text == null) throw new UnknownSymbolException(_v.IntValue);
+            _v.AddValue(text);
         }
 
         public override BigInteger BigIntegerValue()
         {
-            if (!_valueType.IsNumeric()) throw new InvalidOperationException($"Current value is not numeric, type {_valueType}");
             if (_valueIsNull) throw new NullValueException();
 
             PrepareValue();
-            return _scalarConverter.ToBigInteger(_v, _symbolTable);
+            return _v.BigIntegerValue;
         }
 
         public override bool BoolValue()
         {
+            if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _scalarConverter.ToBool(_v, _symbolTable);
+            return _v.BoolValue;
         }
 
         public override DateTime DateTimeValue()
         {
+            if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _scalarConverter.ToDateTime(_v, _symbolTable);
+            return _v.DatetimeValue;
         }
 
         public override decimal DecimalValue()
         {
+            if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _scalarConverter.ToDecimal(_v, _symbolTable);
+            return _v.DecimalValue;
         }
 
         public override double DoubleValue()
         {
+            if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _scalarConverter.ToDouble(_v, _symbolTable);
+            return _v.DoubleValue;
         }
 
-        public override string GetFieldName()
+        protected override void OnValueStart() => _scalarConverter?.OnValueStart();
+
+        protected override void OnAnnotation(int annotId)
         {
-            if (_valueFieldId == SymbolToken.UnknownSid) return null;
+            if (_scalarConverter == null) return;
 
-            var name = _symbolTable.FindKnownSymbol(_valueFieldId);
-            if (name == null) throw new UnknownSymbolException(_valueFieldId);
+            var text = _symbolTable.FindKnownSymbol(annotId);
+            if (text == null) throw new UnknownSymbolException(annotId);
+            var token = new SymbolToken(text, annotId);
+            _scalarConverter.OnSymbol(token);
+        }
 
-            return name;
+        protected override void OnValueEnd() => _scalarConverter?.OnValueEnd();
+
+        public override string CurrentFieldName
+        {
+            get
+            {
+                if (_valueFieldId == SymbolToken.UnknownSid) return null;
+
+                var name = _symbolTable.FindKnownSymbol(_valueFieldId);
+                if (name == null) throw new UnknownSymbolException(_valueFieldId);
+
+                return name;
+            }
         }
 
         public override SymbolToken GetFieldNameSymbol()
         {
             if (_valueFieldId == SymbolToken.UnknownSid) return SymbolToken.None;
             var text = _symbolTable.FindKnownSymbol(_valueFieldId);
-            if (text == null) return SymbolToken.None;
 
-            return new SymbolToken(text, _valueFieldId);
+            return text == null ? SymbolToken.None : new SymbolToken(text, _valueFieldId);
         }
 
         public override IntegerSize GetIntegerSize()
@@ -175,33 +225,29 @@ namespace IonDotnet.Internals
 
         public override int IntValue()
         {
-            if (!_valueType.IsNumeric()) throw new InvalidOperationException($"Current value is not numeric, type {_valueType}");
-
+            if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _scalarConverter.ToInt(_v, _symbolTable);
+            return _v.IntValue;
         }
 
         public override long LongValue()
         {
-            if (!_valueType.IsNumeric()) throw new InvalidOperationException($"Current value is not numeric, type {_valueType}");
-
+            if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _scalarConverter.ToLong(_v, _symbolTable);
+            return _v.LongValue;
         }
 
         public override string StringValue()
         {
             if (!_valueType.IsText()) throw new InvalidOperationException($"Current value is not text, type {_valueType}");
             if (_valueIsNull) return null;
+            PrepareValue();
 
             if (_valueType == IonType.Symbol)
             {
-                //TODO symbols stuff
+                LoadSymbolValue();
             }
-            else
-            {
-                PrepareValue();
-            }
+
             return _v.StringValue;
         }
 
@@ -210,7 +256,14 @@ namespace IonDotnet.Internals
             if (_valueType != IonType.Symbol) throw new InvalidOperationException($"Current value is of type {_valueType}");
             if (_valueIsNull) return SymbolToken.None;
 
-            throw new NotImplementedException();
+            LoadSymbolValue();
+            return new SymbolToken(_v.StringValue, _v.IntValue);
+        }
+
+        public override T ConvertTo<T>()
+        {
+            if (_scalarConverter == null) throw new IonException("No converter provided");
+            return _scalarConverter.Convert<T>(_v);
         }
     }
 }

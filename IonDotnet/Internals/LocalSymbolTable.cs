@@ -14,7 +14,7 @@ namespace IonDotnet.Internals
         private int _mySymbolCount;
         private readonly IDictionary<string, int> _symbolMap;
 
-        internal LocalSymbolTable(LocalSymbolTableImports imports, IList<string> symbolList)
+        private LocalSymbolTable(LocalSymbolTableImports imports, ICollection<string> symbolList)
         {
             _imports = imports;
             _firstLocalId = _imports.MaxId + 1;

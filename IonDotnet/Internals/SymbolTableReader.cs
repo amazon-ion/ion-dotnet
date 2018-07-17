@@ -318,45 +318,48 @@ namespace IonDotnet.Internals
 
         public IntegerSize GetIntegerSize() => StateType(_currentState) == IonType.Int ? IntegerSize.Int : IntegerSize.Unknown;
 
-        public string GetFieldName()
+        public string CurrentFieldName
         {
-            switch (_currentState)
+            get
             {
-                case S_STRUCT:
-                case S_IN_STRUCT:
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
-                case S_AFTER_IMPORT_LIST:
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                case S_SYMBOL_LIST_CLOSE:
-                case S_STRUCT_CLOSE:
-                case S_EOF:
-                    return null;
+                switch (_currentState)
+                {
+                    case S_STRUCT:
+                    case S_IN_STRUCT:
+                    case S_IN_IMPORTS:
+                    case S_IMPORT_STRUCT:
+                    case S_IN_IMPORT_STRUCT:
+                    case S_IMPORT_STRUCT_CLOSE:
+                    case S_IMPORT_LIST_CLOSE:
+                    case S_AFTER_IMPORT_LIST:
+                    case S_IN_SYMBOLS:
+                    case S_SYMBOL:
+                    case S_SYMBOL_LIST_CLOSE:
+                    case S_STRUCT_CLOSE:
+                    case S_EOF:
+                        return null;
 
-                case S_NAME:
-                case S_IMPORT_NAME:
-                    return SystemSymbols.Name;
+                    case S_NAME:
+                    case S_IMPORT_NAME:
+                        return SystemSymbols.Name;
 
-                case S_VERSION:
-                case S_IMPORT_VERSION:
-                    return SystemSymbols.Version;
+                    case S_VERSION:
+                    case S_IMPORT_VERSION:
+                        return SystemSymbols.Version;
 
-                case S_MAX_ID:
-                case S_IMPORT_MAX_ID:
-                    return SystemSymbols.MaxId;
+                    case S_MAX_ID:
+                    case S_IMPORT_MAX_ID:
+                        return SystemSymbols.MaxId;
 
-                case S_IMPORT_LIST:
-                    return SystemSymbols.Imports;
+                    case S_IMPORT_LIST:
+                        return SystemSymbols.Imports;
 
-                case S_SYMBOL_LIST:
-                    return SystemSymbols.Symbols;
+                    case S_SYMBOL_LIST:
+                        return SystemSymbols.Symbols;
 
-                default:
-                    throw new IonException($"Internal error: {nameof(SymbolTableReader)} is in an unrecognized state: {_currentState}");
+                    default:
+                        throw new IonException($"Internal error: {nameof(SymbolTableReader)} is in an unrecognized state: {_currentState}");
+                }
             }
         }
 
@@ -519,6 +522,8 @@ namespace IonDotnet.Internals
 
         public int GetBytes(ArraySegment<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
+
+        public T ConvertTo<T>() => throw new InvalidOperationException("Cannot cast a symbol table");
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFlag(int flagBit, bool on)

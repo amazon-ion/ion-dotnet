@@ -29,12 +29,12 @@ namespace IonDotnet.Internals
         }
 
         protected State _state;
-        protected readonly Stream _input;
+        private readonly Stream _input;
 
         /// <summary>
         /// This 'might' be used to indicate the local remaining bytes of the current container
         /// </summary>
-        protected int _localRemaining;
+        private int _localRemaining;
 
         protected ValueVariant _v;
 
@@ -48,7 +48,7 @@ namespace IonDotnet.Internals
         private int _parentTid;
         protected bool _hasNextNeeded;
         private bool _structIsOrdered;
-        private bool _annotationRequested;
+        private readonly bool _annotationRequested;
         private bool _valueLobReady;
         private int _valueLobRemaining;
         protected bool _hasSymbolTableAnnotation;
@@ -167,14 +167,14 @@ namespace IonDotnet.Internals
                             }
                             else
                             {
-                                //TODO handle annotations
+                                OnValueStart();
                                 // if it's not a bvm then it's an ordinary annotated value
-
                                 _valueType = LoadAnnotationsGotoValueType();
                             }
                         }
                         else
                         {
+                            OnValueStart();
                             _valueType = GetIonTypeFromCode(_valueTid);
                         }
 
@@ -417,7 +417,7 @@ namespace IonDotnet.Internals
         /// <returns>'long' representation of the value</returns>
         /// <param name="length">number of bytes to read</param>
         /// <remarks>If the result is less than 0, 64bit is not enough</remarks>
-        protected long ReadLong(int length)
+        protected long ReadUlong(int length)
         {
             long ret = 0;
             int b;
@@ -492,7 +492,7 @@ namespace IonDotnet.Internals
             if (length == 0) return 0;
 
             if (length != 4 && length != 8) throw new IonException($"Float length must be 0|4|8, length is {length}");
-            var bits = ReadLong(length);
+            var bits = ReadUlong(length);
             return length == 4 ? Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
         }
 
@@ -517,6 +517,8 @@ namespace IonDotnet.Internals
                 {
                     _hasSymbolTableAnnotation = true;
                 }
+
+                OnAnnotation(a);
 
                 if (save)
                 {
@@ -591,7 +593,7 @@ namespace IonDotnet.Internals
         /// </summary>
         /// <param name="length">Length of the string representation in bytes</param>
         /// <returns>Read string</returns>
-        protected String ReadString(int length)
+        protected string ReadString(int length)
         {
             Assert(_state == State.BeforeValue);
             //TODO consider using pipelines to avoid rebuffering
@@ -677,6 +679,8 @@ namespace IonDotnet.Internals
 
             return readBytes;
         }
+
+        public abstract T ConvertTo<T>();
 
         public IonType CurrentType => _valueType;
 
@@ -800,7 +804,7 @@ namespace IonDotnet.Internals
 
         public abstract SymbolToken SymbolValue();
 
-        public abstract string GetFieldName();
+        public abstract string CurrentFieldName { get; }
 
         public abstract SymbolToken GetFieldNameSymbol();
 
@@ -819,6 +823,12 @@ namespace IonDotnet.Internals
         public abstract decimal DecimalValue();
 
         public abstract double DoubleValue();
+
+        protected abstract void OnValueStart();
+
+        protected abstract void OnAnnotation(int annotationId);
+
+        protected abstract void OnValueEnd();
 
         public void Dispose()
         {

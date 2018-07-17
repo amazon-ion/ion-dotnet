@@ -3,15 +3,29 @@ using System.Numerics;
 
 namespace IonDotnet.Internals
 {
+    [Flags]
+    public enum ScalarType
+    {
+        Nothing = 0,
+        Null = 1 << 0,
+        Bool = 1 << 1,
+        Int = 1 << 2,
+        Long = 1 << 3,
+        BigInteger = 1 << 4,
+        Decimal = 1 << 5,
+        Double = 1 << 6,
+        String = 1 << 7,
+        DateTime = 1 << 8
+    }
+    
     public interface IScalarConverter
     {
-        string ToString(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        long ToLong(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        bool ToBool(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        decimal ToDecimal(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        double ToDouble(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        int ToInt(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        DateTime ToDateTime(in ValueVariant valueVariant, ISymbolTable symbolTable);
-        BigInteger ToBigInteger(in ValueVariant valueVariant, ISymbolTable symbolTable);
+        void OnValueStart();
+
+        void OnValueEnd();
+
+        void OnSymbol(in SymbolToken symbolToken);
+
+        T Convert<T>(in ValueVariant valueVariant);
     }
 }

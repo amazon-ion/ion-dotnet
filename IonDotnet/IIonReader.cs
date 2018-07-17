@@ -3,6 +3,7 @@ using System.Numerics;
 
 namespace IonDotnet
 {
+    /// <inheritdoc />
     /// <summary>
     /// Provides stream-based access to Ion data independent of its underlying representation (text, binary, or {@link IonValue} tree).
     /// </summary>
@@ -59,10 +60,10 @@ namespace IonDotnet
         /// </returns>
         IntegerSize GetIntegerSize();
 
-        /// <returns>
-        /// Return the field name of the current value. Or null if there is no valid current value
-        /// </returns>
-        string GetFieldName();
+        /// <value>
+        ///     Return the field name of the current value. Or null if there is no valid current value
+        /// </value>
+        string CurrentFieldName { get; }
 
         SymbolToken GetFieldNameSymbol();
 
@@ -92,5 +93,7 @@ namespace IonDotnet
         byte[] NewByteArray();
 
         int GetBytes(ArraySegment<byte> buffer);
+
+        T ConvertTo<T>();
     }
 }

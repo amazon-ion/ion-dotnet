@@ -5,21 +5,6 @@ namespace IonDotnet.Internals
 {
     public struct ValueVariant
     {
-        [Flags]
-        public enum ScalarType
-        {
-            Nothing = 0,
-            Null = 1 << 0,
-            Bool = 1 << 1,
-            Int = 1 << 2,
-            Long = 1 << 3,
-            BigInteger = 1 << 4,
-            Decimal = 1 << 5,
-            Double = 1 << 6,
-            String = 1 << 7,
-            DateTime = 1 << 8
-        }
-
         public ScalarType TypeSet { get; private set; }
         public ScalarType AuthoritativeType { get; private set; }
 

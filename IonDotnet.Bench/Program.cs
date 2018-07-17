@@ -12,7 +12,7 @@ namespace IonDotnet.Bench
         public static void Main(string[] args)
         {
             var fs = new FileStream("javaout", FileMode.Open);
-            var reader = new UserBinaryReader(fs, new DefaultScalarConverter());
+            var reader = new UserBinaryReader(fs);
 
             reader.Next();
             Console.WriteLine(reader.CurrentType);
@@ -20,7 +20,7 @@ namespace IonDotnet.Bench
             reader.Next();
             Console.WriteLine(reader.CurrentDepth);
             Console.WriteLine(reader.CurrentType);
-            Console.WriteLine(reader.GetFieldName());
+            Console.WriteLine(reader.CurrentFieldName);
             Console.WriteLine(reader.BoolValue());
         }
     }

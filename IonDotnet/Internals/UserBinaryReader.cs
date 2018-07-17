@@ -10,7 +10,7 @@ namespace IonDotnet.Internals
     /// <remarks>Starts out as a system bin reader</remarks>
     internal sealed class UserBinaryReader : SystemBinaryReader
     {
-        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter) : base(input, scalarConverter)
+        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter = null) : base(input, scalarConverter)
         {
         }
 
@@ -58,6 +58,7 @@ namespace IonDotnet.Internals
                 if (sid != SystemSymbols.Ion10Sid) return;
 
                 _symbolTable = SharedSymbolTable.GetSystem(1);
+                //user don't need to see this symbol so continue here
                 _hasNextNeeded = true;
             }
             else if (_valueTid == IonConstants.TidStruct)
@@ -66,6 +67,7 @@ namespace IonDotnet.Internals
                 if (_hasSymbolTableAnnotation)
                 {
                     _symbolTable = LocalSymbolTable.Read(this, false);
+                    //user don't need to read the localsymboltable so continue
                     _hasNextNeeded = true;
                 }
             }
