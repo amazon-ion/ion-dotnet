@@ -6,16 +6,16 @@ namespace IonDotnet.Conversions
     public struct ValueVariant
     {
         public ScalarType TypeSet { get; private set; }
-        public ScalarType AuthoritativeType { get; private set; }
+        public ScalarType AuthoritativeType { get; internal set; }
 
-        public bool BoolValue { get; private set; }
-        public int IntValue { get; private set; }
-        public long LongValue { get; private set; }
-        public double DoubleValue { get; private set; }
-        public string StringValue { get; private set; }
-        public BigInteger BigIntegerValue { get; private set; }
-        public decimal DecimalValue { get; private set; }
-        public DateTime DatetimeValue { get; private set; }
+        public bool BoolValue { get; internal set; }
+        public int IntValue { get; internal set; }
+        public long LongValue { get; internal set; }
+        public double DoubleValue { get; internal set; }
+        public string StringValue { get; internal set; }
+        public BigInteger BigIntegerValue { get; internal set; }
+        public decimal DecimalValue { get; internal set; }
+        public DateTime DatetimeValue { get; internal set; }
         //TODO datetime
 
         public bool IsEmpty => AuthoritativeType == ScalarType.Nothing;
@@ -98,55 +98,6 @@ namespace IonDotnet.Conversions
                 case DateTime dateTime:
                     DatetimeValue = dateTime;
                     TypeSet |= ScalarType.DateTime;
-                    break;
-            }
-        }
-
-        internal void SetValue<T>(T value)
-        {
-            switch (value)
-            {
-                default:
-                    throw new ArgumentOutOfRangeException($"Cannot set type {value.GetType()}");
-                case bool boolValue:
-                    BoolValue = boolValue;
-                    TypeSet = ScalarType.Bool;
-                    AuthoritativeType = ScalarType.Bool;
-                    break;
-                case int intValue:
-                    IntValue = intValue;
-                    TypeSet = ScalarType.Int;
-                    AuthoritativeType = ScalarType.Int;
-                    break;
-                case long longVal:
-                    LongValue = longVal;
-                    TypeSet = ScalarType.Long;
-                    AuthoritativeType = ScalarType.Long;
-                    break;
-                case BigInteger bigInt:
-                    BigIntegerValue = bigInt;
-                    TypeSet = ScalarType.BigInteger;
-                    AuthoritativeType = ScalarType.BigInteger;
-                    break;
-                case decimal decimalValue:
-                    DecimalValue = decimalValue;
-                    TypeSet = ScalarType.Decimal;
-                    AuthoritativeType = ScalarType.Decimal;
-                    break;
-                case double doubleVal:
-                    DoubleValue = doubleVal;
-                    TypeSet = ScalarType.Double;
-                    AuthoritativeType = ScalarType.Double;
-                    break;
-                case string stringVal:
-                    StringValue = stringVal;
-                    TypeSet = ScalarType.String;
-                    AuthoritativeType = ScalarType.String;
-                    break;
-                case DateTime dateTime:
-                    DatetimeValue = dateTime;
-                    TypeSet = ScalarType.DateTime;
-                    AuthoritativeType = ScalarType.DateTime;
                     break;
             }
         }

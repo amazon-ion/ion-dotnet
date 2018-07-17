@@ -19,7 +19,7 @@ namespace IonDotnet.Internals
     {
         private const int NoLimit = int.MinValue;
         private const int DefaultContainerStackSize = 6;
-        private const int ShortStringLength = 32;
+        private const int ShortStringLength = 16;
 
         protected enum State
         {
@@ -203,7 +203,7 @@ namespace IonDotnet.Internals
             // the symbol $ion_1_0 ...
             _valueTid = IonConstants.TidSymbol;
             _valueLength = 0;
-            _v.SetValue(SystemSymbols.Ion10Sid);
+            _v.IntValue = (SystemSymbols.Ion10Sid);
             _valueIsNull = false;
             _valueLobReady = false;
             _valueFieldId = SymbolToken.UnknownSid;
@@ -571,12 +571,11 @@ namespace IonDotnet.Internals
 
         private string ReadLongString(int length)
         {
-            var alloc = new byte[length * 2];
-            //var alloc = ArrayPool<byte>.Shared.Rent(length);
+            var alloc = ArrayPool<byte>.Shared.Rent(length);
             ReadAll(new ArraySegment<byte>(alloc, 0, length), length);
 
             var strValue = Encoding.UTF8.GetString(alloc, 0, length);
-//            ArrayPool<byte>.Shared.Return(alloc);
+            ArrayPool<byte>.Shared.Return(alloc);
             return strValue;
         }
 

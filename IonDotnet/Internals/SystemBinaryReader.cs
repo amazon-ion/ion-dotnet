@@ -59,12 +59,14 @@ namespace IonDotnet.Internals
                 default:
                     return;
                 case IonType.Bool:
-                    _v.SetValue(_valueIsTrue);
+                    _v.BoolValue = _valueIsTrue;
+                    _v.AuthoritativeType = ScalarType.Bool;
                     break;
                 case IonType.Int:
                     if (_valueLength == 0)
                     {
-                        _v.SetValue(0);
+                        _v.IntValue = 0;
+                        _v.AuthoritativeType = ScalarType.Int;
                         break;
                     }
 
@@ -78,7 +80,8 @@ namespace IonDotnet.Internals
                             //this might not fit in a long
                             longVal = (longVal << 1) >> 1;
                             var big = BigInteger.Add(TwoPow63, longVal);
-                            _v.SetValue(big);
+                            _v.BigIntegerValue = big;
+                            _v.AuthoritativeType = ScalarType.BigInteger;
                         }
                         else
                         {
@@ -89,11 +92,13 @@ namespace IonDotnet.Internals
 
                             if (longVal < int.MinValue || longVal > int.MaxValue)
                             {
-                                _v.SetValue(longVal);
+                                _v.LongValue = longVal;
+                                _v.AuthoritativeType = ScalarType.Long;
                             }
                             else
                             {
-                                _v.SetValue((int) longVal);
+                                _v.IntValue = (int) longVal;
+                                _v.AuthoritativeType = ScalarType.Int;
                             }
                         }
 
@@ -102,25 +107,29 @@ namespace IonDotnet.Internals
 
                     //here means the int value has to be in bigInt
                     var bigInt = ReadBigInteger(_valueLength, isNegative);
-                    _v.SetValue(bigInt);
+                    _v.BigIntegerValue = bigInt;
+                    _v.AuthoritativeType = ScalarType.BigInteger;
                     break;
                 case IonType.Float:
                     var d = ReadFloat(_valueLength);
-                    _v.SetValue(d);
+                    _v.DoubleValue = d;
+                    _v.AuthoritativeType = ScalarType.Double;
                     break;
                 case IonType.Symbol:
                     //treat the symbol as int32, since it's cheap and there's no lookup
                     //until the text is required
                     var sid = ReadUlong(_valueLength);
                     if (sid < 0 || sid > int.MaxValue) throw new IonException("Sid is not an uint32");
-                    _v.SetValue((int) sid);
+                    _v.IntValue = (int) sid;
+                    _v.AuthoritativeType = ScalarType.Int;
                     break;
                 case IonType.Decimal:
                 case IonType.Timestamp:
                     throw new NotImplementedException();
                 case IonType.String:
                     var s = _readStringNew ? ReadString(_valueLength) : ReadStringOld(_valueLength);
-                    _v.SetValue(s);
+                    _v.StringValue = s;
+                    _v.AuthoritativeType = ScalarType.String;
                     break;
             }
 

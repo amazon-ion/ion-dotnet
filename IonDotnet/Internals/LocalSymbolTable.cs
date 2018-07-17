@@ -188,7 +188,7 @@ namespace IonDotnet.Internals
             return new LocalSymbolTableImports(importList);
         }
 
-        private static void ReadSymbolList(IIonReader reader, List<string> symbolList)
+        private static void ReadSymbolList(IIonReader reader, ICollection<string> symbolList)
         {
             reader.StepIn();
 
