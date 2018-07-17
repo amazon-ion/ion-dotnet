@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using IonDotnet.Conversions;
 using IonDotnet.Internals;
 
 namespace IonDotnet.Tests.Common

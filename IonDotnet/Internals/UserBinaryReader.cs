@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals
 {
@@ -10,7 +11,8 @@ namespace IonDotnet.Internals
     /// <remarks>Starts out as a system bin reader</remarks>
     internal sealed class UserBinaryReader : SystemBinaryReader
     {
-        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter = null) : base(input, scalarConverter)
+        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter = null, bool readStringNew = true)
+            : base(input, scalarConverter, readStringNew)
         {
         }
 

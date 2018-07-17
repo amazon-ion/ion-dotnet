@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text;
+using IonDotnet.Conversions;
 using IonDotnet.Systems;
 using static System.Diagnostics.Debug;
 
@@ -18,6 +19,7 @@ namespace IonDotnet.Internals
     {
         private const int NoLimit = int.MinValue;
         private const int DefaultContainerStackSize = 6;
+        private const int ShortStringLength = 32;
 
         protected enum State
         {
@@ -58,8 +60,6 @@ namespace IonDotnet.Internals
 
         protected long _positionStart;
         protected long _positionLength;
-
-        protected int[] _annotationIds;
 
         // A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         // position is stored in the first 'long' of the stack item
@@ -108,7 +108,6 @@ namespace IonDotnet.Internals
 
         private void ClearValue()
         {
-            // TODO more values here
             _valueType = IonType.None;
             _valueTid = -1;
             _valueIsNull = false;
@@ -277,12 +276,7 @@ namespace IonDotnet.Internals
             _localRemaining -= length;
         }
 
-        // TODO add docs IOException
-        private int ReadFieldId()
-        {
-            if (ReadVarUintOrEof(out var i) < 0) return IonConstants.Eof;
-            return i;
-        }
+        private int ReadFieldId() => ReadVarUintOrEof(out var i) < 0 ? IonConstants.Eof : i;
 
         /// <summary>
         /// Read the TID bytes 
@@ -379,7 +373,6 @@ namespace IonDotnet.Internals
             return ret;
         }
 
-        // TODO add docs for exceptions
         /// <summary>
         /// Try read an VarUint or returns EOF
         /// </summary>
@@ -519,13 +512,6 @@ namespace IonDotnet.Internals
                 }
 
                 OnAnnotation(a);
-
-                if (save)
-                {
-                    AppendAnnotationAndIncreaseCount(a);
-                    continue;
-                }
-
                 _annotationCount++;
             }
         }
@@ -560,49 +546,37 @@ namespace IonDotnet.Internals
             return valueType;
         }
 
-        /// <summary>
-        /// Append <paramref name="a"/> to the annotation list and increase the annotation count
-        /// </summary>
-        /// <param name="a">Annotation symbol id</param>
-        private void AppendAnnotationAndIncreaseCount(int a)
-        {
-            if (_annotationIds == null)
-            {
-                _annotationIds = ArrayPool<int>.Shared.Rent(1);
-            }
-            else
-            {
-                var oldLength = _annotationIds.Length;
-                if (_annotationCount >= oldLength)
-                {
-                    var temp = _annotationIds = ArrayPool<int>.Shared.Rent(oldLength * 2);
-                    Array.Copy(_annotationIds, temp, oldLength);
-                    ArrayPool<int>.Shared.Return(_annotationIds);
-                    _annotationIds = temp;
-                }
-            }
-
-            _annotationIds[_annotationCount++] = a;
-        }
-
         // Probably the fastest way
         private static unsafe float Int32BitsToSingle(int value) => *(float*) (&value);
+
+        protected string ReadStringOld(int length) => ReadLongString(length);
 
         /// <summary>
         /// Read the string value at the current position (and advance the stream by <paramref name="length"/>)
         /// </summary>
         /// <param name="length">Length of the string representation in bytes</param>
         /// <returns>Read string</returns>
-        protected string ReadString(int length)
+        protected string ReadString(int length) => length <= ShortStringLength
+            ? ReadShortString(length)
+            : ReadLongString(length);
+
+        private string ReadShortString(int length)
         {
-            Assert(_state == State.BeforeValue);
-            //TODO consider using pipelines to avoid rebuffering
-            var alloc = ArrayPool<byte>.Shared.Rent(length);
+            Span<byte> alloc = stackalloc byte[ShortStringLength];
+            ReadAll(alloc, length);
+            ReadOnlySpan<byte> readOnlySpan = alloc;
+            var strValue = Encoding.UTF8.GetString(readOnlySpan.Slice(0, length));
+            return strValue;
+        }
+
+        private string ReadLongString(int length)
+        {
+            var alloc = new byte[length * 2];
+            //var alloc = ArrayPool<byte>.Shared.Rent(length);
             ReadAll(new ArraySegment<byte>(alloc, 0, length), length);
 
             var strValue = Encoding.UTF8.GetString(alloc, 0, length);
-            ArrayPool<byte>.Shared.Return(alloc);
-            _localRemaining -= length;
+//            ArrayPool<byte>.Shared.Return(alloc);
             return strValue;
         }
 
@@ -614,15 +588,33 @@ namespace IonDotnet.Internals
         /// <exception cref="UnexpectedEofException">If EOF occurs before all bytes are read</exception>
         private void ReadAll(ArraySegment<byte> buffer, int length)
         {
-            Assert(length >= buffer.Count);
+            Assert(length <= buffer.Count);
             var offset = buffer.Offset;
             while (length > 0)
             {
                 var amount = _input.Read(buffer.Array, offset, length);
                 if (amount <= 0) throw new UnexpectedEofException(_input.Position);
 
+                _localRemaining -= amount;
                 length -= amount;
                 offset += amount;
+            }
+        }
+
+        /// <summary>
+        /// Read all <paramref name="length"/> bytes into the buffer
+        /// </summary>
+        /// <param name="bufferSpan">Span buffer</param>
+        /// <param name="length">Amount of bytes to read</param>
+        private void ReadAll(Span<byte> bufferSpan, int length)
+        {
+            Assert(length <= bufferSpan.Length);
+            while (length > 0)
+            {
+                var amount = _input.Read(bufferSpan.Slice(0, length));
+                length -= amount;
+                bufferSpan = bufferSpan.Slice(amount);
+                _localRemaining -= amount;
             }
         }
 
@@ -834,11 +826,6 @@ namespace IonDotnet.Internals
         {
             _input?.Dispose();
             _containerStack?.Clear();
-            if (_annotationIds != null)
-            {
-                ArrayPool<int>.Shared.Return(_annotationIds);
-                _annotationIds = null;
-            }
         }
     }
 }

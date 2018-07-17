@@ -27,9 +27,6 @@ namespace IonDotnet.Internals
 
         // TODO unify these
         public const int LnIsNull = 0x0f;
-        public const int LnIsNullAtom = LnIsNull;
-        public const int LnIsNullSequence = LnIsNull;
-        public const int LnIsNullStruct = LnIsNull;
 
         public const int LnIsEmptyContainer = 0x00;
         public const int LnIsOrderedStruct = 0x01;

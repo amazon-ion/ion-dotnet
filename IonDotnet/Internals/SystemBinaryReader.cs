@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
+using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals
 {
@@ -15,16 +16,18 @@ namespace IonDotnet.Internals
 
         protected ISymbolTable _symbolTable;
         private readonly IScalarConverter _scalarConverter;
+        private readonly bool _readStringNew;
 
-        internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter)
-            : this(input, SharedSymbolTable.GetSystem(1), scalarConverter)
+        internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter, bool readStringNew)
+            : this(input, SharedSymbolTable.GetSystem(1), scalarConverter, readStringNew)
         {
         }
 
-        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter) : base(input)
+        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter, bool readStringNew) : base(input)
         {
             _symbolTable = symboltable;
             _scalarConverter = scalarConverter;
+            _readStringNew = readStringNew;
         }
 
         private void PrepareValue()
@@ -116,7 +119,7 @@ namespace IonDotnet.Internals
                 case IonType.Timestamp:
                     throw new NotImplementedException();
                 case IonType.String:
-                    var s = ReadString(_valueLength);
+                    var s = _readStringNew ? ReadString(_valueLength) : ReadStringOld(_valueLength);
                     _v.SetValue(s);
                     break;
             }

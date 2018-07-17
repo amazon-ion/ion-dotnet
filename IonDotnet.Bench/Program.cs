@@ -1,27 +1,78 @@
 ﻿using System;
 using System.IO;
-using System.Numerics;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 using IonDotnet.Internals;
 
 namespace IonDotnet.Bench
 {
-    internal class Program
+    [MemoryDiagnoser]
+    public class Benchmarks
     {
-        private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long) 1 << 62, 2);
+        public byte[] _data;
 
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+            _data = ReadDataFile("javaout");
+        }
+
+        [Benchmark]
+        public void ReadStringOld()
+        {
+            using (var reader = new UserBinaryReader(new MemoryStream(_data), null, false))
+            {
+                Check(reader);
+            }
+        }
+
+        [Benchmark]
+        public void ReadStringNew()
+        {
+            using (var reader = new UserBinaryReader(new MemoryStream(_data)))
+            {
+                Check(reader);
+            }
+        }
+
+        private static void Check(IIonReader reader)
+        {
+            reader.Next();
+            reader.StepIn();
+
+            while (reader.Next() != IonType.None)
+            {
+                //load the value
+                reader.StringValue();
+            }
+
+            reader.StepOut();
+        }
+
+        public static DirectoryInfo GetRootDir()
+        {
+            var dirInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
+            while (!string.Equals(dirInfo.Name, "iondotnet.bench", StringComparison.OrdinalIgnoreCase))
+            {
+                dirInfo = Directory.GetParent(dirInfo.FullName);
+            }
+
+            return dirInfo;
+        }
+
+        public static byte[] ReadDataFile(string relativePath)
+        {
+            var testDatDir = GetRootDir();
+            var path = Path.Combine(testDatDir.FullName, relativePath);
+            return File.ReadAllBytes(path);
+        }
+    }
+
+    internal static class Program
+    {
         public static void Main(string[] args)
         {
-            var fs = new FileStream("javaout", FileMode.Open);
-            var reader = new UserBinaryReader(fs);
-
-            reader.Next();
-            Console.WriteLine(reader.CurrentType);
-            reader.StepIn();
-            reader.Next();
-            Console.WriteLine(reader.CurrentDepth);
-            Console.WriteLine(reader.CurrentType);
-            Console.WriteLine(reader.CurrentFieldName);
-            Console.WriteLine(reader.BoolValue());
+            BenchmarkRunner.Run<Benchmarks>();
         }
     }
 }

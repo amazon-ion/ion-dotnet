@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Conversions
 {
     public struct ValueVariant
     {

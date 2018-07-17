@@ -1,7 +1,7 @@
 using System;
-using System.Numerics;
+using IonDotnet.Internals;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Conversions
 {
     [Flags]
     public enum ScalarType
