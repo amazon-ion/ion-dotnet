@@ -16,18 +16,16 @@ namespace IonDotnet.Internals
 
         protected ISymbolTable _symbolTable;
         private readonly IScalarConverter _scalarConverter;
-        private readonly bool _readStringNew;
 
-        internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter, bool readStringNew)
-            : this(input, SharedSymbolTable.GetSystem(1), scalarConverter, readStringNew)
+        internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter)
+            : this(input, SharedSymbolTable.GetSystem(1), scalarConverter)
         {
         }
 
-        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter, bool readStringNew) : base(input)
+        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter) : base(input)
         {
             _symbolTable = symboltable;
             _scalarConverter = scalarConverter;
-            _readStringNew = readStringNew;
         }
 
         private void PrepareValue()
@@ -60,13 +58,11 @@ namespace IonDotnet.Internals
                     return;
                 case IonType.Bool:
                     _v.BoolValue = _valueIsTrue;
-                    _v.AuthoritativeType = ScalarType.Bool;
                     break;
                 case IonType.Int:
                     if (_valueLength == 0)
                     {
                         _v.IntValue = 0;
-                        _v.AuthoritativeType = ScalarType.Int;
                         break;
                     }
 
@@ -81,7 +77,6 @@ namespace IonDotnet.Internals
                             longVal = (longVal << 1) >> 1;
                             var big = BigInteger.Add(TwoPow63, longVal);
                             _v.BigIntegerValue = big;
-                            _v.AuthoritativeType = ScalarType.BigInteger;
                         }
                         else
                         {
@@ -93,12 +88,10 @@ namespace IonDotnet.Internals
                             if (longVal < int.MinValue || longVal > int.MaxValue)
                             {
                                 _v.LongValue = longVal;
-                                _v.AuthoritativeType = ScalarType.Long;
                             }
                             else
                             {
                                 _v.IntValue = (int) longVal;
-                                _v.AuthoritativeType = ScalarType.Int;
                             }
                         }
 
@@ -108,12 +101,10 @@ namespace IonDotnet.Internals
                     //here means the int value has to be in bigInt
                     var bigInt = ReadBigInteger(_valueLength, isNegative);
                     _v.BigIntegerValue = bigInt;
-                    _v.AuthoritativeType = ScalarType.BigInteger;
                     break;
                 case IonType.Float:
                     var d = ReadFloat(_valueLength);
                     _v.DoubleValue = d;
-                    _v.AuthoritativeType = ScalarType.Double;
                     break;
                 case IonType.Symbol:
                     //treat the symbol as int32, since it's cheap and there's no lookup
@@ -121,14 +112,12 @@ namespace IonDotnet.Internals
                     var sid = ReadUlong(_valueLength);
                     if (sid < 0 || sid > int.MaxValue) throw new IonException("Sid is not an uint32");
                     _v.IntValue = (int) sid;
-                    _v.AuthoritativeType = ScalarType.Int;
                     break;
                 case IonType.Decimal:
                 case IonType.Timestamp:
                     throw new NotImplementedException();
                 case IonType.String:
-                    var s = _readStringNew ? ReadString(_valueLength) : ReadStringOld(_valueLength);
-                    _v.StringValue = s;
+                    _v.StringValue = ReadString(_valueLength);
                     _v.AuthoritativeType = ScalarType.String;
                     break;
             }

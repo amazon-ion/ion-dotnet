@@ -48,7 +48,7 @@ namespace IonDotnet.Internals
         protected int _valueTid;
         protected int _valueLength;
         private int _parentTid;
-        protected bool _hasNextNeeded;
+        protected bool _moveNextNeeded;
         private bool _structIsOrdered;
         private readonly bool _annotationRequested;
         private bool _valueLobReady;
@@ -75,7 +75,7 @@ namespace IonDotnet.Internals
             _valueFieldId = SymbolToken.UnknownSid;
             _state = State.BeforeTid;
             _eof = false;
-            _hasNextNeeded = true;
+            _moveNextNeeded = true;
             _valueIsNull = false;
             _valueIsTrue = false;
             IsInStruct = false;
@@ -84,16 +84,16 @@ namespace IonDotnet.Internals
             _containerStack = new Stack<(long position, int localRemaining, int typeTid)>(DefaultContainerStackSize);
 
             _positionStart = -1;
+            _v = new ValueVariant();
         }
 
-        // TODO this doesnt make a lot of sense, should be MoveNext()
         protected virtual bool HasNext()
         {
-            if (_eof || !_hasNextNeeded) return !_eof;
+            if (_eof || !_moveNextNeeded) return !_eof;
 
             try
             {
-                HasNextRaw();
+                MoveNextRaw();
                 return !_eof;
             }
             catch (IOException e)
@@ -117,7 +117,7 @@ namespace IonDotnet.Internals
             _hasSymbolTableAnnotation = false;
         }
 
-        private void HasNextRaw()
+        private void MoveNextRaw()
         {
             ClearValue();
             while (_valueTid == -1 && !_eof)
@@ -190,7 +190,7 @@ namespace IonDotnet.Internals
             }
 
             // we always get here
-            _hasNextNeeded = false;
+            _moveNextNeeded = false;
         }
 
         private void LoadVersionMarker()
@@ -203,7 +203,7 @@ namespace IonDotnet.Internals
             // the symbol $ion_1_0 ...
             _valueTid = IonConstants.TidSymbol;
             _valueLength = 0;
-            _v.IntValue = (SystemSymbols.Ion10Sid);
+            _v.IntValue = SystemSymbols.Ion10Sid;
             _valueIsNull = false;
             _valueLobReady = false;
             _valueFieldId = SymbolToken.UnknownSid;
@@ -486,7 +486,7 @@ namespace IonDotnet.Internals
 
             if (length != 4 && length != 8) throw new IonException($"Float length must be 0|4|8, length is {length}");
             var bits = ReadUlong(length);
-            return length == 4 ? Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
+            return length == 4 ? BitConverter.Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
         }
 
         /// <summary>
@@ -511,8 +511,8 @@ namespace IonDotnet.Internals
                     _hasSymbolTableAnnotation = true;
                 }
 
-                OnAnnotation(a);
                 _annotationCount++;
+                OnAnnotation(a);
             }
         }
 
@@ -547,9 +547,7 @@ namespace IonDotnet.Internals
         }
 
         // Probably the fastest way
-        private static unsafe float Int32BitsToSingle(int value) => *(float*) (&value);
-
-        protected string ReadStringOld(int length) => ReadLongString(length);
+//        private static unsafe float Int32BitsToSingle(int value) => *(float*) (&value);
 
         /// <summary>
         /// Read the string value at the current position (and advance the stream by <paramref name="length"/>)
@@ -707,11 +705,11 @@ namespace IonDotnet.Internals
         public virtual IonType Next()
         {
             if (_eof) return IonType.None;
-            if (_hasNextNeeded)
+            if (_moveNextNeeded)
             {
                 try
                 {
-                    HasNextRaw();
+                    MoveNextRaw();
                 }
                 catch (IOException e)
                 {
@@ -719,7 +717,7 @@ namespace IonDotnet.Internals
                 }
             }
 
-            _hasNextNeeded = true;
+            _moveNextNeeded = true;
             Assert(_valueType != IonType.None || _eof);
             return _valueType;
         }
@@ -749,7 +747,7 @@ namespace IonDotnet.Internals
             _state = IsInStruct ? State.BeforeField : State.BeforeTid;
             _parentTid = _valueTid;
             ClearValue();
-            _hasNextNeeded = true;
+            _moveNextNeeded = true;
         }
 
         public void StepOut()
@@ -761,7 +759,7 @@ namespace IonDotnet.Internals
             _parentTid = parentTid;
             IsInStruct = _parentTid == IonConstants.TidStruct;
             _state = IsInStruct ? State.BeforeField : State.BeforeTid;
-            _hasNextNeeded = true;
+            _moveNextNeeded = true;
             ClearValue();
 
             var currentPosition = _input.Position;

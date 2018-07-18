@@ -17,7 +17,7 @@ namespace IonDotnet.Conversions
         String = 1 << 7,
         DateTime = 1 << 8
     }
-    
+
     public interface IScalarConverter
     {
         void OnValueStart();

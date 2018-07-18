@@ -5,26 +5,113 @@ namespace IonDotnet.Conversions
 {
     public struct ValueVariant
     {
-        public ScalarType TypeSet { get; private set; }
-        public ScalarType AuthoritativeType { get; internal set; }
+        private int _intValue;
+        private long _longValue;
+        private double _doubleValue;
+        private string _stringValue;
+        private BigInteger _bigIntegerValue;
+        private decimal _decimalValue;
+        private DateTime _datetimeValue;
+        private bool _boolValue;
 
-        public bool BoolValue { get; internal set; }
-        public int IntValue { get; internal set; }
-        public long LongValue { get; internal set; }
-        public double DoubleValue { get; internal set; }
-        public string StringValue { get; internal set; }
-        public BigInteger BigIntegerValue { get; internal set; }
-        public decimal DecimalValue { get; internal set; }
-        public DateTime DatetimeValue { get; internal set; }
+        public bool BoolValue
+        {
+            get => _boolValue;
+            internal set
+            {
+                _boolValue = value;
+                AuthoritativeType = ScalarType.Bool;
+                TypeSet = ScalarType.Bool;
+            }
+        }
+
+        public int IntValue
+        {
+            get => _intValue;
+            internal set
+            {
+                _intValue = value;
+                AuthoritativeType = ScalarType.Int;
+                TypeSet = ScalarType.Int;
+            }
+        }
+
+        public long LongValue
+        {
+            get => _longValue;
+            internal set
+            {
+                _longValue = value;
+                AuthoritativeType = ScalarType.Long;
+                TypeSet = ScalarType.Long;
+            }
+        }
+
+        public double DoubleValue
+        {
+            get => _doubleValue;
+            internal set
+            {
+                _doubleValue = value;
+                AuthoritativeType = ScalarType.Double;
+                TypeSet = ScalarType.Double;
+            }
+        }
+
+        public string StringValue
+        {
+            get => _stringValue;
+            internal set
+            {
+                _stringValue = value;
+                AuthoritativeType = ScalarType.String;
+                TypeSet = ScalarType.String;
+            }
+        }
+
+        public BigInteger BigIntegerValue
+        {
+            get => _bigIntegerValue;
+            internal set
+            {
+                _bigIntegerValue = value;
+                AuthoritativeType = ScalarType.BigInteger;
+                TypeSet = ScalarType.BigInteger;
+            }
+        }
+
+        public decimal DecimalValue
+        {
+            get => _decimalValue;
+            internal set
+            {
+                _decimalValue = value;
+                AuthoritativeType = ScalarType.Decimal;
+                TypeSet = ScalarType.Decimal;
+            }
+        }
+
+        public DateTime DatetimeValue
+        {
+            get => _datetimeValue;
+            internal set
+            {
+                _datetimeValue = value;
+                AuthoritativeType = ScalarType.DateTime;
+                TypeSet = ScalarType.DateTime;
+            }
+        }
         //TODO datetime
 
         public bool IsEmpty => AuthoritativeType == ScalarType.Nothing;
+        public ScalarType TypeSet { get; private set; }
+        public ScalarType AuthoritativeType { get; internal set; }
 
         public void Clear()
         {
             AuthoritativeType = ScalarType.Nothing;
             TypeSet = ScalarType.Nothing;
-            StringValue = null;
+            _stringValue = null;
         }
 
         internal void SetNull(IonType ionType)
@@ -58,6 +145,7 @@ namespace IonDotnet.Conversions
                     AuthoritativeType = ScalarType.Double;
                     break;
             }
+
             TypeSet = ScalarType.Null;
         }
 
@@ -68,35 +156,35 @@ namespace IonDotnet.Conversions
                 default:
                     throw new ArgumentOutOfRangeException($"Cannot set type {value.GetType()}");
                 case bool boolValue:
-                    BoolValue = boolValue;
+                    _boolValue = boolValue;
                     TypeSet |= ScalarType.Bool;
                     break;
                 case int intValue:
-                    IntValue = intValue;
+                    _intValue = intValue;
                     TypeSet |= ScalarType.Int;
                     break;
                 case long longVal:
-                    LongValue = longVal;
+                    _longValue = longVal;
                     TypeSet |= ScalarType.Long;
                     break;
                 case BigInteger bigInt:
-                    BigIntegerValue = bigInt;
+                    _bigIntegerValue = bigInt;
                     TypeSet |= ScalarType.BigInteger;
                     break;
                 case decimal decimalValue:
-                    DecimalValue = decimalValue;
+                    _decimalValue = decimalValue;
                     TypeSet |= ScalarType.Decimal;
                     break;
                 case double doubleVal:
-                    DoubleValue = doubleVal;
+                    _doubleValue = doubleVal;
                     TypeSet |= ScalarType.Double;
                     break;
                 case string stringVal:
-                    StringValue = stringVal;
+                    _stringValue = stringVal;
                     TypeSet |= ScalarType.String;
                     break;
                 case DateTime dateTime:
-                    DatetimeValue = dateTime;
+                    _datetimeValue = dateTime;
                     TypeSet |= ScalarType.DateTime;
                     break;
             }

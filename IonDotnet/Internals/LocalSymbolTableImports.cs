@@ -14,17 +14,23 @@ namespace IonDotnet.Internals
 
         public LocalSymbolTableImports(IList<ISymbolTable> imports)
         {
-            _imports = new ISymbolTable[imports.Count];
-            for (var i = 0; i < imports.Count; i++)
-            {
-                var symtab = imports[i];
-                if (symtab.IsLocal)
-                {
-                    //TODO handle local imports
-                    throw new NotImplementedException();
-                }
+            var importCounts = imports?.Count ?? 0;
+            _imports = new ISymbolTable[importCounts + 1];
+            _imports[0] = SharedSymbolTable.GetSystem(1);
 
-                _imports[i] = symtab;
+            if (imports != null)
+            {
+                for (var i = 0; i < importCounts; i++)
+                {
+                    var symtab = imports[i];
+                    if (symtab.IsLocal)
+                    {
+                        //TODO handle local imports
+                        throw new NotImplementedException();
+                    }
+
+                    _imports[i + 1] = symtab;
+                }
             }
 
             // TODO fix this asap

@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet
 {
-    public enum IonType
+    public enum IonType : short
     {
         None = -1,
         Null = 0,

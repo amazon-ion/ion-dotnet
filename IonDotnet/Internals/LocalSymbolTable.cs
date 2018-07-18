@@ -11,11 +11,10 @@ namespace IonDotnet.Internals
     {
         private readonly int _firstLocalId;
         private readonly LocalSymbolTableImports _imports;
-        private string[] _mySymbolNames;
-        private int _mySymbolCount;
+        private readonly IList<string> _mySymbolNames;
         private readonly IDictionary<string, int> _symbolMap;
 
-        private LocalSymbolTable(LocalSymbolTableImports imports, ICollection<string> symbolList, bool readOnly)
+        private LocalSymbolTable(LocalSymbolTableImports imports, IList<string> symbolList, bool readOnly)
         {
             IsReadOnly = readOnly;
             _imports = imports;
@@ -23,12 +22,10 @@ namespace IonDotnet.Internals
             if (symbolList == null || symbolList.Count == 0)
             {
                 _mySymbolNames = PrivateHelper.EmptyStringArray;
-                _mySymbolCount = 0;
             }
             else
             {
-                _mySymbolNames = symbolList.ToArray();
-                _mySymbolCount = symbolList.Count;
+                _mySymbolNames = symbolList;
             }
 
             _symbolMap = BuildSymbolMap();
@@ -47,7 +44,7 @@ namespace IonDotnet.Internals
                 map = new ConcurrentDictionary<string, int>();
             }
 
-            for (var i = 0; i < _mySymbolNames.Length; i++, sid++)
+            for (var i = 0; i < _mySymbolNames.Count; i++, sid++)
             {
                 var symbolText = _mySymbolNames[i];
                 if (symbolText == null) continue; //shouldn't happen
@@ -79,14 +76,11 @@ namespace IonDotnet.Internals
 
         public string IonVersionId => _imports.SystemTable.IonVersionId;
 
-        public IEnumerable<ISymbolTable> GetImportedTables()
-        {
-            return _imports.GetSymbolTables();
-        }
+        public IEnumerable<ISymbolTable> GetImportedTables() => _imports.GetSymbolTables();
 
         public int GetImportedMaxId() => _imports.MaxId;
 
-        public int MaxId => _mySymbolCount + _imports.MaxId;
+        public int MaxId => _mySymbolNames.Count + _imports.MaxId;
 
         public SymbolToken Intern(string text)
         {
@@ -110,7 +104,9 @@ namespace IonDotnet.Internals
         }
 
         private int FindLocalSymbolPrivate(string text)
-            => _symbolMap.TryGetValue(text, out var sid) ? sid : SymbolToken.UnknownSid;
+        {
+            return _symbolMap.TryGetValue(text, out var sid) ? sid : SymbolToken.UnknownSid;
+        }
 
         public string FindKnownSymbol(int id)
         {
@@ -118,7 +114,7 @@ namespace IonDotnet.Internals
 
             if (id < _firstLocalId) return _imports.FindKnownSymbol(id);
 
-            string[] names;
+            IList<string> names;
             //avoid locking if possible
             if (IsReadOnly)
             {
@@ -134,15 +130,16 @@ namespace IonDotnet.Internals
             }
 
             var offset = id - _firstLocalId;
-            return offset < names.Length ? names[offset] : null;
+            return offset < names.Count ? names[offset] : null;
         }
 
         public void WriteTo(IIonWriter writer) => writer.WriteValues(new SymbolTableReader(this));
 
         public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_mySymbolNames);
 
-        private static LocalSymbolTableImports ReadLocalSymbolTableImports(IIonReader reader, bool isOnStruct, out List<string> symbolList)
+        private static LocalSymbolTableImports ReadLocalSymbolTableImports(IIonReader reader, bool isOnStruct, out IList<string> symbolList)
         {
+            IList<ISymbolTable> importList = null;
             symbolList = new List<string>();
             if (!isOnStruct)
             {
@@ -153,11 +150,6 @@ namespace IonDotnet.Internals
 
             // assume that we're standing before a struct
             reader.StepIn();
-            var importList = new List<ISymbolTable>
-            {
-                reader.GetSymbolTable().GetSystemTable()
-            };
-
             var foundImport = false;
             IonType fieldType;
             while ((fieldType = reader.Next()) != IonType.None)
@@ -173,6 +165,11 @@ namespace IonDotnet.Internals
                 switch (symtok.Sid)
                 {
                     case SystemSymbols.ImportsSid:
+                        if (importList == null)
+                        {
+                            importList = new List<ISymbolTable>();
+                        }
+
                         throw new NotImplementedException();
                     case SystemSymbols.SymbolsSid:
                         if (foundImport) throw new IonException("Multiple symbols field");

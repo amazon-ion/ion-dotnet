@@ -11,31 +11,31 @@ namespace IonDotnet.Internals
     /// <remarks>Starts out as a system bin reader</remarks>
     internal sealed class UserBinaryReader : SystemBinaryReader
     {
-        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter = null, bool readStringNew = true)
-            : base(input, scalarConverter, readStringNew)
+        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter = null)
+            : base(input, scalarConverter)
         {
         }
 
         public override IonType Next()
         {
             if (!HasNext()) return IonType.None;
-            _hasNextNeeded = true;
+            _moveNextNeeded = true;
             return _valueType;
         }
 
         protected override bool HasNext()
         {
-            if (_eof || !_hasNextNeeded) return !_eof;
+            if (_eof || !_moveNextNeeded) return !_eof;
 
-            while (!_eof && _hasNextNeeded)
+            while (!_eof && _moveNextNeeded)
             {
-                HasNextUser();
+                MoveNextUser();
             }
 
             return !_eof;
         }
 
-        private void HasNextUser()
+        private void MoveNextUser()
         {
             base.HasNext();
 
@@ -50,10 +50,7 @@ namespace IonDotnet.Internals
                 // we already count the number of annotations
                 if (_annotationCount != 0) return;
 
-                if (!_v.IsEmpty)
-                {
-                    LoadOnce();
-                }
+                LoadOnce();
 
                 // just get it straight from the holder, no conversion needed
                 var sid = _v.IntValue;
@@ -61,7 +58,7 @@ namespace IonDotnet.Internals
 
                 _symbolTable = SharedSymbolTable.GetSystem(1);
                 //user don't need to see this symbol so continue here
-                _hasNextNeeded = true;
+                _moveNextNeeded = true;
             }
             else if (_valueTid == IonConstants.TidStruct)
             {
@@ -70,7 +67,7 @@ namespace IonDotnet.Internals
                 {
                     _symbolTable = LocalSymbolTable.Read(this, false);
                     //user don't need to read the localsymboltable so continue
-                    _hasNextNeeded = true;
+                    _moveNextNeeded = true;
                 }
             }
         }
