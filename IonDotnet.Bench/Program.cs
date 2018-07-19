@@ -1,42 +1,132 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using IonDotnet.Internals;
 
 namespace IonDotnet.Bench
 {
     [MemoryDiagnoser]
     public class Benchmarks
     {
+        public List<Memory<byte>> LL;
+        
 //        public List<string> _data;
-
-        public const string Sample = "SampleStringSampleStringSampleStringSampleStringSampleString";
-        public static readonly byte[] SampleBytes = Encoding.UTF8.GetBytes(Sample);
+        private const int Iter = 500;
+        private readonly List<string> _stringsss = new List<string>();
+        private readonly List<string> _s2 = new List<string>();
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-//            _data = ReadDataFile("javaout");
+            for (var i = 0; i < Iter; i++)
+            {
+                _stringsss.Add($"Stringsss{i}");
+            }
+
+            for (var i = 0; i < Iter * 2; i++)
+            {
+                _s2.Add($"Stringsss{i}");
+            }
         }
 
 
         [Benchmark]
-        public void GetByteCountDecode()
+        public void GenericLinkedList()
         {
-            var sample = Encoding.UTF8.GetString(SampleBytes);
-            var bc = Encoding.UTF8.GetByteCount(sample);
+            var ll1 = new MyLinkedList<string>();
+            foreach (var s in _stringsss)
+            {
+                ll1.Add(s);
+            }
+
+            var ll2 = new MyLinkedList<string>();
+            foreach (var s in _s2)
+            {
+                ll2.Add(s);
+            }
+
+            var ll3 = new MyLinkedList<string>();
+            foreach (var s in _s2)
+            {
+                ll3.Add(s);
+            }
+
+            ll1.Append(ll2);
+            ll1.Append(ll3);
+
+            foreach (var s in ll1)
+            {
+                var x = s;
+            }
         }
 
         [Benchmark]
-        public void GetByteCountSpan()
+        public void NetLinkedList()
         {
-            var bc = Encoding.UTF8.GetByteCount(Sample);
+            var ll1 = new LinkedList<string>();
+            foreach (var s in _stringsss)
+            {
+                ll1.AddLast(s);
+            }
+
+            var ll2 = new LinkedList<string>();
+            foreach (var s in _s2)
+            {
+                ll2.AddLast(s);
+            }
+
+            var ll3 = new LinkedList<string>();
+            foreach (var s in _s2)
+            {
+                ll3.AddLast(s);
+            }
+
+            foreach (var s2 in ll2)
+            {
+                ll1.AddLast(s2);
+            }
+
+            foreach (var s3 in ll3)
+            {
+                ll1.AddLast(s3);
+            }
+
+            foreach (var s in ll1)
+            {
+                var x = s;
+            }
+        }
+
+        [Benchmark]
+        public void JustUseList()
+        {
+            var ll1 = new List<string>();
+            foreach (var s in _stringsss)
+            {
+                ll1.Add(s);
+            }
+
+            var ll2 = new List<string>();
+            foreach (var s in _s2)
+            {
+                ll2.Add(s);
+            }
+
+            var ll3 = new List<string>();
+            foreach (var s in _s2)
+            {
+                ll3.Add(s);
+            }
+
+            ll1.AddRange(ll2);
+            ll1.AddRange(ll3);
+            foreach (var s in ll1)
+            {
+                var x = s;
+            }
         }
 
 //        [Benchmark]
@@ -102,19 +192,19 @@ namespace IonDotnet.Bench
     {
         public static void Main(string[] args)
         {
-//            BenchmarkRunner.Run<Benchmarks>();
-            var seg1 = new Block<char>(new[] {'1'});
-            var seg2 = new Block<char>(new[] {'2', '3'});
-            seg1.SetNext(seg2);
-            var seg = new ReadOnlySequence<char>(seg1, 0, seg2, 2);
-            Console.WriteLine(seg.Length);
-            foreach (var sm in seg)
-            {
-                for (var i = 0; i < sm.Length; i++)
-                {
-                    Console.WriteLine(sm.Span[i]);
-                }
-            }
+            BenchmarkRunner.Run<Benchmarks>();
+//            var seg1 = new Block<char>(new[] {'1'});
+//            var seg2 = new Block<char>(new[] {'2', '3'});
+//            seg1.SetNext(seg2);
+//            var seg = new ReadOnlySequence<char>(seg1, 0, seg2, 2);
+//            Console.WriteLine(seg.Length);
+//            foreach (var sm in seg)
+//            {
+//                for (var i = 0; i < sm.Length; i++)
+//                {
+//                    Console.WriteLine(sm.Span[i]);
+//                }
+//            }
         }
     }
 }
