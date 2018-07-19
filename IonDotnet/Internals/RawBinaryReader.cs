@@ -12,7 +12,7 @@ namespace IonDotnet.Internals
 {
     /// <inheritdoc />
     /// <summary>
-    /// Base functionalities for Ion binary readers <see href="http://amzn.github.io/ion-docs/docs/binary.html" />
+    /// Base functionalities for Ion binary readers <br/> <see href="http://amzn.github.io/ion-docs/docs/binary.html" /> 
     /// This handles going through the stream and reading TIDs, length
     /// </summary>
     internal abstract class RawBinaryReader : IIonReader
@@ -64,7 +64,7 @@ namespace IonDotnet.Internals
         // A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         // position is stored in the first 'long' of the stack item
         // 
-        private readonly Stack<(long position, int localRemaining, int typeTid)> _containerStack;
+        private Stack<(long position, int localRemaining, int typeTid)> _containerStack;
 
         protected RawBinaryReader(Stream input)
         {
@@ -357,7 +357,7 @@ namespace IonDotnet.Internals
         private int ReadVarUint()
         {
             var ret = 0;
-            for (var i = 0; i < 4; i++)
+            for (var i = 0; i < 5; i++)
             {
                 var b = ReadByte();
                 if (b < 0) throw new UnexpectedEofException(_input.Position);
@@ -517,8 +517,8 @@ namespace IonDotnet.Internals
         }
 
         /// <summary>
-        /// This method will read the annotations, and load them if requested
-        /// Then it will skip to the value
+        /// This method will read the annotations, and load them if requested.
+        /// <para/> Then it will skip to the value
         /// </summary>
         /// <returns>Type of the value</returns>
         private IonType LoadAnnotationsGotoValueType()
@@ -819,10 +819,19 @@ namespace IonDotnet.Internals
 
         protected abstract void OnValueEnd();
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _input?.Dispose();
+                _containerStack = null;
+            }
+        }
+
         public void Dispose()
         {
-            _input?.Dispose();
-            _containerStack?.Clear();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }
