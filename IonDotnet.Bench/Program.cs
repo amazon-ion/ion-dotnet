@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
@@ -12,7 +13,7 @@ namespace IonDotnet.Bench
     public class Benchmarks
     {
         public List<Memory<byte>> LL;
-        
+
 //        public List<string> _data;
         private const int Iter = 500;
         private readonly List<string> _stringsss = new List<string>();
@@ -192,6 +193,12 @@ namespace IonDotnet.Bench
     {
         public static void Main(string[] args)
         {
+//            const string emojis = "😀 😁 😂 🤣 😃 😄 😅 😆 😉";
+//            var bytes = Encoding.UTF8.GetBytes(emojis);
+//            var str = Encoding.UTF8.GetString(bytes);
+//            Console.WriteLine(str == emojis);
+//            Console.WriteLine(str);
+
             BenchmarkRunner.Run<Benchmarks>();
 //            var seg1 = new Block<char>(new[] {'1'});
 //            var seg2 = new Block<char>(new[] {'2', '3'});
