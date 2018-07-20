@@ -3,6 +3,9 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Conversions
 {
+    /// <summary>
+    /// List of C# types that the ion value translates to
+    /// </summary>
     [Flags]
     public enum ScalarType
     {

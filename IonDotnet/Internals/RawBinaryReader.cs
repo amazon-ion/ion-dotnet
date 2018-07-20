@@ -19,7 +19,6 @@ namespace IonDotnet.Internals
     {
         private const int NoLimit = int.MinValue;
         private const int DefaultContainerStackSize = 6;
-        private const int ShortStringLength = 16;
 
         protected enum State
         {
@@ -554,13 +553,13 @@ namespace IonDotnet.Internals
         /// </summary>
         /// <param name="length">Length of the string representation in bytes</param>
         /// <returns>Read string</returns>
-        protected string ReadString(int length) => length <= ShortStringLength
+        protected string ReadString(int length) => length <= IonConstants.ShortStringLength
             ? ReadShortString(length)
             : ReadLongString(length);
 
         private string ReadShortString(int length)
         {
-            Span<byte> alloc = stackalloc byte[ShortStringLength];
+            Span<byte> alloc = stackalloc byte[IonConstants.ShortStringLength];
             ReadAll(alloc, length);
             ReadOnlySpan<byte> readOnlySpan = alloc;
             var strValue = Encoding.UTF8.GetString(readOnlySpan.Slice(0, length));
@@ -823,7 +822,7 @@ namespace IonDotnet.Internals
         {
             if (disposing)
             {
-                _input?.Dispose();
+//                _input?.Dispose();
                 _containerStack = null;
             }
         }

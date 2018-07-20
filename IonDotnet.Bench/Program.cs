@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
@@ -12,7 +13,7 @@ namespace IonDotnet.Bench
     public class Benchmarks
     {
         public List<Memory<byte>> LL;
-        
+
 //        public List<string> _data;
         private const int Iter = 500;
         private readonly List<string> _stringsss = new List<string>();
