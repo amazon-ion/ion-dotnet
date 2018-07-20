@@ -193,6 +193,12 @@ namespace IonDotnet.Bench
     {
         public static void Main(string[] args)
         {
+//            const string emojis = "😀 😁 😂 🤣 😃 😄 😅 😆 😉";
+//            var bytes = Encoding.UTF8.GetBytes(emojis);
+//            var str = Encoding.UTF8.GetString(bytes);
+//            Console.WriteLine(str == emojis);
+//            Console.WriteLine(str);
+
             BenchmarkRunner.Run<Benchmarks>();
 //            var seg1 = new Block<char>(new[] {'1'});
 //            var seg2 = new Block<char>(new[] {'2', '3'});
