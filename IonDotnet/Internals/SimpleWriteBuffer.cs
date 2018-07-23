@@ -16,9 +16,11 @@ namespace IonDotnet.Internals
         private long _writtenSoFar;
         private IList<Memory<byte>> _currentSequence;
 
-        public int WriteUtf8(ReadOnlySpan<char> s)
+        public int WriteUtf8(ReadOnlySpan<char> s, int length)
         {
-            var byteCount = Encoding.UTF8.GetByteCount(s);
+            var byteCount = length == -1 ? Encoding.UTF8.GetByteCount(s) : length;
+            Debug.Assert(length == -1 || length == Encoding.UTF8.GetByteCount(s));
+
             var span = new byte[byteCount];
             Encoding.UTF8.GetBytes(s, span);
             _memory.Write(span);
@@ -83,6 +85,11 @@ namespace IonDotnet.Internals
         }
 
         public int WriteVarUint(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int WriteAnnotationsWithLength(IEnumerable<SymbolToken> annotations)
         {
             throw new NotImplementedException();
         }

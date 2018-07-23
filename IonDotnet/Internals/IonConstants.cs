@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 
 namespace IonDotnet.Internals
@@ -43,7 +44,61 @@ namespace IonDotnet.Internals
         public static int GetLowNibble(int tid) => tid & 0xf;
 
         public const int Bvm10 = unchecked((int) 0xE00100EA);
-        
+
         internal const int ShortStringLength = 32;
+
+        public const int MaxAnnotationLength = 0x7F;
+
+        public static byte GetNullByte(IonType type)
+        {
+            byte data;
+            switch (type)
+            {
+                case IonType.None:
+                case IonType.Null:
+                    data = 0x0F;
+                    break;
+                case IonType.Bool:
+                    data = 0x1F;
+                    break;
+                case IonType.Int:
+                    data = 0x2F;
+                    break;
+                case IonType.Float:
+                    data = 0x4F;
+                    break;
+                case IonType.Decimal:
+                    data = 0x5F;
+                    break;
+                case IonType.Timestamp:
+                    data = 0x6F;
+                    break;
+                case IonType.Symbol:
+                    data = 0x7F;
+                    break;
+                case IonType.String:
+                    data = 0x8F;
+                    break;
+                case IonType.Clob:
+                    data = 0x9F;
+                    break;
+                case IonType.Blob:
+                    data = 0xAF;
+                    break;
+                case IonType.List:
+                    data = 0xBF;
+                    break;
+                case IonType.Sexp:
+                    data = 0xCF;
+                    break;
+                case IonType.Struct:
+                    data = 0xDF;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+
+            return data;
+        }
     }
 }

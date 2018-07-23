@@ -13,9 +13,10 @@ namespace IonDotnet.Internals
         /// Write a character sequence into the buffer as UTF8 bytes
         /// </summary>
         /// <param name="s">The string</param>
+        /// <param name="length">Supply the length, or -1 if length is not supplied</param>
         /// <returns>Number of bytes written</returns>
-        /// /// <remarks>Commit to write all the characters, and will throw exception if bad things happen</remarks>
-        int WriteUtf8(ReadOnlySpan<char> s);
+        /// <remarks>Commit to write all the characters, and will throw exception if bad things happen</remarks>
+        int WriteUtf8(ReadOnlySpan<char> s, int length = -1);
 
         /// <summary>
         /// Write a byte.
@@ -83,6 +84,13 @@ namespace IonDotnet.Internals
         /// <param name="value">Value to write</param>
         /// <returns>Number of bytes written</returns>
         int WriteVarUint(long value);
+
+        /// <summary>
+        /// Write all annotations to the buffer, and prefix them with the length
+        /// </summary>
+        /// <param name="annotations">List of annotations</param>
+        /// <returns>Number of bytes written</returns>
+        int WriteAnnotationsWithLength(IEnumerable<SymbolToken> annotations);
 
         /// <summary>
         /// Start a new write streak

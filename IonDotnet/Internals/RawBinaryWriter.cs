@@ -3,28 +3,49 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace IonDotnet.Internals
 {
     internal class RawBinaryWriter : IIonWriter
     {
+        private enum ContainerType
+        {
+            Sequence,
+            Struct,
+            Annotation
+        }
+
         private const int IntZeroByte = 0x20;
+
+        //high-bits of different value types
         private const byte PosIntTypeByte = 0x20;
         private const byte NegIntTypeByte = 0x30;
+        private const byte TidListByte = 0xB0;
+        private const byte TidSexpByte = 0xC0;
+        private const byte TidStructByte = 0xD0;
+        private const byte TidTypeDeclByte = 0xE0;
+        private const byte TidStringByte = 0x80;
+
+        private const byte NullNull = 0x0F;
+
+        private const byte BoolFalseByte = 0x10;
+        private const byte BoolTrueByte = 0x11;
 
         private const int DefaultContainerStackSize = 6;
-        private readonly IWriteBuffer _lengthWriteBuffer;
-        private readonly IWriteBuffer _dataWriteBuffer;
+        private readonly IWriteBuffer _lengthBuffer;
+        private readonly IWriteBuffer _dataBuffer;
         private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private SymbolToken _currentFieldSymbolToken;
-        private Stack<(IList<Memory<byte>> sequence, IonType type, long length)> _containerStack;
+        private readonly Stack<(List<Memory<byte>> sequence, ContainerType type, long length)> _containerStack;
+        private readonly List<Memory<byte>> _lengthSegments = new List<Memory<byte>>();
 
-        internal RawBinaryWriter(IWriteBuffer lengthWriteBuffer, IWriteBuffer dataWriteBuffer)
+        internal RawBinaryWriter(IWriteBuffer lengthBuffer, IWriteBuffer dataBuffer)
         {
-            _lengthWriteBuffer = lengthWriteBuffer;
-            _dataWriteBuffer = dataWriteBuffer;
-            _containerStack = new Stack<(IList<Memory<byte>> sequence, IonType type, long length)>(DefaultContainerStackSize);
+            _lengthBuffer = lengthBuffer;
+            _dataBuffer = dataBuffer;
+            _containerStack = new Stack<(List<Memory<byte>> sequence, ContainerType type, long length)>(DefaultContainerStackSize);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -56,16 +77,105 @@ namespace IonDotnet.Internals
 
             if (_annotations.Count > 0)
             {
-                //TODO handle annotations
+                //Since annotations 'wraps' the actual value, we basically won't know the length 
+                //(the upcoming value might be another container) 
+                //so we treat this as another container of type 'annotation'
+
+                //add all written segments to the sequence
+                _dataBuffer.Wrapup();
+
+                //set a new container
+                var newList = new List<Memory<byte>>();
+                _containerStack.Push((newList, ContainerType.Annotation, 0));
+                _dataBuffer.StartStreak(newList);
+
+                var annotLength = _dataBuffer.WriteAnnotationsWithLength(_annotations);
+                UpdateCurrentContainerLength(annotLength);
 
                 _annotations.Clear();
             }
         }
 
+        /// <summary>
+        /// This is called after the value is written, and will check if the written value is wrapped within annotations
+        /// </summary>
+        private void FinishValue()
+        {
+            if (_containerStack.Count > 0)
+            {
+                var containerInfo = _containerStack.Peek();
+                if (containerInfo.type == ContainerType.Annotation)
+                {
+                    PopContainer();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Pop a container from the container stack and link the previous container sequence with the length
+        /// and sequence of the popped container
+        /// </summary>
+        private void PopContainer()
+        {
+            var popped = _containerStack.Pop();
+            var wrappedList = _dataBuffer.Wrapup();
+            Debug.Assert(ReferenceEquals(wrappedList, popped.sequence));
+
+            if (_containerStack.Count == 0) return;
+
+            var outer = _containerStack.Peek();
+
+            //write the tid|len byte and (maybe) the length into the length buffer
+            var idxBeforeWrite = _lengthSegments.Count - 1;
+            _lengthBuffer.StartStreak(_lengthSegments);
+            byte tidByte;
+            switch (popped.type)
+            {
+                case ContainerType.Sequence:
+                    tidByte = TidListByte;
+                    break;
+                case ContainerType.Struct:
+                    tidByte = TidStructByte;
+                    break;
+                case ContainerType.Annotation:
+                    tidByte = TidTypeDeclByte;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            var wholeContainerLength = popped.length;
+            if (wholeContainerLength <= 0xD)
+            {
+                //fit in the tid byte
+                tidByte |= (byte) wholeContainerLength;
+                UpdateCurrentContainerLength(1 + wholeContainerLength);
+                _lengthBuffer.WriteByte(tidByte);
+            }
+            else
+            {
+                tidByte |= IonConstants.LnIsVarLen;
+                _lengthBuffer.WriteByte(tidByte);
+                var lengthBytes = _lengthBuffer.WriteVarUint(popped.length);
+                UpdateCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
+            }
+
+            _lengthBuffer.Wrapup();
+            var idxAfterWrite = _lengthSegments.Count - 1;
+
+            for (var i = idxBeforeWrite; i <= idxAfterWrite; i++)
+            {
+                outer.sequence.Add(_lengthSegments[i]);
+            }
+
+            outer.sequence.AddRange(wrappedList);
+            _dataBuffer.StartStreak(outer.sequence);
+        }
+
         private void WriteVarUint(long value)
         {
             Debug.Assert(value >= 0);
-            var written = _dataWriteBuffer.WriteVarUint(value);
+            var written = _dataBuffer.WriteVarUint(value);
             UpdateCurrentContainerLength(written);
         }
 
@@ -97,15 +207,33 @@ namespace IonDotnet.Internals
 
         public void StepIn(IonType type)
         {
-            throw new NotImplementedException();
+            if (!type.IsContainer()) throw new IonException($"Cannot step into {type}");
+
+            PrepareValue();
+            //wrapup the current writes
+
+            if (_containerStack.Count > 0)
+            {
+                var writeList = _dataBuffer.Wrapup();
+                Debug.Assert(ReferenceEquals(writeList, _containerStack.Peek().sequence));
+            }
+
+            var newList = new List<Memory<byte>>();
+            _containerStack.Push((newList, type == IonType.Struct ? ContainerType.Struct : ContainerType.Sequence, 0));
         }
 
         public void StepOut()
         {
-            throw new NotImplementedException();
+            if (_currentFieldSymbolToken != default) throw new IonException("Cannot step out with field name set");
+            if (_annotations.Count > 0) throw new IonException("Cannot step out with annotations set");
+
+            //TODO check if this container is actually list or struct
+            PopContainer();
+            //clear annotations
+            FinishValue();
         }
 
-        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek().type == IonType.Struct;
+        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek().type == ContainerType.Struct;
 
         public void WriteValue(IIonReader reader)
         {
@@ -119,17 +247,32 @@ namespace IonDotnet.Internals
 
         public void WriteNull()
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            UpdateCurrentContainerLength(1);
+            _dataBuffer.WriteByte(NullNull);
         }
 
         public void WriteNull(IonType type)
         {
-            throw new NotImplementedException();
+            var nullByte = IonConstants.GetNullByte(type);
+            PrepareValue();
+            UpdateCurrentContainerLength(1);
+            _dataBuffer.WriteByte(nullByte);
+            FinishValue();
         }
 
         public void WriteBool(bool value)
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            UpdateCurrentContainerLength(1);
+            if (value)
+            {
+                _dataBuffer.WriteByte(BoolTrueByte);
+            }
+            else
+            {
+                _dataBuffer.WriteByte(BoolFalseByte);
+            }
         }
 
         public void WriteInt(long value)
@@ -138,7 +281,7 @@ namespace IonDotnet.Internals
             if (value == 0)
             {
                 UpdateCurrentContainerLength(1);
-                _dataWriteBuffer.WriteByte(IntZeroByte);
+                _dataBuffer.WriteByte(IntZeroByte);
             }
             else if (value < 0)
             {
@@ -149,8 +292,8 @@ namespace IonDotnet.Internals
                     // XXX we keep 2's complement of Long.MIN_VALUE because it encodes to unsigned 2
                     // ** 63 (0x8000000000000000L)
                     // XXX WriteBuffer.writeUInt64() never looks at sign
-                    _dataWriteBuffer.WriteByte(NegIntTypeByte | 0x8);
-                    _dataWriteBuffer.WriteUint64(value);
+                    _dataBuffer.WriteByte(NegIntTypeByte | 0x8);
+                    _dataBuffer.WriteUint64(value);
                     UpdateCurrentContainerLength(9);
                 }
                 else
@@ -162,8 +305,8 @@ namespace IonDotnet.Internals
             {
                 WriteTypedUInt(PosIntTypeByte, value);
             }
-            
-            //TODO cleanup
+
+            FinishValue();
         }
 
         private void WriteTypedUInt(byte type, long value)
@@ -171,50 +314,50 @@ namespace IonDotnet.Internals
             if (value <= 0xFFL)
             {
                 UpdateCurrentContainerLength(2);
-                _dataWriteBuffer.WriteUint8(type | 0x01);
-                _dataWriteBuffer.WriteUint8(value);
+                _dataBuffer.WriteUint8(type | 0x01);
+                _dataBuffer.WriteUint8(value);
             }
             else if (value <= 0xFFFFL)
             {
                 UpdateCurrentContainerLength(3);
-                _dataWriteBuffer.WriteUint8(type | 0x02);
-                _dataWriteBuffer.WriteUint16(value);
+                _dataBuffer.WriteUint8(type | 0x02);
+                _dataBuffer.WriteUint16(value);
             }
             else if (value <= 0xFFFFFFL)
             {
                 UpdateCurrentContainerLength(4);
-                _dataWriteBuffer.WriteUint8(type | 0x03);
-                _dataWriteBuffer.WriteUint24(value);
+                _dataBuffer.WriteUint8(type | 0x03);
+                _dataBuffer.WriteUint24(value);
             }
             else if (value <= 0xFFFFFFFFL)
             {
                 UpdateCurrentContainerLength(5);
-                _dataWriteBuffer.WriteUint8(type | 0x04);
-                _dataWriteBuffer.WriteUint32(value);
+                _dataBuffer.WriteUint8(type | 0x04);
+                _dataBuffer.WriteUint32(value);
             }
             else if (value <= 0xFFFFFFFFFFL)
             {
                 UpdateCurrentContainerLength(6);
-                _dataWriteBuffer.WriteUint8(type | 0x05);
-                _dataWriteBuffer.WriteUint40(value);
+                _dataBuffer.WriteUint8(type | 0x05);
+                _dataBuffer.WriteUint40(value);
             }
             else if (value <= 0xFFFFFFFFFFFFL)
             {
                 UpdateCurrentContainerLength(7);
-                _dataWriteBuffer.WriteUint8(type | 0x06);
-                _dataWriteBuffer.WriteUint48(value);
+                _dataBuffer.WriteUint8(type | 0x06);
+                _dataBuffer.WriteUint48(value);
             }
             else if (value <= 0xFFFFFFFFFFFFFFL)
             {
                 UpdateCurrentContainerLength(8);
-                _dataWriteBuffer.WriteUint8(type | 0x07);
-                _dataWriteBuffer.WriteUint56(value);
+                _dataBuffer.WriteUint8(type | 0x07);
+                _dataBuffer.WriteUint56(value);
             }
             else
             {
                 UpdateCurrentContainerLength(9);
-                _dataWriteBuffer.WriteUint8(type | 0x08);
-                _dataWriteBuffer.WriteUint64(value);
+                _dataBuffer.WriteUint8(type | 0x08);
+                _dataBuffer.WriteUint64(value);
             }
         }
 
@@ -245,7 +388,33 @@ namespace IonDotnet.Internals
 
         public void WriteString(string value)
         {
-            throw new NotImplementedException();
+            if (value == null)
+            {
+                WriteNull(IonType.String);
+            }
+
+            PrepareValue();
+            var stringByteSize = Encoding.UTF8.GetByteCount(value);
+            //since we know the length of the string upfront, we can just write the length right here
+            var tidByte = TidStringByte;
+            var totalSize = stringByteSize;
+            if (stringByteSize <= 0x0D)
+            {
+                tidByte |= (byte) stringByteSize;
+                _dataBuffer.WriteByte(tidByte);
+                totalSize += 1;
+            }
+            else
+            {
+                tidByte |= IonConstants.LnIsVarLen;
+                _dataBuffer.WriteByte(tidByte);
+                totalSize += 1 + _dataBuffer.WriteVarUint(stringByteSize);
+            }
+
+            _dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
+            UpdateCurrentContainerLength(totalSize);
+
+            FinishValue();
         }
 
         public void WriteBlob(byte[] value)
@@ -268,34 +437,24 @@ namespace IonDotnet.Internals
             throw new NotImplementedException();
         }
 
-        public void SetTypeAnnotations(params string[] annotations)
-        {
-            throw new NotImplementedException();
-        }
+        public void SetTypeAnnotations(params string[] annotations) => throw new NotSupportedException("raw writer does not support setting annotations as text");
 
         public void SetTypeAnnotationSymbols(ArraySegment<SymbolToken> annotations)
         {
-            throw new NotImplementedException();
-        }
+            _annotations.Clear();
 
-        public void AddTypeAnnotation(string annotation)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
+            foreach (var annotation in annotations)
             {
-                _dataWriteBuffer.Dispose();
-                _lengthWriteBuffer.Dispose();
+                _annotations.Add(annotation);
             }
         }
 
+        public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding annotations");
+
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            // this class is supposed to be used a tool for another writer wrapper, which will take care of freeing the resources
+            // so nothing to do here
         }
     }
 }

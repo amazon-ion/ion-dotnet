@@ -26,7 +26,8 @@ namespace IonDotnet.Tests.Internals
         [DataRow("Cũng phải có tý tiếng việt cho nó vui vẻ chứ nhỉ")]
         public void TestWriteShortString(string str)
         {
-            using (var buffer = new CustomSizeWriterBuffer(10))
+            IWriteBuffer buffer;
+            using (buffer = new CustomSizeWriterBuffer(10))
             {
                 var list = new List<Memory<byte>>();
                 buffer.StartStreak(list);

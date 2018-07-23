@@ -109,10 +109,12 @@ namespace IonDotnet.Internals
             _runningIndex = 0;
         }
 
-        public int WriteUtf8(ReadOnlySpan<char> chars)
+        public int WriteUtf8(ReadOnlySpan<char> chars, int length)
         {
             //get the bytecount first
-            var byteCount = Encoding.UTF8.GetByteCount(chars);
+            var byteCount = length == -1 ? Encoding.UTF8.GetByteCount(chars) : length;
+            Debug.Assert(length == -1 || length == Encoding.UTF8.GetByteCount(chars));
+
             if (byteCount > _currentBlock.Length - _runningIndex)
             {
                 WriteCharsSlow(chars, byteCount);
@@ -279,10 +281,6 @@ namespace IonDotnet.Internals
             _writtenSoFar += 7;
         }
 
-        /// <summary>
-        /// Write all <paramref name="bytes"/> to the buffer
-        /// </summary>
-        /// <param name="bytes">Bytes to write</param>
         public void WriteBytes(Span<byte> bytes)
         {
             var bytesToWrite = bytes.Length;
@@ -317,7 +315,7 @@ namespace IonDotnet.Internals
          */
 
         private const int IntBitsPerOctet = 7;
-        private const int VarUintUnitFlag = 0b01111111;
+        private const int VarUintUnitFlag = 0b_0111_1111;
         private const int VarUintShift8Unit = 8 * IntBitsPerOctet;
         private const int VarUintShift7Unit = 7 * IntBitsPerOctet;
         private const int VarUintShift6Unit = 6 * IntBitsPerOctet;
@@ -335,7 +333,7 @@ namespace IonDotnet.Internals
         private const long VarUintShift2UnitMinValue = 1L << VarUintShift2Unit;
         private const long VarUintShift1UnitMinValue = 1L << VarUintShift1Unit;
 
-        private const int VarIntFinalOctetMask = 0b10000000;
+        private const int VarIntFinalOctetMask = 0b_1000_0000;
 
         public int WriteVarUint(long value)
         {
@@ -367,6 +365,29 @@ namespace IonDotnet.Internals
                     : WriteVarUIntSlow(value);
 
             return WriteVarUIntSlow(value);
+        }
+
+        public int WriteAnnotationsWithLength(IEnumerable<SymbolToken> annotations)
+        {
+            //remember the current position to write the length
+            //annotation length MUST fit in 1 byte
+            if (_runningIndex == _currentBlock.Length)
+            {
+                AllocateNewBlock();
+            }
+
+            var lengthPosIdx = _runningIndex++;
+            var lengthPosBlock = _currentBlock;
+            var annotLength = 0;
+            foreach (var symbol in annotations)
+            {
+                annotLength += WriteVarUint(symbol.Sid);
+                if (annotLength > IonConstants.MaxAnnotationLength) throw new IonException($"Annotation length too large: {annotLength}");
+            }
+
+            _writtenSoFar += annotLength + 1;
+            lengthPosBlock[lengthPosIdx] = (byte) ((annotLength & VarUintUnitFlag) | VarIntFinalOctetMask);
+            return annotLength + 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
