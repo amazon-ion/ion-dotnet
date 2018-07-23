@@ -10,9 +10,9 @@ namespace IonDotnet.Tests.Internals
     [TestClass]
     public class BinaryWriterBufferTest
     {
-        private class CustomSizeWriterBuffer : BinaryWriterBuffer
+        private class CustomSizeWriterBuffer : PagedWriterBuffer
         {
-            public CustomSizeWriterBuffer(int blockSize) : base(blockSize)
+            public CustomSizeWriterBuffer(int intendedBlockSize) : base(intendedBlockSize)
             {
             }
         }
@@ -28,9 +28,10 @@ namespace IonDotnet.Tests.Internals
         {
             using (var buffer = new CustomSizeWriterBuffer(10))
             {
-                buffer.WriteChars(str);
-                var sequence = buffer.Wrapup();
-                AssertByteSequence(str, sequence);
+                var list = new List<Memory<byte>>();
+                buffer.StartStreak(list);
+                buffer.WriteUtf8(str.AsSpan());
+                AssertByteSequence(str, buffer.Wrapup());
             }
         }
 

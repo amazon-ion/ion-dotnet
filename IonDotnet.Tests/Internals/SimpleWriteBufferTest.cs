@@ -13,7 +13,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         [DataRow("a")]
         [DataRow("abcdefddshgrhgldutrihfdjlbdjksfbaskhdgasygfadksfhlsdfjkldjasdjladhoafhydoshv")]
-//        [DataRow("😀 😁 😂 🤣 😃 😄 😅 😆 😉")]
+        [DataRow("😀 😁 😂 🤣 😃 😄 😅 😆 😉")]
         [DataRow("Viết thử tý tiếng việt xem nó có hoạt động không, mà chắc là chạy thôi ahihi")]
         [DataRow(" Բ Գ Դ Ե Զ Է Ը Թ Ժ Ի Լ Խ Ծ Կ Հ Ձ Ղ Ճ Մ Յ Ն Շ Ո Չ Պ Ջ Ռ Ս Վ Տ Ր Ց Ւ ")]
         [DataRow("㈍ ㈎ ㈏ ㈐ ㈑ ㈒ ㈓ ㈔ ㈕ ㈖ ㈗ ㈘ ㈙ ㈚ ㈛ ㈜ ㈠ ㈡ ㈢ ㈣ ㈤ ㈥ ㈦ ㈧ ㈨ ㈩ ㈪ ㈫ ㈬ ㈭ ㈮ ㈯ ㈰ ㈱ ㈲")]
@@ -22,6 +22,8 @@ namespace IonDotnet.Tests.Internals
             IWriteBuffer writerBuffer;
             using (writerBuffer = new SimpleWriteBuffer())
             {
+                var list = new List<Memory<byte>>();
+                writerBuffer.StartStreak(list);
                 writerBuffer.WriteUtf8(str);
                 AssertString(str, writerBuffer.Wrapup());
             }

@@ -11,7 +11,7 @@
     public readonly struct SymbolToken
     {
         public const int UnknownSid = -1;
-        public static readonly SymbolToken None = default(SymbolToken);
+        public static readonly SymbolToken None = default;
         public static readonly SymbolToken[] EmptyArray = new SymbolToken[0];
 
         private readonly int _sid;
