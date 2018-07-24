@@ -21,8 +21,11 @@ namespace IonDotnet.Bench
             writer.SetFieldName("strings");
             writer.WriteString("this is what we want 😂");
 
+            writer.SetFieldName("number_struct");
+            writer.StepIn(IonType.Struct);
             writer.SetFieldName("number");
             writer.WriteInt(323);
+            writer.StepOut();
 
             writer.StepOut();
             writer.Finish();
@@ -31,22 +34,26 @@ namespace IonDotnet.Bench
             Console.WriteLine(format);
 
             var reader = new UserBinaryReader(new MemoryStream(bytes));
-            reader.Next();
+            reader.MoveNext();
             reader.StepIn();
-            
-            reader.Next();
+
+            reader.MoveNext();
             Console.WriteLine(reader.CurrentFieldName);
             Console.WriteLine(reader.CurrentType);
             Console.WriteLine(reader.BoolValue());
             Console.WriteLine();
 
-            reader.Next();
+            reader.MoveNext();
             Console.WriteLine(reader.CurrentFieldName);
             Console.WriteLine(reader.CurrentType);
             Console.WriteLine(reader.StringValue());
             Console.WriteLine();
-            
-            reader.Next();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            reader.StepIn();
+            reader.MoveNext();
             Console.WriteLine(reader.CurrentFieldName);
             Console.WriteLine(reader.CurrentType);
             Console.WriteLine(reader.IntValue());

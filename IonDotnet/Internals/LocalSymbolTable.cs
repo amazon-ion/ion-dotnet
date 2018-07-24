@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using IonDotnet.Internals.Binary;
@@ -29,6 +30,18 @@ namespace IonDotnet.Internals
                 _mySymbolNames = symbolList;
             }
 
+            _symbolMap = BuildSymbolMap();
+        }
+
+        private LocalSymbolTable(LocalSymbolTable copyFrom, int maxId)
+        {
+            IsReadOnly = false;
+            _firstLocalId = copyFrom._firstLocalId;
+            _imports = copyFrom._imports;
+            var symbolCount = maxId - _imports.MaxId;
+
+            //copy list
+            _mySymbolNames = copyFrom._mySymbolNames.Take(symbolCount).ToList();
             _symbolMap = BuildSymbolMap();
         }
 
@@ -85,7 +98,23 @@ namespace IonDotnet.Internals
 
         public SymbolToken Intern(string text)
         {
-            throw new NotImplementedException();
+            var token = Find(text);
+            if (token != default) return token;
+            //TODO validate symbol
+
+            var sid = PutSymbol(text);
+            return new SymbolToken(text, sid);
+        }
+
+        private int PutSymbol(string text)
+        {
+            if (IsReadOnly) throw new ReadOnlyException("Table is read-only");
+            var sid = _mySymbolNames.Count + _firstLocalId;
+            Debug.Assert(sid == MaxId + 1);
+            Debug.Assert(!_symbolMap.ContainsKey(text));
+            _symbolMap.Add(text, sid);
+            _mySymbolNames.Add(text);
+            return sid;
         }
 
         public SymbolToken Find(string text)
@@ -95,7 +124,11 @@ namespace IonDotnet.Internals
             var token = _imports.Find(text);
             if (token != SymbolToken.None) return token;
 
-            return _symbolMap.TryGetValue(text, out var sid) ? new SymbolToken(text, sid) : SymbolToken.None;
+            var found = _symbolMap.TryGetValue(text, out var sid);
+            if (!found) return default;
+
+            Debug.Assert(text == _mySymbolNames[sid - _firstLocalId]);
+            return new SymbolToken(text, sid);
         }
 
         public int FindSymbol(string text)
@@ -144,7 +177,7 @@ namespace IonDotnet.Internals
             symbolList = new List<string>();
             if (!isOnStruct)
             {
-                reader.Next();
+                reader.MoveNext();
             }
 
             Debug.Assert(reader.CurrentType == IonType.Struct);
@@ -153,7 +186,7 @@ namespace IonDotnet.Internals
             reader.StepIn();
             var foundImport = false;
             IonType fieldType;
-            while ((fieldType = reader.Next()) != IonType.None)
+            while ((fieldType = reader.MoveNext()) != IonType.None)
             {
                 if (reader.CurrentIsNull) continue;
 
@@ -171,7 +204,8 @@ namespace IonDotnet.Internals
                             importList = new List<ISymbolTable>();
                         }
 
-                        throw new NotImplementedException();
+                        //TODO what's next?
+                        break;
                     case SystemSymbols.SymbolsSid:
                         if (foundImport) throw new IonException("Multiple symbols field");
                         foundImport = true;
@@ -183,7 +217,7 @@ namespace IonDotnet.Internals
             }
 
             reader.StepOut();
-            return new LocalSymbolTableImports(importList);
+            return new LocalSymbolTableImports(SharedSymbolTable.GetSystem(1), importList);
         }
 
         private static void ReadSymbolList(IIonReader reader, ICollection<string> symbolList)
@@ -191,7 +225,7 @@ namespace IonDotnet.Internals
             reader.StepIn();
 
             IonType type;
-            while ((type = reader.Next()) != IonType.None)
+            while ((type = reader.MoveNext()) != IonType.None)
             {
                 var text = type == IonType.String ? reader.StringValue() : null;
                 symbolList.Add(text);
@@ -205,5 +239,7 @@ namespace IonDotnet.Internals
             var imports = ReadLocalSymbolTableImports(reader, isOnStruct, out var symbolList);
             return new LocalSymbolTable(imports, symbolList, true);
         }
+
+        public ISymbolTable Copy() => new LocalSymbolTable(this, MaxId);
     }
 }

@@ -13,14 +13,14 @@ namespace IonDotnet
         /// Positions this reader on the next sibling after the current value
         /// </summary>
         /// <returns>Type of the current value</returns>
-        IonType Next();
+        IonType MoveNext();
 
         /// <summary>
         /// Positions the reader just before the contents of the current value, which must be a container (list, sexp, or struct).
         /// </summary>
         /// <exception cref="InvalidOperationException">When the current value is not an <see cref="IIonContainer"/></exception>
         /// <remarks>
-        /// There's no current value immediately after stepping in, so the next thing you'll want to do is call <see cref="Next"/>
+        /// There's no current value immediately after stepping in, so the next thing you'll want to do is call <see cref="MoveNext"/>
         /// to move onto the first child value (or learn that there's not one).
         /// </remarks>
         void StepIn();
@@ -30,7 +30,7 @@ namespace IonDotnet
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
         /// <remarks>
-        /// There's no current value immediately after stepping out, so the next thing you'll want to do is call <see cref="Next"/>
+        /// There's no current value immediately after stepping out, so the next thing you'll want to do is call <see cref="MoveNext"/>
         /// to move onto the following value
         /// </remarks>
         void StepOut();

@@ -701,7 +701,7 @@ namespace IonDotnet.Internals.Binary
             return bytes;
         }
 
-        public virtual IonType Next()
+        public virtual IonType MoveNext()
         {
             if (_eof) return IonType.None;
             if (_moveNextNeeded)

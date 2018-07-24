@@ -103,7 +103,7 @@ namespace IonDotnet.Internals.Binary
         /// this computes the actual move to the next state and
         /// update the current read value accordingly
         /// </summary>
-        public IonType Next()
+        public IonType MoveNext()
         {
             if (!HasNext()) return IonType.None;
             var newState = _currentState;

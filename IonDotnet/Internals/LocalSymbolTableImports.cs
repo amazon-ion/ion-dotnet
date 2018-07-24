@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 
 namespace IonDotnet.Internals
@@ -10,31 +11,57 @@ namespace IonDotnet.Internals
     internal sealed class LocalSymbolTableImports
     {
         private readonly ISymbolTable[] _imports;
+        private readonly int[] _baseIds;
+
         public int MaxId { get; }
 
-        public LocalSymbolTableImports(IList<ISymbolTable> imports)
+        public LocalSymbolTableImports(ISymbolTable systemTable, IList<ISymbolTable> imports)
         {
+            if (!systemTable.IsSystem) throw new ArgumentException("Not a system table", nameof(systemTable));
+
             var importCounts = imports?.Count ?? 0;
             _imports = new ISymbolTable[importCounts + 1];
-            _imports[0] = SharedSymbolTable.GetSystem(1);
+            _imports[0] = systemTable;
+            var startIdx = _imports?[0]?.IsSystem == true ? 1 : 0;
+
 
             if (imports != null)
             {
-                for (var i = 0; i < importCounts; i++)
+                var ii = 1;
+                for (var i = startIdx; i < importCounts; i++, ii++)
                 {
                     var symtab = imports[i];
-                    if (symtab.IsLocal)
-                    {
-                        //TODO handle local imports
-                        throw new NotImplementedException();
-                    }
+                    if (symtab.IsSystem) throw new IonException("System table cannot be imported");
 
-                    _imports[i + 1] = symtab;
+                    if (symtab is LocalSymbolTable localSymtab)
+                    {
+                        _imports[ii] = localSymtab.IsReadOnly ? localSymtab : localSymtab.Copy();
+                    }
+                    else
+                    {
+                        _imports[ii] = symtab;
+                    }
                 }
             }
 
-            // TODO fix this asap
-            MaxId = _imports[0].MaxId;
+            _baseIds = new int[_imports.Length];
+            MaxId = PrepBaseSids(_baseIds, _imports);
+        }
+
+        private static int PrepBaseSids(int[] baseSids, IReadOnlyList<ISymbolTable> imports)
+        {
+            Debug.Assert(imports != null && imports.Count > 0);
+            Debug.Assert(imports[0].IsSystem);
+
+            baseSids[0] = 0;
+            var total = imports[0].MaxId;
+            for (var i = 1; i < imports.Count; i++)
+            {
+                baseSids[i] = total;
+                total += imports[i].MaxId;
+            }
+
+            return total;
         }
 
         /// <summary>
@@ -65,20 +92,33 @@ namespace IonDotnet.Internals
         /// <returns>The token</returns>
         public SymbolToken Find(string text)
         {
-            //TODO implements this properly
+            for (var i = 0; i < _imports.Length; i++)
+            {
+                var token = _imports[i].Find(text);
+                if (token == default) continue;
+
+                return new SymbolToken(text, token.Sid + _baseIds[i]);
+            }
+
             return SymbolToken.None;
         }
 
-        public int FindSymbol(string text)
-        {
-            //TODO implements this properly
-            return SymbolToken.UnknownSid;
-        }
+        public int FindSymbol(string text) => Find(text).Sid;
 
         public string FindKnownSymbol(int sid)
         {
-            //TODO implements this properly
-            return string.Empty;
+            if (sid > MaxId) return null;
+
+            int i, prevBaseSid = 0;
+            for (i = 0; i < _imports.Length; i++)
+            {
+                var baseSid = _baseIds[i];
+                if (sid <= baseSid) break;
+                prevBaseSid = baseSid;
+            }
+
+            var importScopedSid = sid - prevBaseSid;
+            return _imports[i - 1].FindKnownSymbol(importScopedSid);
         }
     }
 }

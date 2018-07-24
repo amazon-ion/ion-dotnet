@@ -19,14 +19,14 @@ namespace IonDotnet.Tests.Internals
 
             using (var reader = new UserBinaryReader(new MemoryStream(trivial)))
             {
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Struct, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
-                Assert.AreEqual(IonType.None, reader.Next());
+                Assert.AreEqual(IonType.None, reader.MoveNext());
                 for (var i = 0; i < 10; i++)
                 {
-                    Assert.AreEqual(IonType.None, reader.Next());
+                    Assert.AreEqual(IonType.None, reader.MoveNext());
                 }
 
                 reader.StepOut();
@@ -41,15 +41,15 @@ namespace IonDotnet.Tests.Internals
             var oneBool = DirStructure.ReadDataFile("onebool.bindat");
             using (var reader = new UserBinaryReader(new MemoryStream(oneBool)))
             {
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Struct, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Bool, reader.CurrentType);
                 Assert.AreEqual("yolo", reader.CurrentFieldName);
                 Assert.AreEqual(true, reader.BoolValue());
-                Assert.AreEqual(IonType.None, reader.Next());
+                Assert.AreEqual(IonType.None, reader.MoveNext());
                 reader.StepOut();
                 Assert.AreEqual(0, reader.CurrentDepth);
             }
@@ -69,42 +69,42 @@ namespace IonDotnet.Tests.Internals
 
             using (var reader = new UserBinaryReader(new MemoryStream(flatScalar)))
             {
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Struct, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual("boolean", reader.CurrentFieldName);
                 Assert.AreEqual(IonType.Bool, reader.CurrentType);
                 Assert.IsTrue(reader.BoolValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual("str", reader.CurrentFieldName);
                 Assert.AreEqual(IonType.String, reader.CurrentType);
                 Assert.AreEqual("yes", reader.StringValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual("integer", reader.CurrentFieldName);
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(123456, reader.IntValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual("longInt", reader.CurrentFieldName);
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual((long) int.MaxValue * 2, reader.LongValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual("bigInt", reader.CurrentFieldName);
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(BigInteger.Multiply(new BigInteger(long.MaxValue), 10), reader.BigIntegerValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual("double", reader.CurrentFieldName);
                 Assert.AreEqual(IonType.Float, reader.CurrentType);
                 Assert.AreEqual(2213.1267567, reader.DoubleValue());
 
-                Assert.AreEqual(IonType.None, reader.Next());
+                Assert.AreEqual(IonType.None, reader.MoveNext());
                 reader.StepOut();
                 Assert.AreEqual(0, reader.CurrentDepth);
             }
@@ -118,24 +118,24 @@ namespace IonDotnet.Tests.Internals
 
             using (var reader = new UserBinaryReader(new MemoryStream(flatListInt)))
             {
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.List, reader.CurrentType);
                 reader.StepIn();
                 Assert.AreEqual(1, reader.CurrentDepth);
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(123, reader.IntValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(456, reader.IntValue());
 
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual(789, reader.IntValue());
 
-                Assert.AreEqual(IonType.None, reader.Next());
+                Assert.AreEqual(IonType.None, reader.MoveNext());
                 reader.StepOut();
                 Assert.AreEqual(0, reader.CurrentDepth);
             }
@@ -152,9 +152,9 @@ namespace IonDotnet.Tests.Internals
             var converter = new SaveAnnotationsConverter();
             using (var reader = new UserBinaryReader(new MemoryStream(annotSingleField), converter))
             {
-                reader.Next();
+                reader.MoveNext();
                 reader.StepIn();
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Int, reader.CurrentType);
                 Assert.AreEqual("withannot", reader.CurrentFieldName);
                 Assert.AreEqual(18, reader.IntValue());
@@ -171,9 +171,9 @@ namespace IonDotnet.Tests.Internals
 
             using (var reader = new UserBinaryReader(new MemoryStream(data)))
             {
-                reader.Next();
+                reader.MoveNext();
                 reader.StepIn();
-                reader.Next();
+                reader.MoveNext();
                 Assert.AreEqual(IonType.Symbol, reader.CurrentType);
                 Assert.AreEqual("single_symbol", reader.CurrentFieldName);
                 Assert.AreEqual("something", reader.StringValue());

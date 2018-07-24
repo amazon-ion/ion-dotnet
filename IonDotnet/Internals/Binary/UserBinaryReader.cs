@@ -16,7 +16,7 @@ namespace IonDotnet.Internals.Binary
         {
         }
 
-        public override IonType Next()
+        public override IonType MoveNext()
         {
             if (!HasNext()) return IonType.None;
             _moveNextNeeded = true;

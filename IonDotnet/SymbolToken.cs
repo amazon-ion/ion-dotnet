@@ -10,8 +10,16 @@
     /// </remarks>
     public readonly struct SymbolToken
     {
+        /// <summary>
+        /// The default Sid, which is unknown
+        /// </summary>
         public const int UnknownSid = -1;
+
+        /// <summary>
+        /// The default value, corresponds to not_found/unknown
+        /// </summary>
         public static readonly SymbolToken None = default;
+
         public static readonly SymbolToken[] EmptyArray = new SymbolToken[0];
 
         private readonly int _sid;

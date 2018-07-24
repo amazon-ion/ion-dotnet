@@ -41,7 +41,7 @@ namespace IonDotnet
         /// If there's no current value then this method calls {@link IonReader#next()} to get going.
         /// </summary>
         /// <param name="reader">Ion reader</param>
-        /// <remarks>This method iterates until <see cref="IIonReader.Next"/> returns null and does not Step out</remarks>
+        /// <remarks>This method iterates until <see cref="IIonReader.MoveNext"/> returns null and does not Step out</remarks>
         void WriteValues(IIonReader reader);
 
         /// <summary>

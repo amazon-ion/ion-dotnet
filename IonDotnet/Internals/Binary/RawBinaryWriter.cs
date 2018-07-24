@@ -28,6 +28,8 @@ namespace IonDotnet.Internals.Binary
         private const byte TidStructByte = 0xD0;
         private const byte TidTypeDeclByte = 0xE0;
         private const byte TidStringByte = 0x80;
+        private const byte ClobType = (byte) 0x90;
+        private const byte BlobByteType = (byte) 0xA0;
 
         private const byte NullNull = 0x0F;
 
@@ -382,7 +384,47 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteInt(BigInteger value)
         {
-            throw new NotImplementedException();
+            if (value >= long.MinValue && value <= long.MaxValue)
+            {
+                WriteInt((long) value);
+                return;
+            }
+
+            PrepareValue();
+
+            var type = PosIntTypeByte;
+            if (value < 0)
+            {
+                type = NegIntTypeByte;
+                value = BigInteger.Negate(value);
+            }
+
+            //TODO is this different than java, is there a no-alloc way?
+            var buffer = value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            WriteTypedBytes(type, buffer);
+
+            FinishValue();
+        }
+
+        /// <summary>
+        /// Write raw bytes with a type.
+        /// </summary>
+        /// <remarks>This does not do <see cref="PrepareValue"/></remarks> or <see cref="FinishValue"/>
+        private void WriteTypedBytes(byte type, Span<byte> data)
+        {
+            var totalLength = 1;
+            if (data.Length < 0xD)
+            {
+                _dataBuffer.WriteUint8(type | (byte) data.Length);
+            }
+            else
+            {
+                _dataBuffer.WriteUint8(type | IonConstants.LnIsVarLen);
+                totalLength += _dataBuffer.WriteVarUint(data.Length);
+            }
+
+            UpdateCurrentContainerLength(totalLength);
+            _dataBuffer.WriteBytes(data);
         }
 
         public void WriteFloat(double value)
@@ -438,12 +480,28 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteBlob(byte[] value)
         {
-            throw new NotImplementedException();
+            if (value == null)
+            {
+                WriteNull(IonType.Blob);
+                return;
+            }
+
+            WriteBlob(new ArraySegment<byte>(value));
         }
 
         public void WriteBlob(ArraySegment<byte> value)
         {
-            throw new NotImplementedException();
+            if (value == null)
+            {
+                WriteNull(IonType.Blob);
+                return;
+            }
+
+            PrepareValue();
+
+            WriteTypedBytes(BlobByteType, value);
+
+            FinishValue();
         }
 
         public void WriteClob(byte[] value)

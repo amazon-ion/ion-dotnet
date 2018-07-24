@@ -63,7 +63,7 @@ namespace IonDotnet.Internals.Binary
                     }
                 }
             }
-            
+
             public IReadOnlyDictionary<string, int> SymbolResolver => _dict;
         }
 
@@ -377,15 +377,9 @@ namespace IonDotnet.Internals.Binary
                 _writer._localsLocked = true;
             }
 
-            public override ISymbolTable GetSystemTable()
-            {
-                throw new NotImplementedException();
-            }
+            public override ISymbolTable GetSystemTable() => SharedSymbolTable.GetSystem(1);
 
-            public override IEnumerable<ISymbolTable> GetImportedTables()
-            {
-                throw new NotImplementedException();
-            }
+            public override IEnumerable<ISymbolTable> GetImportedTables() => _writer._importContext.Parents;
 
             public override int GetImportedMaxId() => _writer._importContext.LocalSidStart - 1;
 
@@ -396,7 +390,7 @@ namespace IonDotnet.Internals.Binary
                 var existing = Find(text);
                 if (existing != default) return existing;
                 if (IsReadOnly) throw new ReadOnlyException("Table is read-only");
-                
+
                 return _writer.Intern(text);
             }
 
