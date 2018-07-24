@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using IonDotnet.Utils;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     internal class ManagedBinaryWriter : IIonWriter
     {
@@ -26,8 +28,9 @@ namespace IonDotnet.Internals
 
         private class ImportedSymbolsContext
         {
+            private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
+
             public readonly List<ISymbolTable> Parents;
-            public readonly IDictionary<string, int> SymbolResolver = new Dictionary<string, int>();
             public readonly int LocalSidStart;
 
             public ImportedSymbolsContext(IReadOnlyCollection<ISymbolTable> imports)
@@ -36,7 +39,7 @@ namespace IonDotnet.Internals
                 //add all the system symbols
                 foreach (var systemSymbolToken in Symbols.SystemSymbolTokens)
                 {
-                    SymbolResolver.Add(systemSymbolToken.Text, systemSymbolToken.Sid);
+                    _dict.Add(systemSymbolToken.Text, systemSymbolToken.Sid);
                 }
 
                 LocalSidStart = SystemSymbols.Ion10MaxId + 1;
@@ -51,23 +54,25 @@ namespace IonDotnet.Internals
                     while (declaredSymbols.HasNext())
                     {
                         var text = declaredSymbols.Next();
-                        if (text != null && !SymbolResolver.ContainsKey(text))
+                        if (text != null && !_dict.ContainsKey(text))
                         {
-                            SymbolResolver.Add(text, LocalSidStart);
+                            _dict.Add(text, LocalSidStart);
                         }
 
                         LocalSidStart++;
                     }
                 }
             }
+            
+            public IReadOnlyDictionary<string, int> SymbolResolver => _dict;
         }
 
         private readonly IDictionary<string, int> _locals;
-        private bool _localsLocked = false;
+        private bool _localsLocked;
 
         private readonly RawBinaryWriter _symbolsWriter;
         private readonly RawBinaryWriter _userWriter;
-
+        private readonly LocalSymbolTableView _localSymbolTableView;
         private readonly ImportedSymbolsContext _importContext;
 
         private readonly Stream _outputStream;
@@ -77,12 +82,14 @@ namespace IonDotnet.Internals
         public ManagedBinaryWriter(Stream outputStream, IReadOnlyCollection<ISymbolTable> importedTables)
         {
             if (!outputStream.CanWrite) throw new ArgumentException("Output stream must be writable", nameof(outputStream));
+
             _outputStream = outputStream;
+            _localSymbolTableView = new LocalSymbolTableView(this);
 
             var lengthWriterBuffer = new PagedWriter512Buffer();
-
             _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
             _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
+
             _importContext = new ImportedSymbolsContext(importedTables);
             _locals = new Dictionary<string, int>();
         }
@@ -184,7 +191,7 @@ namespace IonDotnet.Internals
             throw new NotImplementedException();
         }
 
-        public ISymbolTable SymbolTable { get; }
+        public ISymbolTable SymbolTable => _localSymbolTableView;
 
         public void Flush()
         {
@@ -313,22 +320,22 @@ namespace IonDotnet.Internals
 
         public void WriteBlob(byte[] value)
         {
-            throw new NotImplementedException();
+            _userWriter.WriteBlob(value);
         }
 
         public void WriteBlob(ArraySegment<byte> value)
         {
-            throw new NotImplementedException();
+            _userWriter.WriteBlob(value);
         }
 
         public void WriteClob(byte[] value)
         {
-            throw new NotImplementedException();
+            _userWriter.WriteClob(value);
         }
 
         public void WriteClob(ArraySegment<byte> value)
         {
-            throw new NotImplementedException();
+            _userWriter.WriteClob(value);
         }
 
         public void SetTypeAnnotations(params string[] annotations)
@@ -345,6 +352,78 @@ namespace IonDotnet.Internals
         {
             var token = Intern(annotation);
             _userWriter.AddTypeAnnotationSymbol(token);
+        }
+
+        /// <summary>
+        /// Reflects the 'view' of the local symbol used in this writer
+        /// </summary>
+        private class LocalSymbolTableView : AbstractSymbolTable
+        {
+            private readonly ManagedBinaryWriter _writer;
+
+            public LocalSymbolTableView(ManagedBinaryWriter writer) : base(string.Empty, 0)
+            {
+                _writer = writer;
+            }
+
+            public override bool IsLocal => true;
+            public override bool IsShared => false;
+            public override bool IsSubstitute => false;
+            public override bool IsSystem => false;
+            public override bool IsReadOnly => _writer._localsLocked;
+
+            public override void MakeReadOnly()
+            {
+                _writer._localsLocked = true;
+            }
+
+            public override ISymbolTable GetSystemTable()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override IEnumerable<ISymbolTable> GetImportedTables()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override int GetImportedMaxId() => _writer._importContext.LocalSidStart - 1;
+
+            public override int MaxId => GetImportedMaxId() + _writer._locals.Count;
+
+            public override SymbolToken Intern(string text)
+            {
+                var existing = Find(text);
+                if (existing != default) return existing;
+                if (IsReadOnly) throw new ReadOnlyException("Table is read-only");
+                
+                return _writer.Intern(text);
+            }
+
+            public override SymbolToken Find(string text)
+            {
+                if (text == null) throw new ArgumentNullException(nameof(text));
+
+                var found = _writer._importContext.SymbolResolver.TryGetValue(text, out var sid);
+                if (found) return new SymbolToken(text, sid);
+                found = _writer._locals.TryGetValue(text, out sid);
+
+                return found ? new SymbolToken(text, sid) : default;
+            }
+
+            public override string FindKnownSymbol(int id)
+            {
+                foreach (var symbolTable in _writer._importContext.Parents)
+                {
+                    var text = symbolTable.FindKnownSymbol(id);
+                    if (text == null) continue;
+                    return text;
+                }
+
+                return _writer._locals.FirstOrDefault(kvp => kvp.Value == id).Key;
+            }
+
+            public override IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_writer._locals.Keys);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using IonDotnet.Systems;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     internal class PrivateIonBinaryWriterBuilder : IonBinaryWriterBuilder
     {

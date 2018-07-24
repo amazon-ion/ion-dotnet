@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using IonDotnet.Internals;
+using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

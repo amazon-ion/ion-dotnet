@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     internal class RawBinaryWriter : IPrivateWriter
     {

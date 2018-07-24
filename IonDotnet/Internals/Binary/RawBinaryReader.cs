@@ -1,14 +1,14 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 using System.Text;
 using IonDotnet.Conversions;
 using IonDotnet.Systems;
-using static System.Diagnostics.Debug;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     /// <inheritdoc />
     /// <summary>
@@ -126,7 +126,7 @@ namespace IonDotnet.Internals
                     default:
                         throw new IonException("should not happen");
                     case State.BeforeField:
-                        Assert(_valueFieldId == SymbolToken.UnknownSid);
+                        Debug.Assert(_valueFieldId == SymbolToken.UnknownSid);
                         _valueFieldId = ReadFieldId();
                         if (_valueFieldId == IonConstants.Eof)
                         {
@@ -157,7 +157,7 @@ namespace IonDotnet.Internals
                             //bvm tid happens to be typedecl
                             if (_valueLength == BinaryVersionMarkerLen)
                             {
-                                Assert(_valueTid == BinaryVersionMarkerTid);
+                                Debug.Assert(_valueTid == BinaryVersionMarkerTid);
                                 // this isn't valid for any type descriptor except the first byte
                                 // of a 4 byte version marker - so lets read the rest
                                 LoadVersionMarker();
@@ -584,7 +584,7 @@ namespace IonDotnet.Internals
         /// <exception cref="UnexpectedEofException">If EOF occurs before all bytes are read</exception>
         private void ReadAll(ArraySegment<byte> buffer, int length)
         {
-            Assert(length <= buffer.Count);
+            Debug.Assert(length <= buffer.Count);
             var offset = buffer.Offset;
             while (length > 0)
             {
@@ -604,7 +604,7 @@ namespace IonDotnet.Internals
         /// <param name="length">Amount of bytes to read</param>
         private void ReadAll(Span<byte> bufferSpan, int length)
         {
-            Assert(length <= bufferSpan.Length);
+            Debug.Assert(length <= bufferSpan.Length);
             while (length > 0)
             {
                 var amount = _input.Read(bufferSpan.Slice(0, length));
@@ -717,7 +717,7 @@ namespace IonDotnet.Internals
             }
 
             _moveNextNeeded = true;
-            Assert(_valueType != IonType.None || _eof);
+            Debug.Assert(_valueType != IonType.None || _eof);
             return _valueType;
         }
 
@@ -776,7 +776,7 @@ namespace IonDotnet.Internals
 
                 if (distance > 0)
                 {
-                    Assert(distance < int.MaxValue);
+                    Debug.Assert(distance < int.MaxValue);
                     Skip((int) distance);
                 }
             }

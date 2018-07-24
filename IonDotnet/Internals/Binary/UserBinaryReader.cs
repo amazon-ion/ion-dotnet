@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using IonDotnet.Conversions;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     /// <inheritdoc />
     /// <summary>

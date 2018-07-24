@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Internals
 {

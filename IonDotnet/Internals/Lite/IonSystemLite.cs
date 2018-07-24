@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using IonDotnet.Internals.Binary;
 using IonDotnet.Systems;
 
 namespace IonDotnet.Internals.Lite

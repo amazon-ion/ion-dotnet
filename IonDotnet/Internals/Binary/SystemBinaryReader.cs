@@ -4,7 +4,7 @@ using System.IO;
 using System.Numerics;
 using IonDotnet.Conversions;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     /// <inheritdoc />
     /// <summary>

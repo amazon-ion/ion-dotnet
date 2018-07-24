@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using static System.Diagnostics.Debug;
 
 // ReSharper disable InconsistentNaming
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
     /// <inheritdoc />
     /// <summary>
@@ -126,7 +126,7 @@ namespace IonDotnet.Internals
                     LoadStateData(newState);
                     break;
                 case S_NAME:
-                    Assert(HasVersion());
+                    Debug.Assert(HasVersion());
                     newState = S_VERSION;
                     LoadStateData(newState);
                     break;
@@ -151,7 +151,7 @@ namespace IonDotnet.Internals
                     // we only need to get the import list once, which we
                     // do as we step into the import list, so it should
                     // be waiting for us here.
-                    Assert(_importTablesIterator != null);
+                    Debug.Assert(_importTablesIterator != null);
                     newState = NextImport();
                     break;
                 case S_IN_IMPORT_STRUCT:
@@ -178,11 +178,11 @@ namespace IonDotnet.Internals
                     // no change here - we just bump up against this local eof
                     break;
                 case S_AFTER_IMPORT_LIST:
-                    Assert(_symbolTable.GetImportedMaxId() < _maxId);
+                    Debug.Assert(_symbolTable.GetImportedMaxId() < _maxId);
                     newState = S_SYMBOL_LIST;
                     break;
                 case S_SYMBOL_LIST:
-                    Assert(_symbolTable.GetImportedMaxId() < _maxId);
+                    Debug.Assert(_symbolTable.GetImportedMaxId() < _maxId);
                     newState = StateFollowingLocalSymbols();
                     break;
                 case S_IN_SYMBOLS:
@@ -191,7 +191,7 @@ namespace IonDotnet.Internals
                 // is at the first symbol so we just fall through to and let the S_SYMBOL
                 // state do it's thing (which it will do every time we move to the next symbol)             
                 case S_SYMBOL:
-                    Assert(_localSymbolsIterator != null);
+                    Debug.Assert(_localSymbolsIterator != null);
                     if (_localSymbolsIterator.HasNext())
                     {
                         _stringValue = _localSymbolsIterator.Next();
@@ -248,7 +248,7 @@ namespace IonDotnet.Internals
                     _currentState = S_IN_IMPORTS;
                     break;
                 case S_IMPORT_STRUCT:
-                    Assert(_currentImportTable != null);
+                    Debug.Assert(_currentImportTable != null);
                     _currentState = S_IN_IMPORT_STRUCT;
                     break;
                 case S_SYMBOL_LIST:
@@ -601,7 +601,7 @@ namespace IonDotnet.Internals
                 case S_SYMBOL_LIST:
                     // the symbol list is the last member, so it has no "next sibling"
                     // but ... just in case we put something after the local symbol list
-                    Assert(StateFollowingLocalSymbols() == S_STRUCT_CLOSE);
+                    Debug.Assert(StateFollowingLocalSymbols() == S_STRUCT_CLOSE);
                     return false;
                 case S_IN_SYMBOLS:
                 case S_SYMBOL:
@@ -625,13 +625,13 @@ namespace IonDotnet.Internals
                 default:
                     throw new IonException($"{nameof(SymbolTableReader)} in state {GetStateName(newState)} has no state to load");
                 case S_NAME:
-                    Assert(HasName());
+                    Debug.Assert(HasName());
                     _stringValue = _symbolTable.Name;
-                    Assert(_stringValue != null);
+                    Debug.Assert(_stringValue != null);
                     break;
                 case S_VERSION:
                     _intValue = _symbolTable.Version;
-                    Assert(_intValue != 0);
+                    Debug.Assert(_intValue != 0);
                     break;
                 case S_MAX_ID:
                     _intValue = _maxId;
@@ -641,7 +641,7 @@ namespace IonDotnet.Internals
                     // no op to simplify the initial fields logic in next()
                     break;
                 case S_IMPORT_NAME:
-                    Assert(_currentImportTable != null);
+                    Debug.Assert(_currentImportTable != null);
                     _stringValue = _currentImportTable.Name;
                     break;
                 case S_IMPORT_VERSION:

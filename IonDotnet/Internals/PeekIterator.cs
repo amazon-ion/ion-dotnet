@@ -25,9 +25,6 @@ namespace IonDotnet.Internals
             return current;
         }
 
-        public void Dispose()
-        {
-            _enumerator?.Dispose();
-        }
+        public void Dispose() => _enumerator?.Dispose();
     }
 }
