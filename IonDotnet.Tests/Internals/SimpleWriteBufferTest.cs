@@ -19,8 +19,8 @@ namespace IonDotnet.Tests.Internals
         [DataRow("㈍ ㈎ ㈏ ㈐ ㈑ ㈒ ㈓ ㈔ ㈕ ㈖ ㈗ ㈘ ㈙ ㈚ ㈛ ㈜ ㈠ ㈡ ㈢ ㈣ ㈤ ㈥ ㈦ ㈧ ㈨ ㈩ ㈪ ㈫ ㈬ ㈭ ㈮ ㈯ ㈰ ㈱ ㈲")]
         public void WriteString(string str)
         {
-            IWriteBuffer writerBuffer;
-            using (writerBuffer = new SimpleWriteBuffer())
+            IWriterBuffer writerBuffer;
+            using (writerBuffer = new SimpleWriterBuffer())
             {
                 var list = new List<Memory<byte>>();
                 writerBuffer.StartStreak(list);

@@ -10,7 +10,7 @@ namespace IonDotnet.Internals
     /// <summary>
     /// Simple careless write buffer, just use a memory stream
     /// </summary>
-    internal sealed class SimpleWriteBuffer : IWriteBuffer
+    internal sealed class SimpleWriterBuffer : IWriterBuffer
     {
         private readonly MemoryStream _memory = new MemoryStream();
         private long _writtenSoFar;

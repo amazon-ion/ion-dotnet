@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace IonDotnet.Internals
 {
-    internal class RawBinaryWriter : IIonWriter
+    internal class RawBinaryWriter : IPrivateWriter
     {
         private enum ContainerType
         {
             Sequence,
             Struct,
-            Annotation
+            Annotation,
+            Datagram
         }
 
         private const int IntZeroByte = 0x20;
@@ -33,19 +35,24 @@ namespace IonDotnet.Internals
         private const byte BoolTrueByte = 0x11;
 
         private const int DefaultContainerStackSize = 6;
-        private readonly IWriteBuffer _lengthBuffer;
-        private readonly IWriteBuffer _dataBuffer;
+        private readonly IWriterBuffer _lengthBuffer;
+        private readonly IWriterBuffer _dataBuffer;
         private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private SymbolToken _currentFieldSymbolToken;
         private readonly Stack<(List<Memory<byte>> sequence, ContainerType type, long length)> _containerStack;
         private readonly List<Memory<byte>> _lengthSegments = new List<Memory<byte>>();
 
-        internal RawBinaryWriter(IWriteBuffer lengthBuffer, IWriteBuffer dataBuffer)
+        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer)
         {
             _lengthBuffer = lengthBuffer;
             _dataBuffer = dataBuffer;
             _containerStack = new Stack<(List<Memory<byte>> sequence, ContainerType type, long length)>(DefaultContainerStackSize);
+
+            //top-level writing also requires a tracker
+            var topSequence = new List<Memory<byte>>();
+            _containerStack.Push((topSequence, ContainerType.Datagram, 0));
+            _dataBuffer.StartStreak(topSequence);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,15 +125,16 @@ namespace IonDotnet.Internals
         private void PopContainer()
         {
             var popped = _containerStack.Pop();
+            if (_containerStack.Count == 0) return;
+
+
             var wrappedList = _dataBuffer.Wrapup();
             Debug.Assert(ReferenceEquals(wrappedList, popped.sequence));
-
-            if (_containerStack.Count == 0) return;
 
             var outer = _containerStack.Peek();
 
             //write the tid|len byte and (maybe) the length into the length buffer
-            var idxBeforeWrite = _lengthSegments.Count - 1;
+            var idxBeforeWrite = _lengthSegments.Count;
             _lengthBuffer.StartStreak(_lengthSegments);
             byte tidByte;
             switch (popped.type)
@@ -184,7 +192,6 @@ namespace IonDotnet.Internals
 
         public void Flush()
         {
-            throw new NotImplementedException();
         }
 
         public void Finish()
@@ -195,6 +202,18 @@ namespace IonDotnet.Internals
         public void Close()
         {
             throw new NotImplementedException();
+        }
+
+        internal void WriteTo(Stream outputStream)
+        {
+            Debug.Assert(_containerStack.Count == 1);
+            Debug.Assert(outputStream.CanWrite);
+
+            var currentSequence = _containerStack.Peek().sequence;
+            foreach (var segment in currentSequence)
+            {
+                outputStream.Write(segment.Span);
+            }
         }
 
         public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
@@ -220,6 +239,7 @@ namespace IonDotnet.Internals
 
             var newList = new List<Memory<byte>>();
             _containerStack.Push((newList, type == IonType.Struct ? ContainerType.Struct : ContainerType.Sequence, 0));
+            _dataBuffer.StartStreak(newList);
         }
 
         public void StepOut()
@@ -228,6 +248,12 @@ namespace IonDotnet.Internals
             if (_annotations.Count > 0) throw new IonException("Cannot step out with annotations set");
 
             //TODO check if this container is actually list or struct
+            var currentContainerType = _containerStack.Peek().type;
+            if (currentContainerType != ContainerType.Sequence && currentContainerType != ContainerType.Struct)
+            {
+                throw new IonException($"Cannot step out of {currentContainerType}");
+            }
+
             PopContainer();
             //clear annotations
             FinishValue();
@@ -265,14 +291,7 @@ namespace IonDotnet.Internals
         {
             PrepareValue();
             UpdateCurrentContainerLength(1);
-            if (value)
-            {
-                _dataBuffer.WriteByte(BoolTrueByte);
-            }
-            else
-            {
-                _dataBuffer.WriteByte(BoolFalseByte);
-            }
+            _dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
         }
 
         public void WriteInt(long value)
@@ -449,12 +468,39 @@ namespace IonDotnet.Internals
             }
         }
 
+        internal void AddTypeAnnotationSymbol(SymbolToken annotation)
+        {
+            _annotations.Add(annotation);
+        }
+
         public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding annotations");
 
         public void Dispose()
         {
             // this class is supposed to be used a tool for another writer wrapper, which will take care of freeing the resources
             // so nothing to do here
+        }
+
+        public ICatalog Catalog { get; }
+
+        public bool IsFieldNameSet() => _currentFieldSymbolToken != default;
+
+        public int GetDepth()
+        {
+            return _containerStack.Count - 1;
+        }
+
+        public void WriteIonVersionMarker()
+        {
+            _dataBuffer.WriteByte(0xE0);
+            _dataBuffer.WriteByte(0x01);
+            _dataBuffer.WriteByte(0x00);
+            _dataBuffer.WriteByte(0xEA);
+        }
+
+        public bool IsStreamCopyOptimized()
+        {
+            throw new NotImplementedException();
         }
     }
 }

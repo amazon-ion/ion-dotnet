@@ -7,7 +7,7 @@ namespace IonDotnet.Internals
     /// <summary>
     /// Provide the functionalities as a buffer for writing Ion data
     /// </summary>
-    internal interface IWriteBuffer : IDisposable
+    internal interface IWriterBuffer : IDisposable
     {
         /// <summary>
         /// Write a character sequence into the buffer as UTF8 bytes

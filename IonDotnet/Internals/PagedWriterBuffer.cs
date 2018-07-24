@@ -7,7 +7,7 @@ using System.Text;
 
 namespace IonDotnet.Internals
 {
-    internal abstract class PagedWriterBuffer : IWriteBuffer
+    internal abstract class PagedWriterBuffer : IWriterBuffer
     {
         private const int Shift1Byte = 8;
         private const int Shift2Byte = 8 * 2;
@@ -379,13 +379,16 @@ namespace IonDotnet.Internals
             var lengthPosIdx = _runningIndex++;
             var lengthPosBlock = _currentBlock;
             var annotLength = 0;
+
+            //this accounts for the tid|length byte
+            _writtenSoFar++;
+
             foreach (var symbol in annotations)
             {
                 annotLength += WriteVarUint(symbol.Sid);
                 if (annotLength > IonConstants.MaxAnnotationLength) throw new IonException($"Annotation length too large: {annotLength}");
             }
 
-            _writtenSoFar += annotLength + 1;
             lengthPosBlock[lengthPosIdx] = (byte) ((annotLength & VarUintUnitFlag) | VarIntFinalOctetMask);
             return annotLength + 1;
         }
