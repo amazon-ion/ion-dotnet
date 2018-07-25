@@ -1,7 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using IonDotnet.Internals;
+using IonDotnet.Internals.Binary;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
 
@@ -69,24 +72,48 @@ namespace IonDotnet.Bench
 //            [Benchmark]
             public void JsonDotnet()
             {
-                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data));
+                JsonConvert.SerializeObject(Data);
             }
 
             [Benchmark]
             public void IonDotnet()
             {
-                _serializer.Serialize(Data);
+//                _serializer.Serialize(Data);
+//                using (var stream = new MemoryStream())
+//                {
+                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                {
+                    writer.StepIn(IonType.List);
+                    foreach (var poco in Data)
+                    {
+                        writer.StepIn(IonType.Struct);
+
+//                        writer.SetFieldName("Age");
+//                        writer.WriteInt(poco.Age);
+//                        writer.SetFieldName("Name");
+//                        writer.WriteString(poco.Name);
+//                        writer.SetFieldName("Nickname");
+//                        writer.WriteString(poco.Nickname);
+//                        writer.SetFieldName("IsHandsome");
+//                        writer.WriteBool(poco.IsHandsome);
+//                        writer.SetFieldName("Id");
+//                        writer.WriteInt(poco.Id);
+
+                        writer.StepOut();
+                    }
+
+                    writer.StepOut();
+//                        writer.Finish(stream);
+                }
+
+//                }
             }
         }
 
         public void Run(ArraySegment<string> args)
         {
-            BenchmarkRunner.Run<Benchmark>();
-//            var s = new IonSerializer();
-//            for (var i = 0; i < 4096; i++)
-//            {
-//                s.Serialize(Benchmark.Data);
-//            }
+//            BenchmarkRunner.Run<Benchmark>();
+            new Benchmark().IonDotnet();
         }
     }
 }

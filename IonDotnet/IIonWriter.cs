@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 
 namespace IonDotnet
@@ -12,9 +13,9 @@ namespace IonDotnet
         /// Flushes this writer by writing any buffered output to the underlying output target.
         /// </summary>
         /// <exception cref="System.IO.IOException">When error happens while writing data to output stream</exception>
-        void Flush();
+        void Flush(Stream outputStream);
 
-        void Finish();
+        void Finish(Stream outputStream);
 
         void SetFieldName(string name);
 

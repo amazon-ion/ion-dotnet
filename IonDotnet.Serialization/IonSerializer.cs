@@ -15,14 +15,16 @@ namespace IonDotnet.Serialization
         public byte[] Serialize(object obj)
         {
             //prepare infrastructure
-            var stream = new MemoryStream();
-            using (var writer = new ManagedBinaryWriter(stream, IonConstants.EmptySymbolTablesArray))
+            using (var stream = new MemoryStream())
             {
-                WriteObject(writer, obj);
-//                writer.Finish();
+                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                {
+                    WriteObject(writer, obj);
+                    writer.Finish(stream);
+                }
+                
+                return stream.ToArray();
             }
-
-            return stream.ToArray();
         }
 
         /// <summary>

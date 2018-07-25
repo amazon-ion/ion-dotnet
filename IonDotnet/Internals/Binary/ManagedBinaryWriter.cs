@@ -13,7 +13,7 @@ namespace IonDotnet.Internals.Binary
     {
         private sealed class PagedWriter512Buffer : PagedWriterBuffer
         {
-            public PagedWriter512Buffer() : base(512)
+            public PagedWriter512Buffer() : base(256)
             {
             }
         }
@@ -30,25 +30,23 @@ namespace IonDotnet.Internals.Binary
         {
             private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
 
-            public readonly List<ISymbolTable> Parents;
+            public readonly IReadOnlyCollection<ISymbolTable> Parents;
             public readonly int LocalSidStart;
 
             public ImportedSymbolsContext(IReadOnlyCollection<ISymbolTable> imports)
             {
-                Parents = new List<ISymbolTable>(imports.Count);
+                Parents = imports;
                 //add all the system symbols
-                foreach (var systemSymbolToken in Symbols.SystemSymbolTokens)
-                {
-                    _dict.Add(systemSymbolToken.Text, systemSymbolToken.Sid);
-                }
+//                foreach (var systemSymbolToken in Symbols.SystemSymbolTokens)
+//                {
+//                    _dict.Add(systemSymbolToken.Text, systemSymbolToken.Sid);
+//                }
 
                 LocalSidStart = SystemSymbols.Ion10MaxId + 1;
                 foreach (var symbolTable in imports)
                 {
                     if (symbolTable.IsShared) throw new IonException("Import table cannot be shared");
                     if (symbolTable.IsSystem) continue;
-
-                    Parents.Add(symbolTable);
 
                     var declaredSymbols = symbolTable.IterateDeclaredSymbolNames();
                     while (declaredSymbols.HasNext())
@@ -64,7 +62,23 @@ namespace IonDotnet.Internals.Binary
                 }
             }
 
-            public IReadOnlyDictionary<string, int> SymbolResolver => _dict;
+            public bool TryGetValue(string text, out int val)
+            {
+                val = 0;
+                if (text == null) return false;
+
+                for (int i = 0, l = Symbols.SystemSymbolTokens.Count; i < l; i++)
+                {
+                    var systemToken = Symbols.SystemSymbolTokens[i];
+                    if (systemToken.Text != text) continue;
+                    val = systemToken.Sid;
+                    return true;
+                }
+
+                if (Parents.Count == 0) return false;
+
+                return _dict.TryGetValue(text, out val);
+            }
         }
 
         private readonly IDictionary<string, int> _locals;
@@ -74,26 +88,21 @@ namespace IonDotnet.Internals.Binary
         private readonly RawBinaryWriter _userWriter;
         private readonly LocalSymbolTableView _localSymbolTableView;
         private readonly ImportedSymbolsContext _importContext;
-
-        private readonly Stream _outputStream;
-
         private SymbolState _symbolState;
 
-        public ManagedBinaryWriter(Stream outputStream, IReadOnlyCollection<ISymbolTable> importedTables)
+        public ManagedBinaryWriter(IReadOnlyCollection<ISymbolTable> importedTables)
         {
-            if (outputStream == null || !outputStream.CanWrite)
-                throw new ArgumentException("Output stream must be writable", nameof(outputStream));
-
-            _outputStream = outputStream;
             _localSymbolTableView = new LocalSymbolTableView(this);
 
             //raw writers and their buffers
             var lengthWriterBuffer = new PagedWriter512Buffer();
-            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
-            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
+            var lengthSegment = new List<Memory<byte>>(2);
+            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer(), lengthSegment);
+            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer(), lengthSegment);
 
             _importContext = new ImportedSymbolsContext(importedTables);
             _locals = new Dictionary<string, int>(6);
+            _locals.Add("Name", 10);
         }
 
         /// <summary>
@@ -117,6 +126,7 @@ namespace IonDotnet.Internals.Binary
             {
                 _symbolsWriter.SetFieldNameSymbol(Symbols.GetSystemSymbol(SystemSymbols.ImportsSid));
                 _symbolsWriter.StepIn(IonType.List); // $imports: []
+
                 foreach (var importedTable in _importContext.Parents)
                 {
                     _symbolsWriter.StepIn(IonType.Struct); // {name:'a', version: 1, max_id: 33}
@@ -155,17 +165,17 @@ namespace IonDotnet.Internals.Binary
         private SymbolToken Intern(string text)
         {
             Debug.Assert(text != null);
-            int tokenSid;
-//            var foundInImported = _importContext.SymbolResolver.TryGetValue(text, out var tokenSid);
-//            if (foundInImported)
-//            {
-//                if (tokenSid > SystemSymbols.Ion10MaxId)
-//                {
-//                    StartLocalSymbolTableIfNeeded(true);
-//                }
-//
-//                return new SymbolToken(text, tokenSid);
-//            }
+
+            var foundInImported = _importContext.TryGetValue(text, out var tokenSid);
+            if (foundInImported)
+            {
+                if (tokenSid > SystemSymbols.Ion10MaxId)
+                {
+                    StartLocalSymbolTableIfNeeded(true);
+                }
+
+                return new SymbolToken(text, tokenSid);
+            }
 
             //try the locals
             var foundInLocal = _locals.TryGetValue(text, out tokenSid);
@@ -207,15 +217,15 @@ namespace IonDotnet.Internals.Binary
             //first try to flush things out
 //            Flush();
 
-            var lengthBuffer = _userWriter.GetLengthBuffer();
+            var lengthBuffer = _userWriter?.GetLengthBuffer();
             Debug.Assert(lengthBuffer == _symbolsWriter.GetLengthBuffer());
-            lengthBuffer.Dispose();
+            lengthBuffer?.Dispose();
 
-            _userWriter.GetDataBuffer().Dispose();
-            _symbolsWriter.GetDataBuffer().Dispose();
+            _userWriter?.GetDataBuffer().Dispose();
+            _symbolsWriter?.GetDataBuffer().Dispose();
         }
 
-        public void Flush()
+        public void Flush(Stream outputStream)
         {
             if (_userWriter.GetDepth() != 0) return;
 
@@ -239,14 +249,14 @@ namespace IonDotnet.Internals.Binary
 
             _symbolState = SymbolState.LocalSymbolsFlushed;
 
-            _symbolsWriter.FlushAndFinish(_outputStream);
-            _userWriter.FlushAndFinish(_outputStream);
+            _symbolsWriter.FlushAndFinish(outputStream);
+            _userWriter.FlushAndFinish(outputStream);
         }
 
-        public void Finish()
+        public void Finish(Stream outputStream)
         {
             if (_userWriter.GetDepth() != 0) throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
-            Flush();
+            Flush(outputStream);
 
             //reset local symbols
             _locals.Clear();
@@ -419,7 +429,7 @@ namespace IonDotnet.Internals.Binary
             {
                 if (text == null) throw new ArgumentNullException(nameof(text));
 
-                var found = _writer._importContext.SymbolResolver.TryGetValue(text, out var sid);
+                var found = _writer._importContext.TryGetValue(text, out var sid);
                 if (found) return new SymbolToken(text, sid);
                 found = _writer._locals.TryGetValue(text, out sid);
 

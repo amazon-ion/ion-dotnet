@@ -101,8 +101,10 @@ namespace IonDotnet.Internals
         /// <summary>
         /// Allocate new memory block and update related fields
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AllocateNewBlock()
         {
+            Console.WriteLine("Allocating");
             var newBlock = ArrayPool<byte>.Shared.Rent(_blockSize);
             _bufferBlocks.Add(newBlock);
             _currentBlock = newBlock;
@@ -128,6 +130,7 @@ namespace IonDotnet.Internals
             return byteCount;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte octet)
         {
             if (_runningIndex == _currentBlock.Length)
@@ -139,6 +142,7 @@ namespace IonDotnet.Internals
             _writtenSoFar++;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUint8(long value) => WriteByte((byte) value);
 
         public void WriteUint16(long value)
@@ -278,7 +282,7 @@ namespace IonDotnet.Internals
             _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
             _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
             _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 7;
+            _writtenSoFar += 8;
         }
 
         public void WriteBytes(ReadOnlySpan<byte> bytes)
@@ -295,7 +299,7 @@ namespace IonDotnet.Internals
                 bytesToWrite -= bytesWritten;
 
                 Debug.Assert(_runningIndex <= _blockSize);
-                if (bytesToWrite == 0) continue;
+                if (bytesToWrite == 0) break;
 
                 Debug.Assert(_runningIndex == _blockSize);
                 // new allocation needed
@@ -507,6 +511,7 @@ namespace IonDotnet.Internals
                 {
                     _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
                 }
+
                 _writtenSoFar = 0;
             }
             else
@@ -526,7 +531,7 @@ namespace IonDotnet.Internals
             _writtenSoFar = 0;
             _runningIndex = 0;
             _currentSequence = null;
-            //TODO should we return all rented buffers? Or just trust arraypool to do the right thing?
+            //TODO should we return all rented buffers and just trust arraypool to do the right thing?
             foreach (var block in _bufferBlocks)
             {
                 ArrayPool<byte>.Shared.Return(block);

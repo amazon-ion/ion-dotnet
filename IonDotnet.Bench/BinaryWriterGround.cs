@@ -12,57 +12,58 @@ namespace IonDotnet.Bench
         public void Run(ArraySegment<string> args)
         {
             var outputStream = new MemoryStream();
-            for (var i = 0; i < 4096; i++)
-            {
-                var writer = new ManagedBinaryWriter(outputStream, new ISymbolTable[0]);
-                writer.StepIn(IonType.Struct);
 
-                writer.SetFieldName("yes");
-                writer.WriteBool(true);
+            var writer = new ManagedBinaryWriter(new ISymbolTable[0]);
+            writer.StepIn(IonType.Struct);
 
-                writer.SetFieldName("strings");
-                writer.WriteString("this is what we want tiếng việt nhé 😂");
+            writer.SetFieldName("yes");
+            writer.WriteBool(true);
 
-                writer.SetFieldName("number_struct");
-                writer.StepIn(IonType.Struct);
-                writer.SetFieldName("number");
-                writer.WriteInt(323);
-                writer.StepOut();
+            writer.SetFieldName("strings");
+            writer.WriteString("abcd def adsd dasdas tiếng việt  😂");
 
-                writer.StepOut();
-//                writer.Finish();
-                writer.Dispose();
-            }
+            writer.SetFieldName("number_struct");
+            writer.StepIn(IonType.Struct);
+            writer.SetFieldName("number");
+            writer.WriteInt(int.MaxValue / 2);
+            writer.StepOut();
 
-//            var bytes = outputStream.ToArray();
+            writer.StepOut();
+            writer.WriteInt(int.MaxValue);
+            writer.Finish(outputStream);
+            writer.Dispose();
 
-//            Console.WriteLine(string.Join(" ", bytes.Select(b => $"{b:X2}")));
+            var bytes = outputStream.ToArray();
+            Console.WriteLine(bytes.Length);
 
-//            var reader = new UserBinaryReader(new MemoryStream(bytes));
-//            reader.MoveNext();
-//            Console.WriteLine(reader.CurrentType);
-//            reader.StepIn();
-//
-//            reader.MoveNext();
-//            Console.WriteLine(reader.CurrentFieldName);
-//            Console.WriteLine(reader.CurrentType);
-//            Console.WriteLine(reader.BoolValue());
-//            Console.WriteLine();
-//
-//            reader.MoveNext();
-//            Console.WriteLine(reader.CurrentFieldName);
-//            Console.WriteLine(reader.CurrentType);
-//            Console.WriteLine(reader.StringValue());
-//            Console.WriteLine();
-//
-//            reader.MoveNext();
-//            Console.WriteLine(reader.CurrentFieldName);
-//            Console.WriteLine(reader.CurrentType);
-//            reader.StepIn();
-//            reader.MoveNext();
-//            Console.WriteLine(reader.CurrentFieldName);
-//            Console.WriteLine(reader.CurrentType);
-//            Console.WriteLine(reader.IntValue());
+            Console.WriteLine(string.Join(" ", bytes.Select(b => $"{b:X2}")));
+
+            var reader = new UserBinaryReader(new MemoryStream(bytes));
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentType);
+            reader.StepIn();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.BoolValue());
+            Console.WriteLine();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.StringValue());
+            Console.WriteLine();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            reader.StepIn();
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.IntValue());
         }
     }
 }

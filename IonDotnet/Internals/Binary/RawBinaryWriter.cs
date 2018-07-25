@@ -45,12 +45,13 @@ namespace IonDotnet.Internals.Binary
 
         private SymbolToken _currentFieldSymbolToken;
         private readonly ContainerStack _containerStack;
-        private readonly List<Memory<byte>> _lengthSegments = new List<Memory<byte>>();
+        private readonly List<Memory<byte>> _lengthSegments;
 
-        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer)
+        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments)
         {
             _lengthBuffer = lengthBuffer;
             _dataBuffer = dataBuffer;
+            _lengthSegments = lengthSegments;
             _containerStack = new ContainerStack(DefaultContainerStackSize);
 
             //top-level writing also requires a tracker
@@ -136,7 +137,6 @@ namespace IonDotnet.Internals.Binary
             var outer = _containerStack.Peek();
 
             //write the tid|len byte and (maybe) the length into the length buffer
-            var idxBeforeWrite = _lengthSegments.Count;
             _lengthBuffer.StartStreak(_lengthSegments);
             byte tidByte;
             switch (popped.Type)
@@ -171,12 +171,10 @@ namespace IonDotnet.Internals.Binary
             }
 
             _lengthBuffer.Wrapup();
-            var idxAfterWrite = _lengthSegments.Count - 1;
+            outer.Sequence.AddRange(_lengthSegments);
 
-            for (var i = idxBeforeWrite; i <= idxAfterWrite; i++)
-            {
-                outer.Sequence.Add(_lengthSegments[i]);
-            }
+            //clear the length segments, no worry
+            _lengthSegments.Clear();
 
             outer.Sequence.AddRange(wrappedList);
             _dataBuffer.StartStreak(outer.Sequence);
@@ -195,11 +193,11 @@ namespace IonDotnet.Internals.Binary
         //Flush() and Finish() will never be called at this level, so just in case 
         //they're implemented explicitly
 
-        void IIonWriter.Flush()
+        void IIonWriter.Flush(Stream outputStream)
         {
         }
 
-        void IIonWriter.Finish()
+        void IIonWriter.Finish(Stream outputStream)
         {
         }
 
@@ -231,6 +229,7 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.Reset();
             //double calls to Reset() should be fine
             _lengthBuffer.Reset();
+            _lengthSegments.Clear();
 
             //TODO implement writing again after finish
         }
@@ -467,9 +466,11 @@ namespace IonDotnet.Internals.Binary
             if (value == null)
             {
                 WriteNull(IonType.String);
+                return;
             }
 
             PrepareValue();
+            //TODO what's the performance implication of this?
             var stringByteSize = Encoding.UTF8.GetByteCount(value);
             //since we know the length of the string upfront, we can just write the length right here
             var tidByte = TidStringByte;
@@ -546,10 +547,7 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteIonVersionMarker()
         {
-            _dataBuffer.WriteByte(0xE0);
-            _dataBuffer.WriteByte(0x01);
-            _dataBuffer.WriteByte(0x00);
-            _dataBuffer.WriteByte(0xEA);
+            _dataBuffer.WriteUint32(0xE0_01_00_EA);
         }
 
         public bool IsStreamCopyOptimized()
@@ -581,13 +579,7 @@ namespace IonDotnet.Internals.Binary
                 EnsureCapacity(Count);
                 if (_array[Count] == null)
                 {
-                    _array[Count] = new ContainerInfo();
-                }
-                
-                //change for reusing the list
-                if (_array[Count].Sequence == null)
-                {
-                    _array[Count].Sequence = new List<Memory<byte>>();
+                    _array[Count] = new ContainerInfo {Sequence = new List<Memory<byte>>(4)};
                 }
                 else
                 {
@@ -630,7 +622,9 @@ namespace IonDotnet.Internals.Binary
             {
                 if (forIndex < _array.Length) return;
                 //resize
-                Array.Resize(ref _array, _array.Length * 2);
+                var newArray = new ContainerInfo[_array.Length * 2];
+                Buffer.BlockCopy(_array, 0, newArray, 0, _array.Length);
+                _array = newArray;
             }
         }
     }
