@@ -22,7 +22,7 @@ namespace IonDotnet.Internals
         private IList<Memory<byte>> _currentSequence;
 
         /// <summary>
-        /// This is only a reference to the 'supposed' primary block size
+        /// This is only a reference to the 'estimated' primary block size
         /// </summary>
         private readonly int _blockSize;
 
@@ -281,7 +281,7 @@ namespace IonDotnet.Internals
             _writtenSoFar += 7;
         }
 
-        public void WriteBytes(Span<byte> bytes)
+        public void WriteBytes(ReadOnlySpan<byte> bytes)
         {
             var bytesToWrite = bytes.Length;
             while (bytesToWrite > 0)
@@ -514,13 +514,27 @@ namespace IonDotnet.Internals
                 _writtenSoFar = 0;
             }
 
-            var ret = _currentSequence;
+            return _currentSequence;
+        }
+
+        public void Reset()
+        {
+            _currentBlock = null;
+            _writtenSoFar = 0;
+            _runningIndex = 0;
             _currentSequence = null;
-            return ret;
+            //TODO should we return all rented buffers? Or just trust arraypool to do the right thing?
+            foreach (var block in _bufferBlocks)
+            {
+                ArrayPool<byte>.Shared.Return(block);
+            }
+
+            _bufferBlocks.Clear();
         }
 
         public void Dispose()
         {
+            _currentBlock = null;
             foreach (var block in _bufferBlocks)
             {
                 ArrayPool<byte>.Shared.Return(block);

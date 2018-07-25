@@ -63,10 +63,12 @@ namespace IonDotnet.Internals.Binary
         // A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         // position is stored in the first 'long' of the stack item
         // 
-        private Stack<(long position, int localRemaining, int typeTid)> _containerStack;
+        private readonly Stack<(long position, int localRemaining, int typeTid)> _containerStack;
 
         protected RawBinaryReader(Stream input)
         {
+            if (input == null || !input.CanRead) throw new ArgumentException("Input not readable", nameof(input));
+            
             _input = input;
 
             _localRemaining = NoLimit;
@@ -817,20 +819,5 @@ namespace IonDotnet.Internals.Binary
         protected abstract void OnAnnotation(int annotationId);
 
         protected abstract void OnValueEnd();
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-//                _input?.Dispose();
-                _containerStack = null;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
     }
 }

@@ -19,7 +19,7 @@ namespace IonDotnet.Bench
             writer.WriteBool(true);
 
             writer.SetFieldName("strings");
-            writer.WriteString("this is what we want 😂");
+            writer.WriteString("this is what we want tiếng việt nhé 😂");
 
             writer.SetFieldName("number_struct");
             writer.StepIn(IonType.Struct);
@@ -35,6 +35,7 @@ namespace IonDotnet.Bench
 
             var reader = new UserBinaryReader(new MemoryStream(bytes));
             reader.MoveNext();
+            Console.WriteLine(reader.CurrentType);
             reader.StepIn();
 
             reader.MoveNext();

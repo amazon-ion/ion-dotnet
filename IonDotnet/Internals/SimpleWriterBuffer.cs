@@ -78,7 +78,7 @@ namespace IonDotnet.Internals
             throw new NotImplementedException();
         }
 
-        public void WriteBytes(Span<byte> bytes)
+        public void WriteBytes(ReadOnlySpan<byte> bytes)
         {
             _memory.Write(bytes);
             _writtenSoFar += bytes.Length;
@@ -115,6 +115,13 @@ namespace IonDotnet.Internals
             var ret = _currentSequence;
             _currentSequence = null;
             return ret;
+        }
+
+        public void Reset()
+        {
+            _currentSequence = null;
+            _writtenSoFar = 0;
+            _memory.Seek(0, SeekOrigin.Begin);
         }
 
         public void Dispose()

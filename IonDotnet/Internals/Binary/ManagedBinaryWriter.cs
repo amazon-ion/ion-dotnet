@@ -9,9 +9,9 @@ using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Binary
 {
-    internal class ManagedBinaryWriter : IIonWriter
+    internal sealed class ManagedBinaryWriter : IIonWriter
     {
-        private class PagedWriter512Buffer : PagedWriterBuffer
+        private sealed class PagedWriter512Buffer : PagedWriterBuffer
         {
             public PagedWriter512Buffer() : base(512)
             {
@@ -86,6 +86,7 @@ namespace IonDotnet.Internals.Binary
             _outputStream = outputStream;
             _localSymbolTableView = new LocalSymbolTableView(this);
 
+            //raw writers and their buffers
             var lengthWriterBuffer = new PagedWriter512Buffer();
             _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
             _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
@@ -186,13 +187,34 @@ namespace IonDotnet.Internals.Binary
             return new SymbolToken(text, tokenSid);
         }
 
-        public void Dispose()
+        /// <summary>
+        /// This basically interns the text of the token and return the new token
+        /// </summary>
+        private SymbolToken InternSymbol(SymbolToken token)
         {
-            throw new NotImplementedException();
+            if (token == default || token.Text == null) return default;
+            return Intern(token.Text);
         }
 
         public ISymbolTable SymbolTable => _localSymbolTableView;
+        
+        /// <inheritdoc />
+        /// <summary>
+        /// This is supposed to close the writer and release all their resources
+        /// </summary>
+        public void Dispose()
+        {
+            //first try to flush things out
+//            Flush();
 
+            var lengthBuffer = _userWriter.GetLengthBuffer();
+            Debug.Assert(lengthBuffer == _symbolsWriter.GetLengthBuffer());
+            lengthBuffer.Dispose();
+
+            _userWriter.GetDataBuffer().Dispose();
+            _symbolsWriter.GetDataBuffer().Dispose();
+        }
+        
         public void Flush()
         {
             if (_userWriter.GetDepth() != 0) return;
@@ -209,25 +231,27 @@ namespace IonDotnet.Internals.Binary
                     _symbolsWriter.StepOut();
                     _symbolsWriter.StepOut();
                     break;
+                case SymbolState.LocalSymbolsFlushed:
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
             _symbolState = SymbolState.LocalSymbolsFlushed;
 
-            _symbolsWriter.WriteTo(_outputStream);
-            _userWriter.WriteTo(_outputStream);
+            _symbolsWriter.FlushAndFinish(_outputStream);
+            _userWriter.FlushAndFinish(_outputStream);
         }
 
         public void Finish()
         {
             if (_userWriter.GetDepth() != 0) throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
             Flush();
-        }
 
-        public void Close()
-        {
-            throw new NotImplementedException();
+            //reset local symbols
+            _locals.Clear();
+            _localsLocked = false;
+            _symbolState = SymbolState.SystemSymbols;
         }
 
         public void SetFieldName(string name)
@@ -241,7 +265,8 @@ namespace IonDotnet.Internals.Binary
 
         public void SetFieldNameSymbol(SymbolToken name)
         {
-            throw new NotImplementedException();
+            var token = InternSymbol(name);
+            _userWriter.SetFieldNameSymbol(token);
         }
 
         public void StepIn(IonType type)
@@ -318,34 +343,30 @@ namespace IonDotnet.Internals.Binary
             _userWriter.WriteString(value);
         }
 
-        public void WriteBlob(byte[] value)
+        public void WriteBlob(ReadOnlySpan<byte> value) => _userWriter.WriteBlob(value);
+
+        public void WriteClob(ReadOnlySpan<byte> value) => _userWriter.WriteClob(value);
+
+        public void SetTypeAnnotations(IEnumerable<string> annotations)
         {
-            _userWriter.WriteBlob(value);
+            if (annotations == null) throw new ArgumentNullException(nameof(annotations));
+
+            _userWriter.ClearAnnotations();
+            foreach (var annotation in annotations)
+            {
+                var token = Intern(annotation);
+                _userWriter.AddTypeAnnotationSymbol(token);
+            }
         }
 
-        public void WriteBlob(ArraySegment<byte> value)
+        public void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
         {
-            _userWriter.WriteBlob(value);
-        }
-
-        public void WriteClob(byte[] value)
-        {
-            _userWriter.WriteClob(value);
-        }
-
-        public void WriteClob(ArraySegment<byte> value)
-        {
-            _userWriter.WriteClob(value);
-        }
-
-        public void SetTypeAnnotations(params string[] annotations)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetTypeAnnotationSymbols(ArraySegment<SymbolToken> annotations)
-        {
-            throw new NotImplementedException();
+            if (annotations == null) throw new ArgumentNullException(nameof(annotations));
+            foreach (var annotation in annotations)
+            {
+                var token = InternSymbol(annotation);
+                _userWriter.AddTypeAnnotationSymbol(token);
+            }
         }
 
         public void AddTypeAnnotation(string annotation)

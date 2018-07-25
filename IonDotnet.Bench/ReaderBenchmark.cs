@@ -12,48 +12,51 @@ namespace IonDotnet.Bench
         [MemoryDiagnoser]
         public class CompareReader
         {
+            private const string SomeString = nameof(SomeString);
             private readonly byte[] _data = DirStructure.ReadDataFile("javaout");
 
             [Benchmark]
             public void ReadStringLoadValue()
             {
-                using (var reader = new UserBinaryReader(new MemoryStream(_data)))
-                {
-                    reader.MoveNext();
-                    reader.StepIn();
-                    while (reader.MoveNext() != IonType.None)
-                    {
-                        //load the value
-                        reader.StringValue();
-                    }
+                var reader = new UserBinaryReader(new MemoryStream(_data));
 
-                    reader.StepOut();
+                reader.MoveNext();
+                reader.StepIn();
+                while (reader.MoveNext() != IonType.None)
+                {
+                    //load the value
+                    reader.StringValue();
                 }
+
+                reader.StepOut();
             }
-            
+
             [Benchmark]
             public void ReadStringNoLoadValue()
             {
-                using (var reader = new UserBinaryReader(new MemoryStream(_data)))
+                var reader = new UserBinaryReader(new MemoryStream(_data));
+                reader.MoveNext();
+                reader.StepIn();
+                while (reader.MoveNext() != IonType.None)
                 {
-                    reader.MoveNext();
-                    reader.StepIn();
-                    while (reader.MoveNext() != IonType.None)
-                    {
-                        //do nothing
-                    }
-
-                    reader.StepOut();
+                    //do nothing
                 }
+
+                reader.StepOut();
             }
 
             [Benchmark]
             public void Baseline()
             {
-                using (var reader = new UserBinaryReader(new MemoryStream(_data)))
-                {
-                    reader.MoveNext();
-                }
+                var reader = new UserBinaryReader(new MemoryStream(_data));
+                reader.MoveNext();
+            }
+
+            [Benchmark]
+            public void CompStruct()
+            {
+                var s = new SymbolToken(SomeString, 213123213);
+                var eq = s == default;
             }
         }
 

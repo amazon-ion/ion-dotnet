@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Tests", "IonDotne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Bench", "IonDotnet.Bench\IonDotnet.Bench.csproj", "{F40BDBAC-89B1-4306-8D1D-62E6E33B513E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Serialization", "IonDotnet.Serialization\IonDotnet.Serialization.csproj", "{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{F40BDBAC-89B1-4306-8D1D-62E6E33B513E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F40BDBAC-89B1-4306-8D1D-62E6E33B513E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F40BDBAC-89B1-4306-8D1D-62E6E33B513E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

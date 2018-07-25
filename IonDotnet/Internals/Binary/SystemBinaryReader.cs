@@ -67,7 +67,7 @@ namespace IonDotnet.Internals.Binary
                     }
 
                     var isNegative = _valueTid == IonConstants.TidNegInt;
-                    if (_valueLength < sizeof(long))
+                    if (_valueLength <= sizeof(long))
                     {
                         //long might be enough
                         var longVal = ReadUlong(_valueLength);

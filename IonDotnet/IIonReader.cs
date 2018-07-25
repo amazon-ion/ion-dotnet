@@ -3,11 +3,10 @@ using System.Numerics;
 
 namespace IonDotnet
 {
-    /// <inheritdoc />
     /// <summary>
     /// Provides stream-based access to Ion data independent of its underlying representation (text, binary, or {@link IonValue} tree).
     /// </summary>
-    public interface IIonReader : IDisposable
+    public interface IIonReader
     {
         /// <summary>
         /// Positions this reader on the next sibling after the current value

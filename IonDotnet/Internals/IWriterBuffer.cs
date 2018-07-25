@@ -76,7 +76,7 @@ namespace IonDotnet.Internals
         /// Write the whole byte segment into the buffer
         /// </summary>
         /// <param name="bytes">The byte segment</param>
-        void WriteBytes(Span<byte> bytes);
+        void WriteBytes(ReadOnlySpan<byte> bytes);
 
         /// <summary>
         /// Write self-delimited int value to the buffer
@@ -103,5 +103,11 @@ namespace IonDotnet.Internals
         /// </summary>
         /// <returns>The supplied list after adding all the written segment</returns>
         IList<Memory<byte>> Wrapup();
+
+        /// <summary>
+        /// Reset the state of the buffer, start over
+        /// </summary>
+        /// <remarks>This does NOT wrap up latest streak</remarks>
+        void Reset();
     }
 }

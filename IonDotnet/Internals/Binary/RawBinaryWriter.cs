@@ -28,8 +28,8 @@ namespace IonDotnet.Internals.Binary
         private const byte TidStructByte = 0xD0;
         private const byte TidTypeDeclByte = 0xE0;
         private const byte TidStringByte = 0x80;
-        private const byte ClobType = (byte) 0x90;
-        private const byte BlobByteType = (byte) 0xA0;
+        private const byte ClobType = 0x90;
+        private const byte BlobByteType = 0xA0;
 
         private const byte NullNull = 0x0F;
 
@@ -37,6 +37,8 @@ namespace IonDotnet.Internals.Binary
         private const byte BoolTrueByte = 0x11;
 
         private const int DefaultContainerStackSize = 6;
+
+
         private readonly IWriterBuffer _lengthBuffer;
         private readonly IWriterBuffer _dataBuffer;
         private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
@@ -192,30 +194,48 @@ namespace IonDotnet.Internals.Binary
         //this is not supposed to be called ever
         public ISymbolTable SymbolTable => SharedSymbolTable.GetSystem(1);
 
-        public void Flush()
+        //Flush() and Finish() will never be called at this level, so just in case 
+        //they're implemented explicitly
+
+        void IIonWriter.Flush()
         {
         }
 
-        public void Finish()
+        void IIonWriter.Finish()
         {
-            throw new NotImplementedException();
         }
 
-        public void Close()
-        {
-            throw new NotImplementedException();
-        }
-
-        internal void WriteTo(Stream outputStream)
+        /// <summary>
+        /// Flush the content to this 
+        /// </summary>
+        /// <param name="outputStream">Write all contents here</param>
+        internal void FlushAndFinish(Stream outputStream)
         {
             Debug.Assert(_containerStack.Count == 1);
-            Debug.Assert(outputStream.CanWrite);
+            Debug.Assert(outputStream?.CanWrite == true);
 
             var currentSequence = _containerStack.Peek().sequence;
+            //wrapup to append all data to the sequence
+            _dataBuffer.Wrapup();
             foreach (var segment in currentSequence)
             {
                 outputStream.Write(segment.Span);
             }
+
+            outputStream.Flush();
+
+            //reset the states
+            _containerStack.Clear();
+
+            //top-level writing also requires a tracker
+            var topSequence = new List<Memory<byte>>();
+            _containerStack.Push((topSequence, ContainerType.Datagram, 0));
+            _dataBuffer.StartStreak(topSequence);
+            _dataBuffer.Reset();
+            //double calls to Reset() should be fine
+            _lengthBuffer.Reset();
+
+            //TODO implement writing again after finish
         }
 
         public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
@@ -410,7 +430,7 @@ namespace IonDotnet.Internals.Binary
         /// Write raw bytes with a type.
         /// </summary>
         /// <remarks>This does not do <see cref="PrepareValue"/></remarks> or <see cref="FinishValue"/>
-        private void WriteTypedBytes(byte type, Span<byte> data)
+        private void WriteTypedBytes(byte type, ReadOnlySpan<byte> data)
         {
             var totalLength = 1;
             if (data.Length < 0xD)
@@ -478,18 +498,7 @@ namespace IonDotnet.Internals.Binary
             FinishValue();
         }
 
-        public void WriteBlob(byte[] value)
-        {
-            if (value == null)
-            {
-                WriteNull(IonType.Blob);
-                return;
-            }
-
-            WriteBlob(new ArraySegment<byte>(value));
-        }
-
-        public void WriteBlob(ArraySegment<byte> value)
+        public void WriteBlob(ReadOnlySpan<byte> value)
         {
             if (value == null)
             {
@@ -504,19 +513,15 @@ namespace IonDotnet.Internals.Binary
             FinishValue();
         }
 
-        public void WriteClob(byte[] value)
+        public void WriteClob(ReadOnlySpan<byte> value)
         {
             throw new NotImplementedException();
         }
 
-        public void WriteClob(ArraySegment<byte> value)
-        {
-            throw new NotImplementedException();
-        }
+        public void SetTypeAnnotations(IEnumerable<string> annotations)
+            => throw new NotSupportedException("raw writer does not support setting annotations as text");
 
-        public void SetTypeAnnotations(params string[] annotations) => throw new NotSupportedException("raw writer does not support setting annotations as text");
-
-        public void SetTypeAnnotationSymbols(ArraySegment<SymbolToken> annotations)
+        public void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
         {
             _annotations.Clear();
 
@@ -526,10 +531,9 @@ namespace IonDotnet.Internals.Binary
             }
         }
 
-        internal void AddTypeAnnotationSymbol(SymbolToken annotation)
-        {
-            _annotations.Add(annotation);
-        }
+        internal void AddTypeAnnotationSymbol(SymbolToken annotation) => _annotations.Add(annotation);
+
+        internal void ClearAnnotations() => _annotations.Clear();
 
         public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding annotations");
 
@@ -539,14 +543,11 @@ namespace IonDotnet.Internals.Binary
             // so nothing to do here
         }
 
-        public ICatalog Catalog { get; }
+        public ICatalog Catalog => throw new NotSupportedException();
 
         public bool IsFieldNameSet() => _currentFieldSymbolToken != default;
 
-        public int GetDepth()
-        {
-            return _containerStack.Count - 1;
-        }
+        public int GetDepth() => _containerStack.Count - 1;
 
         public void WriteIonVersionMarker()
         {
@@ -560,5 +561,8 @@ namespace IonDotnet.Internals.Binary
         {
             throw new NotImplementedException();
         }
+
+        internal IWriterBuffer GetLengthBuffer() => _lengthBuffer;
+        internal IWriterBuffer GetDataBuffer() => _dataBuffer;
     }
 }

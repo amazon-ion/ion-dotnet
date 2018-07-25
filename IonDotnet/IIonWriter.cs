@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace IonDotnet
@@ -8,14 +9,12 @@ namespace IonDotnet
         ISymbolTable SymbolTable { get; }
 
         /// <summary>
-        /// Flushes this writer by writing any buffered output to the underlying output target
+        /// Flushes this writer by writing any buffered output to the underlying output target.
         /// </summary>
-        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.IO.IOException">When error happens while writing data to output stream</exception>
         void Flush();
 
         void Finish();
-
-        void Close();
 
         void SetFieldName(string name);
 
@@ -71,17 +70,13 @@ namespace IonDotnet
 
         void WriteString(string value);
 
-        void WriteBlob(byte[] value);
+        void WriteBlob(ReadOnlySpan<byte> value);
 
-        void WriteBlob(ArraySegment<byte> value);
+        void WriteClob(ReadOnlySpan<byte> value);
 
-        void WriteClob(byte[] value);
+        void SetTypeAnnotations(IEnumerable<string> annotations);
 
-        void WriteClob(ArraySegment<byte> value);
-
-        void SetTypeAnnotations(params string[] annotations);
-
-        void SetTypeAnnotationSymbols(ArraySegment<SymbolToken> annotations);
+        void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations);
 
         void AddTypeAnnotation(string annotation);
     }
