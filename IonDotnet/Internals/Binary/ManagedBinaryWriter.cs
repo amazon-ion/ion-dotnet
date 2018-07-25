@@ -54,9 +54,9 @@ namespace IonDotnet.Internals.Binary
                     while (declaredSymbols.HasNext())
                     {
                         var text = declaredSymbols.Next();
-                        if (text != null && !_dict.ContainsKey(text))
+                        if (text != null)
                         {
-                            _dict.Add(text, LocalSidStart);
+                            _dict.TryAdd(text, LocalSidStart);
                         }
 
                         LocalSidStart++;
@@ -93,7 +93,7 @@ namespace IonDotnet.Internals.Binary
             _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer());
 
             _importContext = new ImportedSymbolsContext(importedTables);
-            _locals = new Dictionary<string, int>();
+            _locals = new Dictionary<string, int>(6);
         }
 
         /// <summary>
@@ -155,22 +155,22 @@ namespace IonDotnet.Internals.Binary
         private SymbolToken Intern(string text)
         {
             Debug.Assert(text != null);
-
-            var foundInImported = _importContext.SymbolResolver.TryGetValue(text, out var tokenSid);
-            if (foundInImported)
-            {
-                if (tokenSid > SystemSymbols.Ion10MaxId)
-                {
-                    StartLocalSymbolTableIfNeeded(true);
-                }
-
-                return new SymbolToken(text, tokenSid);
-            }
+            int tokenSid;
+//            var foundInImported = _importContext.SymbolResolver.TryGetValue(text, out var tokenSid);
+//            if (foundInImported)
+//            {
+//                if (tokenSid > SystemSymbols.Ion10MaxId)
+//                {
+//                    StartLocalSymbolTableIfNeeded(true);
+//                }
+//
+//                return new SymbolToken(text, tokenSid);
+//            }
 
             //try the locals
             var foundInLocal = _locals.TryGetValue(text, out tokenSid);
             if (foundInLocal) return new SymbolToken(text, tokenSid);
-            
+
             //try adding the text to the locals
             if (_localsLocked) throw new IonException("Local table is made read-only");
 

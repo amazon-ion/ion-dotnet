@@ -503,7 +503,10 @@ namespace IonDotnet.Internals
                 //this means that all the bytes written since the last wrapup() fits in one block
                 //so just need to return that segment
                 //make sure that we are conservative in array here
-                _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
+                if (_runningIndex > 0)
+                {
+                    _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
+                }
                 _writtenSoFar = 0;
             }
             else

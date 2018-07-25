@@ -19,7 +19,7 @@ namespace IonDotnet.Serialization
             using (var writer = new ManagedBinaryWriter(stream, IonConstants.EmptySymbolTablesArray))
             {
                 WriteObject(writer, obj);
-                writer.Finish();
+//                writer.Finish();
             }
 
             return stream.ToArray();

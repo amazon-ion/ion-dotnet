@@ -22,7 +22,7 @@ namespace IonDotnet.Bench
         [MemoryDiagnoser]
         public class Benchmark
         {
-            private static SimplePoco[] Data = GenerateArray();
+            public static SimplePoco[] Data = GenerateArray();
 
             private static SimplePoco[] GenerateArray()
             {
@@ -66,7 +66,7 @@ namespace IonDotnet.Bench
 
             private readonly IonSerializer _serializer = new IonSerializer();
 
-            [Benchmark]
+//            [Benchmark]
             public void JsonDotnet()
             {
                 Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data));
@@ -82,17 +82,11 @@ namespace IonDotnet.Bench
         public void Run(ArraySegment<string> args)
         {
             BenchmarkRunner.Run<Benchmark>();
-//            var serializer = new IonSerializer();
-//
-//            var listPoco =
-//                var output = serializer.Serialize(listPoco);
-////            Console.WriteLine(string.Join(",", output.Select(b => $"0x{b:x2}")));
-//
-//            var jsonOutput = JsonConvert.SerializeObject(listPoco);
-//            Console.WriteLine(jsonOutput);
-//            var jsonBytes = Encoding.UTF8.GetBytes(jsonOutput);
-//            Console.WriteLine($"json Length {jsonBytes.Length}");
-//            Console.WriteLine($"ion length {output.Length}");
+//            var s = new IonSerializer();
+//            for (var i = 0; i < 4096; i++)
+//            {
+//                s.Serialize(Benchmark.Data);
+//            }
         }
     }
 }

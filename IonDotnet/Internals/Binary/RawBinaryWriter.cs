@@ -44,29 +44,28 @@ namespace IonDotnet.Internals.Binary
         private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private SymbolToken _currentFieldSymbolToken;
-        private readonly Stack<(List<Memory<byte>> sequence, ContainerType type, long length)> _containerStack;
+        private readonly ContainerStack _containerStack;
         private readonly List<Memory<byte>> _lengthSegments = new List<Memory<byte>>();
 
         internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer)
         {
             _lengthBuffer = lengthBuffer;
             _dataBuffer = dataBuffer;
-            _containerStack = new Stack<(List<Memory<byte>> sequence, ContainerType type, long length)>(DefaultContainerStackSize);
+            _containerStack = new ContainerStack(DefaultContainerStackSize);
 
             //top-level writing also requires a tracker
-            var topSequence = new List<Memory<byte>>();
-            _containerStack.Push((topSequence, ContainerType.Datagram, 0));
-            _dataBuffer.StartStreak(topSequence);
+            var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
+            _dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void UpdateCurrentContainerLength(long increase)
-        {
-            if (_containerStack.Count == 0) return;
-            //pop and push, should be quick
-            var ( sequence, type, length) = _containerStack.Pop();
-            _containerStack.Push((sequence, type, length + increase));
-        }
+//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//        private void UpdateCurrentContainerLength(long increase)
+//        {
+//            if (_containerStack.Count == 0) return;
+//            //pop and push, should be quick
+//            var ( sequence, type, length) = _containerStack.Pop();
+//            _containerStack.Push((sequence, type, length + increase));
+//        }
 
         /// <summary>
         /// Prepare the field name and annotations (if any)
@@ -96,12 +95,11 @@ namespace IonDotnet.Internals.Binary
                 _dataBuffer.Wrapup();
 
                 //set a new container
-                var newList = new List<Memory<byte>>();
-                _containerStack.Push((newList, ContainerType.Annotation, 0));
-                _dataBuffer.StartStreak(newList);
+                var newContainer = _containerStack.PushContainer(ContainerType.Annotation);
+                _dataBuffer.StartStreak(newContainer.Sequence);
 
                 var annotLength = _dataBuffer.WriteAnnotationsWithLength(_annotations);
-                UpdateCurrentContainerLength(annotLength);
+                _containerStack.UpdateCurrentContainerLength(annotLength);
 
                 _annotations.Clear();
             }
@@ -115,7 +113,7 @@ namespace IonDotnet.Internals.Binary
             if (_containerStack.Count > 0)
             {
                 var containerInfo = _containerStack.Peek();
-                if (containerInfo.type == ContainerType.Annotation)
+                if (containerInfo.Type == ContainerType.Annotation)
                 {
                     PopContainer();
                 }
@@ -133,7 +131,7 @@ namespace IonDotnet.Internals.Binary
 
 
             var wrappedList = _dataBuffer.Wrapup();
-            Debug.Assert(ReferenceEquals(wrappedList, popped.sequence));
+            Debug.Assert(ReferenceEquals(wrappedList, popped.Sequence));
 
             var outer = _containerStack.Peek();
 
@@ -141,7 +139,7 @@ namespace IonDotnet.Internals.Binary
             var idxBeforeWrite = _lengthSegments.Count;
             _lengthBuffer.StartStreak(_lengthSegments);
             byte tidByte;
-            switch (popped.type)
+            switch (popped.Type)
             {
                 case ContainerType.Sequence:
                     tidByte = TidListByte;
@@ -156,20 +154,20 @@ namespace IonDotnet.Internals.Binary
                     throw new ArgumentOutOfRangeException();
             }
 
-            var wholeContainerLength = popped.length;
+            var wholeContainerLength = popped.Length;
             if (wholeContainerLength <= 0xD)
             {
                 //fit in the tid byte
                 tidByte |= (byte) wholeContainerLength;
-                UpdateCurrentContainerLength(1 + wholeContainerLength);
+                _containerStack.UpdateCurrentContainerLength(1 + wholeContainerLength);
                 _lengthBuffer.WriteByte(tidByte);
             }
             else
             {
                 tidByte |= IonConstants.LnIsVarLen;
                 _lengthBuffer.WriteByte(tidByte);
-                var lengthBytes = _lengthBuffer.WriteVarUint(popped.length);
-                UpdateCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
+                var lengthBytes = _lengthBuffer.WriteVarUint(popped.Length);
+                _containerStack.UpdateCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
             }
 
             _lengthBuffer.Wrapup();
@@ -177,18 +175,18 @@ namespace IonDotnet.Internals.Binary
 
             for (var i = idxBeforeWrite; i <= idxAfterWrite; i++)
             {
-                outer.sequence.Add(_lengthSegments[i]);
+                outer.Sequence.Add(_lengthSegments[i]);
             }
 
-            outer.sequence.AddRange(wrappedList);
-            _dataBuffer.StartStreak(outer.sequence);
+            outer.Sequence.AddRange(wrappedList);
+            _dataBuffer.StartStreak(outer.Sequence);
         }
 
         private void WriteVarUint(long value)
         {
             Debug.Assert(value >= 0);
             var written = _dataBuffer.WriteVarUint(value);
-            UpdateCurrentContainerLength(written);
+            _containerStack.UpdateCurrentContainerLength(written);
         }
 
         //this is not supposed to be called ever
@@ -214,7 +212,7 @@ namespace IonDotnet.Internals.Binary
             Debug.Assert(_containerStack.Count == 1);
             Debug.Assert(outputStream?.CanWrite == true);
 
-            var currentSequence = _containerStack.Peek().sequence;
+            var currentSequence = _containerStack.Peek().Sequence;
             //wrapup to append all data to the sequence
             _dataBuffer.Wrapup();
             foreach (var segment in currentSequence)
@@ -228,9 +226,8 @@ namespace IonDotnet.Internals.Binary
             _containerStack.Clear();
 
             //top-level writing also requires a tracker
-            var topSequence = new List<Memory<byte>>();
-            _containerStack.Push((topSequence, ContainerType.Datagram, 0));
-            _dataBuffer.StartStreak(topSequence);
+            var pushed = _containerStack.PushContainer(ContainerType.Datagram);
+            _dataBuffer.StartStreak(pushed.Sequence);
             _dataBuffer.Reset();
             //double calls to Reset() should be fine
             _lengthBuffer.Reset();
@@ -256,12 +253,11 @@ namespace IonDotnet.Internals.Binary
             if (_containerStack.Count > 0)
             {
                 var writeList = _dataBuffer.Wrapup();
-                Debug.Assert(ReferenceEquals(writeList, _containerStack.Peek().sequence));
+                Debug.Assert(ReferenceEquals(writeList, _containerStack.Peek().Sequence));
             }
 
-            var newList = new List<Memory<byte>>();
-            _containerStack.Push((newList, type == IonType.Struct ? ContainerType.Struct : ContainerType.Sequence, 0));
-            _dataBuffer.StartStreak(newList);
+            var pushedContainer = _containerStack.PushContainer(type == IonType.Struct ? ContainerType.Struct : ContainerType.Sequence);
+            _dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
         public void StepOut()
@@ -270,18 +266,17 @@ namespace IonDotnet.Internals.Binary
             if (_annotations.Count > 0) throw new IonException("Cannot step out with annotations set");
 
             //TODO check if this container is actually list or struct
-            var currentContainerType = _containerStack.Peek().type;
+            var currentContainerType = _containerStack.Peek().Type;
+
             if (currentContainerType != ContainerType.Sequence && currentContainerType != ContainerType.Struct)
-            {
                 throw new IonException($"Cannot step out of {currentContainerType}");
-            }
 
             PopContainer();
             //clear annotations
             FinishValue();
         }
 
-        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek().type == ContainerType.Struct;
+        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek().Type == ContainerType.Struct;
 
         public void WriteValue(IIonReader reader)
         {
@@ -296,7 +291,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteNull()
         {
             PrepareValue();
-            UpdateCurrentContainerLength(1);
+            _containerStack.UpdateCurrentContainerLength(1);
             _dataBuffer.WriteByte(NullNull);
         }
 
@@ -304,7 +299,7 @@ namespace IonDotnet.Internals.Binary
         {
             var nullByte = IonConstants.GetNullByte(type);
             PrepareValue();
-            UpdateCurrentContainerLength(1);
+            _containerStack.UpdateCurrentContainerLength(1);
             _dataBuffer.WriteByte(nullByte);
             FinishValue();
         }
@@ -312,7 +307,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteBool(bool value)
         {
             PrepareValue();
-            UpdateCurrentContainerLength(1);
+            _containerStack.UpdateCurrentContainerLength(1);
             _dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
         }
 
@@ -321,7 +316,7 @@ namespace IonDotnet.Internals.Binary
             PrepareValue();
             if (value == 0)
             {
-                UpdateCurrentContainerLength(1);
+                _containerStack.UpdateCurrentContainerLength(1);
                 _dataBuffer.WriteByte(IntZeroByte);
             }
             else if (value < 0)
@@ -335,7 +330,7 @@ namespace IonDotnet.Internals.Binary
                     // XXX WriteBuffer.writeUInt64() never looks at sign
                     _dataBuffer.WriteByte(NegIntTypeByte | 0x8);
                     _dataBuffer.WriteUint64(value);
-                    UpdateCurrentContainerLength(9);
+                    _containerStack.UpdateCurrentContainerLength(9);
                 }
                 else
                 {
@@ -354,49 +349,49 @@ namespace IonDotnet.Internals.Binary
         {
             if (value <= 0xFFL)
             {
-                UpdateCurrentContainerLength(2);
+                _containerStack.UpdateCurrentContainerLength(2);
                 _dataBuffer.WriteUint8(type | 0x01);
                 _dataBuffer.WriteUint8(value);
             }
             else if (value <= 0xFFFFL)
             {
-                UpdateCurrentContainerLength(3);
+                _containerStack.UpdateCurrentContainerLength(3);
                 _dataBuffer.WriteUint8(type | 0x02);
                 _dataBuffer.WriteUint16(value);
             }
             else if (value <= 0xFFFFFFL)
             {
-                UpdateCurrentContainerLength(4);
+                _containerStack.UpdateCurrentContainerLength(4);
                 _dataBuffer.WriteUint8(type | 0x03);
                 _dataBuffer.WriteUint24(value);
             }
             else if (value <= 0xFFFFFFFFL)
             {
-                UpdateCurrentContainerLength(5);
+                _containerStack.UpdateCurrentContainerLength(5);
                 _dataBuffer.WriteUint8(type | 0x04);
                 _dataBuffer.WriteUint32(value);
             }
             else if (value <= 0xFFFFFFFFFFL)
             {
-                UpdateCurrentContainerLength(6);
+                _containerStack.UpdateCurrentContainerLength(6);
                 _dataBuffer.WriteUint8(type | 0x05);
                 _dataBuffer.WriteUint40(value);
             }
             else if (value <= 0xFFFFFFFFFFFFL)
             {
-                UpdateCurrentContainerLength(7);
+                _containerStack.UpdateCurrentContainerLength(7);
                 _dataBuffer.WriteUint8(type | 0x06);
                 _dataBuffer.WriteUint48(value);
             }
             else if (value <= 0xFFFFFFFFFFFFFFL)
             {
-                UpdateCurrentContainerLength(8);
+                _containerStack.UpdateCurrentContainerLength(8);
                 _dataBuffer.WriteUint8(type | 0x07);
                 _dataBuffer.WriteUint56(value);
             }
             else
             {
-                UpdateCurrentContainerLength(9);
+                _containerStack.UpdateCurrentContainerLength(9);
                 _dataBuffer.WriteUint8(type | 0x08);
                 _dataBuffer.WriteUint64(value);
             }
@@ -443,7 +438,7 @@ namespace IonDotnet.Internals.Binary
                 totalLength += _dataBuffer.WriteVarUint(data.Length);
             }
 
-            UpdateCurrentContainerLength(totalLength);
+            _containerStack.UpdateCurrentContainerLength(totalLength);
             _dataBuffer.WriteBytes(data);
         }
 
@@ -493,7 +488,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             _dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
-            UpdateCurrentContainerLength(totalSize);
+            _containerStack.UpdateCurrentContainerLength(totalSize);
 
             FinishValue();
         }
@@ -564,5 +559,79 @@ namespace IonDotnet.Internals.Binary
 
         internal IWriterBuffer GetLengthBuffer() => _lengthBuffer;
         internal IWriterBuffer GetDataBuffer() => _dataBuffer;
+
+        private class ContainerInfo
+        {
+            public List<Memory<byte>> Sequence;
+            public ContainerType Type;
+            public long Length;
+        }
+
+        private class ContainerStack
+        {
+            private ContainerInfo[] _array;
+
+            public ContainerStack(int initialCapacity)
+            {
+                _array = new ContainerInfo[initialCapacity];
+            }
+
+            public ContainerInfo PushContainer(ContainerType containerType)
+            {
+                EnsureCapacity(Count);
+                if (_array[Count] == null)
+                {
+                    _array[Count] = new ContainerInfo();
+                }
+                
+                //change for reusing the list
+                if (_array[Count].Sequence == null)
+                {
+                    _array[Count].Sequence = new List<Memory<byte>>();
+                }
+                else
+                {
+                    _array[Count].Sequence.Clear();
+                }
+
+                _array[Count].Length = 0;
+                _array[Count].Type = containerType;
+                return _array[Count++];
+            }
+
+            public void UpdateCurrentContainerLength(long increase)
+            {
+                _array[Count - 1].Length += increase;
+            }
+
+            public ContainerInfo Peek()
+            {
+                if (Count == 0) throw new IndexOutOfRangeException();
+                return _array[Count - 1];
+            }
+
+            public ContainerInfo Pop()
+            {
+                if (Count == 0) throw new IndexOutOfRangeException();
+                var ret = _array[--Count];
+                return ret;
+            }
+
+            public void Clear()
+            {
+                //don't dispose of the lists
+                Count = 0;
+            }
+
+            public int Count { get; private set; }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void EnsureCapacity(int forIndex)
+            {
+                if (forIndex < _array.Length) return;
+                //resize
+                Array.Resize(ref _array, _array.Length * 2);
+            }
+        }
     }
 }
