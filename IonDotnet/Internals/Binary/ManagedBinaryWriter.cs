@@ -81,7 +81,8 @@ namespace IonDotnet.Internals.Binary
 
         public ManagedBinaryWriter(Stream outputStream, IReadOnlyCollection<ISymbolTable> importedTables)
         {
-            if (!outputStream.CanWrite) throw new ArgumentException("Output stream must be writable", nameof(outputStream));
+            if (outputStream == null || !outputStream.CanWrite)
+                throw new ArgumentException("Output stream must be writable", nameof(outputStream));
 
             _outputStream = outputStream;
             _localSymbolTableView = new LocalSymbolTableView(this);
@@ -168,21 +169,20 @@ namespace IonDotnet.Internals.Binary
 
             //try the locals
             var foundInLocal = _locals.TryGetValue(text, out tokenSid);
-            if (!foundInLocal)
-            {
-                //try adding the text to the locals
-                if (_localsLocked) throw new IonException("Local table is made read-only");
+            if (foundInLocal) return new SymbolToken(text, tokenSid);
+            
+            //try adding the text to the locals
+            if (_localsLocked) throw new IonException("Local table is made read-only");
 
-                StartLocalSymbolTableIfNeeded(true);
-                StartLocalSymbolListIfNeeded();
+            StartLocalSymbolTableIfNeeded(true);
+            StartLocalSymbolListIfNeeded();
 
-                //progressively set the new sid
-                tokenSid = _importContext.LocalSidStart + _locals.Count;
-                _locals.Add(text, tokenSid);
+            //progressively set the new sid
+            tokenSid = _importContext.LocalSidStart + _locals.Count;
+            _locals.Add(text, tokenSid);
 
-                //write the new symbol to the list
-                _symbolsWriter.WriteString(text);
-            }
+            //write the new symbol to the list
+            _symbolsWriter.WriteString(text);
 
             return new SymbolToken(text, tokenSid);
         }
@@ -197,7 +197,7 @@ namespace IonDotnet.Internals.Binary
         }
 
         public ISymbolTable SymbolTable => _localSymbolTableView;
-        
+
         /// <inheritdoc />
         /// <summary>
         /// This is supposed to close the writer and release all their resources
@@ -214,7 +214,7 @@ namespace IonDotnet.Internals.Binary
             _userWriter.GetDataBuffer().Dispose();
             _symbolsWriter.GetDataBuffer().Dispose();
         }
-        
+
         public void Flush()
         {
             if (_userWriter.GetDepth() != 0) return;

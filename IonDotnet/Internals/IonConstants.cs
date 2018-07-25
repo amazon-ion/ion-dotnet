@@ -47,7 +47,7 @@ namespace IonDotnet.Internals
 
         public const int Bvm10 = unchecked((int) 0xE00100EA);
 
-        internal const int ShortStringLength = 32;
+        internal const int ShortStringLength = 512;
 
         public const int MaxAnnotationLength = 0x7F;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using IonDotnet.Serialization;
@@ -21,9 +22,9 @@ namespace IonDotnet.Bench
         [MemoryDiagnoser]
         public class Benchmark
         {
-            public static SimplePoco[] Data = GenerateArray();
+            private static SimplePoco[] Data = GenerateArray();
 
-            public static SimplePoco[] GenerateArray()
+            private static SimplePoco[] GenerateArray()
             {
                 var random = new Random();
                 return new[]
@@ -63,17 +64,18 @@ namespace IonDotnet.Bench
                 };
             }
 
+            private readonly IonSerializer _serializer = new IonSerializer();
+
             [Benchmark]
             public void JsonDotnet()
             {
-                JsonConvert.SerializeObject(Data);
+                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data));
             }
 
             [Benchmark]
             public void IonDotnet()
             {
-                var serializer = new IonSerializer();
-                serializer.Serialize(Data);
+                _serializer.Serialize(Data);
             }
         }
 
