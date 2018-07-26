@@ -13,7 +13,7 @@ namespace IonDotnet.Internals.Binary
     {
         private sealed class PagedWriter256Buffer : PagedWriterBuffer
         {
-            public PagedWriter256Buffer() : base(256)
+            public PagedWriter256Buffer() : base(512)
             {
             }
         }

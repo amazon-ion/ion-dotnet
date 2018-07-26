@@ -104,7 +104,7 @@ namespace IonDotnet.Internals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AllocateNewBlock()
         {
-            Console.WriteLine("Allocating");
+//            Console.WriteLine("Allocating");
             var newBlock = ArrayPool<byte>.Shared.Rent(_blockSize);
             _bufferBlocks.Add(newBlock);
             _currentBlock = newBlock;

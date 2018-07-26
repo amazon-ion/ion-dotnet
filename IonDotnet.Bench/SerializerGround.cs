@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using IonDotnet.Internals;
@@ -23,51 +24,30 @@ namespace IonDotnet.Bench
         [MemoryDiagnoser]
         public class Benchmark
         {
-            public static SimplePoco[] Data = GenerateArray();
+            public static List<SimplePoco> Data = GenerateArray();
 
-            private static SimplePoco[] GenerateArray()
+            private static List<SimplePoco> GenerateArray()
             {
                 var random = new Random();
-                return new[]
+                var l = new List<SimplePoco>();
+                for (var i = 0; i < 2000; i++)
                 {
-                    new SimplePoco
+                    l.Add(new SimplePoco
                     {
-                        Name = "Bob",
+                        Name = $"Bob{i}",
                         Age = random.Next(0, int.MaxValue / 5),
                         Nickname = Guid.NewGuid().ToString(),
                         IsHandsome = true,
                         Id = random.Next(0, int.MaxValue / 3)
-                    },
-                    new SimplePoco
-                    {
-                        Name = "Adam",
-                        Age = random.Next(0, int.MaxValue / 5),
-                        Nickname = Guid.NewGuid().ToString(),
-                        IsHandsome = false,
-                        Id = random.Next(0, int.MaxValue / 3)
-                    },
-                    new SimplePoco
-                    {
-                        Name = "Jason",
-                        Age = random.Next(0, int.MaxValue / 5),
-                        Nickname = Guid.NewGuid().ToString(),
-                        IsHandsome = false,
-                        Id = random.Next(0, int.MaxValue / 3)
-                    },
-                    new SimplePoco
-                    {
-                        Name = "Helen",
-                        Age = random.Next(0, int.MaxValue / 5),
-                        Nickname = Guid.NewGuid().ToString(),
-                        IsHandsome = true,
-                        Id = random.Next(0, int.MaxValue / 3)
-                    }
-                };
+                    });
+                }
+
+                return l;
             }
 
             private readonly IonSerializer _serializer = new IonSerializer();
 
-//            [Benchmark]
+            [Benchmark]
             public void JsonDotnet()
             {
                 JsonConvert.SerializeObject(Data);
@@ -75,6 +55,12 @@ namespace IonDotnet.Bench
 
             [Benchmark]
             public void IonDotnet()
+            {
+                _serializer.Serialize(Data);
+            }
+
+            [Benchmark]
+            public void IonDotnetManual()
             {
                 //                _serializer.Serialize(Data);
                 //                using (var stream = new MemoryStream())
@@ -103,7 +89,6 @@ namespace IonDotnet.Bench
                     writer.StepOut();
                     //                        writer.Finish(stream);
                 }
-
                 //                }
             }
         }
@@ -111,8 +96,8 @@ namespace IonDotnet.Bench
         public void Run(ArraySegment<string> args)
         {
             BenchmarkRunner.Run<Benchmark>();
-            
-            
+
+
 //            var bm = new Benchmark();
 //            for (var i = 0; i < 100000; i++)
 //            {

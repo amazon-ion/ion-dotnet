@@ -509,7 +509,7 @@ namespace IonDotnet.Internals.Binary
         {
             Debug.Assert(length > 0);
 
-            int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+            int month = 0, day = 0, hour = 0, minute = 0, second = 0;
             decimal frac = 0;
             var hasFrac = false;
 
@@ -517,7 +517,7 @@ namespace IonDotnet.Internals.Binary
             _localRemaining = length; // > 0
 
             var offsetKnown = ReadVarInt(out var offset);
-            year = ReadVarUint();
+            var year = ReadVarUint();
             if (_localRemaining > 0)
             {
                 month = ReadVarUint();
@@ -544,7 +544,16 @@ namespace IonDotnet.Internals.Binary
             }
 
             _localRemaining = saveLimit;
-            return new Timestamp(year, month, day, hour, minute, second, frac);
+            if (hasFrac && frac > 0)
+            {
+                return offsetKnown
+                    ? new Timestamp(year, month, day, hour, minute, second, offset, frac)
+                    : new Timestamp(year, month, day, hour, minute, second, frac);
+            }
+
+            return offsetKnown
+                ? new Timestamp(year, month, day, hour, minute, second, offset)
+                : new Timestamp(year, month, day, hour, minute, second);
         }
 
         /// <summary>
