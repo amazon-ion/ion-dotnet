@@ -11,7 +11,7 @@ namespace IonDotnet.Conversions
         private string _stringValue;
         private BigInteger _bigIntegerValue;
         private decimal _decimalValue;
-        private DateTime _datetimeValue;
+        private Timestamp _timestampValue;
         private bool _boolValue;
 
         public bool BoolValue
@@ -91,12 +91,12 @@ namespace IonDotnet.Conversions
             }
         }
 
-        public DateTime DatetimeValue
+        public Timestamp TimestampValue
         {
-            get => _datetimeValue;
+            get => _timestampValue;
             internal set
             {
-                _datetimeValue = value;
+                _timestampValue = value;
                 AuthoritativeType = ScalarType.DateTime;
                 TypeSet = ScalarType.DateTime;
             }
@@ -183,8 +183,8 @@ namespace IonDotnet.Conversions
                     _stringValue = stringVal;
                     TypeSet |= ScalarType.String;
                     break;
-                case DateTime dateTime:
-                    _datetimeValue = dateTime;
+                case Timestamp timestamp:
+                    _timestampValue = timestamp;
                     TypeSet |= ScalarType.DateTime;
                     break;
             }

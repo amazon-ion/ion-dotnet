@@ -68,7 +68,7 @@ namespace IonDotnet.Internals.Binary
         protected RawBinaryReader(Stream input)
         {
             if (input == null || !input.CanRead) throw new ArgumentException("Input not readable", nameof(input));
-            
+
             _input = input;
 
             _localRemaining = NoLimit;
@@ -406,6 +406,48 @@ namespace IonDotnet.Internals.Binary
         }
 
         /// <summary>
+        /// Read a var-uint
+        /// </summary>
+        /// <param name="val">read output is set here</param>
+        /// <returns>False to mean -0 => unknown value</returns>
+        private bool ReadVarInt(out int val)
+        {
+            val = 0;
+            var isNegative = false;
+            var b = ReadByte();
+            if (b < 0) throw new UnexpectedEofException();
+
+            if ((b & 0x40) != 0)
+            {
+                isNegative = true;
+            }
+
+            val = b & 0x3F;
+            if ((b & 0x80) != 0)
+                goto Done;
+            for (var i = 0; i < 4; i++)
+            {
+                if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
+                val = (val << 7) | (b & 0x7F);
+                if ((b & 0x80) != 0)
+                    goto Done;
+            }
+
+            //here means overflow
+            throw new OverflowException();
+
+            Done:
+            if (isNegative)
+            {
+                if (val == 0) return false;
+                val = -val;
+                return true;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Read <paramref name="length"/> bytes, store results in a long
         /// </summary>
         /// <returns>'long' representation of the value</returns>
@@ -456,6 +498,53 @@ namespace IonDotnet.Internals.Binary
             }
 
             return ret;
+        }
+
+        protected bool ReadDecimal(int length, out decimal val)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected Timestamp ReadTimeStamp(int length)
+        {
+            Debug.Assert(length > 0);
+
+            int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+            decimal frac = 0;
+            var hasFrac = false;
+
+            var saveLimit = _localRemaining - length;
+            _localRemaining = length; // > 0
+
+            var offsetKnown = ReadVarInt(out var offset);
+            year = ReadVarUint();
+            if (_localRemaining > 0)
+            {
+                month = ReadVarUint();
+                if (_localRemaining > 0)
+                {
+                    day = ReadVarUint();
+
+                    // now we look for hours and minutes
+                    if (_localRemaining > 0)
+                    {
+                        hour = ReadVarUint();
+                        minute = ReadVarUint();
+                        if (_localRemaining > 0)
+                        {
+                            second = ReadVarUint();
+                            if (_localRemaining > 0)
+                            {
+                                // now we read in our actual "milliseconds since the epoch"
+                                hasFrac = ReadDecimal(_localRemaining, out frac);
+                            }
+                        }
+                    }
+                }
+            }
+
+            _localRemaining = saveLimit;
+            return new Timestamp(year, month, day, hour, minute, second, frac);
         }
 
         /// <summary>
@@ -808,7 +897,7 @@ namespace IonDotnet.Internals.Binary
 
         public abstract bool BoolValue();
 
-        public abstract DateTime DateTimeValue();
+        public abstract Timestamp TimestampValue();
 
         public abstract decimal DecimalValue();
 

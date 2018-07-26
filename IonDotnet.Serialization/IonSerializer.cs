@@ -99,10 +99,10 @@ namespace IonDotnet.Serialization
 
         private static bool TryWriteByteArray(IIonWriter writer, object obj, Type type)
         {
-            if (obj is byte[] byteArray)
+            if (type == typeof(byte[]))
             {
                 //fast path, just check directly for byte array
-                writer.WriteBlob(byteArray);
+                writer.WriteBlob((byte[])obj);
                 return true;
             }
 

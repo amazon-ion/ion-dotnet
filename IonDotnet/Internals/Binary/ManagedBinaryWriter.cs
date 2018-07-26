@@ -11,9 +11,9 @@ namespace IonDotnet.Internals.Binary
 {
     internal sealed class ManagedBinaryWriter : IIonWriter
     {
-        private sealed class PagedWriter512Buffer : PagedWriterBuffer
+        private sealed class PagedWriter256Buffer : PagedWriterBuffer
         {
-            public PagedWriter512Buffer() : base(256)
+            public PagedWriter256Buffer() : base(256)
             {
             }
         }
@@ -30,10 +30,10 @@ namespace IonDotnet.Internals.Binary
         {
             private readonly Dictionary<string, int> _dict = new Dictionary<string, int>();
 
-            public readonly IReadOnlyCollection<ISymbolTable> Parents;
+            public readonly ISymbolTable[] Parents;
             public readonly int LocalSidStart;
 
-            public ImportedSymbolsContext(IReadOnlyCollection<ISymbolTable> imports)
+            public ImportedSymbolsContext(ISymbolTable[] imports)
             {
                 Parents = imports;
                 //add all the system symbols
@@ -64,18 +64,27 @@ namespace IonDotnet.Internals.Binary
 
             public bool TryGetValue(string text, out int val)
             {
-                val = 0;
+                val = default;
+                
                 if (text == null) return false;
-
-                for (int i = 0, l = Symbols.SystemSymbolTokens.Count; i < l; i++)
+                var systemTab = SharedSymbolTable.GetSystem(1);
+                var st = systemTab.Find(text);
+                if (st.Text != null)
                 {
-                    var systemToken = Symbols.SystemSymbolTokens[i];
-                    if (systemToken.Text != text) continue;
-                    val = systemToken.Sid;
+                    //found it
+                    val = st.Sid;
                     return true;
                 }
 
-                if (Parents.Count == 0) return false;
+//                for (int i = 0, l = Symbols.SystemSymbolTokens.Length; i < l; i++)
+//                {
+//                    var systemToken = Symbols.SystemSymbolTokens[i];
+//                    if (systemToken.Text != text) continue;
+//                    val = systemToken.Sid;
+//                    return true;
+//                }
+
+                if (Parents.Length == 0) return false;
 
                 return _dict.TryGetValue(text, out val);
             }
@@ -90,19 +99,18 @@ namespace IonDotnet.Internals.Binary
         private readonly ImportedSymbolsContext _importContext;
         private SymbolState _symbolState;
 
-        public ManagedBinaryWriter(IReadOnlyCollection<ISymbolTable> importedTables)
+        public ManagedBinaryWriter(ISymbolTable[] importedTables)
         {
             _localSymbolTableView = new LocalSymbolTableView(this);
 
             //raw writers and their buffers
-            var lengthWriterBuffer = new PagedWriter512Buffer();
+            var lengthWriterBuffer = new PagedWriter256Buffer();
             var lengthSegment = new List<Memory<byte>>(2);
-            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer(), lengthSegment);
-            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter512Buffer(), lengthSegment);
+            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment);
+            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment);
 
             _importContext = new ImportedSymbolsContext(importedTables);
-            _locals = new Dictionary<string, int>(6);
-            _locals.Add("Name", 10);
+            _locals = new Dictionary<string, int>();
         }
 
         /// <summary>
@@ -122,7 +130,7 @@ namespace IonDotnet.Internals.Binary
             _symbolsWriter.AddTypeAnnotationSymbol(Symbols.GetSystemSymbol(SystemSymbols.IonSymbolTableSid));
 
             _symbolsWriter.StepIn(IonType.Struct); // $ion_symbol_table:{}
-            if (_importContext.Parents.Count > 0)
+            if (_importContext.Parents.Length > 0)
             {
                 _symbolsWriter.SetFieldNameSymbol(Symbols.GetSystemSymbol(SystemSymbols.ImportsSid));
                 _symbolsWriter.StepIn(IonType.List); // $imports: []

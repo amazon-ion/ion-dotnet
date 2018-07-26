@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using IonDotnet.Internals;
@@ -78,9 +76,9 @@ namespace IonDotnet.Bench
             [Benchmark]
             public void IonDotnet()
             {
-//                _serializer.Serialize(Data);
-//                using (var stream = new MemoryStream())
-//                {
+                //                _serializer.Serialize(Data);
+                //                using (var stream = new MemoryStream())
+                //                {
                 using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.List);
@@ -88,32 +86,38 @@ namespace IonDotnet.Bench
                     {
                         writer.StepIn(IonType.Struct);
 
-//                        writer.SetFieldName("Age");
-//                        writer.WriteInt(poco.Age);
-//                        writer.SetFieldName("Name");
-//                        writer.WriteString(poco.Name);
-//                        writer.SetFieldName("Nickname");
-//                        writer.WriteString(poco.Nickname);
-//                        writer.SetFieldName("IsHandsome");
-//                        writer.WriteBool(poco.IsHandsome);
-//                        writer.SetFieldName("Id");
-//                        writer.WriteInt(poco.Id);
+                        writer.SetFieldName("Age");
+                        writer.WriteInt(poco.Age);
+                        writer.SetFieldName("Name");
+                        writer.WriteString(poco.Name);
+                        writer.SetFieldName("Nickname");
+                        writer.WriteString(poco.Nickname);
+                        writer.SetFieldName("IsHandsome");
+                        writer.WriteBool(poco.IsHandsome);
+                        writer.SetFieldName("Id");
+                        writer.WriteInt(poco.Id);
 
                         writer.StepOut();
                     }
 
                     writer.StepOut();
-//                        writer.Finish(stream);
+                    //                        writer.Finish(stream);
                 }
 
-//                }
+                //                }
             }
         }
 
         public void Run(ArraySegment<string> args)
         {
-//            BenchmarkRunner.Run<Benchmark>();
-            new Benchmark().IonDotnet();
+            BenchmarkRunner.Run<Benchmark>();
+            
+            
+//            var bm = new Benchmark();
+//            for (var i = 0; i < 100000; i++)
+//            {
+//                bm.IonDotnet();
+//            }
         }
     }
 }

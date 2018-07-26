@@ -81,7 +81,7 @@ namespace IonDotnet
 
         decimal DecimalValue();
 
-        DateTime DateTimeValue();
+        Timestamp TimestampValue();
 
         string StringValue();
 

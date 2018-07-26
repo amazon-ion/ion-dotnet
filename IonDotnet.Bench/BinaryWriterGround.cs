@@ -28,6 +28,18 @@ namespace IonDotnet.Bench
             writer.WriteInt(int.MaxValue / 2);
             writer.StepOut();
 
+            writer.SetFieldName("float_min");
+            writer.WriteFloat(float.MinValue);
+
+            writer.SetFieldName("float_rand");
+            writer.WriteFloat(float.MaxValue / 2);
+
+            writer.SetFieldName("double_max");
+            writer.WriteFloat(double.MaxValue);
+
+            writer.SetFieldName("double_rand");
+            writer.WriteFloat(3.12345678901);
+
             writer.StepOut();
             writer.WriteInt(int.MaxValue);
             writer.Finish(outputStream);
@@ -64,6 +76,31 @@ namespace IonDotnet.Bench
             Console.WriteLine(reader.CurrentFieldName);
             Console.WriteLine(reader.CurrentType);
             Console.WriteLine(reader.IntValue());
+            reader.StepOut();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.DoubleValue());
+            Console.WriteLine();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.DoubleValue());
+            Console.WriteLine();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.DoubleValue());
+            Console.WriteLine();
+
+            reader.MoveNext();
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.CurrentType);
+            Console.WriteLine(reader.DoubleValue());
+            Console.WriteLine();
         }
     }
 }

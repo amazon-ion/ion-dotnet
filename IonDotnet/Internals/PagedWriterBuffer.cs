@@ -371,7 +371,7 @@ namespace IonDotnet.Internals
             return WriteVarUIntSlow(value);
         }
 
-        public int WriteAnnotationsWithLength(IEnumerable<SymbolToken> annotations)
+        public int WriteAnnotationsWithLength(IList<SymbolToken> annotations)
         {
             //remember the current position to write the length
             //annotation length MUST fit in 1 byte
@@ -387,9 +387,9 @@ namespace IonDotnet.Internals
             //this accounts for the tid|length byte
             _writtenSoFar++;
 
-            foreach (var symbol in annotations)
+            for (int i = 0, l = annotations.Count; i < l; i++)
             {
-                annotLength += WriteVarUint(symbol.Sid);
+                annotLength += WriteVarUint(annotations[i].Sid);
                 if (annotLength > IonConstants.MaxAnnotationLength) throw new IonException($"Annotation length too large: {annotLength}");
             }
 
@@ -439,6 +439,7 @@ namespace IonDotnet.Internals
             return 5;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int WriteVarUIntSlow(long value)
         {
             var size = 1;

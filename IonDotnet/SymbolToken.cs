@@ -44,20 +44,12 @@
         /// <summary>
         /// The text of this symbol.
         /// </summary>
-        public string Text { get; }
+        public readonly string Text;
 
         /// <summary>
         /// The ID of this symbol token.
         /// </summary>
         public int Sid => _sid - 1;
-
-        /// <returns>Symbol Text</returns>
-        /// <exception cref="UnknownSymbolException">If the text is null</exception>
-        public string AssumeText()
-        {
-            if (Text == null) throw new UnknownSymbolException(Sid);
-            return Text;
-        }
 
         public override string ToString() => $"SymbolToken::{{text:{Text},id:{Sid}}}";
 

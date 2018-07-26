@@ -4,8 +4,7 @@ namespace IonDotnet.Utils
 {
     public static class Symbols
     {
-        public static readonly IReadOnlyList<SymbolToken> SystemSymbolTokens = new[]
-        {
+        public static readonly SymbolToken[] SystemSymbolTokens = {
             new SymbolToken(SystemSymbols.Ion, SystemSymbols.IonSid),
             new SymbolToken(SystemSymbols.Ion10, SystemSymbols.Ion10Sid),
             new SymbolToken(SystemSymbols.IonSymbolTable, SystemSymbols.IonSymbolTableSid),

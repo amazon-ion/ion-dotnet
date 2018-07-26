@@ -1,12 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet", "IonDotnet\IonDotnet.csproj", "{21393746-00BE-4B80-9645-D31D9959EC92}"
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IonDotnet", "IonDotnet\IonDotnet.csproj", "{21393746-00BE-4B80-9645-D31D9959EC92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Tests", "IonDotnet.Tests\IonDotnet.Tests.csproj", "{01004275-6BBF-4BB4-9ADB-C968691B5E0D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IonDotnet.Tests", "IonDotnet.Tests\IonDotnet.Tests.csproj", "{01004275-6BBF-4BB4-9ADB-C968691B5E0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Bench", "IonDotnet.Bench\IonDotnet.Bench.csproj", "{F40BDBAC-89B1-4306-8D1D-62E6E33B513E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IonDotnet.Bench", "IonDotnet.Bench\IonDotnet.Bench.csproj", "{F40BDBAC-89B1-4306-8D1D-62E6E33B513E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonDotnet.Serialization", "IonDotnet.Serialization\IonDotnet.Serialization.csproj", "{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IonDotnet.Serialization", "IonDotnet.Serialization\IonDotnet.Serialization.csproj", "{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +33,11 @@ Global
 		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4721DD4D-EEBB-4E5C-9A5C-E0FD1990B3C7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B7AB15B9-682D-4BAA-953C-759DEA19D11C}
 	EndGlobalSection
 EndGlobal

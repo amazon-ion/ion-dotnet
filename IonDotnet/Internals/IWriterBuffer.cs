@@ -90,7 +90,7 @@ namespace IonDotnet.Internals
         /// </summary>
         /// <param name="annotations">List of annotations</param>
         /// <returns>Number of bytes written</returns>
-        int WriteAnnotationsWithLength(IEnumerable<SymbolToken> annotations);
+        int WriteAnnotationsWithLength(IList<SymbolToken> annotations);
 
         /// <summary>
         /// Start a new write streak

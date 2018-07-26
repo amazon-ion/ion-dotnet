@@ -510,7 +510,7 @@ namespace IonDotnet.Internals.Binary
 
         public decimal DecimalValue() => throw new InvalidOperationException("only valid if the value is a decimal");
 
-        public DateTime DateTimeValue() => throw new InvalidOperationException("only valid if the value is a DateTime");
+        public Timestamp TimestampValue() => throw new InvalidOperationException("only valid if the value is a DateTime");
 
         public string StringValue() => _stringValue;
 

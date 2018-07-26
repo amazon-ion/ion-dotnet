@@ -21,15 +21,16 @@ namespace IonDotnet.Internals.Binary
         private const int IntZeroByte = 0x20;
 
         //high-bits of different value types
-        private const byte PosIntTypeByte = 0x20;
-        private const byte NegIntTypeByte = 0x30;
+        private const byte TidPosIntByte = 0x20;
+        private const byte TidNegIntByte = 0x30;
         private const byte TidListByte = 0xB0;
         private const byte TidSexpByte = 0xC0;
         private const byte TidStructByte = 0xD0;
         private const byte TidTypeDeclByte = 0xE0;
         private const byte TidStringByte = 0x80;
-        private const byte ClobType = 0x90;
-        private const byte BlobByteType = 0xA0;
+        private const byte TidClobType = 0x90;
+        private const byte TidBlobByte = 0xA0;
+        private const byte TidFloatByte = 0x40;
 
         private const byte NullNull = 0x0F;
 
@@ -100,7 +101,7 @@ namespace IonDotnet.Internals.Binary
                 _dataBuffer.StartStreak(newContainer.Sequence);
 
                 var annotLength = _dataBuffer.WriteAnnotationsWithLength(_annotations);
-                _containerStack.UpdateCurrentContainerLength(annotLength);
+                _containerStack.IncreaseCurrentContainerLength(annotLength);
 
                 _annotations.Clear();
             }
@@ -159,7 +160,7 @@ namespace IonDotnet.Internals.Binary
             {
                 //fit in the tid byte
                 tidByte |= (byte) wholeContainerLength;
-                _containerStack.UpdateCurrentContainerLength(1 + wholeContainerLength);
+                _containerStack.IncreaseCurrentContainerLength(1 + wholeContainerLength);
                 _lengthBuffer.WriteByte(tidByte);
             }
             else
@@ -167,7 +168,7 @@ namespace IonDotnet.Internals.Binary
                 tidByte |= IonConstants.LnIsVarLen;
                 _lengthBuffer.WriteByte(tidByte);
                 var lengthBytes = _lengthBuffer.WriteVarUint(popped.Length);
-                _containerStack.UpdateCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
+                _containerStack.IncreaseCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
             }
 
             _lengthBuffer.Wrapup();
@@ -184,7 +185,7 @@ namespace IonDotnet.Internals.Binary
         {
             Debug.Assert(value >= 0);
             var written = _dataBuffer.WriteVarUint(value);
-            _containerStack.UpdateCurrentContainerLength(written);
+            _containerStack.IncreaseCurrentContainerLength(written);
         }
 
         //this is not supposed to be called ever
@@ -290,7 +291,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteNull()
         {
             PrepareValue();
-            _containerStack.UpdateCurrentContainerLength(1);
+            _containerStack.IncreaseCurrentContainerLength(1);
             _dataBuffer.WriteByte(NullNull);
         }
 
@@ -298,7 +299,7 @@ namespace IonDotnet.Internals.Binary
         {
             var nullByte = IonConstants.GetNullByte(type);
             PrepareValue();
-            _containerStack.UpdateCurrentContainerLength(1);
+            _containerStack.IncreaseCurrentContainerLength(1);
             _dataBuffer.WriteByte(nullByte);
             FinishValue();
         }
@@ -306,7 +307,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteBool(bool value)
         {
             PrepareValue();
-            _containerStack.UpdateCurrentContainerLength(1);
+            _containerStack.IncreaseCurrentContainerLength(1);
             _dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
         }
 
@@ -315,7 +316,7 @@ namespace IonDotnet.Internals.Binary
             PrepareValue();
             if (value == 0)
             {
-                _containerStack.UpdateCurrentContainerLength(1);
+                _containerStack.IncreaseCurrentContainerLength(1);
                 _dataBuffer.WriteByte(IntZeroByte);
             }
             else if (value < 0)
@@ -327,18 +328,18 @@ namespace IonDotnet.Internals.Binary
                     // XXX we keep 2's complement of Long.MIN_VALUE because it encodes to unsigned 2
                     // ** 63 (0x8000000000000000L)
                     // XXX WriteBuffer.writeUInt64() never looks at sign
-                    _dataBuffer.WriteByte(NegIntTypeByte | 0x8);
+                    _dataBuffer.WriteByte(TidNegIntByte | 0x8);
                     _dataBuffer.WriteUint64(value);
-                    _containerStack.UpdateCurrentContainerLength(9);
+                    _containerStack.IncreaseCurrentContainerLength(9);
                 }
                 else
                 {
-                    WriteTypedUInt(NegIntTypeByte, -value);
+                    WriteTypedUInt(TidNegIntByte, -value);
                 }
             }
             else
             {
-                WriteTypedUInt(PosIntTypeByte, value);
+                WriteTypedUInt(TidPosIntByte, value);
             }
 
             FinishValue();
@@ -348,49 +349,49 @@ namespace IonDotnet.Internals.Binary
         {
             if (value <= 0xFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(2);
+                _containerStack.IncreaseCurrentContainerLength(2);
                 _dataBuffer.WriteUint8(type | 0x01);
                 _dataBuffer.WriteUint8(value);
             }
             else if (value <= 0xFFFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(3);
+                _containerStack.IncreaseCurrentContainerLength(3);
                 _dataBuffer.WriteUint8(type | 0x02);
                 _dataBuffer.WriteUint16(value);
             }
             else if (value <= 0xFFFFFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(4);
+                _containerStack.IncreaseCurrentContainerLength(4);
                 _dataBuffer.WriteUint8(type | 0x03);
                 _dataBuffer.WriteUint24(value);
             }
             else if (value <= 0xFFFFFFFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(5);
+                _containerStack.IncreaseCurrentContainerLength(5);
                 _dataBuffer.WriteUint8(type | 0x04);
                 _dataBuffer.WriteUint32(value);
             }
             else if (value <= 0xFFFFFFFFFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(6);
+                _containerStack.IncreaseCurrentContainerLength(6);
                 _dataBuffer.WriteUint8(type | 0x05);
                 _dataBuffer.WriteUint40(value);
             }
             else if (value <= 0xFFFFFFFFFFFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(7);
+                _containerStack.IncreaseCurrentContainerLength(7);
                 _dataBuffer.WriteUint8(type | 0x06);
                 _dataBuffer.WriteUint48(value);
             }
             else if (value <= 0xFFFFFFFFFFFFFFL)
             {
-                _containerStack.UpdateCurrentContainerLength(8);
+                _containerStack.IncreaseCurrentContainerLength(8);
                 _dataBuffer.WriteUint8(type | 0x07);
                 _dataBuffer.WriteUint56(value);
             }
             else
             {
-                _containerStack.UpdateCurrentContainerLength(9);
+                _containerStack.IncreaseCurrentContainerLength(9);
                 _dataBuffer.WriteUint8(type | 0x08);
                 _dataBuffer.WriteUint64(value);
             }
@@ -406,10 +407,10 @@ namespace IonDotnet.Internals.Binary
 
             PrepareValue();
 
-            var type = PosIntTypeByte;
+            var type = TidPosIntByte;
             if (value < 0)
             {
-                type = NegIntTypeByte;
+                type = TidNegIntByte;
                 value = BigInteger.Negate(value);
             }
 
@@ -437,13 +438,30 @@ namespace IonDotnet.Internals.Binary
                 totalLength += _dataBuffer.WriteVarUint(data.Length);
             }
 
-            _containerStack.UpdateCurrentContainerLength(totalLength);
+            _containerStack.IncreaseCurrentContainerLength(totalLength);
             _dataBuffer.WriteBytes(data);
         }
 
         public void WriteFloat(double value)
         {
-            throw new NotImplementedException();
+            PrepareValue();
+
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (value == (float) value)
+            {
+                //TODO requires careful testing
+                _containerStack.IncreaseCurrentContainerLength(5);
+                _dataBuffer.WriteByte(TidFloatByte | 4);
+                _dataBuffer.WriteUint32(BitConverter.SingleToInt32Bits((float) value));
+            }
+            else
+            {
+                _containerStack.IncreaseCurrentContainerLength(9);
+                _dataBuffer.WriteByte(TidFloatByte | 8);
+                _dataBuffer.WriteUint64(BitConverter.DoubleToInt64Bits(value));
+            }
+
+            FinishValue();
         }
 
         public void WriteDecimal(decimal value)
@@ -489,7 +507,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             _dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
-            _containerStack.UpdateCurrentContainerLength(totalSize);
+            _containerStack.IncreaseCurrentContainerLength(totalSize);
 
             FinishValue();
         }
@@ -504,7 +522,7 @@ namespace IonDotnet.Internals.Binary
 
             PrepareValue();
 
-            WriteTypedBytes(BlobByteType, value);
+            WriteTypedBytes(TidBlobByte, value);
 
             FinishValue();
         }
@@ -579,19 +597,22 @@ namespace IonDotnet.Internals.Binary
                 EnsureCapacity(Count);
                 if (_array[Count] == null)
                 {
-                    _array[Count] = new ContainerInfo {Sequence = new List<Memory<byte>>(4)};
-                }
-                else
-                {
-                    _array[Count].Sequence.Clear();
+                    _array[Count] = new ContainerInfo
+                    {
+                        Sequence = new List<Memory<byte>>(4),
+                        Type = containerType
+                    };
+                    return _array[Count++];
                 }
 
-                _array[Count].Length = 0;
-                _array[Count].Type = containerType;
+                var entry = _array[Count];
+                entry.Sequence.Clear();
+                entry.Length = 0;
+                entry.Type = containerType;
                 return _array[Count++];
             }
 
-            public void UpdateCurrentContainerLength(long increase)
+            public void IncreaseCurrentContainerLength(long increase)
             {
                 _array[Count - 1].Length += increase;
             }

@@ -115,7 +115,14 @@ namespace IonDotnet.Internals.Binary
                     break;
                 case IonType.Decimal:
                 case IonType.Timestamp:
-                    throw new NotImplementedException();
+                    if (_valueLength == 0)
+                    {
+                        _v.SetNull(IonType.Timestamp);
+                        break;
+                    }
+
+                    _v.TimestampValue = ReadTimeStamp(_valueLength);
+                    break;
                 case IonType.String:
                     _v.StringValue = ReadString(_valueLength);
                     _v.AuthoritativeType = ScalarType.String;
@@ -158,11 +165,11 @@ namespace IonDotnet.Internals.Binary
             return _v.BoolValue;
         }
 
-        public override DateTime DateTimeValue()
+        public override Timestamp TimestampValue()
         {
             if (_valueIsNull) throw new NullValueException();
             PrepareValue();
-            return _v.DatetimeValue;
+            return _v.TimestampValue;
         }
 
         public override decimal DecimalValue()
