@@ -47,7 +47,7 @@ namespace IonDotnet.Bench
 
             private readonly IonSerializer _serializer = new IonSerializer();
 
-            [Benchmark]
+            //[Benchmark]
             public void JsonDotnet()
             {
                 JsonConvert.SerializeObject(Data);
@@ -59,7 +59,7 @@ namespace IonDotnet.Bench
                 _serializer.Serialize(Data);
             }
 
-            [Benchmark]
+            //[Benchmark]
             public void IonDotnetManual()
             {
                 //                _serializer.Serialize(Data);

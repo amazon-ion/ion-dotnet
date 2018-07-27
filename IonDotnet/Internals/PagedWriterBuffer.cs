@@ -539,6 +539,8 @@ namespace IonDotnet.Internals
             }
 
             _bufferBlocks.Clear();
+            _currentBlock = ArrayPool<byte>.Shared.Rent(_blockSize);
+            _bufferBlocks.Add(_currentBlock);
         }
 
         public void Dispose()

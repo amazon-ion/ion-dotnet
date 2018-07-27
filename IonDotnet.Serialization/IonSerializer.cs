@@ -12,16 +12,15 @@ namespace IonDotnet.Serialization
 {
     public class IonSerializer
     {
+        private static ManagedBinaryWriter PrivateWriter = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
+        
         public byte[] Serialize(object obj)
         {
             //prepare infrastructure
             using (var stream = new MemoryStream())
             {
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
-                {
-                    WriteObject(writer, obj);
-                    writer.Finish(stream);
-                }
+                WriteObject(PrivateWriter, obj);
+                PrivateWriter.Finish(stream);
                 
                 return stream.ToArray();
             }

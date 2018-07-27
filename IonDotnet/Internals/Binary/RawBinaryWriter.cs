@@ -225,12 +225,12 @@ namespace IonDotnet.Internals.Binary
             _containerStack.Clear();
 
             //top-level writing also requires a tracker
-            var pushed = _containerStack.PushContainer(ContainerType.Datagram);
-            _dataBuffer.StartStreak(pushed.Sequence);
             _dataBuffer.Reset();
             //double calls to Reset() should be fine
             _lengthBuffer.Reset();
             _lengthSegments.Clear();
+            var pushed = _containerStack.PushContainer(ContainerType.Datagram);
+            _dataBuffer.StartStreak(pushed.Sequence);
 
             //TODO implement writing again after finish
         }
