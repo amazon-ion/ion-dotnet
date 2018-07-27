@@ -27,8 +27,7 @@ namespace IonDotnet.Bench
             }
 
             var instance = (IRunable) Activator.CreateInstance(thatclass);
-            var argsSeg = args.Length > 1 ? new ArraySegment<string>(args, 1, args.Length - 1) : new ArraySegment<string>(new string[0]);
-            instance.Run(argsSeg);
+            instance.Run(args);
         }
     }
 }

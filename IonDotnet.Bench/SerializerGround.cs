@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using IonDotnet.Internals;
@@ -9,10 +10,10 @@ using Newtonsoft.Json;
 
 namespace IonDotnet.Bench
 {
-    // ReSharper disable once UnusedMember.Global
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class SerializerGround : IRunable
     {
-        public class SimplePoco
+        private class SimplePoco
         {
             public string Name { get; set; }
             public int Age { get; set; }
@@ -24,21 +25,22 @@ namespace IonDotnet.Bench
         [MemoryDiagnoser]
         public class Benchmark
         {
-            public static List<SimplePoco> Data = GenerateArray();
+            private static readonly List<SimplePoco> Data = GenerateArray();
+            private const int Times = 100;
 
             private static List<SimplePoco> GenerateArray()
             {
                 var random = new Random();
                 var l = new List<SimplePoco>();
-                for (var i = 0; i < 2000; i++)
+                for (var i = 0; i < 20000; i++)
                 {
                     l.Add(new SimplePoco
                     {
                         Name = $"Bob{i}",
-                        Age = random.Next(0, int.MaxValue / 5),
+                        Age = random.Next(0, 1000000),
                         Nickname = Guid.NewGuid().ToString(),
                         IsHandsome = true,
-                        Id = random.Next(0, int.MaxValue / 3)
+                        Id = random.Next(0, 1000000)
                     });
                 }
 
@@ -47,17 +49,21 @@ namespace IonDotnet.Bench
 
             private readonly IonSerializer _serializer = new IonSerializer();
 
-            [Benchmark]
-            public void JsonDotnet()
+//            [Benchmark]
+            public int JsonDotnet()
             {
-                JsonConvert.SerializeObject(Data);
+                var s = JsonConvert.SerializeObject(Data);
+                return Encoding.UTF8.GetBytes(s).Length;
             }
 
-            [Benchmark]
-            public void IonDotnet()
+//            [Benchmark]
+            public int IonDotnet()
             {
-                _serializer.Serialize(Data);
+                var b = IonSerializer.Serialize(Data);
+                return b.Length;
             }
+
+            private static readonly IIonWriter Writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
 
             [Benchmark]
             public void IonDotnetManual()
@@ -65,44 +71,42 @@ namespace IonDotnet.Bench
                 //                _serializer.Serialize(Data);
                 //                using (var stream = new MemoryStream())
                 //                {
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                Writer.StepIn(IonType.List);
+                foreach (var poco in Data)
                 {
-                    writer.StepIn(IonType.List);
-                    foreach (var poco in Data)
-                    {
-                        writer.StepIn(IonType.Struct);
+                    Writer.StepIn(IonType.Struct);
 
-                        writer.SetFieldName("Age");
-                        writer.WriteInt(poco.Age);
-                        writer.SetFieldName("Name");
-                        writer.WriteString(poco.Name);
-                        writer.SetFieldName("Nickname");
-                        writer.WriteString(poco.Nickname);
-                        writer.SetFieldName("IsHandsome");
-                        writer.WriteBool(poco.IsHandsome);
-                        writer.SetFieldName("Id");
-                        writer.WriteInt(poco.Id);
+                    Writer.SetFieldName("Age");
+                    Writer.WriteInt(poco.Age);
+                    Writer.SetFieldName("Name");
+                    Writer.WriteString(poco.Name);
+                    Writer.SetFieldName("Nickname");
+                    Writer.WriteString(poco.Nickname);
+                    Writer.SetFieldName("IsHandsome");
+                    Writer.WriteBool(poco.IsHandsome);
+                    Writer.SetFieldName("Id");
+                    Writer.WriteInt(poco.Id);
 
-                        writer.StepOut();
-                    }
-
-                    writer.StepOut();
-                    //                        writer.Finish(stream);
+                    Writer.StepOut();
                 }
+
+                Writer.StepOut();
+                //                        writer.Finish(stream);
+
                 //                }
             }
         }
 
-        public void Run(ArraySegment<string> args)
+        public void Run(string[] args)
         {
-            BenchmarkRunner.Run<Benchmark>();
+//            BenchmarkRunner.Run<Benchmark>();
 
-
-//            var bm = new Benchmark();
-//            for (var i = 0; i < 100000; i++)
-//            {
-//                bm.IonDotnet();
-//            }
+            var bm = new Benchmark();
+            var js = bm.JsonDotnet();
+            var io = bm.IonDotnet();
+            Console.WriteLine(js);
+            Console.WriteLine(io);
+            Console.WriteLine((js * 1.0) / io);
         }
     }
 }

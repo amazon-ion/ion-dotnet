@@ -104,11 +104,16 @@ namespace IonDotnet.Internals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AllocateNewBlock()
         {
-//            Console.WriteLine("Allocating");
+            _runningIndex = 0;
+            if (_currentBlock == null && _bufferBlocks.Count > 0)
+            {
+                _currentBlock = _bufferBlocks[0];
+                return;
+            }
+
             var newBlock = ArrayPool<byte>.Shared.Rent(_blockSize);
             _bufferBlocks.Add(newBlock);
             _currentBlock = newBlock;
-            _runningIndex = 0;
         }
 
         public int WriteUtf8(ReadOnlySpan<char> chars, int length)
@@ -498,6 +503,10 @@ namespace IonDotnet.Internals
         public void StartStreak(IList<Memory<byte>> sequence)
         {
             _currentSequence = sequence;
+            if (_currentBlock == null)
+            {
+                AllocateNewBlock();
+            }
         }
 
         public IList<Memory<byte>> Wrapup()
@@ -532,13 +541,13 @@ namespace IonDotnet.Internals
             _writtenSoFar = 0;
             _runningIndex = 0;
             _currentSequence = null;
-            //TODO should we return all rented buffers and just trust arraypool to do the right thing?
-            foreach (var block in _bufferBlocks)
-            {
-                ArrayPool<byte>.Shared.Return(block);
-            }
-
-            _bufferBlocks.Clear();
+//            //TODO should we return all rented buffers and just trust arraypool to do the right thing?
+//            foreach (var block in _bufferBlocks)
+//            {
+//                ArrayPool<byte>.Shared.Return(block);
+//            }
+//
+//            _bufferBlocks.Clear();
         }
 
         public void Dispose()

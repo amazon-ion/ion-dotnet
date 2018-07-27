@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using IonDotnet.Internals.Binary;
+using IonDotnet.Serialization;
+using Newtonsoft.Json;
 
 namespace IonDotnet.Bench
 {
@@ -60,9 +64,53 @@ namespace IonDotnet.Bench
             }
         }
 
-        public void Run(ArraySegment<string> args)
+        [MemoryDiagnoser]
+        public class CompareWriter
         {
-            BenchmarkRunner.Run<CompareReader>();
+            private static readonly List<RootObject> Objs;
+            private const int Times = 1;
+
+            static CompareWriter()
+            {
+                var jsonBytes = DirStructure.ReadDataFile("sample.json");
+                var jsonString = Encoding.UTF8.GetString(jsonBytes);
+                Objs = JsonConvert.DeserializeObject<List<RootObject>>(jsonString);
+                JsonConvert.SerializeObject(Objs);
+                IonSerializer.Serialize(Objs);
+            }
+
+            [Benchmark]
+            public void Json()
+            {
+                for (var i = 0; i < Times; i++)
+                {
+                    var jsoned = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Objs));
+                    Console.WriteLine(jsoned.Length);
+                }
+            }
+
+            [Benchmark]
+            public void Ion()
+            {
+                for (var i = 0; i < Times; i++)
+                {
+                    var ioned = IonSerializer.Serialize(Objs);
+                    Console.WriteLine(ioned.Length);
+                }
+            }
+        }
+
+        public void Run(string[] args)
+        {
+            var decBin = DirStructure.ReadDataFile("javaout");
+            var reader = new UserBinaryReader(new MemoryStream(decBin));
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.DecimalValue());
+
+//            var b = new CompareWriter();
+//            b.Json();
+//            b.Ion();
+//            BenchmarkRunner.Run<CompareWriter>();
         }
     }
 }

@@ -9,7 +9,7 @@ namespace IonDotnet.Bench
     // ReSharper disable once UnusedMember.Global
     public class BinaryWriterGround : IRunable
     {
-        public void Run(ArraySegment<string> args)
+        public void Run(string[] args)
         {
             var outputStream = new MemoryStream();
 
