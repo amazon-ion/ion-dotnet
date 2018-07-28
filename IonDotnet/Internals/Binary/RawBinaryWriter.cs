@@ -221,16 +221,18 @@ namespace IonDotnet.Internals.Binary
 
             outputStream.Flush();
 
-            //reset the states
-            _containerStack.Clear();
 
-            //top-level writing also requires a tracker
+            //reset the states
             _dataBuffer.Reset();
             //double calls to Reset() should be fine
             _lengthBuffer.Reset();
-            _lengthSegments.Clear();
+            _containerStack.Clear();
+
+            //top-level writing also requires a tracker
             var pushed = _containerStack.PushContainer(ContainerType.Datagram);
             _dataBuffer.StartStreak(pushed.Sequence);
+
+            _lengthSegments.Clear();
 
             //TODO implement writing again after finish
         }
@@ -589,6 +591,7 @@ namespace IonDotnet.Internals.Binary
 
             public ContainerStack(int initialCapacity)
             {
+                Debug.Assert(initialCapacity > 0);
                 _array = new ContainerInfo[initialCapacity];
             }
 
@@ -599,7 +602,7 @@ namespace IonDotnet.Internals.Binary
                 {
                     _array[Count] = new ContainerInfo
                     {
-                        Sequence = new List<Memory<byte>>(4),
+                        Sequence = new List<Memory<byte>>(2),
                         Type = containerType
                     };
                     return _array[Count++];

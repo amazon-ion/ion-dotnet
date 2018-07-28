@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
 
@@ -12,24 +13,35 @@ namespace IonDotnet.Serialization
 {
     public class IonSerializer
     {
-        private static ManagedBinaryWriter PrivateWriter = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
-        
-        public byte[] Serialize(object obj)
+        private static readonly IDictionary<Type, PropertyInfo[]> PropertyInfoMap = new Dictionary<Type, PropertyInfo[]>();
+        private static readonly ManagedBinaryWriter BinWriter = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
+
+        public static byte[] Serialize(object obj)
         {
             //prepare infrastructure
             using (var stream = new MemoryStream())
             {
-                WriteObject(PrivateWriter, obj);
-                PrivateWriter.Finish(stream);
-                
+                WriteObject(BinWriter, obj);
+                BinWriter.Finish(stream);
+
                 return stream.ToArray();
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static PropertyInfo[] GetPublicProperties(Type type)
+        {
+            if (PropertyInfoMap.TryGetValue(type, out var props)) return props;
+
+            props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            PropertyInfoMap.Add(type, props);
+            return props;
         }
 
         /// <summary>
         /// Write the object to the writer, don't care the level/container, don't know the type
         /// </summary>
-        private void WriteObject(IIonWriter writer, object obj)
+        private static void WriteObject(IIonWriter writer, object obj)
         {
             if (obj == null)
             {
@@ -43,7 +55,7 @@ namespace IonDotnet.Serialization
         /// <summary>
         /// Write object knowing the (intended) type
         /// </summary>
-        private void WriteObject(IIonWriter writer, object obj, Type type)
+        private static void WriteObject(IIonWriter writer, object obj, Type type)
         {
             Debug.Assert(obj == null || obj.GetType() == type);
 
@@ -83,7 +95,7 @@ namespace IonDotnet.Serialization
 
             writer.StepIn(IonType.Struct);
 
-            var properties = obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            var properties = GetPublicProperties(type);
             foreach (var propertyInfo in properties)
             {
                 if (!propertyInfo.CanRead) continue;
@@ -98,32 +110,32 @@ namespace IonDotnet.Serialization
 
         private static bool TryWriteByteArray(IIonWriter writer, object obj, Type type)
         {
-            if (type == typeof(byte[]))
-            {
-                //fast path, just check directly for byte array
-                writer.WriteBlob((byte[])obj);
-                return true;
-            }
-
-            if (obj is ReadOnlyMemory<byte> readOnlyMemorymemory)
-            {
-                //fast path 2
-                writer.WriteBlob(readOnlyMemorymemory.Span);
-                return true;
-            }
-
-            if (obj is Memory<byte> memory)
-            {
-                //fast path 3
-                writer.WriteBlob(memory.Span);
-                return true;
-            }
-
             if (obj == null)
             {
                 if (!typeof(byte[]).IsAssignableFrom(type) && !typeof(IEnumerable<byte>).IsAssignableFrom(type)) return false;
 
                 writer.WriteNull(IonType.Blob);
+                return true;
+            }
+
+            if (type == typeof(byte[]))
+            {
+                //fast path, just check directly for byte array
+                writer.WriteBlob((byte[]) obj);
+                return true;
+            }
+
+            if (type == typeof(ReadOnlyMemory<byte>))
+            {
+                //fast path 2
+                writer.WriteBlob(((ReadOnlyMemory<byte>) obj).Span);
+                return true;
+            }
+
+            if (type == typeof(Memory<byte>))
+            {
+                //fast path 3
+                writer.WriteBlob(((Memory<byte>) obj).Span);
                 return true;
             }
 
@@ -134,6 +146,7 @@ namespace IonDotnet.Serialization
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryWriteScalar(IIonWriter writer, object obj, Type type)
         {
             if (type == typeof(string))

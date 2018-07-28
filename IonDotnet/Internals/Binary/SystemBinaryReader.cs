@@ -114,6 +114,8 @@ namespace IonDotnet.Internals.Binary
                     _v.IntValue = (int) sid;
                     break;
                 case IonType.Decimal:
+                    _v.DecimalValue = ReadDecimal(_valueLength);
+                    break;
                 case IonType.Timestamp:
                     if (_valueLength == 0)
                     {

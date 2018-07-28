@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Conversions;
 using IonDotnet.Systems;
@@ -406,7 +407,7 @@ namespace IonDotnet.Internals.Binary
         }
 
         /// <summary>
-        /// Read a var-uint
+        /// Read a var-int
         /// </summary>
         /// <param name="val">read output is set here</param>
         /// <returns>False to mean -0 => unknown value</returns>
@@ -423,27 +424,27 @@ namespace IonDotnet.Internals.Binary
             }
 
             val = b & 0x3F;
-            if ((b & 0x80) != 0)
-                goto Done;
+            if ((b & 0x80) != 0) goto Done;
+
             for (var i = 0; i < 4; i++)
             {
                 if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
                 val = (val << 7) | (b & 0x7F);
-                if ((b & 0x80) != 0)
-                    goto Done;
+                if ((b & 0x80) != 0) goto Done;
             }
 
             //here means overflow
             throw new OverflowException();
 
             Done:
-            if (isNegative)
-            {
-                if (val == 0) return false;
-                val = -val;
-                return true;
-            }
+            //non-negative, return now
+            if (!isNegative) return true;
 
+            //negative zero -0
+            if (val == 0) return false;
+
+            //otherwise just return the negation
+            val = -val;
             return true;
         }
 
@@ -500,9 +501,75 @@ namespace IonDotnet.Internals.Binary
             return ret;
         }
 
-        protected bool ReadDecimal(int length, out decimal val)
+        protected decimal ReadDecimal(int length)
         {
-            throw new NotImplementedException();
+            if (length == 0) return 0m;
+
+            var saveLimit = _localRemaining - length;
+            _localRemaining = length;
+
+            ReadVarInt(out var exponent);
+            if (exponent > 0) throw new IonException($"Exponent should be <= : {exponent}");
+            //we care about the scale here
+            exponent = -exponent;
+
+            decimal dec;
+
+            //don't support big decimal this for now
+            if (exponent > 28) throw new OverflowException($"Decimal exponent scale {exponent} is not supported");
+            if (_localRemaining > sizeof(int) * 3) throw new OverflowException($"Decimal mantissa size {_localRemaining} is not supported");
+
+            if (_localRemaining == 0)
+            {
+                dec = new decimal(0, 0, 0, false, (byte) exponent);
+            }
+            else
+            {
+                var mantissaSize = _localRemaining;
+                Span<byte> mantissaBytes = new byte[mantissaSize];
+                ReadAll(mantissaBytes, _localRemaining);
+
+
+                var isNegative = (mantissaBytes[0] & 0b1000_0000) > 0;
+                mantissaBytes[0] &= 0x7F;
+//                Array.Reverse(mantissaBytes);
+
+                int high = 0, mid = 0;
+
+                var rl = mantissaSize > sizeof(int) ? sizeof(int) : mantissaSize;
+                var offset = mantissaSize - rl;
+                var low = ReadBigEndian(mantissaBytes.Slice(offset, rl));
+                if (offset > 0)
+                {
+                    rl = offset > sizeof(int) ? sizeof(int) : offset;
+                    offset -= rl;
+                    mid = ReadBigEndian(mantissaBytes.Slice(offset, rl));
+                }
+
+                if (offset > 0)
+                {
+                    Debug.Assert(offset <= sizeof(int));
+                    high = ReadBigEndian(mantissaBytes.Slice(0, offset));
+                }
+
+                dec = new decimal(low, mid, high, isNegative, (byte) exponent);
+            }
+
+            _localRemaining = saveLimit;
+            return dec;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ReadBigEndian(Span<byte> bytes)
+        {
+            var ret = 0;
+            foreach (var t in bytes)
+            {
+                ret <<= 8;
+                ret |= t;
+            }
+
+            return ret;
         }
 
         protected Timestamp ReadTimeStamp(int length)
@@ -511,7 +578,6 @@ namespace IonDotnet.Internals.Binary
 
             int month = 0, day = 0, hour = 0, minute = 0, second = 0;
             decimal frac = 0;
-            var hasFrac = false;
 
             var saveLimit = _localRemaining - length;
             _localRemaining = length; // > 0
@@ -536,7 +602,7 @@ namespace IonDotnet.Internals.Binary
                             if (_localRemaining > 0)
                             {
                                 // now we read in our actual "milliseconds since the epoch"
-                                hasFrac = ReadDecimal(_localRemaining, out frac);
+                                frac = ReadDecimal(_localRemaining);
                             }
                         }
                     }
@@ -544,7 +610,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             _localRemaining = saveLimit;
-            if (hasFrac && frac > 0)
+            if (frac > 0)
             {
                 return offsetKnown
                     ? new Timestamp(year, month, day, hour, minute, second, offset, frac)
