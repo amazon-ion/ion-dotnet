@@ -324,7 +324,7 @@ namespace IonDotnet.Internals
          */
 
         private const int IntBitsPerOctet = 7;
-        private const int VarUintUnitFlag = 0b_0111_1111;
+        private const int VarUintUnitFlag = 0b_0111_1111; //0x7f
         private const int VarUintShift8Unit = 8 * IntBitsPerOctet;
         private const int VarUintShift7Unit = 7 * IntBitsPerOctet;
         private const int VarUintShift6Unit = 6 * IntBitsPerOctet;
@@ -342,7 +342,7 @@ namespace IonDotnet.Internals
         private const long VarUintShift2UnitMinValue = 1L << VarUintShift2Unit;
         private const long VarUintShift1UnitMinValue = 1L << VarUintShift1Unit;
 
-        private const int VarIntFinalOctetMask = 0b_1000_0000;
+        private const int VarIntFinalOctetMask = 0b_1000_0000; //0x80
 
         public int WriteVarUint(long value)
         {
@@ -498,6 +498,168 @@ namespace IonDotnet.Internals
 
             WriteUint8((value & VarUintUnitFlag) | VarIntFinalOctetMask);
             return size;
+        }
+
+        private const byte VarIntSignedOctetMask = 0x3F;
+
+        private const byte VarInt10OctetShift = 62;
+        private const long VarInt10OctetMinValue = 1L << VarInt10OctetShift;
+        private const long VarInt9OctetMinValue = VarUintShift8UnitMinValue >> 1;
+        private const long VarInt8OctetMinValue = VarUintShift7UnitMinValue >> 1;
+        private const long VarInt7OctetMinValue = VarUintShift6UnitMinValue >> 1;
+        private const long VarInt6OctetMinValue = VarUintShift5UnitMinValue >> 1;
+        private const long VarInt5OctetMinValue = VarUintShift4UnitMinValue >> 1;
+        private const long VarInt4OctetMinValue = VarUintShift3UnitMinValue >> 1;
+        private const long VarInt3OctetMinValue = VarUintShift2UnitMinValue >> 1;
+        private const long VarInt2OctetMinValue = VarUintShift1UnitMinValue >> 1;
+
+        /// <summary>
+        /// Write the number in the form of var-int, meaning that 
+        /// </summary>
+        /// <returns></returns>
+        public int WriteVarInt(long value)
+        {
+            Debug.Assert(value != long.MinValue);
+
+            const int varIntBitsPerSignedOctet = 6;
+            const int varSint2OctetShift = varIntBitsPerSignedOctet + 1 * IntBitsPerOctet;
+            const int varSint3OctetShift = varIntBitsPerSignedOctet + 2 * IntBitsPerOctet;
+            const int varSint4OctetShift = varIntBitsPerSignedOctet + 3 * IntBitsPerOctet;
+            const int varSint5OctetShift = varIntBitsPerSignedOctet + 4 * IntBitsPerOctet;
+
+            var signMask = (byte) (value < 0 ? 0b0100_0000 : 0);
+            var magnitude = value < 0 ? -value : value;
+            if (magnitude < VarInt2OctetMinValue)
+            {
+                WriteUint8((magnitude & VarIntSignedOctetMask) | VarIntFinalOctetMask | signMask);
+                return 1;
+            }
+
+            long signBit = value < 0 ? 1 : 0;
+            var remaining = _currentBlock.Length - _runningIndex;
+
+            if (magnitude < VarInt3OctetMinValue && remaining >= 2)
+                return WriteVarUIntDirect2(magnitude | (signBit << varSint2OctetShift));
+
+            if (magnitude < VarInt4OctetMinValue && remaining >= 3)
+                return WriteVarUIntDirect3(magnitude | (signBit << varSint3OctetShift));
+
+            if (magnitude < VarInt5OctetMinValue && remaining >= 4)
+                return WriteVarUIntDirect4(magnitude | (signBit << varSint4OctetShift));
+
+            if (magnitude < VarInt6OctetMinValue && remaining >= 5)
+                return WriteVarUIntDirect5(magnitude | (signBit << varSint5OctetShift));
+
+            return WriteVarIntSlow(magnitude, signMask);
+        }
+
+        private int WriteVarIntSlow(long magnitude, byte signMask)
+        {
+            var size = 1;
+            byte b;
+            if (magnitude >= VarInt10OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarInt10OctetShift);
+                b &= VarIntSignedOctetMask;
+                b |= signMask;
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt9OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift8Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt8OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift7Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt7OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift6Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt6OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift5Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt5OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift4Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt4OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift3Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt3OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift2Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt2OctetMinValue)
+            {
+                b = (byte) (magnitude >> VarUintShift1Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                WriteByte(b);
+                size++;
+            }
+
+            b = (byte) magnitude;
+            b = TransformVarIntOctet(b, size, signMask);
+
+            b |= VarIntFinalOctetMask;
+            WriteByte(b);
+            return size;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte TransformVarIntOctet(byte b, int size, byte signMask)
+        {
+            if (size == 1)
+            {
+                b &= VarIntSignedOctetMask;
+                b |= signMask;
+            }
+            else
+            {
+                b &= VarUintUnitFlag;
+            }
+
+            return b;
         }
 
         public void StartStreak(IList<Memory<byte>> sequence)

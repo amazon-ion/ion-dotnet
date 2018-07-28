@@ -80,14 +80,9 @@ namespace IonDotnet.Tests.Common
                     }
                 case IonType.Float:
                     var doubleVal = reader.DoubleValue();
-                    if (Math.Abs(doubleVal - (float) doubleVal) < float.Epsilon)
-                    {
-                        return (float) doubleVal;
-                    }
+                    if (Math.Abs(doubleVal - (float) doubleVal) < float.Epsilon) return (float) doubleVal;
 
                     return doubleVal;
-
-                    return reader.DoubleValue();
                 case IonType.Decimal:
                     return reader.DecimalValue();
                 case IonType.String:

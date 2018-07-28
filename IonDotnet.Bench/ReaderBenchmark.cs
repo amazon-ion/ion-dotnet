@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
@@ -102,15 +104,62 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            var decBin = DirStructure.ReadDataFile("javaout");
-            var reader = new UserBinaryReader(new MemoryStream(decBin));
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.DecimalValue());
+            const string fn = "dotnetout";
+            const int defaultDepth = 400;
 
-//            var b = new CompareWriter();
-//            b.Json();
-//            b.Ion();
-//            BenchmarkRunner.Run<CompareWriter>();
+            var depth = args.Length > 1 ? int.Parse(args[1]) : defaultDepth;
+//            var s = "layer182";
+//            var bytes = Encoding.UTF8.GetBytes(s);
+//            var sback = Encoding.UTF8.GetString(bytes);
+//            Console.WriteLine(sback);
+            WriteLayersDeep(fn, depth);
+
+//            var data = DirStructure.ReadDataFile("javaout");
+            var data = DirStructure.ReadDataFile(fn);
+            var reader = new UserBinaryReader(new MemoryStream(data));
+            for (var i = 0; i < depth; i++)
+            {
+                try
+                {
+                    var readType = reader.MoveNext();
+                    if (IonType.Struct != readType)
+                    {
+                        throw new Exception($"type is {readType}");
+                    }
+
+                    reader.StepIn();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"exception at idx {i}");
+                    Console.WriteLine($"{e.GetType().Name}: {e.Message}");
+                    Console.WriteLine(e.StackTrace);
+                    break;
+                }
+            }
+        }
+
+        private static void WriteLayersDeep(string fileName, int depth)
+        {
+            using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+            {
+                writer.StepIn(IonType.Struct);
+                for (var i = 0; i < depth - 1; i++)
+                {
+                    writer.SetFieldName($"layer{i}");
+                    writer.StepIn(IonType.Struct);
+                }
+
+                for (var i = 0; i < depth; i++)
+                {
+                    writer.StepOut();
+                }
+
+                using (var fs = DirStructure.OpenWrite(fileName))
+                {
+                    writer.Flush(fs);
+                }
+            }
         }
     }
 }

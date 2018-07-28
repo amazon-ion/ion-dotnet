@@ -194,7 +194,7 @@ namespace IonDotnet.Serialization
             if (type == typeof(DateTime))
             {
                 var propValue = (DateTime) obj;
-                writer.WriteTimestamp(propValue);
+                writer.WriteTimestamp(new Timestamp(propValue));
                 return true;
             }
 

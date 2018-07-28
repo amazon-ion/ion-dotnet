@@ -23,5 +23,11 @@ namespace IonDotnet.Bench
             var path = Path.Combine(testDatDir.FullName, relativePath);
             return File.ReadAllBytes(path);
         }
+
+        public static FileStream OpenWrite(string fileName)
+        {
+            var rootDir = GetRootDir();
+            return File.OpenWrite(Path.Combine(rootDir.FullName, fileName));
+        }
     }
 }

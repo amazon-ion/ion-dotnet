@@ -65,7 +65,7 @@ namespace IonDotnet.Internals.Binary
             public bool TryGetValue(string text, out int val)
             {
                 val = default;
-                
+
                 if (text == null) return false;
                 var systemTab = SharedSymbolTable.GetSystem(1);
                 var st = systemTab.Find(text);
@@ -106,8 +106,8 @@ namespace IonDotnet.Internals.Binary
             //raw writers and their buffers
             var lengthWriterBuffer = new PagedWriter256Buffer();
             var lengthSegment = new List<Memory<byte>>(2);
-            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment);
-            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment);
+            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment, "symbols");
+            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment, "user");
 
             _importContext = new ImportedSymbolsContext(importedTables);
             _locals = new Dictionary<string, int>();
@@ -346,7 +346,7 @@ namespace IonDotnet.Internals.Binary
             _userWriter.WriteDecimal(value);
         }
 
-        public void WriteTimestamp(DateTime value)
+        public void WriteTimestamp(Timestamp value)
         {
             _userWriter.WriteTimestamp(value);
         }

@@ -228,6 +228,11 @@ namespace IonDotnet.Internals
             while ((type = reader.MoveNext()) != IonType.None)
             {
                 var text = type == IonType.String ? reader.StringValue() : null;
+                if (text == null)
+                {
+                    Console.WriteLine(type);
+                }
+
                 symbolList.Add(text);
             }
 

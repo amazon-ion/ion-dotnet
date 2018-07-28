@@ -65,7 +65,7 @@ namespace IonDotnet
 
         void WriteDecimal(decimal value);
 
-        void WriteTimestamp(DateTime value);
+        void WriteTimestamp(Timestamp value);
 
         void WriteSymbol(SymbolToken symbolToken);
 

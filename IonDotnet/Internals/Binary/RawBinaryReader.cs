@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -252,6 +253,7 @@ namespace IonDotnet.Internals.Binary
 
         private void Skip(int length)
         {
+            Console.WriteLine($"skip {length}");
             if (length < 0) throw new ArgumentException(nameof(length));
             if (_localRemaining == NoLimit)
             {
@@ -293,6 +295,11 @@ namespace IonDotnet.Internals.Binary
             if (tdRead < 0) return IonConstants.Eof;
 
             var tid = IonConstants.GetTypeCode(tdRead);
+            if (tid == IonConstants.TidClob)
+            {
+                Console.WriteLine("trouble");
+            }
+
             var len = IonConstants.GetLowNibble(tdRead);
             if (tid == IonConstants.TidNull && len != IonConstants.LnIsNull)
             {
@@ -723,12 +730,21 @@ namespace IonDotnet.Internals.Binary
             ? ReadShortString(length)
             : ReadLongString(length);
 
+        private int N;
+
         private string ReadShortString(int length)
         {
+            if (N++ == 181)
+            {
+                Console.WriteLine("read string trouble");
+            }
+
             Span<byte> alloc = stackalloc byte[IonConstants.ShortStringLength];
             ReadAll(alloc, length);
             ReadOnlySpan<byte> readOnlySpan = alloc;
             var strValue = Encoding.UTF8.GetString(readOnlySpan.Slice(0, length));
+            var bytes = string.Join(" ", readOnlySpan.Slice(0, length).ToArray().Select(b => $"{b:x2}"));
+            Console.WriteLine($"readstring {strValue}, size {length}, bytes {bytes}");
             return strValue;
         }
 

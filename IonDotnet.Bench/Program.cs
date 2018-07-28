@@ -11,7 +11,7 @@ namespace IonDotnet.Bench
                 Console.WriteLine($"usage: <prog> <runner_classname>");
                 Environment.Exit(1);
             }
-
+            
             var className = args[0];
             var thatclass = Type.GetType($"IonDotnet.Bench.{className}");
             if (thatclass == null)
@@ -26,8 +26,17 @@ namespace IonDotnet.Bench
                 Environment.Exit(1);
             }
 
-            var instance = (IRunable) Activator.CreateInstance(thatclass);
-            instance.Run(args);
+            try
+            {
+                var instance = (IRunable) Activator.CreateInstance(thatclass);
+                instance.Run(args);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("catched");
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+            }
         }
     }
 }

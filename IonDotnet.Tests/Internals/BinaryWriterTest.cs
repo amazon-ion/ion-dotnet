@@ -83,12 +83,12 @@ namespace IonDotnet.Tests.Internals
         /// Test for correct stepping in-out of structs
         /// </summary>
         [TestMethod]
-        [DataRow(1)]
-        [DataRow(2)]
-        [DataRow(3)]
-        [DataRow(5)]
-        [DataRow(10)]
-        [DataRow(1000)]
+//        [DataRow(1)]
+//        [DataRow(2)]
+//        [DataRow(3)]
+//        [DataRow(5)]
+//        [DataRow(10)]
+        [DataRow(400)]
         public void WriteLayersDeep(int depth)
         {
             using (var stream = new MemoryStream())
@@ -96,8 +96,10 @@ namespace IonDotnet.Tests.Internals
                 List<(string key, object value)> kvps;
                 using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
                 {
-                    for (var i = 0; i < depth; i++)
+                    writer.StepIn(IonType.Struct);
+                    for (var i = 0; i < depth - 1; i++)
                     {
+                        writer.SetFieldName($"layer{i}");
                         writer.StepIn(IonType.Struct);
                     }
 
@@ -108,13 +110,15 @@ namespace IonDotnet.Tests.Internals
                         writer.StepOut();
                     }
 
-                    writer.StepOut();
                     writer.Flush(stream);
                 }
 
                 var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
                 for (var i = 0; i < depth - 1; i++)
                 {
+                    Console.WriteLine(i);
+                    Assert.AreEqual(IonType.Struct, reader.MoveNext());
+                    Console.WriteLine(reader.CurrentFieldName);
                     reader.StepIn();
                 }
 
@@ -162,7 +166,7 @@ namespace IonDotnet.Tests.Internals
             writeAndAdd("cstring", "somestring", writer.WriteString);
             writeAndAdd("int", 123456, i => writer.WriteInt(i));
             writeAndAdd("long", long.MaxValue / 10000, writer.WriteInt);
-            writeAndAdd("datetime", new DateTime(2000, 11, 11, 11, 11, 11, DateTimeKind.Utc), writer.WriteTimestamp);
+            writeAndAdd("datetime", new Timestamp(new DateTime(2000, 11, 11, 11, 11, 11, DateTimeKind.Utc)), writer.WriteTimestamp);
             writeAndAdd("decimal", 6.34233242123123123423m, writer.WriteDecimal);
             writeAndAdd("float", 231236.321312f, d => writer.WriteFloat(d));
             writeAndAdd("double", 231345.325667d * 133.346432d, writer.WriteFloat);

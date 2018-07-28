@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -15,7 +16,10 @@ namespace IonDotnet.Internals.Binary
             Sequence,
             Struct,
             Annotation,
-            Datagram
+            Datagram,
+
+            //to be used in the case where a value is treated as a container
+            Value
         }
 
         private const int IntZeroByte = 0x20;
@@ -32,6 +36,7 @@ namespace IonDotnet.Internals.Binary
         private const byte TidBlobByte = 0xA0;
         private const byte TidFloatByte = 0x40;
         private const byte TidDecimalByte = 0x50;
+        private const byte TidTimestampByte = 0x60;
 
         private const byte NullNull = 0x0F;
 
@@ -48,9 +53,11 @@ namespace IonDotnet.Internals.Binary
         private SymbolToken _currentFieldSymbolToken;
         private readonly ContainerStack _containerStack;
         private readonly List<Memory<byte>> _lengthSegments;
+        private readonly string _name;
 
-        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments)
+        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments, string name)
         {
+            _name = name;
             _lengthBuffer = lengthBuffer;
             _dataBuffer = dataBuffer;
             _lengthSegments = lengthSegments;
@@ -139,6 +146,8 @@ namespace IonDotnet.Internals.Binary
             var outer = _containerStack.Peek();
 
             //write the tid|len byte and (maybe) the length into the length buffer
+            //clear the length segments, no worry
+            _lengthSegments.Clear();
             _lengthBuffer.StartStreak(_lengthSegments);
             byte tidByte;
             switch (popped.Type)
@@ -151,6 +160,9 @@ namespace IonDotnet.Internals.Binary
                     break;
                 case ContainerType.Annotation:
                     tidByte = TidTypeDeclByte;
+                    break;
+                case ContainerType.Value:
+                    tidByte = TidTimestampByte;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -174,9 +186,6 @@ namespace IonDotnet.Internals.Binary
 
             _lengthBuffer.Wrapup();
             outer.Sequence.AddRange(_lengthSegments);
-
-            //clear the length segments, no worry
-            _lengthSegments.Clear();
 
             outer.Sequence.AddRange(wrappedList);
             _dataBuffer.StartStreak(outer.Sequence);
@@ -203,6 +212,8 @@ namespace IonDotnet.Internals.Binary
         {
         }
 
+        private int N;
+
         /// <summary>
         /// Flush the content to this 
         /// </summary>
@@ -217,11 +228,15 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.Wrapup();
             foreach (var segment in currentSequence)
             {
+                for (var i = 0; i < segment.Length && N++ < 10; i++)
+                {
+                    Console.WriteLine($"{_name}: 0x{segment.Span[i]:x2}");
+                }
+
                 outputStream.Write(segment.Span);
             }
 
             outputStream.Flush();
-
 
             //reset the states
             _dataBuffer.Reset();
@@ -467,14 +482,6 @@ namespace IonDotnet.Internals.Binary
             FinishValue();
         }
 
-        private struct DecimalBreak
-        {
-            public int I1;
-            public int I2;
-            public int I3;
-            public int I4;
-        }
-
         public void WriteDecimal(decimal value)
         {
             PrepareValue();
@@ -594,9 +601,77 @@ namespace IonDotnet.Internals.Binary
             return j;
         }
 
-        public void WriteTimestamp(DateTime value)
+        public void WriteTimestamp(Timestamp value)
         {
-            throw new NotImplementedException();
+            const byte varintNegZero = 0xC0;
+            const short minutePrecision = 3;
+            const short secondPrecision = 4;
+            const short fracPrecision = 5;
+
+            PrepareValue();
+
+            //wrapup first
+            //add all written segments to the sequence
+            _dataBuffer.Wrapup();
+
+            //set a new container
+            var newContainer = _containerStack.PushContainer(ContainerType.Value);
+            var totalLength = 0;
+            _dataBuffer.StartStreak(newContainer.Sequence);
+            if (value.DateTime.Kind == DateTimeKind.Unspecified || value.DateTime.Kind == DateTimeKind.Local)
+            {
+                //unknown offset
+                totalLength++;
+                _dataBuffer.WriteByte(varintNegZero);
+            }
+            else
+            {
+                totalLength += _dataBuffer.WriteVarUint(value.LocalOffset);
+            }
+
+            _containerStack.IncreaseCurrentContainerLength(totalLength);
+
+            //don't update totallength here
+            WriteVarUint(value.DateTime.Year);
+            WriteVarUint(value.DateTime.Month);
+            WriteVarUint(value.DateTime.Day);
+
+            short precision = 0;
+            //we support up to ticks precision
+            decimal tickRemainder = value.DateTime.Ticks % TimeSpan.TicksPerSecond;
+            if (tickRemainder != 0)
+            {
+                precision = fracPrecision;
+            }
+            else if (value.DateTime.Second != 0)
+            {
+                precision = secondPrecision;
+            }
+            else if (value.DateTime.Hour != 0 || value.DateTime.Minute != 0)
+            {
+                precision = minutePrecision;
+            }
+
+            if (precision >= minutePrecision)
+            {
+                WriteVarUint(value.DateTime.Hour);
+                WriteVarUint(value.DateTime.Minute);
+            }
+
+            if (precision >= secondPrecision)
+            {
+                WriteVarUint(value.DateTime.Second);
+            }
+
+            if (precision == fracPrecision)
+            {
+                tickRemainder /= TimeSpan.TicksPerSecond;
+                WriteDecimalNumber(tickRemainder);
+            }
+
+            PopContainer();
+
+            FinishValue();
         }
 
         public void WriteSymbol(SymbolToken symbolToken)
@@ -631,6 +706,11 @@ namespace IonDotnet.Internals.Binary
                 totalSize += 1 + _dataBuffer.WriteVarUint(stringByteSize);
             }
 
+            var bytes = Encoding.UTF8.GetBytes(value);
+            var bstr = string.Join(" ", bytes.Select(b => $"{b:x2}"));
+            //88 6c 61 79 65 72 32 33 read
+            //6c 61 79 65 72 31 38 32 write 
+            Console.WriteLine($"writestring {value}, size {stringByteSize}, bytes {bstr}");
             _dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
             _containerStack.IncreaseCurrentContainerLength(totalSize);
 
@@ -769,9 +849,7 @@ namespace IonDotnet.Internals.Binary
             {
                 if (forIndex < _array.Length) return;
                 //resize
-                var newArray = new ContainerInfo[_array.Length * 2];
-                Buffer.BlockCopy(_array, 0, newArray, 0, _array.Length);
-                _array = newArray;
+                Array.Resize(ref _array, _array.Length * 2);
             }
         }
     }
