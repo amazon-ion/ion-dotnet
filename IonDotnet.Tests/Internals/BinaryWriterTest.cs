@@ -42,6 +42,28 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        [DataRow("1.024")]
+        [DataRow("-1.024")]
+        [DataRow("3.01234567890123456789")]
+        [DataRow("-3.01234567890123456789")]
+        public void WriteSingleDecimal(string format)
+        {
+            var val = decimal.Parse(format);
+
+            Console.WriteLine(val);
+            using (var stream = new MemoryStream())
+            {
+                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                {
+                    writer.WriteDecimal(val);
+                    writer.Flush(stream);
+                    var bytes = stream.ToArray();
+                    Assert.AreEqual(val, ReadUtils.Binary.ReadSingleDecimal(bytes));
+                }
+            }
+        }
+
+        [TestMethod]
         public void WriteEmptyStruct()
         {
             using (var stream = new MemoryStream())

@@ -111,6 +111,13 @@ namespace IonDotnet.Tests.Common
                 var reader = new UserBinaryReader(new MemoryStream(data));
                 return reader.MoveNext() == IonType.None;
             }
+
+            public static decimal ReadSingleDecimal(byte[] data)
+            {
+                var reader = new UserBinaryReader(new MemoryStream(data));
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                return reader.DecimalValue();
+            }
         }
     }
 }

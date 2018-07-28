@@ -509,7 +509,7 @@ namespace IonDotnet.Internals.Binary
             _localRemaining = length;
 
             ReadVarInt(out var exponent);
-            if (exponent > 0) throw new IonException($"Exponent should be <= : {exponent}");
+            if (exponent > 0) throw new IonException($"Exponent should be <= 0: {exponent}");
             //we care about the scale here
             exponent = -exponent;
 
@@ -526,7 +526,7 @@ namespace IonDotnet.Internals.Binary
             else
             {
                 var mantissaSize = _localRemaining;
-                Span<byte> mantissaBytes = new byte[mantissaSize];
+                Span<byte> mantissaBytes = stackalloc byte[sizeof(int) * 3];
                 ReadAll(mantissaBytes, _localRemaining);
 
 

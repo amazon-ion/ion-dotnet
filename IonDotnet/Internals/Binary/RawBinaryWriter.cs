@@ -31,6 +31,7 @@ namespace IonDotnet.Internals.Binary
         private const byte TidClobType = 0x90;
         private const byte TidBlobByte = 0xA0;
         private const byte TidFloatByte = 0x40;
+        private const byte TidDecimalByte = 0x50;
 
         private const byte NullNull = 0x0F;
 
@@ -60,14 +61,14 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
-//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-//        private void UpdateCurrentContainerLength(long increase)
-//        {
-//            if (_containerStack.Count == 0) return;
-//            //pop and push, should be quick
-//            var ( sequence, type, length) = _containerStack.Pop();
-//            _containerStack.Push((sequence, type, length + increase));
-//        }
+        //        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //        private void UpdateCurrentContainerLength(long increase)
+        //        {
+        //            if (_containerStack.Count == 0) return;
+        //            //pop and push, should be quick
+        //            var ( sequence, type, length) = _containerStack.Pop();
+        //            _containerStack.Push((sequence, type, length + increase));
+        //        }
 
         /// <summary>
         /// Prepare the field name and annotations (if any)
@@ -466,9 +467,131 @@ namespace IonDotnet.Internals.Binary
             FinishValue();
         }
 
+        private struct DecimalBreak
+        {
+            public int I1;
+            public int I2;
+            public int I3;
+            public int I4;
+        }
+
         public void WriteDecimal(decimal value)
         {
-            throw new NotImplementedException();
+            PrepareValue();
+
+            if (value == 0)
+            {
+                _containerStack.IncreaseCurrentContainerLength(1);
+                _dataBuffer.WriteUint8(TidDecimalByte);
+            }
+            else
+            {
+                WriteDecimalNumber(value);
+            }
+
+            FinishValue();
+        }
+
+        private void WriteDecimalNumber(decimal value)
+        {
+            Span<byte> bytes = stackalloc byte[sizeof(decimal)];
+            var maxIdx = CopyDecimalBigEndian(bytes, value);
+
+            var negative = value < 0;
+            Debug.Assert(!negative || (bytes[0] & 0b1000_0000) <= 0);
+            Debug.Assert(negative || (bytes[0] ^ 0b1000_0000) > 0);
+
+            //len = maxid - (last index of flag=3) + (flag byte=1)
+            var totalLength = maxIdx - 2;
+
+            var tidByte = TidDecimalByte;
+            if (totalLength <= 0x0D)
+            {
+                tidByte |= (byte) totalLength;
+                _dataBuffer.WriteByte(tidByte);
+                totalLength++;
+            }
+            else
+            {
+                tidByte |= IonConstants.LnIsVarLen;
+                _dataBuffer.WriteByte(tidByte);
+                totalLength += 1 + _dataBuffer.WriteVarUint(totalLength);
+            }
+
+            const byte isNegativeAndDone = 0b_1100_0000;
+            _dataBuffer.WriteByte((byte) (bytes[2] | isNegativeAndDone));
+            if (negative)
+            {
+                bytes[4] |= 0b1000_0000;
+            }
+
+            _dataBuffer.WriteBytes(bytes.Slice(4, maxIdx - 3));
+
+            _containerStack.IncreaseCurrentContainerLength(totalLength);
+        }
+
+        private static unsafe int CopyDecimalBigEndian(Span<byte> bytes, decimal value)
+        {
+            var p = (byte*) &value;
+
+            //keep the flag the same
+            bytes[0] = p[0];
+            bytes[1] = p[1];
+            bytes[2] = p[2];
+            bytes[3] = p[3];
+
+            //high
+            var i = 7;
+            while (i > 3 && p[i] == 0)
+            {
+                i--;
+            }
+
+            var hasHigh = i > 3;
+            var j = 3;
+            while (i > 3)
+            {
+                bytes[++j] = p[i--];
+            }
+
+            //mid
+            i = 15;
+            bool hasMid;
+            if (!hasHigh)
+            {
+                while (i > 11 && p[i] == 0)
+                {
+                    i--;
+                }
+
+                hasMid = i > 11;
+            }
+            else
+            {
+                hasMid = true;
+            }
+
+            while (i > 11)
+            {
+                bytes[++j] = p[i--];
+            }
+
+            //lo
+            i = 11;
+            if (!hasMid)
+            {
+                while (i > 7 && p[i] == 0)
+                {
+                    i--;
+                }
+            }
+
+            while (i > 7)
+            {
+                bytes[++j] = p[i--];
+            }
+
+            return j;
         }
 
         public void WriteTimestamp(DateTime value)
