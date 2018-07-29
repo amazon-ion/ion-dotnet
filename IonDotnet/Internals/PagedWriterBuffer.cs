@@ -82,34 +82,22 @@ namespace IonDotnet.Internals
         }
 
         /// <summary>
-        /// This is called when _runningIndex reaches the end of the current block
-        /// We gotta add the end segment to the list of current segment sequence
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddBlockEndToCurrentSequence()
-        {
-            Debug.Assert(_currentSequence != null);
-            if (_runningIndex >= _writtenSoFar)
-            {
-                if (_runningIndex > 0)
-                {
-                    _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
-                }
-
-                //this means that all the bytes written since the last wrapup() fits in one block
-                return;
-            }
-
-            // _writtenSoFar > BlockSize means this whole block is to be added
-            _currentSequence.Add(_currentBlock);
-        }
-
-        /// <summary>
         /// Allocate new memory block and update related fields
         /// </summary>
         private void AllocateNewBlock()
         {
-            AddBlockEndToCurrentSequence();
+            // First we gotta add the end segment to the list of current segment sequence
+            Debug.Assert(_currentSequence != null);
+            if (_runningIndex < _writtenSoFar)
+            {
+                // _writtenSoFar > BlockSize means this whole block is to be added
+                _currentSequence.Add(_currentBlock);
+            }
+            else if (_runningIndex > 0)
+            {
+                //this means that all the bytes written since the last wrapup() fits in one block
+                _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
+            }
 
             _runningIndex = 0;
             if (_currentBlock == null && _bufferBlocks.Count > 0)

@@ -78,7 +78,7 @@ namespace IonDotnet.Bench
                 var jsonString = Encoding.UTF8.GetString(jsonBytes);
                 Objs = JsonConvert.DeserializeObject<List<RootObject>>(jsonString);
                 JsonConvert.SerializeObject(Objs);
-                IonSerializer.Serialize(Objs);
+                IonSerialization.Serialize(Objs);
             }
 
             [Benchmark]
@@ -96,7 +96,7 @@ namespace IonDotnet.Bench
             {
                 for (var i = 0; i < Times; i++)
                 {
-                    var ioned = IonSerializer.Serialize(Objs);
+                    var ioned = IonSerialization.Serialize(Objs);
                     Console.WriteLine(ioned.Length);
                 }
             }

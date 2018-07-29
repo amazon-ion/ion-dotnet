@@ -32,7 +32,7 @@ namespace IonDotnet.Bench
             {
                 var random = new Random();
                 var l = new List<SimplePoco>();
-                for (var i = 0; i < 20000; i++)
+                for (var i = 0; i < Times; i++)
                 {
                     l.Add(new SimplePoco
                     {
@@ -47,7 +47,7 @@ namespace IonDotnet.Bench
                 return l;
             }
 
-            private readonly IonSerializer _serializer = new IonSerializer();
+            private readonly IonSerialization _serializer = new IonSerialization();
 
 //            [Benchmark]
             public int JsonDotnet()
@@ -59,7 +59,7 @@ namespace IonDotnet.Bench
 //            [Benchmark]
             public int IonDotnet()
             {
-                var b = IonSerializer.Serialize(Data);
+                var b = IonSerialization.Serialize(Data);
                 return b.Length;
             }
 
@@ -97,16 +97,39 @@ namespace IonDotnet.Bench
             }
         }
 
+        private class Person
+        {
+            public string Name { get; set; }
+            public int Age { get; set; }
+            public int[] Ids { get; set; }
+        }
+
         public void Run(string[] args)
         {
-//            BenchmarkRunner.Run<Benchmark>();
-
-            var bm = new Benchmark();
-            var js = bm.JsonDotnet();
-            var io = bm.IonDotnet();
-            Console.WriteLine(js);
-            Console.WriteLine(io);
-            Console.WriteLine((js * 1.0) / io);
+            var l = new List<Person>
+            {
+                new Person
+                {
+                    Name = "Bob",
+                    Age = 35,
+                    Ids = new[] {1, 2, 3}
+                },
+                new Person
+                {
+                    Name = "Anna",
+                    Age = 32,
+                    Ids = new[] {1, 2, 3}
+                },
+                new Person
+                {
+                    Name = "Huy",
+                    Age = 26,
+                    Ids = new[] {1, 2, 3}
+                }
+            };
+            var dat = IonSerialization.Serialize(l);
+            var d = IonSerialization.Deserialize<IEnumerable<Person>>(dat);
+            Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
         }
     }
 }

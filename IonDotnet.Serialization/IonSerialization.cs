@@ -11,7 +11,7 @@ using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Serialization
 {
-    public class IonSerializer
+    public partial class IonSerialization
     {
         private static readonly IDictionary<Type, PropertyInfo[]> PropertyInfoMap = new Dictionary<Type, PropertyInfo[]>();
         private static readonly ManagedBinaryWriter BinWriter = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
