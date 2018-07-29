@@ -57,7 +57,7 @@ namespace IonDotnet.Serialization
         /// </summary>
         private static void WriteObject(IIonWriter writer, object obj, Type type)
         {
-            Debug.Assert(obj == null || obj.GetType() == type);
+            Debug.Assert(obj == null || obj.GetType() == type, $"objType: {obj?.GetType()}, type:{type}");
 
             if (TryWriteScalar(writer, obj, type)) return;
 
@@ -148,7 +148,7 @@ namespace IonDotnet.Serialization
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryWriteScalar(IIonWriter writer, object obj, Type type)
-        {            
+        {
             if (type == typeof(string))
             {
                 var propValue = (string) obj;

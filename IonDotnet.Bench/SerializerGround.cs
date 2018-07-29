@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Text;
 using BenchmarkDotNet.Attributes;
@@ -115,12 +117,36 @@ namespace IonDotnet.Bench
             }
         }
 
+        private static byte[] Compress(byte[] data)
+        {
+            using (var memStream = new MemoryStream())
+            {
+                using (var compressionStream = new GZipStream(memStream, CompressionLevel.NoCompression))
+                {
+                    compressionStream.Write(data);
+                }
+
+                var compressed = memStream.ToArray();
+                return compressed;
+            }
+        }
+
         public void Run(string[] args)
         {
             var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
                 &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
+
             var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
-            Console.WriteLine(obj.meta.code);
+            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
+            var ionBytes = IonSerialization.Serialize(obj);
+
+            Console.WriteLine($"JSON size: {jsonBytes.Length}");
+            Console.WriteLine($"ION size: {ionBytes.Length}");
+
+            var compressedJson = Compress(jsonBytes);
+            var compressedIon = Compress(ionBytes);
+            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
+            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
         }
     }
 }

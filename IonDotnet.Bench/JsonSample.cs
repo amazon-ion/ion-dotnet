@@ -255,12 +255,12 @@ namespace IonDotnet.Bench
         public string storeId { get; set; }
         public HereNow hereNow { get; set; }
         public Price price { get; set; }
-        public bool? hasMenu { get; set; }
+        public bool hasMenu { get; set; }
         public Menu menu { get; set; }
-        public bool? allowMenuUrlEdit { get; set; }
+        public bool allowMenuUrlEdit { get; set; }
         public Delivery delivery { get; set; }
         public VenuePage venuePage { get; set; }
-        public bool? venueRatingBlacklisted { get; set; }
+        public bool venueRatingBlacklisted { get; set; }
     }
 
     public class Source
