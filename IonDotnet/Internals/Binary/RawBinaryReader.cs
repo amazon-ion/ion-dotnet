@@ -730,21 +730,12 @@ namespace IonDotnet.Internals.Binary
             ? ReadShortString(length)
             : ReadLongString(length);
 
-        private int N;
-
         private string ReadShortString(int length)
         {
-            if (N++ == 181)
-            {
-                Console.WriteLine("read string trouble");
-            }
-
             Span<byte> alloc = stackalloc byte[IonConstants.ShortStringLength];
             ReadAll(alloc, length);
             ReadOnlySpan<byte> readOnlySpan = alloc;
             var strValue = Encoding.UTF8.GetString(readOnlySpan.Slice(0, length));
-            var bytes = string.Join(" ", readOnlySpan.Slice(0, length).ToArray().Select(b => $"{b:x2}"));
-            Console.WriteLine($"readstring {strValue}, size {length}, bytes {bytes}");
             return strValue;
         }
 

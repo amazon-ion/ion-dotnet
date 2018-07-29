@@ -68,7 +68,8 @@ namespace IonDotnet.Internals
         private void WriteShortChars(ReadOnlySpan<char> chars, int bytesToWrite)
         {
             Span<byte> alloc = stackalloc byte[IonConstants.ShortStringLength];
-            Encoding.UTF8.GetBytes(chars, alloc);
+            var length = Encoding.UTF8.GetBytes(chars, alloc);
+            Debug.Assert(length == bytesToWrite);
             WriteBytes(alloc.Slice(0, bytesToWrite));
         }
 
@@ -84,13 +85,18 @@ namespace IonDotnet.Internals
         /// This is called when _runningIndex reaches the end of the current block
         /// We gotta add the end segment to the list of current segment sequence
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddBlockEndToCurrentSequence()
         {
             Debug.Assert(_currentSequence != null);
             if (_runningIndex >= _writtenSoFar)
             {
+                if (_runningIndex > 0)
+                {
+                    _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
+                }
+
                 //this means that all the bytes written since the last wrapup() fits in one block
-                _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
                 return;
             }
 
@@ -101,9 +107,10 @@ namespace IonDotnet.Internals
         /// <summary>
         /// Allocate new memory block and update related fields
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AllocateNewBlock()
         {
+            AddBlockEndToCurrentSequence();
+
             _runningIndex = 0;
             if (_currentBlock == null && _bufferBlocks.Count > 0)
             {
@@ -308,7 +315,6 @@ namespace IonDotnet.Internals
 
                 Debug.Assert(_runningIndex == _blockSize);
                 // new allocation needed
-                AddBlockEndToCurrentSequence();
                 AllocateNewBlock();
                 bytes = bytes.Slice(bytesWritten);
             }

@@ -83,12 +83,13 @@ namespace IonDotnet.Tests.Internals
         /// Test for correct stepping in-out of structs
         /// </summary>
         [TestMethod]
-//        [DataRow(1)]
-//        [DataRow(2)]
-//        [DataRow(3)]
-//        [DataRow(5)]
-//        [DataRow(10)]
+        [DataRow(1)]
+        [DataRow(2)]
+        [DataRow(3)]
+        [DataRow(5)]
+        [DataRow(10)]
         [DataRow(400)]
+        [DataRow(1000)]
         public void WriteLayersDeep(int depth)
         {
             using (var stream = new MemoryStream())

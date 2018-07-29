@@ -212,8 +212,6 @@ namespace IonDotnet.Internals.Binary
         {
         }
 
-        private int N;
-
         /// <summary>
         /// Flush the content to this 
         /// </summary>
@@ -228,11 +226,6 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.Wrapup();
             foreach (var segment in currentSequence)
             {
-                for (var i = 0; i < segment.Length && N++ < 10; i++)
-                {
-                    Console.WriteLine($"{_name}: 0x{segment.Span[i]:x2}");
-                }
-
                 outputStream.Write(segment.Span);
             }
 
@@ -244,9 +237,9 @@ namespace IonDotnet.Internals.Binary
             _lengthBuffer.Reset();
             _containerStack.Clear();
 
-            //top-level writing also requires a tracker
-            var pushed = _containerStack.PushContainer(ContainerType.Datagram);
-            _dataBuffer.StartStreak(pushed.Sequence);
+            currentSequence.Clear();
+            //set the top-level container
+            _dataBuffer.StartStreak(currentSequence);
 
             _lengthSegments.Clear();
 
@@ -706,11 +699,6 @@ namespace IonDotnet.Internals.Binary
                 totalSize += 1 + _dataBuffer.WriteVarUint(stringByteSize);
             }
 
-            var bytes = Encoding.UTF8.GetBytes(value);
-            var bstr = string.Join(" ", bytes.Select(b => $"{b:x2}"));
-            //88 6c 61 79 65 72 32 33 read
-            //6c 61 79 65 72 31 38 32 write 
-            Console.WriteLine($"writestring {value}, size {stringByteSize}, bytes {bstr}");
             _dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
             _containerStack.IncreaseCurrentContainerLength(totalSize);
 
@@ -840,6 +828,11 @@ namespace IonDotnet.Internals.Binary
             {
                 //don't dispose of the lists
                 Count = 0;
+            }
+
+            public ContainerInfo First()
+            {
+                return _array[0];
             }
 
             public int Count { get; private set; }
