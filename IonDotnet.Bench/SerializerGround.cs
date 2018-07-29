@@ -29,7 +29,7 @@ namespace IonDotnet.Bench
         public class Benchmark
         {
             private static readonly List<SimplePoco> Data = GenerateArray();
-            private const int Times = 100;
+            private const int Times = 1000;
 
             private static List<SimplePoco> GenerateArray()
             {
@@ -52,14 +52,14 @@ namespace IonDotnet.Bench
 
             private readonly IonSerialization _serializer = new IonSerialization();
 
-//            [Benchmark]
+            [Benchmark]
             public int JsonDotnet()
             {
                 var s = JsonConvert.SerializeObject(Data);
                 return Encoding.UTF8.GetBytes(s).Length;
             }
 
-//            [Benchmark]
+            [Benchmark]
             public int IonDotnet()
             {
                 var b = IonSerialization.Serialize(Data);
@@ -100,13 +100,6 @@ namespace IonDotnet.Bench
             }
         }
 
-        private class Person
-        {
-            public string Name { get; set; }
-            public int Age { get; set; }
-            public int[] Ids { get; set; }
-        }
-
         private static string GetJson(string api)
         {
             using (var httpClient = new HttpClient())
@@ -133,20 +126,21 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
-                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
-
-            var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
-            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
-            var ionBytes = IonSerialization.Serialize(obj);
-
-            Console.WriteLine($"JSON size: {jsonBytes.Length}");
-            Console.WriteLine($"ION size: {ionBytes.Length}");
-
-            var compressedJson = Compress(jsonBytes);
-            var compressedIon = Compress(ionBytes);
-            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
-            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
+            BenchmarkRunner.Run<Benchmark>();
+//            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
+//                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
+//
+//            var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
+//            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
+//            var ionBytes = IonSerialization.Serialize(obj);
+//
+//            Console.WriteLine($"JSON size: {jsonBytes.Length}");
+//            Console.WriteLine($"ION size: {ionBytes.Length}");
+//
+//            var compressedJson = Compress(jsonBytes);
+//            var compressedIon = Compress(ionBytes);
+//            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
+//            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
         }
     }
 }

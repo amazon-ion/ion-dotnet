@@ -237,11 +237,9 @@ namespace IonDotnet.Internals.Binary
             _lengthBuffer.Reset();
             _containerStack.Clear();
 
-            currentSequence.Clear();
             //set the top-level container
-            _dataBuffer.StartStreak(currentSequence);
-
-            _lengthSegments.Clear();
+            var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
+            _dataBuffer.StartStreak(pushedContainer.Sequence);
 
             //TODO implement writing again after finish
         }
