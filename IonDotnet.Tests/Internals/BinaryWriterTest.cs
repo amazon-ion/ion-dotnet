@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
@@ -186,6 +188,43 @@ namespace IonDotnet.Tests.Internals
                 {
                     Assert.IsTrue(annotReader.Symbols.Contains($"annot_{i}"));
                 }
+            }
+        }
+
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(10)]
+        [DataRow(50)]
+        [DataRow(2000)]
+        public void WriteStructWithSingleBlob(int blobSize)
+        {
+            var blob = new byte[blobSize];
+            new Random().NextBytes(blob);
+            using (var stream = new MemoryStream())
+            {
+                IIonWriter writer;
+                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                {
+                    writer.StepIn(IonType.Struct);
+
+                    writer.SetFieldName("blob");
+                    writer.WriteBlob(blob);
+
+                    writer.StepOut();
+                    writer.Flush(stream);
+                }
+
+                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
+                reader.MoveNext();
+                reader.StepIn();
+                Assert.AreEqual(IonType.Blob, reader.MoveNext());
+                var size = reader.GetLobByteSize();
+                Assert.AreEqual(blobSize, size);
+                var readBlob = new byte[size];
+                reader.GetBytes(readBlob);
+
+                Assert.IsTrue(blob.SequenceEqual(readBlob));
             }
         }
 

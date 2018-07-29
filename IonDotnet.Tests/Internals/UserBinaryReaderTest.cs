@@ -304,5 +304,25 @@ namespace IonDotnet.Tests.Internals
 
             Assert.AreEqual(0, reader.CurrentDepth);
         }
+
+        [TestMethod]
+        public void Struct_OneBlob()
+        {
+            var data = DirStructure.ReadDataFile("struct_oneblob.bindat");
+            var reader = new UserBinaryReader(new MemoryStream(data));
+            reader.MoveNext();
+            reader.StepIn();
+            Assert.AreEqual(IonType.Blob, reader.MoveNext());
+            Assert.AreEqual("blobbbb", reader.CurrentFieldName);
+            var lobByteSize = reader.GetLobByteSize();
+            Assert.AreEqual(100, lobByteSize);
+            var blob = new byte[lobByteSize];
+            reader.GetBytes(blob);
+            
+            for (var i = 0; i < 100; i++)
+            {
+                Assert.AreEqual((byte) 1, blob[i]);
+            }
+        }
     }
 }

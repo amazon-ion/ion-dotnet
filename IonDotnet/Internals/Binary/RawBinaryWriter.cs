@@ -437,7 +437,7 @@ namespace IonDotnet.Internals.Binary
         private void WriteTypedBytes(byte type, ReadOnlySpan<byte> data)
         {
             var totalLength = 1;
-            if (data.Length < 0xD)
+            if (data.Length <= 0xD)
             {
                 _dataBuffer.WriteUint8(type | (byte) data.Length);
             }
@@ -447,8 +447,8 @@ namespace IonDotnet.Internals.Binary
                 totalLength += _dataBuffer.WriteVarUint(data.Length);
             }
 
-            _containerStack.IncreaseCurrentContainerLength(totalLength);
             _dataBuffer.WriteBytes(data);
+            _containerStack.IncreaseCurrentContainerLength(totalLength + data.Length);
         }
 
         public void WriteFloat(double value)

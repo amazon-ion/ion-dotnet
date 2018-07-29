@@ -59,7 +59,12 @@ namespace IonDotnet.Serialization
 
         private static bool TryDeserializeCollection(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
         {
-            if (!typeof(IEnumerable).IsAssignableFrom(type) || reader.CurrentType != IonType.List) return false;
+            if (!typeof(IEnumerable).IsAssignableFrom(type)) return false;
+
+            //special case of byte array
+            if (TryDeserializeByteArray(reader, type, scalarConverter, ref result)) return true;
+
+            if (reader.CurrentType != IonType.List) return false;
 
             //figure out collection type
             Type elementType, constructedListType = null;
@@ -108,6 +113,17 @@ namespace IonDotnet.Serialization
             }
 
             reader.StepOut();
+            return true;
+        }
+
+        private static bool TryDeserializeByteArray(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
+        {
+            if (!type.IsAssignableFrom(typeof(byte[]))) return false;
+            if (reader.CurrentType != IonType.Blob && reader.CurrentType != IonType.Clob) return false;
+
+            var bytes = new byte[reader.GetLobByteSize()];
+            reader.GetBytes(bytes);
+            result = bytes;
             return true;
         }
 

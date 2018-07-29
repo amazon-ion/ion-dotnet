@@ -71,42 +71,43 @@ namespace IonDotnet.Bench
             }
         }
 
-        public enum EmployeeLevel
+        public enum ExperimentResult
         {
-            Junior,
-            Senior,
-            Executive
+            Success,
+            Failure,
+            Unknown
         }
 
-        private class Employee
+        private class Experiment
         {
-            public string Name { get; set; }
-            public TimeSpan Age { get; set; }
-            public string Role { get; set; }
             public int Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public TimeSpan Duration { get; set; }
             public bool IsActive { get; set; }
+            public byte[] SampleData { get; set; }
 
             [JsonConverter(typeof(StringEnumConverter))]
-            public EmployeeLevel Level { get; set; }
+            public ExperimentResult Result { get; set; }
         }
 
         [MemoryDiagnoser]
         public class Benchmark
         {
-            private static readonly List<Employee> Data = GenerateArray();
+            private static readonly List<Experiment> Data = GenerateArray();
             private const int Times = 1000;
 
-            private static List<Employee> GenerateArray()
+            private static List<Experiment> GenerateArray()
             {
                 var random = new Random();
-                var l = new List<Employee>();
+                var l = new List<Experiment>();
                 for (var i = 0; i < Times; i++)
                 {
-                    l.Add(new Employee
+                    l.Add(new Experiment
                     {
                         Name = $"Bob{i}",
 //                        Age = random.Next(0, 1000000),
-                        Role = Guid.NewGuid().ToString(),
+                        Description = Guid.NewGuid().ToString(),
                         IsActive = true,
                         Id = random.Next(0, 1000000)
                     });
@@ -206,19 +207,21 @@ namespace IonDotnet.Bench
 //            var compressedIon = Compress(ionBytes);
 //            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
 //            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
-            var poco = new Employee
+            var exp = new Experiment
             {
-                Name = "Bob",
-                Age = new TimeSpan(365 * 23, 0, 0, 0, 0),
+                Name = "Boxing Perftest",
+                Duration = TimeSpan.FromSeconds(30),
                 Id = 233,
                 IsActive = true,
-                Role = "Developer",
-                Level = EmployeeLevel.Senior
+                Description = "Measure performance impact of boxing",
+                Result = ExperimentResult.Success,
+                SampleData = new byte[100]
             };
+            Array.Fill(exp.SampleData, (byte) 1);
             var converter = new TimeSpanConverter();
-            var b = IonSerialization.Serialize(poco, converter);
-            var d = IonSerialization.Deserialize<Employee>(b, converter);
-            Console.WriteLine(d.Age.Days / 365);
+            var b = IonSerialization.Serialize(exp, converter);
+            var d = IonSerialization.Deserialize<Experiment>(b, converter);
+
             Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
             Console.WriteLine(typeof(IonType).IsValueType);
         }

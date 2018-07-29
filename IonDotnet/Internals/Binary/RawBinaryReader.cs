@@ -850,7 +850,6 @@ namespace IonDotnet.Internals.Binary
 
         public int GetLobByteSize()
         {
-            //TODO should we do sth abt this code?
             if (_valueType != IonType.Blob && _valueType != IonType.Clob)
                 throw new InvalidOperationException($"No byte size for type {_valueType}");
 
