@@ -148,7 +148,7 @@ namespace IonDotnet.Serialization
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryWriteScalar(IIonWriter writer, object obj, Type type)
-        {
+        {            
             if (type == typeof(string))
             {
                 var propValue = (string) obj;

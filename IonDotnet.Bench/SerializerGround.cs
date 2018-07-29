@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
@@ -104,32 +105,22 @@ namespace IonDotnet.Bench
             public int[] Ids { get; set; }
         }
 
+        private static string GetJson(string api)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var str = httpClient.GetStringAsync(api);
+                str.Wait();
+                return str.Result;
+            }
+        }
+
         public void Run(string[] args)
         {
-            var l = new List<Person>
-            {
-                new Person
-                {
-                    Name = "Bob",
-                    Age = 35,
-                    Ids = new[] {1, 2, 3}
-                },
-                new Person
-                {
-                    Name = "Anna",
-                    Age = 32,
-                    Ids = new[] {1, 2, 3}
-                },
-                new Person
-                {
-                    Name = "Huy",
-                    Age = 26,
-                    Ids = new[] {1, 2, 3}
-                }
-            };
-            var dat = IonSerialization.Serialize(l);
-            var d = IonSerialization.Deserialize<IEnumerable<Person>>(dat);
-            Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
+            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
+                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
+            var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
+            Console.WriteLine(obj.meta.code);
         }
     }
 }
