@@ -205,6 +205,13 @@ namespace IonDotnet.Serialization
                 return true;
             }
 
+            if (type == typeof(DateTimeOffset))
+            {
+                var propValue = (DateTimeOffset) obj;
+                writer.WriteTimestamp(new Timestamp(propValue));
+                return true;
+            }
+
             if (type == typeof(decimal))
             {
                 var propValue = (decimal) obj;

@@ -124,12 +124,13 @@ namespace IonDotnet.Bench
             public int Id { get; set; }
             public string Name { get; set; }
             public string Description { get; set; }
+            public DateTimeOffset StartDate { get; set; }
             public TimeSpan Duration { get; set; }
             public bool IsActive { get; set; }
             public byte[] SampleData { get; set; }
             public decimal Budget { get; set; }
 
-            [JsonConverter(typeof(StringEnumConverter))]
+            // [JsonConverter(typeof(StringEnumConverter))]
             public ExperimentResult Result { get; set; }
         }
 
@@ -148,7 +149,7 @@ namespace IonDotnet.Bench
                     l.Add(new Experiment
                     {
                         Name = $"Bob{i}",
-//                        Age = random.Next(0, 1000000),
+                        //                        Age = random.Next(0, 1000000),
                         Description = Guid.NewGuid().ToString(),
                         IsActive = true,
                         Id = random.Next(0, 1000000)
@@ -187,16 +188,16 @@ namespace IonDotnet.Bench
                 {
                     Writer.StepIn(IonType.Struct);
 
-//                    Writer.SetFieldName("Age");
-//                    Writer.WriteInt(poco.Age);
-//                    Writer.SetFieldName("Name");
-//                    Writer.WriteString(poco.Name);
-//                    Writer.SetFieldName("Nickname");
-//                    Writer.WriteString(poco.Nickname);
-//                    Writer.SetFieldName("IsHandsome");
-//                    Writer.WriteBool(poco.IsHandsome);
-//                    Writer.SetFieldName("Id");
-//                    Writer.WriteInt(poco.Id);
+                    //                    Writer.SetFieldName("Age");
+                    //                    Writer.WriteInt(poco.Age);
+                    //                    Writer.SetFieldName("Name");
+                    //                    Writer.WriteString(poco.Name);
+                    //                    Writer.SetFieldName("Nickname");
+                    //                    Writer.WriteString(poco.Nickname);
+                    //                    Writer.SetFieldName("IsHandsome");
+                    //                    Writer.WriteBool(poco.IsHandsome);
+                    //                    Writer.SetFieldName("Id");
+                    //                    Writer.WriteInt(poco.Id);
 
                     Writer.StepOut();
                 }
@@ -234,36 +235,37 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-//            BenchmarkRunner.Run<Benchmark>();
-//            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
-//                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
-//
-//            var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
-//            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
-//            var ionBytes = IonSerialization.Serialize(obj);
-//
-//            Console.WriteLine($"JSON size: {jsonBytes.Length}");
-//            Console.WriteLine($"ION size: {ionBytes.Length}");
-//
-//            var compressedJson = Compress(jsonBytes);
-//            var compressedIon = Compress(ionBytes);
-//            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
-//            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
-            var exp = new Experiment
+            //            BenchmarkRunner.Run<Benchmark>();
+            //            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
+            //                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
+            //
+            //            var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
+            //            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
+            //            var ionBytes = IonSerialization.Serialize(obj);
+            //
+            //            Console.WriteLine($"JSON size: {jsonBytes.Length}");
+            //            Console.WriteLine($"ION size: {ionBytes.Length}");
+            //
+            //            var compressedJson = Compress(jsonBytes);
+            //            var compressedIon = Compress(ionBytes);
+            //            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
+            //            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
+            var experiment = new Experiment
             {
                 Name = "Boxing Perftest",
-                Duration = TimeSpan.FromMilliseconds(70),
+                Duration = TimeSpan.FromSeconds(90),
                 Id = 233,
+                StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
                 IsActive = true,
                 Description = "Measure performance impact of boxing",
-                Result = ExperimentResult.Success,
+                Result = ExperimentResult.Failure,
                 SampleData = new byte[100],
-                Budget = decimal.Parse("1000000000.01234567890123456789")
+                Budget = decimal.Parse("12345.01234567890123456789")
             };
-            new Random().NextBytes(exp.SampleData);
+            new Random().NextBytes(experiment.SampleData);
             var converter = new TimeSpanConverter();
-            var b = IonSerialization.Serialize(exp, converter);
-            var d = IonSerialization.Deserialize<Experiment>(b, converter);
+            byte[] ionBytes = IonSerialization.Serialize(experiment, converter);
+            var d = IonSerialization.Deserialize<Experiment>(ionBytes, converter);
             Console.WriteLine(d.Budget);
 
             Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));

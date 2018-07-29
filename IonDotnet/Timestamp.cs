@@ -33,7 +33,7 @@ namespace IonDotnet
             if (frac >= 1) throw new ArgumentException("Fraction must be < 1", nameof(frac));
 
             var ticks = (int) (frac * TimeSpan.TicksPerSecond);
-            DateTime = new DateTime(year,  month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local)
+            DateTime = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local)
                 .Add(TimeSpan.FromTicks(ticks));
             LocalOffset = offset;
         }
@@ -41,7 +41,7 @@ namespace IonDotnet
         public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset)
         {
             //no frag, no perf lost
-            DateTime = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, 
+            DateTime = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second,
                 offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
             LocalOffset = offset;
         }
@@ -75,6 +75,12 @@ namespace IonDotnet
             DateTime = dateTime;
             //we have no idea about the local offset except when it's 0, so no change here
             LocalOffset = 0;
+        }
+
+        public Timestamp(DateTimeOffset dateTimeOffset)
+        {
+            LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
+            DateTime = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
         }
     }
 }
