@@ -18,7 +18,7 @@ namespace IonDotnet.Tests.Common
         {
         }
 
-        public void OnSymbol(in SymbolToken symbolToken)
+        public void OnAnnotation(in SymbolToken symbolToken)
         {
             Symbols.Add(symbolToken.Text);
         }

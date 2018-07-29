@@ -25,8 +25,37 @@ namespace IonDotnet.Bench
                 switch (value)
                 {
                     case TimeSpan timeSpan:
-                        valueWriter.SetTypeAnnotation("days");
-                        valueWriter.WriteInt(timeSpan.Days);
+                        if (timeSpan.Days > 0)
+                        {
+                            valueWriter.SetTypeAnnotation("days");
+                            valueWriter.WriteFloat(timeSpan.TotalDays);
+                        }
+                        else if (timeSpan.Hours > 0)
+                        {
+                            valueWriter.SetTypeAnnotation("hours");
+                            valueWriter.WriteFloat(timeSpan.TotalHours);
+                        }
+                        else if (timeSpan.Minutes > 0)
+                        {
+                            valueWriter.SetTypeAnnotation("minutes");
+                            valueWriter.WriteFloat(timeSpan.TotalMinutes);
+                        }
+                        else if (timeSpan.Seconds > 0)
+                        {
+                            valueWriter.SetTypeAnnotation("seconds");
+                            valueWriter.WriteFloat(timeSpan.TotalSeconds);
+                        }
+                        else if (timeSpan.Milliseconds > 0)
+                        {
+                            valueWriter.SetTypeAnnotation("millis");
+                            valueWriter.WriteFloat(timeSpan.TotalMilliseconds);
+                        }
+                        else
+                        {
+                            valueWriter.SetTypeAnnotation("ticks");
+                            valueWriter.WriteInt(timeSpan.Ticks);
+                        }
+
                         return true;
                     default:
                         return false;
@@ -43,7 +72,7 @@ namespace IonDotnet.Bench
             {
             }
 
-            public void OnSymbol(in SymbolToken symbolToken)
+            public void OnAnnotation(in SymbolToken symbolToken)
             {
                 _timeSpanKind = symbolToken.Text;
             }
@@ -61,11 +90,23 @@ namespace IonDotnet.Bench
                     default:
                         result = default;
                         return false;
-                    case "years":
-                        result = new TimeSpan(valueVariant.IntValue * 365, 0, 0, 0);
-                        return true;
                     case "days":
-                        result = new TimeSpan(valueVariant.IntValue, 0, 0, 0);
+                        result = TimeSpan.FromDays(valueVariant.DoubleValue);
+                        return true;
+                    case "hours":
+                        result = TimeSpan.FromHours(valueVariant.DoubleValue);
+                        return true;
+                    case "minutes":
+                        result = TimeSpan.FromMinutes(valueVariant.DoubleValue);
+                        return true;
+                    case "seconds":
+                        result = TimeSpan.FromSeconds(valueVariant.DoubleValue);
+                        return true;
+                    case "millis":
+                        result = TimeSpan.FromMilliseconds(valueVariant.DoubleValue);
+                        return true;
+                    case "ticks":
+                        result = TimeSpan.FromTicks(valueVariant.LongValue);
                         return true;
                 }
             }
@@ -86,6 +127,7 @@ namespace IonDotnet.Bench
             public TimeSpan Duration { get; set; }
             public bool IsActive { get; set; }
             public byte[] SampleData { get; set; }
+            public decimal Budget { get; set; }
 
             [JsonConverter(typeof(StringEnumConverter))]
             public ExperimentResult Result { get; set; }
@@ -210,17 +252,19 @@ namespace IonDotnet.Bench
             var exp = new Experiment
             {
                 Name = "Boxing Perftest",
-                Duration = TimeSpan.FromSeconds(30),
+                Duration = TimeSpan.FromMilliseconds(70),
                 Id = 233,
                 IsActive = true,
                 Description = "Measure performance impact of boxing",
                 Result = ExperimentResult.Success,
-                SampleData = new byte[100]
+                SampleData = new byte[100],
+                Budget = decimal.Parse("1000000000.01234567890123456789")
             };
-            Array.Fill(exp.SampleData, (byte) 1);
+            new Random().NextBytes(exp.SampleData);
             var converter = new TimeSpanConverter();
             var b = IonSerialization.Serialize(exp, converter);
             var d = IonSerialization.Deserialize<Experiment>(b, converter);
+            Console.WriteLine(d.Budget);
 
             Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
             Console.WriteLine(typeof(IonType).IsValueType);

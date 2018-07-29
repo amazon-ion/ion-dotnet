@@ -27,7 +27,7 @@ namespace IonDotnet.Conversions
 
         void OnValueEnd();
 
-        void OnSymbol(in SymbolToken symbolToken);
+        void OnAnnotation(in SymbolToken symbolToken);
     }
 
     public interface IScalarConverter : IReaderRoutine

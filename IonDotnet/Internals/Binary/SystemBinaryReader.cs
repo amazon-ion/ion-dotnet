@@ -198,7 +198,7 @@ namespace IonDotnet.Internals.Binary
             var text = _symbolTable.FindKnownSymbol(annotId);
             if (text == null) throw new UnknownSymbolException(annotId);
             var token = new SymbolToken(text, annotId);
-            _readerRoutine.OnSymbol(token);
+            _readerRoutine.OnAnnotation(token);
         }
 
         protected override void OnValueEnd() => _readerRoutine?.OnValueEnd();

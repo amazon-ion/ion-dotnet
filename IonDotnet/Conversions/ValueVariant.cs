@@ -31,6 +31,8 @@ namespace IonDotnet.Conversions
             internal set
             {
                 _intValue = value;
+                _longValue = value;
+                _bigIntegerValue = value;
                 AuthoritativeType = ScalarType.Int;
                 TypeSet = ScalarType.Int;
             }
@@ -42,6 +44,7 @@ namespace IonDotnet.Conversions
             internal set
             {
                 _longValue = value;
+                _bigIntegerValue = value;
                 AuthoritativeType = ScalarType.Long;
                 TypeSet = ScalarType.Long;
             }
@@ -161,10 +164,13 @@ namespace IonDotnet.Conversions
                     break;
                 case int intValue:
                     _intValue = intValue;
+                    _longValue = intValue;
+                    _bigIntegerValue = intValue;
                     TypeSet |= ScalarType.Int;
                     break;
                 case long longVal:
                     _longValue = longVal;
+                    _bigIntegerValue = longVal;
                     TypeSet |= ScalarType.Long;
                     break;
                 case BigInteger bigInt:
