@@ -195,7 +195,7 @@ namespace IonDotnet.Tests.Internals
             var annotSingleField = DirStructure.ReadDataFile("annot_singlefield.bindat");
 
             var symbols = new[] {"years", "months", "days", "hours", "minutes", "seconds"};
-            var converter = new SaveAnnotationsConverter();
+            var converter = new SaveAnnotationsReaderRoutine();
             var reader = new UserBinaryReader(new MemoryStream(annotSingleField), converter);
 
             reader.MoveNext();

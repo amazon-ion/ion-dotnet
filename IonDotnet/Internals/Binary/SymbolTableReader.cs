@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using IonDotnet.Conversions;
 
 // ReSharper disable InconsistentNaming
 
@@ -523,7 +524,7 @@ namespace IonDotnet.Internals.Binary
         public int GetBytes(ArraySegment<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
-        public T ConvertTo<T>() => throw new InvalidOperationException("Cannot cast a symbol table");
+        public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result) => throw new IonException($"Not supported in symbol talbe");
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFlag(int flagBit, bool on)

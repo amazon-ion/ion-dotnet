@@ -6,43 +6,108 @@ using System.Net.Http;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using IonDotnet.Conversions;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace IonDotnet.Bench
 {
     // ReSharper disable once ClassNeverInstantiated.Global
     public class SerializerGround : IRunable
     {
-        private class SimplePoco
+        private class TimeSpanConverter : IScalarWriter, IScalarConverter
+        {
+            public bool TryWriteValue<T>(IValueWriter valueWriter, T value)
+            {
+                switch (value)
+                {
+                    case TimeSpan timeSpan:
+                        valueWriter.SetTypeAnnotation("days");
+                        valueWriter.WriteInt(timeSpan.Days);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            private string _timeSpanKind;
+
+            public void OnValueStart()
+            {
+            }
+
+            public void OnValueEnd()
+            {
+            }
+
+            public void OnSymbol(in SymbolToken symbolToken)
+            {
+                _timeSpanKind = symbolToken.Text;
+            }
+
+            public bool TryConvertTo(Type targetType, in ValueVariant valueVariant, out object result)
+            {
+                if (targetType != typeof(TimeSpan))
+                {
+                    result = default;
+                    return false;
+                }
+
+                switch (_timeSpanKind)
+                {
+                    default:
+                        result = default;
+                        return false;
+                    case "years":
+                        result = new TimeSpan(valueVariant.IntValue * 365, 0, 0, 0);
+                        return true;
+                    case "days":
+                        result = new TimeSpan(valueVariant.IntValue, 0, 0, 0);
+                        return true;
+                }
+            }
+        }
+
+        public enum EmployeeLevel
+        {
+            Junior,
+            Senior,
+            Executive
+        }
+
+        private class Employee
         {
             public string Name { get; set; }
-            public int Age { get; set; }
-            public string Nickname { get; set; }
+            public TimeSpan Age { get; set; }
+            public string Role { get; set; }
             public int Id { get; set; }
-            public bool IsHandsome { get; set; }
+            public bool IsActive { get; set; }
+
+            [JsonConverter(typeof(StringEnumConverter))]
+            public EmployeeLevel Level { get; set; }
         }
 
         [MemoryDiagnoser]
         public class Benchmark
         {
-            private static readonly List<SimplePoco> Data = GenerateArray();
+            private static readonly List<Employee> Data = GenerateArray();
             private const int Times = 1000;
 
-            private static List<SimplePoco> GenerateArray()
+            private static List<Employee> GenerateArray()
             {
                 var random = new Random();
-                var l = new List<SimplePoco>();
+                var l = new List<Employee>();
                 for (var i = 0; i < Times; i++)
                 {
-                    l.Add(new SimplePoco
+                    l.Add(new Employee
                     {
                         Name = $"Bob{i}",
-                        Age = random.Next(0, 1000000),
-                        Nickname = Guid.NewGuid().ToString(),
-                        IsHandsome = true,
+//                        Age = random.Next(0, 1000000),
+                        Role = Guid.NewGuid().ToString(),
+                        IsActive = true,
                         Id = random.Next(0, 1000000)
                     });
                 }
@@ -79,16 +144,16 @@ namespace IonDotnet.Bench
                 {
                     Writer.StepIn(IonType.Struct);
 
-                    Writer.SetFieldName("Age");
-                    Writer.WriteInt(poco.Age);
-                    Writer.SetFieldName("Name");
-                    Writer.WriteString(poco.Name);
-                    Writer.SetFieldName("Nickname");
-                    Writer.WriteString(poco.Nickname);
-                    Writer.SetFieldName("IsHandsome");
-                    Writer.WriteBool(poco.IsHandsome);
-                    Writer.SetFieldName("Id");
-                    Writer.WriteInt(poco.Id);
+//                    Writer.SetFieldName("Age");
+//                    Writer.WriteInt(poco.Age);
+//                    Writer.SetFieldName("Name");
+//                    Writer.WriteString(poco.Name);
+//                    Writer.SetFieldName("Nickname");
+//                    Writer.WriteString(poco.Nickname);
+//                    Writer.SetFieldName("IsHandsome");
+//                    Writer.WriteBool(poco.IsHandsome);
+//                    Writer.SetFieldName("Id");
+//                    Writer.WriteInt(poco.Id);
 
                     Writer.StepOut();
                 }
@@ -126,7 +191,7 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            BenchmarkRunner.Run<Benchmark>();
+//            BenchmarkRunner.Run<Benchmark>();
 //            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
 //                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
 //
@@ -141,6 +206,21 @@ namespace IonDotnet.Bench
 //            var compressedIon = Compress(ionBytes);
 //            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
 //            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
+            var poco = new Employee
+            {
+                Name = "Bob",
+                Age = new TimeSpan(365 * 23, 0, 0, 0, 0),
+                Id = 233,
+                IsActive = true,
+                Role = "Developer",
+                Level = EmployeeLevel.Senior
+            };
+            var converter = new TimeSpanConverter();
+            var b = IonSerialization.Serialize(poco, converter);
+            var d = IonSerialization.Deserialize<Employee>(b, converter);
+            Console.WriteLine(d.Age.Days / 365);
+            Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
+            Console.WriteLine(typeof(IonType).IsValueType);
         }
     }
 }

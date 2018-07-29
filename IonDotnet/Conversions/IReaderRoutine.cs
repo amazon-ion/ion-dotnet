@@ -21,14 +21,17 @@ namespace IonDotnet.Conversions
         DateTime = 1 << 8
     }
 
-    public interface IScalarConverter
+    public interface IReaderRoutine
     {
         void OnValueStart();
 
         void OnValueEnd();
 
         void OnSymbol(in SymbolToken symbolToken);
+    }
 
-        T Convert<T>(in ValueVariant valueVariant);
+    public interface IScalarConverter : IReaderRoutine
+    {
+        bool TryConvertTo(Type targetType, in ValueVariant valueVariant, out object result);
     }
 }

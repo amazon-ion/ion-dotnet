@@ -5,7 +5,11 @@ using System.Numerics;
 
 namespace IonDotnet
 {
-    public interface IIonWriter : IDisposable
+    /// <inheritdoc cref="IValueWriter" />
+    /// <summary>
+    /// Contains all functions to write an Ion stream
+    /// </summary>
+    public interface IIonWriter : IValueWriter, IDisposable
     {
         ISymbolTable SymbolTable { get; }
 
@@ -15,7 +19,7 @@ namespace IonDotnet
         /// <exception cref="System.IO.IOException">When error happens while writing data to output stream</exception>
         void Flush(Stream outputStream);
 
-        void Finish(Stream outputStream);
+        void Finish(Stream outputStream = null);
 
         void SetFieldName(string name);
 
@@ -44,41 +48,7 @@ namespace IonDotnet
         /// <remarks>This method iterates until <see cref="IIonReader.MoveNext"/> returns null and does not Step out</remarks>
         void WriteValues(IIonReader reader);
 
-        /// <summary>
-        /// Write a null.null
-        /// </summary>
-        void WriteNull();
-
-        /// <summary>
-        /// Write a <see cref="type" /> null
-        /// </summary>
-        /// <param name="type"></param>
-        void WriteNull(IonType type);
-
-        void WriteBool(bool value);
-
-        void WriteInt(long value);
-
-        void WriteInt(BigInteger value);
-
-        void WriteFloat(double value);
-
-        void WriteDecimal(decimal value);
-
-        void WriteTimestamp(Timestamp value);
-
-        void WriteSymbol(SymbolToken symbolToken);
-
-        void WriteString(string value);
-
-        void WriteBlob(ReadOnlySpan<byte> value);
-
-        void WriteClob(ReadOnlySpan<byte> value);
-
-        void SetTypeAnnotations(IEnumerable<string> annotations);
 
         void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations);
-
-        void AddTypeAnnotation(string annotation);
     }
 }

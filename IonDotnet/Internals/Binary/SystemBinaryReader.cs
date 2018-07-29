@@ -15,17 +15,17 @@ namespace IonDotnet.Internals.Binary
         private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long) 1 << 62, 2);
 
         protected ISymbolTable _symbolTable;
-        private readonly IScalarConverter _scalarConverter;
+        private readonly IReaderRoutine _readerRoutine;
 
-        internal SystemBinaryReader(Stream input, IScalarConverter scalarConverter)
-            : this(input, SharedSymbolTable.GetSystem(1), scalarConverter)
+        internal SystemBinaryReader(Stream input, IReaderRoutine readerRoutine)
+            : this(input, SharedSymbolTable.GetSystem(1), readerRoutine)
         {
         }
 
-        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IScalarConverter scalarConverter) : base(input)
+        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IReaderRoutine readerRoutine) : base(input)
         {
             _symbolTable = symboltable;
-            _scalarConverter = scalarConverter;
+            _readerRoutine = readerRoutine;
         }
 
         private void PrepareValue()
@@ -142,8 +142,9 @@ namespace IonDotnet.Internals.Binary
         /// <exception cref="UnknownSymbolException">The Sid does not exist in the table</exception>
         private void LoadSymbolValue()
         {
+            PrepareValue();
             Debug.Assert(_v.TypeSet.HasFlag(ScalarType.Int));
-            Debug.Assert(_v.AuthoritativeType == ScalarType.Int);
+            Debug.Assert(_v.AuthoritativeType == ScalarType.Int, $"AuthType is ${_v.AuthoritativeType}");
 
             if (_v.TypeSet.HasFlag(ScalarType.String)) return;
 
@@ -188,19 +189,19 @@ namespace IonDotnet.Internals.Binary
             return _v.DoubleValue;
         }
 
-        protected override void OnValueStart() => _scalarConverter?.OnValueStart();
+        protected override void OnValueStart() => _readerRoutine?.OnValueStart();
 
         protected override void OnAnnotation(int annotId)
         {
-            if (_scalarConverter == null) return;
+            if (_readerRoutine == null) return;
 
             var text = _symbolTable.FindKnownSymbol(annotId);
             if (text == null) throw new UnknownSymbolException(annotId);
             var token = new SymbolToken(text, annotId);
-            _scalarConverter.OnSymbol(token);
+            _readerRoutine.OnSymbol(token);
         }
 
-        protected override void OnValueEnd() => _scalarConverter?.OnValueEnd();
+        protected override void OnValueEnd() => _readerRoutine?.OnValueEnd();
 
         public override string CurrentFieldName
         {
@@ -270,10 +271,10 @@ namespace IonDotnet.Internals.Binary
             return new SymbolToken(_v.StringValue, _v.IntValue);
         }
 
-        public override T ConvertTo<T>()
+        public override bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
         {
-            if (_scalarConverter == null) throw new IonException("No converter provided");
-            return _scalarConverter.Convert<T>(_v);
+            PrepareValue();
+            return scalarConverter.TryConvertTo(targetType, _v, out result);
         }
     }
 }

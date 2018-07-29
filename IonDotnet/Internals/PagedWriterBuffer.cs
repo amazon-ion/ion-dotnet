@@ -389,7 +389,7 @@ namespace IonDotnet.Internals
             for (int i = 0, l = annotations.Count; i < l; i++)
             {
                 annotLength += WriteVarUint(annotations[i].Sid);
-                if (annotLength > IonConstants.MaxAnnotationLength) throw new IonException($"Annotation length too large: {annotLength}");
+                if (annotLength > IonConstants.MaxAnnotationSize) throw new IonException($"Annotation size too large: {annotLength} bytes");
             }
 
             lengthPosBlock[lengthPosIdx] = (byte) ((annotLength & VarUintUnitFlag) | VarIntFinalOctetMask);

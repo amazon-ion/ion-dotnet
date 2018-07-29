@@ -841,7 +841,7 @@ namespace IonDotnet.Internals.Binary
             return readBytes;
         }
 
-        public abstract T ConvertTo<T>();
+        public abstract bool TryConvertTo(Type targeType, IScalarConverter scalarConverter, out object result);
 
         public IonType CurrentType => _valueType;
 

@@ -5,9 +5,9 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tests.Common
 {
-    public class SaveAnnotationsConverter : IScalarConverter
+    public class SaveAnnotationsReaderRoutine : IReaderRoutine
     {
-        public List<string> Symbols { get; } = new List<string>();
+        public HashSet<string> Symbols { get; } = new HashSet<string>();
 
         public void OnValueStart()
         {
@@ -23,6 +23,6 @@ namespace IonDotnet.Tests.Common
             Symbols.Add(symbolToken.Text);
         }
 
-        public T Convert<T>(in ValueVariant valueVariant) => throw new InvalidOperationException("This just saves annotations");
+        public bool TryConvertTo<T>(out T result) => throw new InvalidOperationException("This just saves annotations");
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using IonDotnet.Conversions;
 
 namespace IonDotnet
 {
@@ -93,6 +94,6 @@ namespace IonDotnet
 
         int GetBytes(ArraySegment<byte> buffer);
 
-        T ConvertTo<T>();
+        bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
     }
 }

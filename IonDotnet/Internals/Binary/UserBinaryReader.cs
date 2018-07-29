@@ -12,8 +12,8 @@ namespace IonDotnet.Internals.Binary
     /// <remarks>Starts out as a system bin reader</remarks>
     internal sealed class UserBinaryReader : SystemBinaryReader
     {
-        internal UserBinaryReader(Stream input, IScalarConverter scalarConverter = null)
-            : base(input, scalarConverter)
+        internal UserBinaryReader(Stream input, IReaderRoutine readerRoutine = null)
+            : base(input, readerRoutine)
         {
         }
 

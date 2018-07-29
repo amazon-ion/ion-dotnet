@@ -37,8 +37,7 @@ namespace IonDotnet.Internals.Binary
         private const byte TidFloatByte = 0x40;
         private const byte TidDecimalByte = 0x50;
         private const byte TidTimestampByte = 0x60;
-
-        private const byte NullNull = 0x0F;
+        private const byte TidSymbolType = 0x70;
 
         private const byte BoolFalseByte = 0x10;
         private const byte BoolTrueByte = 0x11;
@@ -299,9 +298,10 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteNull()
         {
+            const byte nullNull = 0x0F;
             PrepareValue();
             _containerStack.IncreaseCurrentContainerLength(1);
-            _dataBuffer.WriteByte(NullNull);
+            _dataBuffer.WriteByte(nullNull);
         }
 
         public void WriteNull(IonType type)
@@ -665,9 +665,22 @@ namespace IonDotnet.Internals.Binary
             FinishValue();
         }
 
-        public void WriteSymbol(SymbolToken symbolToken)
+        public void WriteSymbol(string symbol)
+            => throw new UnsupportedIonVersionException($"Writing text symbol is not supported at raw level");
+
+        internal void WriteSymbolToken(SymbolToken token)
         {
-            throw new NotImplementedException();
+            if (token == default)
+            {
+                //does this ever happen?
+                WriteNull(IonType.Symbol);
+                return;
+            }
+
+            Debug.Assert(token.Sid >= 0);
+            PrepareValue();
+            WriteTypedUInt(TidSymbolType, token.Sid);
+            FinishValue();
         }
 
         public void WriteString(string value)
@@ -723,7 +736,7 @@ namespace IonDotnet.Internals.Binary
             throw new NotImplementedException();
         }
 
-        public void SetTypeAnnotations(IEnumerable<string> annotations)
+        public void SetTypeAnnotation(string annotation)
             => throw new NotSupportedException("raw writer does not support setting annotations as text");
 
         public void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
+using IonDotnet.Conversions;
 using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Serialization
@@ -17,24 +18,25 @@ namespace IonDotnet.Serialization
         /// Deserialize a binary format to object type T
         /// </summary>
         /// <param name="binary">Binary input</param>
+        /// <param name="scalarConverter"></param>
         /// <typeparam name="T">Type of object to deserialize to</typeparam>
         /// <returns>Deserialized object</returns>
-        public static T Deserialize<T>(byte[] binary)
+        public static T Deserialize<T>(byte[] binary, IScalarConverter scalarConverter = null)
         {
             using (var stream = new MemoryStream(binary))
             {
-                var reader = new UserBinaryReader(stream);
+                var reader = new UserBinaryReader(stream, scalarConverter);
                 reader.MoveNext();
-                return (T) Deserialize(reader, typeof(T));
+                return (T) Deserialize(reader, typeof(T), scalarConverter);
             }
         }
 
-        private static object Deserialize(IIonReader reader, Type type)
+        private static object Deserialize(IIonReader reader, Type type, IScalarConverter scalarConverter)
         {
             object t = null;
 
-            if (TryDeserializeScalar(reader, type, ref t)) return t;
-            if (TryDeserializeCollection(reader, type, ref t)) return t;
+            if (TryDeserializeScalar(reader, type, scalarConverter, ref t)) return t;
+            if (TryDeserializeCollection(reader, type, scalarConverter, ref t)) return t;
 
             //object
             t = Activator.CreateInstance(type);
@@ -47,7 +49,7 @@ namespace IonDotnet.Serialization
                 if (prop == null) continue;
                 if (!prop.CanWrite) throw new IonException($"Property {type.Name}.{prop.Name} cannot be set");
 
-                var propValue = Deserialize(reader, prop.PropertyType);
+                var propValue = Deserialize(reader, prop.PropertyType, scalarConverter);
                 prop.SetValue(t, propValue);
             }
 
@@ -55,7 +57,7 @@ namespace IonDotnet.Serialization
             return t;
         }
 
-        private static bool TryDeserializeCollection(IIonReader reader, Type type, ref object result)
+        private static bool TryDeserializeCollection(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
         {
             if (!typeof(IEnumerable).IsAssignableFrom(type) || reader.CurrentType != IonType.List) return false;
 
@@ -80,7 +82,7 @@ namespace IonDotnet.Serialization
 
             while (reader.MoveNext() != IonType.None)
             {
-                var element = Deserialize(reader, elementType);
+                var element = Deserialize(reader, elementType, scalarConverter);
                 arrayList.Add(element);
             }
 
@@ -109,7 +111,7 @@ namespace IonDotnet.Serialization
             return true;
         }
 
-        private static bool TryDeserializeScalar(IIonReader reader, Type type, ref object result)
+        private static bool TryDeserializeScalar(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
         {
             if (type == typeof(string))
             {
@@ -118,25 +120,32 @@ namespace IonDotnet.Serialization
                 return true;
             }
 
-            //no more null
-            if (!type.IsValueType)
+            if (reader.CurrentIsNull)
             {
+                if (type.IsValueType) return false;
+
                 result = null;
-                return false;
+                return true;
             }
 
-            if (reader.CurrentIsNull) return false;
+            //check for enum/symbol
+            if (type.IsEnum)
+            {
+                if (reader.CurrentType != IonType.Symbol) goto NoMatch;
+                var symbolText = reader.SymbolValue().Text;
+                return Enum.TryParse(type, symbolText, out result);
+            }
 
             if (type == typeof(bool))
             {
-                if (reader.CurrentType != IonType.Bool) return false;
+                if (reader.CurrentType != IonType.Bool) goto NoMatch;
                 result = reader.BoolValue();
                 return true;
             }
 
             if (type == typeof(int))
             {
-                if (reader.CurrentType != IonType.Int) return false;
+                if (reader.CurrentType != IonType.Int) goto NoMatch;
                 switch (reader.GetIntegerSize())
                 {
                     case IntegerSize.Int:
@@ -152,7 +161,7 @@ namespace IonDotnet.Serialization
 
             if (type == typeof(long))
             {
-                if (reader.CurrentType != IonType.Int) return false;
+                if (reader.CurrentType != IonType.Int) goto NoMatch;
                 switch (reader.GetIntegerSize())
                 {
                     case IntegerSize.Int:
@@ -170,7 +179,7 @@ namespace IonDotnet.Serialization
 
             if (type == typeof(BigInteger))
             {
-                if (reader.CurrentType != IonType.Int) return false;
+                if (reader.CurrentType != IonType.Int) goto NoMatch;
                 switch (reader.GetIntegerSize())
                 {
                     case IntegerSize.Int:
@@ -189,40 +198,43 @@ namespace IonDotnet.Serialization
 
             if (type == typeof(float))
             {
-                if (reader.CurrentType != IonType.Float) return false;
+                if (reader.CurrentType != IonType.Float) goto NoMatch;
                 result = (float) reader.DoubleValue();
                 return true;
             }
 
             if (type == typeof(double))
             {
-                if (reader.CurrentType != IonType.Float) return false;
+                if (reader.CurrentType != IonType.Float) goto NoMatch;
                 result = reader.DoubleValue();
                 return true;
             }
 
             if (type == typeof(decimal))
             {
-                if (reader.CurrentType != IonType.Decimal) return false;
+                if (reader.CurrentType != IonType.Decimal) goto NoMatch;
                 result = reader.DecimalValue();
                 return true;
             }
 
             if (type == typeof(DateTime))
             {
-                if (reader.CurrentType != IonType.Timestamp) return false;
+                if (reader.CurrentType != IonType.Timestamp) goto NoMatch;
                 result = reader.TimestampValue().DateTime;
                 return true;
             }
 
             if (type == typeof(DateTimeOffset))
             {
-                if (reader.CurrentType != IonType.Timestamp) return false;
+                if (reader.CurrentType != IonType.Timestamp) goto NoMatch;
                 result = reader.TimestampValue().AsDateTimeOffset();
                 return true;
             }
 
-            return false;
+
+            NoMatch:
+            //here means we don't know , try the scalar converter
+            return scalarConverter != null && reader.TryConvertTo(type, scalarConverter, out result);
         }
     }
 }

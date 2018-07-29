@@ -149,6 +149,71 @@ namespace IonDotnet.Tests.Internals
             }
         }
 
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(10)]
+        [DataRow(50)]
+        public void WriteObjectWithAnnotations(int annotationCount)
+        {
+            using (var stream = new MemoryStream())
+            {
+                IIonWriter writer;
+                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                {
+                    writer.StepIn(IonType.Struct);
+
+                    writer.SetFieldName("FieldName");
+                    for (var i = 0; i < annotationCount; i++)
+                    {
+                        writer.AddTypeAnnotation($"annot_{i}");
+                    }
+
+                    writer.WriteString("FieldValue");
+
+                    writer.StepOut();
+                    writer.Flush(stream);
+                }
+
+                var annotReader = new SaveAnnotationsReaderRoutine();
+                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()), annotReader);
+                reader.MoveNext();
+                reader.StepIn();
+                reader.MoveNext();
+                //load the value
+                reader.StringValue();
+                for (var i = 0; i < annotationCount; i++)
+                {
+                    Assert.IsTrue(annotReader.Symbols.Contains($"annot_{i}"));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void WriteAnnotations_ExceedMaxSize()
+        {
+            void writeAlot(IIonWriter w)
+            {
+                w.StepIn(IonType.Struct);
+
+                w.SetFieldName("FieldName");
+                for (var i = 0; i < IonConstants.MaxAnnotationSize; i++)
+                {
+                    w.AddTypeAnnotation($"annot_{i}");
+                }
+
+                w.WriteString("FieldValue");
+
+                w.StepOut();
+            }
+
+            IIonWriter writer;
+            using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+            {
+                Assert.ThrowsException<IonException>(() => writeAlot(writer));
+            }
+        }
+
         /// <summary>
         /// Just write a bunch of scalar values
         /// </summary>

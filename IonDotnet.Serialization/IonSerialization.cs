@@ -16,12 +16,12 @@ namespace IonDotnet.Serialization
         private static readonly IDictionary<Type, PropertyInfo[]> PropertyInfoMap = new Dictionary<Type, PropertyInfo[]>();
         private static readonly ManagedBinaryWriter BinWriter = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
 
-        public static byte[] Serialize(object obj)
+        public static byte[] Serialize(object obj, IScalarWriter scalarWriter = null)
         {
             //prepare infrastructure
             using (var stream = new MemoryStream())
             {
-                WriteObject(BinWriter, obj);
+                WriteObject(BinWriter, obj, scalarWriter);
                 BinWriter.Finish(stream);
 
                 return stream.ToArray();
@@ -41,7 +41,7 @@ namespace IonDotnet.Serialization
         /// <summary>
         /// Write the object to the writer, don't care the level/container, don't know the type
         /// </summary>
-        private static void WriteObject(IIonWriter writer, object obj)
+        private static void WriteObject(IIonWriter writer, object obj, IScalarWriter scalarWriter)
         {
             if (obj == null)
             {
@@ -49,17 +49,17 @@ namespace IonDotnet.Serialization
                 return;
             }
 
-            WriteObject(writer, obj, obj.GetType());
+            WriteObject(writer, obj, obj.GetType(), scalarWriter);
         }
 
         /// <summary>
         /// Write object knowing the (intended) type
         /// </summary>
-        private static void WriteObject(IIonWriter writer, object obj, Type type)
+        private static void WriteObject(IIonWriter writer, object obj, Type type, IScalarWriter scalarWriter)
         {
             Debug.Assert(obj == null || obj.GetType() == type, $"objType: {obj?.GetType()}, type:{type}");
 
-            if (TryWriteScalar(writer, obj, type)) return;
+            if (TryWriteScalar(writer, obj, type, scalarWriter)) return;
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
             {
@@ -79,7 +79,7 @@ namespace IonDotnet.Serialization
                 writer.StepIn(IonType.List);
                 foreach (var item in enumerable)
                 {
-                    WriteObject(writer, item);
+                    WriteObject(writer, item, scalarWriter);
                 }
 
                 writer.StepOut();
@@ -102,7 +102,7 @@ namespace IonDotnet.Serialization
                 //with property, we have to be careful because they have type declaration which might carry intention
                 //for 
                 writer.SetFieldName(propertyInfo.Name);
-                WriteObject(writer, propertyInfo.GetValue(obj), propertyInfo.PropertyType);
+                WriteObject(writer, propertyInfo.GetValue(obj), propertyInfo.PropertyType, scalarWriter);
             }
 
             writer.StepOut();
@@ -147,8 +147,15 @@ namespace IonDotnet.Serialization
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryWriteScalar(IIonWriter writer, object obj, Type type)
+        private static bool TryWriteScalar(IIonWriter writer, object obj, Type type, IScalarWriter scalarWriter)
         {
+            if (type.IsEnum)
+            {
+                var propValue = Enum.GetName(type, obj);
+                writer.WriteSymbol(propValue);
+                return true;
+            }
+
             if (type == typeof(string))
             {
                 var propValue = (string) obj;
@@ -203,6 +210,14 @@ namespace IonDotnet.Serialization
                 var propValue = (decimal) obj;
                 writer.WriteDecimal(propValue);
                 return true;
+            }
+
+            //try to see if we can write use the scalar writer
+            if (scalarWriter != null)
+            {
+                var method = scalarWriter.GetType().GetMethod(nameof(IScalarWriter.TryWriteValue));
+                var genericMethod = method.MakeGenericMethod(type);
+                return (bool) genericMethod.Invoke(scalarWriter, new[] {writer, obj});
             }
 
             return false;

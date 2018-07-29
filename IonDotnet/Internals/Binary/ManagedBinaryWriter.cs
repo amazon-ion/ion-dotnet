@@ -95,14 +95,12 @@ namespace IonDotnet.Internals.Binary
 
         private readonly RawBinaryWriter _symbolsWriter;
         private readonly RawBinaryWriter _userWriter;
-        private readonly LocalSymbolTableView _localSymbolTableView;
+        private LocalSymbolTableView _localSymbolTableView;
         private readonly ImportedSymbolsContext _importContext;
         private SymbolState _symbolState;
 
         public ManagedBinaryWriter(ISymbolTable[] importedTables)
         {
-            _localSymbolTableView = new LocalSymbolTableView(this);
-
             //raw writers and their buffers
             var lengthWriterBuffer = new PagedWriter256Buffer();
             var lengthSegment = new List<Memory<byte>>(2);
@@ -214,7 +212,7 @@ namespace IonDotnet.Internals.Binary
             return Intern(token.Text);
         }
 
-        public ISymbolTable SymbolTable => _localSymbolTableView;
+        public ISymbolTable SymbolTable => _localSymbolTableView ?? (_localSymbolTableView = new LocalSymbolTableView(this));
 
         /// <inheritdoc />
         /// <summary>
@@ -264,7 +262,10 @@ namespace IonDotnet.Internals.Binary
         public void Finish(Stream outputStream)
         {
             if (_userWriter.GetDepth() != 0) throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
-            Flush(outputStream);
+            if (outputStream != null)
+            {
+                Flush(outputStream);
+            }
 
             //reset local symbols
             _locals.Clear();
@@ -351,9 +352,10 @@ namespace IonDotnet.Internals.Binary
             _userWriter.WriteTimestamp(value);
         }
 
-        public void WriteSymbol(SymbolToken symbolToken)
+        public void WriteSymbol(string symbol)
         {
-            _userWriter.WriteSymbol(symbolToken);
+            var token = Intern(symbol);
+            _userWriter.WriteSymbolToken(token);
         }
 
         public void WriteString(string value)
@@ -365,16 +367,13 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteClob(ReadOnlySpan<byte> value) => _userWriter.WriteClob(value);
 
-        public void SetTypeAnnotations(IEnumerable<string> annotations)
+        public void SetTypeAnnotation(string annotation)
         {
-            if (annotations == null) throw new ArgumentNullException(nameof(annotations));
+            if (annotation == default) throw new ArgumentNullException(nameof(annotation));
 
             _userWriter.ClearAnnotations();
-            foreach (var annotation in annotations)
-            {
-                var token = Intern(annotation);
-                _userWriter.AddTypeAnnotationSymbol(token);
-            }
+            var token = Intern(annotation);
+            _userWriter.AddTypeAnnotationSymbol(token);
         }
 
         public void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
@@ -411,10 +410,7 @@ namespace IonDotnet.Internals.Binary
             public override bool IsSystem => false;
             public override bool IsReadOnly => _writer._localsLocked;
 
-            public override void MakeReadOnly()
-            {
-                _writer._localsLocked = true;
-            }
+            public override void MakeReadOnly() => _writer._localsLocked = true;
 
             public override ISymbolTable GetSystemTable() => SharedSymbolTable.GetSystem(1);
 

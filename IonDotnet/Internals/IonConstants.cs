@@ -49,7 +49,7 @@ namespace IonDotnet.Internals
 
         internal const int ShortStringLength = 512;
 
-        public const int MaxAnnotationLength = 0x7F;
+        public const int MaxAnnotationSize = 0x7F;
 
         public static byte GetNullByte(IonType type)
         {
