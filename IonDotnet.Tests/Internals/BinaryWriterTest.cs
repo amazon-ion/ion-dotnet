@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using IonDotnet.Internals;
@@ -253,6 +252,47 @@ namespace IonDotnet.Tests.Internals
             }
         }
 
+        [TestMethod]
+        public void WriteNulls()
+        {
+            using (var stream = new MemoryStream())
+            {
+                List<(string key, object value)> kvps;
+                IIonWriter writer;
+                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                {
+                    writer.StepIn(IonType.Struct);
+
+                    foreach (var iType in Enum.GetValues(typeof(IonType)))
+                    {
+                        if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
+
+                        var name = Enum.GetName(typeof(IonType), iType);
+                        writer.SetFieldName($"null_{name}");
+                        writer.WriteNull((IonType) iType);
+                    }
+
+                    writer.StepOut();
+                    writer.Flush(stream);
+                }
+
+                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
+                reader.MoveNext();
+                reader.StepIn();
+
+                foreach (var iType in Enum.GetValues(typeof(IonType)))
+                {
+                    if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
+                    var name = Enum.GetName(typeof(IonType), iType);
+                    Assert.AreEqual((IonType) iType, reader.MoveNext());
+                    Assert.AreEqual($"null_{name}", reader.CurrentFieldName);
+                    Assert.IsTrue(reader.CurrentIsNull);
+                }
+
+                reader.StepOut();
+            }
+        }
+
         /// <summary>
         /// Just write a bunch of scalar values
         /// </summary>
@@ -275,6 +315,7 @@ namespace IonDotnet.Tests.Internals
             writeAndAdd("decimal", 6.34233242123123123423m, writer.WriteDecimal);
             writeAndAdd("float", 231236.321312f, d => writer.WriteFloat(d));
             writeAndAdd("double", 231345.325667d * 133.346432d, writer.WriteFloat);
+
             return kvps;
         }
     }
