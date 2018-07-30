@@ -214,9 +214,9 @@ namespace IonDotnet.Utils
                     case IonType.Decimal:
                         result = ((IIonDecimal) v1).DecimalValue.CompareTo(((IIonDecimal) v2).DecimalValue);
                         break;
-                    case IonType.Timestamp:
-                        result = ((IIonTimestamp) v1).TimeStampValue.CompareTo(((IIonTimestamp) v2).TimeStampValue);
-                        break;
+//                    case IonType.Timestamp:
+//                        result = ((IIonTimestamp) v1).TimeStampValue.CompareTo(((IIonTimestamp) v2).TimeStampValue);
+//                        break;
                     case IonType.String:
                         result = string.Compare(((IIonString) v1).StringValue, ((IIonString) v2).StringValue, StringComparison.Ordinal);
                         break;

@@ -323,7 +323,7 @@ namespace IonDotnet.Internals.Binary
                 len = 0;
                 _state = State.AfterValue;
             }
-            else if (tid == IonConstants.LnIsNull)
+            else if (len == IonConstants.LnIsNull)
             {
                 _valueIsNull = true;
                 len = 0;
@@ -376,7 +376,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             //if we get here we have more bits that we have room for
-            throw new OverflowException($"VarUint overflow at {_input.Position}");
+            throw new OverflowException($"VarUint overflow at {_input.Position}, current fieldname {CurrentFieldName}");
 
             Done:
             return ret;
@@ -407,7 +407,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             //if we get here we have more bits that we have room for
-            throw new OverflowException($"VarUint overflow at {_input.Position}");
+            throw new OverflowException($"VarUint overflow at {_input.Position}, fieldname {CurrentFieldName}");
 
             Done:
             return bn;

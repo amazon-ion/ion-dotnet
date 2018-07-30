@@ -52,11 +52,9 @@ namespace IonDotnet.Internals.Binary
         private SymbolToken _currentFieldSymbolToken;
         private readonly ContainerStack _containerStack;
         private readonly List<Memory<byte>> _lengthSegments;
-        private readonly string _name;
 
-        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments, string name)
+        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments)
         {
-            _name = name;
             _lengthBuffer = lengthBuffer;
             _dataBuffer = dataBuffer;
             _lengthSegments = lengthSegments;
@@ -302,6 +300,7 @@ namespace IonDotnet.Internals.Binary
             PrepareValue();
             _containerStack.IncreaseCurrentContainerLength(1);
             _dataBuffer.WriteByte(nullNull);
+            FinishValue();
         }
 
         public void WriteNull(IonType type)

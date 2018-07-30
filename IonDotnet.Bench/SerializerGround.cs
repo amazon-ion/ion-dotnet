@@ -252,7 +252,7 @@ namespace IonDotnet.Bench
             //            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
             var experiment = new Experiment
             {
-                Name = "Boxing Perftest",
+//                Name = "Boxing Perftest",
                 Duration = TimeSpan.FromSeconds(90),
                 Id = 233,
                 StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
@@ -266,10 +266,8 @@ namespace IonDotnet.Bench
             var converter = new TimeSpanConverter();
             byte[] ionBytes = IonSerialization.Serialize(experiment, converter);
             var d = IonSerialization.Deserialize<Experiment>(ionBytes, converter);
-            Console.WriteLine(d.Budget);
 
             Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
-            Console.WriteLine(typeof(IonType).IsValueType);
         }
     }
 }

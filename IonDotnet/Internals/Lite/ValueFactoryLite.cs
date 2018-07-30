@@ -181,8 +181,8 @@ namespace IonDotnet.Internals.Lite
                     return NewNullFloat();
                 case IonType.Decimal:
                     return NewNullDecimal();
-                case IonType.Timestamp:
-                    return NewNullTimestamp();
+//                case IonType.Timestamp:
+//                    return NewNullTimestamp();
                 case IonType.Symbol:
                     return NewNullSymbol();
                 case IonType.String:
@@ -246,14 +246,14 @@ namespace IonDotnet.Internals.Lite
             throw new NotImplementedException();
         }
 
-        public IIonTimestamp NewNullTimestamp()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IIonTimestamp NewTimestamp(DateTimeOffset dateTimeOffset)
-        {
-            throw new NotImplementedException();
-        }
+//        public IIonTimestamp NewNullTimestamp()
+//        {
+//            throw new NotImplementedException();
+//        }
+//
+//        public IIonTimestamp NewTimestamp(DateTimeOffset dateTimeOffset)
+//        {
+//            throw new NotImplementedException();
+//        }
     }
 }

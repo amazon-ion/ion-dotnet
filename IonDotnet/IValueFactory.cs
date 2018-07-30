@@ -132,9 +132,9 @@ namespace IonDotnet
 
         #region TimeStamp
 
-        IIonTimestamp NewNullTimestamp();
-
-        IIonTimestamp NewTimestamp(DateTimeOffset dateTimeOffset);
+//        IIonTimestamp NewNullTimestamp();
+//
+//        IIonTimestamp NewTimestamp(DateTimeOffset dateTimeOffset);
 
         #endregion
     }
