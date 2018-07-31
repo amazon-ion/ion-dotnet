@@ -175,7 +175,7 @@ namespace IonDotnet.Internals.Binary
             }
             else
             {
-                tidByte |= IonConstants.LnIsVarLen;
+                tidByte |= BinaryConstants.LnIsVarLen;
                 _lengthBuffer.WriteByte(tidByte);
                 var lengthBytes = _lengthBuffer.WriteVarUint(popped.Length);
                 _containerStack.IncreaseCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
@@ -305,7 +305,7 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteNull(IonType type)
         {
-            var nullByte = IonConstants.GetNullByte(type);
+            var nullByte = BinaryConstants.GetNullByte(type);
             PrepareValue();
             _containerStack.IncreaseCurrentContainerLength(1);
             _dataBuffer.WriteByte(nullByte);
@@ -442,7 +442,7 @@ namespace IonDotnet.Internals.Binary
             }
             else
             {
-                _dataBuffer.WriteUint8(type | IonConstants.LnIsVarLen);
+                _dataBuffer.WriteUint8(type | BinaryConstants.LnIsVarLen);
                 totalLength += _dataBuffer.WriteVarUint(data.Length);
             }
 
@@ -510,7 +510,7 @@ namespace IonDotnet.Internals.Binary
             }
             else
             {
-                tidByte |= IonConstants.LnIsVarLen;
+                tidByte |= BinaryConstants.LnIsVarLen;
                 _dataBuffer.WriteByte(tidByte);
                 totalLength += 1 + _dataBuffer.WriteVarUint(totalLength);
             }
@@ -704,7 +704,7 @@ namespace IonDotnet.Internals.Binary
             }
             else
             {
-                tidByte |= IonConstants.LnIsVarLen;
+                tidByte |= BinaryConstants.LnIsVarLen;
                 _dataBuffer.WriteByte(tidByte);
                 totalSize += 1 + _dataBuffer.WriteVarUint(stringByteSize);
             }

@@ -1,12 +1,12 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace IonDotnet.Internals
+namespace IonDotnet.Internals.Binary
 {
-    public static class IonConstants
+    public static class BinaryConstants
     {
         public static readonly ISymbolTable[] EmptySymbolTablesArray = new ISymbolTable[0];
-        
+
         public const int Eof = -1;
 
         public const int TidNull = 0;

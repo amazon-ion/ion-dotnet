@@ -17,7 +17,7 @@ namespace IonDotnet.Tests.Internals
         {
             using (var stream = new MemoryStream())
             {
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.Flush(stream);
                     Assert.IsTrue(ReadUtils.Binary.DatagramEmpty(stream.ToArray()));
@@ -32,7 +32,7 @@ namespace IonDotnet.Tests.Internals
         {
             using (var stream = new MemoryStream())
             {
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.WriteBool(val);
                     writer.Flush(stream);
@@ -54,7 +54,7 @@ namespace IonDotnet.Tests.Internals
             Console.WriteLine(val);
             using (var stream = new MemoryStream())
             {
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.WriteDecimal(val);
                     writer.Flush(stream);
@@ -69,7 +69,7 @@ namespace IonDotnet.Tests.Internals
         {
             using (var stream = new MemoryStream())
             {
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
                     writer.StepOut();
@@ -96,7 +96,7 @@ namespace IonDotnet.Tests.Internals
             using (var stream = new MemoryStream())
             {
                 List<(string key, object value)> kvps;
-                using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
                     for (var i = 0; i < depth - 1; i++)
@@ -135,7 +135,7 @@ namespace IonDotnet.Tests.Internals
             {
                 List<(string key, object value)> kvps;
                 IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 
@@ -160,7 +160,7 @@ namespace IonDotnet.Tests.Internals
             using (var stream = new MemoryStream())
             {
                 IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 
@@ -203,7 +203,7 @@ namespace IonDotnet.Tests.Internals
             using (var stream = new MemoryStream())
             {
                 IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 
@@ -235,7 +235,7 @@ namespace IonDotnet.Tests.Internals
                 w.StepIn(IonType.Struct);
 
                 w.SetFieldName("FieldName");
-                for (var i = 0; i < IonConstants.MaxAnnotationSize; i++)
+                for (var i = 0; i < BinaryConstants.MaxAnnotationSize; i++)
                 {
                     w.AddTypeAnnotation($"annot_{i}");
                 }
@@ -246,7 +246,7 @@ namespace IonDotnet.Tests.Internals
             }
 
             IIonWriter writer;
-            using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+            using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
             {
                 Assert.ThrowsException<IonException>(() => writeAlot(writer));
             }
@@ -259,7 +259,7 @@ namespace IonDotnet.Tests.Internals
             {
                 List<(string key, object value)> kvps;
                 IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 

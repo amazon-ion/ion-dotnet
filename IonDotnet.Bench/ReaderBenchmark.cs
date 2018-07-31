@@ -141,7 +141,7 @@ namespace IonDotnet.Bench
 
         private static void WriteLayersDeep(string fileName, int depth)
         {
-            using (var writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray))
+            using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
             {
                 writer.StepIn(IonType.Struct);
                 for (var i = 0; i < depth - 1; i++)

@@ -42,9 +42,9 @@ namespace IonDotnet.Internals.Binary
 
             // if we're not at the top (datagram) level or the next value is null
             if (CurrentDepth != 0 || _valueIsNull) return;
-            Debug.Assert(_valueTid != IonConstants.TidTypedecl);
+            Debug.Assert(_valueTid != BinaryConstants.TidTypedecl);
 
-            if (_valueTid == IonConstants.TidSymbol)
+            if (_valueTid == BinaryConstants.TidSymbol)
             {
                 // trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
@@ -61,7 +61,7 @@ namespace IonDotnet.Internals.Binary
                 //user don't need to see this symbol so continue here
                 _moveNextNeeded = true;
             }
-            else if (_valueTid == IonConstants.TidStruct)
+            else if (_valueTid == BinaryConstants.TidStruct)
             {
                 //trying to read the local symboltable here
                 if (_hasSymbolTableAnnotation)

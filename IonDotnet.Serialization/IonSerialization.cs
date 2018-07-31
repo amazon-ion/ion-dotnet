@@ -14,7 +14,7 @@ namespace IonDotnet.Serialization
     public partial class IonSerialization
     {
         private static readonly IDictionary<Type, PropertyInfo[]> PropertyInfoMap = new Dictionary<Type, PropertyInfo[]>();
-        private static readonly ManagedBinaryWriter BinWriter = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
+        private static readonly ManagedBinaryWriter BinWriter = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
         public static byte[] Serialize(object obj, IScalarWriter scalarWriter = null)
         {

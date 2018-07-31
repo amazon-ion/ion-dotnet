@@ -125,7 +125,7 @@ namespace IonDotnet.Bench
             public string Name { get; set; }
             public string Description { get; set; }
             public DateTimeOffset StartDate { get; set; }
-            public TimeSpan Duration { get; set; }
+            // public TimeSpan Duration { get; set; }
             public bool IsActive { get; set; }
             public byte[] SampleData { get; set; }
             public decimal Budget { get; set; }
@@ -148,11 +148,15 @@ namespace IonDotnet.Bench
                 {
                     l.Add(new Experiment
                     {
-                        Name = $"Bob{i}",
-                        //                        Age = random.Next(0, 1000000),
-                        Description = Guid.NewGuid().ToString(),
+                        Name = "Boxing Perftest",
+                        // Duration = TimeSpan.FromSeconds(90),
+                        Id = 233,
+                        StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
                         IsActive = true,
-                        Id = random.Next(0, 1000000)
+                        Description = "Measure performance impact of boxing",
+                        Result = ExperimentResult.Failure,
+                        SampleData = new byte[100],
+                        Budget = decimal.Parse("12345.01234567890123456789")
                     });
                 }
 
@@ -175,7 +179,7 @@ namespace IonDotnet.Bench
                 return b.Length;
             }
 
-            private static readonly IIonWriter Writer = new ManagedBinaryWriter(IonConstants.EmptySymbolTablesArray);
+            private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
             [Benchmark]
             public void IonDotnetManual()
@@ -188,16 +192,20 @@ namespace IonDotnet.Bench
                 {
                     Writer.StepIn(IonType.Struct);
 
-                    //                    Writer.SetFieldName("Age");
-                    //                    Writer.WriteInt(poco.Age);
-                    //                    Writer.SetFieldName("Name");
-                    //                    Writer.WriteString(poco.Name);
-                    //                    Writer.SetFieldName("Nickname");
-                    //                    Writer.WriteString(poco.Nickname);
-                    //                    Writer.SetFieldName("IsHandsome");
-                    //                    Writer.WriteBool(poco.IsHandsome);
-                    //                    Writer.SetFieldName("Id");
-                    //                    Writer.WriteInt(poco.Id);
+                    Writer.SetFieldName("Id");
+                    Writer.WriteInt(poco.Id);
+                    Writer.SetFieldName("Name");
+                    Writer.WriteString(poco.Name);
+                    Writer.SetFieldName("Description");
+                    Writer.WriteString(poco.Description);
+                    Writer.SetFieldName("StartDate");
+                    Writer.WriteTimestamp(new Timestamp(poco.StartDate));
+                    Writer.SetFieldName("IsActive");
+                    Writer.WriteBool(poco.IsActive);
+                    Writer.SetFieldName("SampleData");
+                    Writer.WriteBlob(poco.SampleData);
+                    Writer.SetFieldName("Budget");
+                    Writer.WriteDecimal(poco.Budget);
 
                     Writer.StepOut();
                 }
@@ -235,7 +243,7 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            //            BenchmarkRunner.Run<Benchmark>();
+            BenchmarkRunner.Run<Benchmark>();
             //            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
             //                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
             //
@@ -250,24 +258,24 @@ namespace IonDotnet.Bench
             //            var compressedIon = Compress(ionBytes);
             //            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
             //            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
-            var experiment = new Experiment
-            {
-//                Name = "Boxing Perftest",
-                Duration = TimeSpan.FromSeconds(90),
-                Id = 233,
-                StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
-                IsActive = true,
-                Description = "Measure performance impact of boxing",
-                Result = ExperimentResult.Failure,
-                SampleData = new byte[100],
-                Budget = decimal.Parse("12345.01234567890123456789")
-            };
-            new Random().NextBytes(experiment.SampleData);
-            var converter = new TimeSpanConverter();
-            byte[] ionBytes = IonSerialization.Serialize(experiment, converter);
-            var d = IonSerialization.Deserialize<Experiment>(ionBytes, converter);
+            // var experiment = new Experiment
+            // {
+            //     Name = "Boxing Perftest",
+            //     Duration = TimeSpan.FromSeconds(90),
+            //     Id = 233,
+            //     StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
+            //     IsActive = true,
+            //     Description = "Measure performance impact of boxing",
+            //     Result = ExperimentResult.Failure,
+            //     SampleData = new byte[100],
+            //     Budget = decimal.Parse("12345.01234567890123456789")
+            // };
+            // new Random().NextBytes(experiment.SampleData);
+            // var converter = new TimeSpanConverter();
+            // byte[] ionBytes = IonSerialization.Serialize(experiment, converter);
+            // var d = IonSerialization.Deserialize<Experiment>(ionBytes, converter);
 
-            Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
+            // Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
         }
     }
 }

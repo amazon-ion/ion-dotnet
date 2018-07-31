@@ -66,7 +66,7 @@ namespace IonDotnet.Internals.Binary
                         break;
                     }
 
-                    var isNegative = _valueTid == IonConstants.TidNegInt;
+                    var isNegative = _valueTid == BinaryConstants.TidNegInt;
                     if (_valueLength <= sizeof(long))
                     {
                         //long might be enough

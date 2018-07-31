@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Internals
 {
@@ -55,7 +56,7 @@ namespace IonDotnet.Internals
         /// <param name="bytesToWrite">Total bytes needed to utf8-encode the string</param>
         private void WriteCharsSlow(ReadOnlySpan<char> chars, int bytesToWrite)
         {
-            if (bytesToWrite <= IonConstants.ShortStringLength)
+            if (bytesToWrite <= BinaryConstants.ShortStringLength)
             {
                 WriteShortChars(chars, bytesToWrite);
             }
@@ -67,7 +68,7 @@ namespace IonDotnet.Internals
 
         private void WriteShortChars(ReadOnlySpan<char> chars, int bytesToWrite)
         {
-            Span<byte> alloc = stackalloc byte[IonConstants.ShortStringLength];
+            Span<byte> alloc = stackalloc byte[BinaryConstants.ShortStringLength];
             var length = Encoding.UTF8.GetBytes(chars, alloc);
             Debug.Assert(length == bytesToWrite);
             WriteBytes(alloc.Slice(0, bytesToWrite));
@@ -389,7 +390,7 @@ namespace IonDotnet.Internals
             for (int i = 0, l = annotations.Count; i < l; i++)
             {
                 annotLength += WriteVarUint(annotations[i].Sid);
-                if (annotLength > IonConstants.MaxAnnotationSize) throw new IonException($"Annotation size too large: {annotLength} bytes");
+                if (annotLength > BinaryConstants.MaxAnnotationSize) throw new IonException($"Annotation size too large: {annotLength} bytes");
             }
 
             lengthPosBlock[lengthPosIdx] = (byte) ((annotLength & VarUintUnitFlag) | VarIntFinalOctetMask);

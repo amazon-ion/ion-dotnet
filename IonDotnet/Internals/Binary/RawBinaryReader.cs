@@ -74,7 +74,7 @@ namespace IonDotnet.Internals.Binary
             _input = input;
 
             _localRemaining = NoLimit;
-            _parentTid = IonConstants.TidDatagram;
+            _parentTid = BinaryConstants.TidDatagram;
             _valueFieldId = SymbolToken.UnknownSid;
             _state = State.BeforeTid;
             _eof = false;
@@ -132,7 +132,7 @@ namespace IonDotnet.Internals.Binary
                     case State.BeforeField:
                         Debug.Assert(_valueFieldId == SymbolToken.UnknownSid);
                         _valueFieldId = ReadFieldId();
-                        if (_valueFieldId == IonConstants.Eof)
+                        if (_valueFieldId == BinaryConstants.Eof)
                         {
                             // FIXME why is EOF ever okay in the middle of a struct?
                             _eof = true;
@@ -145,18 +145,18 @@ namespace IonDotnet.Internals.Binary
                     case State.BeforeTid:
                         _state = State.BeforeValue;
                         _valueTid = ReadTypeId();
-                        if (_valueTid == IonConstants.Eof)
+                        if (_valueTid == BinaryConstants.Eof)
                         {
                             _state = State.Eof;
                             _eof = true;
                         }
-                        else if (_valueTid == IonConstants.TidNopPad)
+                        else if (_valueTid == BinaryConstants.TidNopPad)
                         {
                             // skips size of pad and resets State machine
                             Skip(_valueLength);
                             ClearValue();
                         }
-                        else if (_valueTid == IonConstants.TidTypedecl)
+                        else if (_valueTid == BinaryConstants.TidTypedecl)
                         {
                             //bvm tid happens to be typedecl
                             if (_valueLength == BinaryVersionMarkerLen)
@@ -204,7 +204,7 @@ namespace IonDotnet.Internals.Binary
 
             // so it's a 4 byte version marker - make it look like
             // the symbol $ion_1_0 ...
-            _valueTid = IonConstants.TidSymbol;
+            _valueTid = BinaryConstants.TidSymbol;
             _valueLength = 0;
             _v.IntValue = SystemSymbols.Ion10Sid;
             _valueIsNull = false;
@@ -217,34 +217,34 @@ namespace IonDotnet.Internals.Binary
         {
             switch (tid)
             {
-                case IonConstants.TidNull: // 0
+                case BinaryConstants.TidNull: // 0
                     return IonType.Null;
-                case IonConstants.TidBoolean: // 1
+                case BinaryConstants.TidBoolean: // 1
                     return IonType.Bool;
-                case IonConstants.TidPosInt: // 2
-                case IonConstants.TidNegInt: // 3
+                case BinaryConstants.TidPosInt: // 2
+                case BinaryConstants.TidNegInt: // 3
                     return IonType.Int;
-                case IonConstants.TidFloat: // 4
+                case BinaryConstants.TidFloat: // 4
                     return IonType.Float;
-                case IonConstants.TidDecimal: // 5
+                case BinaryConstants.TidDecimal: // 5
                     return IonType.Decimal;
-                case IonConstants.TidTimestamp: // 6
+                case BinaryConstants.TidTimestamp: // 6
                     return IonType.Timestamp;
-                case IonConstants.TidSymbol: // 7
+                case BinaryConstants.TidSymbol: // 7
                     return IonType.Symbol;
-                case IonConstants.TidString: // 8
+                case BinaryConstants.TidString: // 8
                     return IonType.String;
-                case IonConstants.TidClob: // 9
+                case BinaryConstants.TidClob: // 9
                     return IonType.Clob;
-                case IonConstants.TidBlob: // 10 A
+                case BinaryConstants.TidBlob: // 10 A
                     return IonType.Blob;
-                case IonConstants.TidList: // 11 B
+                case BinaryConstants.TidList: // 11 B
                     return IonType.List;
-                case IonConstants.TidSexp: // 12 C
+                case BinaryConstants.TidSexp: // 12 C
                     return IonType.Sexp;
-                case IonConstants.TidStruct: // 13 D
+                case BinaryConstants.TidStruct: // 13 D
                     return IonType.Struct;
-                case IonConstants.TidTypedecl: // 14 E
+                case BinaryConstants.TidTypedecl: // 14 E
                     return IonType.None; // we don't know yet
                 default:
                     throw new IonException($"Unrecognized value type encountered: {tid}");
@@ -280,7 +280,7 @@ namespace IonDotnet.Internals.Binary
             _localRemaining -= length;
         }
 
-        private int ReadFieldId() => ReadVarUintOrEof(out var i) < 0 ? IonConstants.Eof : i;
+        private int ReadFieldId() => ReadVarUintOrEof(out var i) < 0 ? BinaryConstants.Eof : i;
 
         /// <summary>
         /// Read the TID bytes 
@@ -292,53 +292,53 @@ namespace IonDotnet.Internals.Binary
             var startOfTid = _input.Position;
             var startOfValue = startOfTid + 1;
             var tdRead = ReadByte();
-            if (tdRead < 0) return IonConstants.Eof;
+            if (tdRead < 0) return BinaryConstants.Eof;
 
-            var tid = IonConstants.GetTypeCode(tdRead);
-            if (tid == IonConstants.TidClob)
+            var tid = BinaryConstants.GetTypeCode(tdRead);
+            if (tid == BinaryConstants.TidClob)
             {
                 Console.WriteLine("trouble");
             }
 
-            var len = IonConstants.GetLowNibble(tdRead);
-            if (tid == IonConstants.TidNull && len != IonConstants.LnIsNull)
+            var len = BinaryConstants.GetLowNibble(tdRead);
+            if (tid == BinaryConstants.TidNull && len != BinaryConstants.LnIsNull)
             {
                 //nop pad
-                if (len == IonConstants.LnIsVarLen)
+                if (len == BinaryConstants.LnIsVarLen)
                 {
                     len = ReadVarUint();
                 }
 
                 _state = IsInStruct ? State.BeforeField : State.BeforeTid;
-                tid = IonConstants.TidNopPad;
+                tid = BinaryConstants.TidNopPad;
             }
-            else if (len == IonConstants.LnIsVarLen)
+            else if (len == BinaryConstants.LnIsVarLen)
             {
                 len = ReadVarUint();
                 startOfValue = _input.Position;
             }
-            else if (tid == IonConstants.TidNull)
+            else if (tid == BinaryConstants.TidNull)
             {
                 _valueIsNull = true;
                 len = 0;
                 _state = State.AfterValue;
             }
-            else if (len == IonConstants.LnIsNull)
+            else if (len == BinaryConstants.LnIsNull)
             {
                 _valueIsNull = true;
                 len = 0;
                 _state = State.AfterValue;
             }
-            else if (tid == IonConstants.TidBoolean)
+            else if (tid == BinaryConstants.TidBoolean)
             {
                 switch (len)
                 {
                     default:
                         throw new IonException("Tid is bool but len is not null|true|false");
-                    case IonConstants.LnBooleanTrue:
+                    case BinaryConstants.LnBooleanTrue:
                         _valueIsTrue = true;
                         break;
-                    case IonConstants.LnBooleanFalse:
+                    case BinaryConstants.LnBooleanFalse:
                         _valueIsTrue = false;
                         break;
                 }
@@ -346,7 +346,7 @@ namespace IonDotnet.Internals.Binary
                 len = 0;
                 _state = State.AfterValue;
             }
-            else if (tid == IonConstants.TidStruct)
+            else if (tid == BinaryConstants.TidStruct)
             {
                 _structIsOrdered = len == 1;
                 if (_structIsOrdered)
@@ -393,7 +393,7 @@ namespace IonDotnet.Internals.Binary
         {
             output = 0;
             int b;
-            if ((b = ReadByte()) < 0) return IonConstants.Eof;
+            if ((b = ReadByte()) < 0) return BinaryConstants.Eof;
             output = (output << 7) | (b & 0x7F);
             var bn = 1;
             if ((b & 0x80) != 0) goto Done;
@@ -675,7 +675,7 @@ namespace IonDotnet.Internals.Binary
             _annotationCount = 0;
 
             int l;
-            while (annotLength > 0 && (l = ReadVarUintOrEof(out var a)) != IonConstants.Eof)
+            while (annotLength > 0 && (l = ReadVarUintOrEof(out var a)) != BinaryConstants.Eof)
             {
                 annotLength -= l;
                 if (a == SystemSymbols.IonSymbolTableSid)
@@ -707,11 +707,11 @@ namespace IonDotnet.Internals.Binary
             // length as well (over-writing the len + annotations value
             // that is there now, before the call)
             _valueTid = ReadTypeId();
-            if (_valueTid == IonConstants.TidNopPad)
+            if (_valueTid == BinaryConstants.TidNopPad)
                 throw new IonException("NOP padding is not allowed within annotation wrappers");
-            if (_valueTid == IonConstants.Eof)
+            if (_valueTid == BinaryConstants.Eof)
                 throw new UnexpectedEofException();
-            if (_valueTid == IonConstants.TidTypedecl)
+            if (_valueTid == BinaryConstants.TidTypedecl)
                 throw new IonException("An annotation wrapper may not contain another annotation wrapper.");
 
             var valueType = GetIonTypeFromCode(_valueTid);
@@ -726,13 +726,13 @@ namespace IonDotnet.Internals.Binary
         /// </summary>
         /// <param name="length">Length of the string representation in bytes</param>
         /// <returns>Read string</returns>
-        protected string ReadString(int length) => length <= IonConstants.ShortStringLength
+        protected string ReadString(int length) => length <= BinaryConstants.ShortStringLength
             ? ReadShortString(length)
             : ReadLongString(length);
 
         private string ReadShortString(int length)
         {
-            Span<byte> alloc = stackalloc byte[IonConstants.ShortStringLength];
+            Span<byte> alloc = stackalloc byte[BinaryConstants.ShortStringLength];
             ReadAll(alloc, length);
             ReadOnlySpan<byte> readOnlySpan = alloc;
             var strValue = Encoding.UTF8.GetString(readOnlySpan.Slice(0, length));
@@ -791,7 +791,7 @@ namespace IonDotnet.Internals.Binary
         {
             if (_localRemaining != NoLimit)
             {
-                if (_localRemaining < 1) return IonConstants.Eof;
+                if (_localRemaining < 1) return BinaryConstants.Eof;
                 _localRemaining--;
             }
 
@@ -913,7 +913,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             _containerStack.Push((nextPosition, nextRemaining, _parentTid));
-            IsInStruct = _valueTid == IonConstants.TidStruct;
+            IsInStruct = _valueTid == BinaryConstants.TidStruct;
             _localRemaining = _valueLength;
             _state = IsInStruct ? State.BeforeField : State.BeforeTid;
             _parentTid = _valueTid;
@@ -928,7 +928,7 @@ namespace IonDotnet.Internals.Binary
             var (nextPosition, localRemaining, parentTid) = _containerStack.Pop();
             _eof = false;
             _parentTid = parentTid;
-            IsInStruct = _parentTid == IonConstants.TidStruct;
+            IsInStruct = _parentTid == BinaryConstants.TidStruct;
             _state = IsInStruct ? State.BeforeField : State.BeforeTid;
             _moveNextNeeded = true;
             ClearValue();

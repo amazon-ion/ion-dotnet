@@ -25,7 +25,7 @@ namespace IonDotnet.Tests.Internals
             var array = new SymbolToken[arrayLength];
             foreach (var token in array)
             {
-                Assert.AreEqual(SymbolToken.None, token);
+                Assert.AreEqual(default, token);
             }
         }
 
