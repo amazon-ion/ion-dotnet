@@ -26,27 +26,27 @@ namespace IonDotnet.Internals.Text
 
         #region Actions
 
-        private const int ActionNotDefined = 0;
-        private const int ActionLoadFieldName = 1;
-        private const int ActionLoadAnnotation = 2;
-        private const int ActionStartStruct = 3;
-        private const int ActionStartList = 4;
-        private const int ActionStartSexp = 5;
-        private const int ActionStartLob = 6;
-        private const int ActionLoadScalar = 8;
-        private const int ActionPlusInf = 9;
-        private const int ActionMinusInf = 10;
-        private const int ActionEatComma = 11; // if this is unnecessary (because load_scalar handle it) we don't need "after_value"
-        private const int ActionFinishContainer = 12;
-        private const int ActionFinishLob = 13;
-        private const int ActionFinishDatagram = 14;
-        private const int ActionEof = 15;
+        private const short ActionNotDefined = 0;
+        private const short ActionLoadFieldName = 1;
+        private const short ActionLoadAnnotation = 2;
+        private const short ActionStartStruct = 3;
+        private const short ActionStartList = 4;
+        private const short ActionStartSexp = 5;
+        private const short ActionStartLob = 6;
+        private const short ActionLoadScalar = 8;
+        private const short ActionPlusInf = 9;
+        private const short ActionMinusInf = 10;
+        private const short ActionEatComma = 11; // if this is unnecessary (because load_scalar handle it) we don't need "after_value"
+        private const short ActionFinishContainer = 12;
+        private const short ActionFinishLob = 13;
+        private const short ActionFinishDatagram = 14;
+        private const short ActionEof = 15;
 
-        private static readonly int[,] TransitionActions = MakeTransitionActionArray();
+        private static readonly short[,] TransitionActions = MakeTransitionActionArray();
 
-        private static int[,] MakeTransitionActionArray()
+        private static short[,] MakeTransitionActionArray()
         {
-            var actions = new int[StateMax + 1, TextConstants.TokenMax + 1];
+            var actions = new short[StateMax + 1, TextConstants.TokenMax + 1];
 
             actions[StateBeforeAnnotationDatagram, TextConstants.TokenEof] = ActionFinishDatagram;
             actions[StateBeforeAnnotationDatagram, TextConstants.TokenUnknownNumeric] = ActionLoadScalar;
