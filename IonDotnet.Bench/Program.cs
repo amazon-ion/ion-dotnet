@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Text;
 
 namespace IonDotnet.Bench
-{
+{        
     internal static class Program
     {
         public static void Main(string[] args)
@@ -11,7 +12,7 @@ namespace IonDotnet.Bench
                 Console.WriteLine($"usage: <prog> <runner_classname>");
                 Environment.Exit(1);
             }
-            
+
             var className = args[0];
             var thatclass = Type.GetType($"IonDotnet.Bench.{className}");
             if (thatclass == null)

@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Text;
 using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals.Text
 {
-    public class RawTextReader : IIonReader
+    internal class RawTextReader : IIonReader
     {
         #region States
 
@@ -134,6 +138,33 @@ namespace IonDotnet.Internals.Text
 
         #endregion
 
+        private readonly StringBuilder _currentValueBuffer;
+        private readonly ValueVariant _v;
+        private readonly RawTextScanner _scanner;
+        private int _state;
+        private bool _eof;
+
+        private bool _containerIsStruct; // helper bool's set on push and pop and used
+        private bool _containerProhibitsCommas; // frequently during state transitions actions
+        private bool _hasNextCalled;
+
+        private readonly ContainerStack _containerStack;
+
+        protected RawTextReader(Stream input, bool isByteData, IonType parent = IonType.None)
+        {
+            _state = GetStateAtContainerStart(parent);
+            _currentValueBuffer = new StringBuilder();
+            _scanner = new RawTextScanner(input, isByteData);
+            _eof = false;
+            _hasNextCalled = false;
+            _containerStack = new ContainerStack(this, 6);
+        }
+
+        private void ClearCurrentBuffer()
+        {
+            _currentValueBuffer.Clear();
+        }
+
         public IonType MoveNext()
         {
             throw new NotImplementedException();
@@ -149,7 +180,22 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public int CurrentDepth { get; }
+        public int CurrentDepth
+        {
+            get
+            {
+                var top = _containerStack.Count;
+
+                if (top == 0)
+                    //not sure why this would ever happen
+                    return 0;
+
+                //subtract 1 because level '0' is the datagram
+                Debug.Assert(_containerStack.First() == IonType.Datagram);
+                return top - 1;
+                //TODO handle nested parent
+            }
+        }
 
         public ISymbolTable GetSymbolTable()
         {
@@ -236,6 +282,140 @@ namespace IonDotnet.Internals.Text
         public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
         {
             throw new NotImplementedException();
+        }
+
+        private static int GetStateAtContainerStart(IonType container)
+        {
+            if (container == IonType.None)
+                return StateBeforeAnnotationDatagram;
+
+            Debug.Assert(container.IsContainer());
+
+            switch (container)
+            {
+                default:
+                    //should not happen
+                    throw new IonException($"{container} is no container");
+                case IonType.Struct:
+                    return StateBeforeFieldName;
+                case IonType.List:
+                    return StateBeforeAnnotationContained;
+                case IonType.Sexp:
+                    return StateBeforeAnnotationSexp;
+                case IonType.Datagram:
+                    return StateBeforeAnnotationDatagram;
+            }
+        }
+
+        private static int GetStateAfterContainer(IonType newContainer)
+        {
+            if (newContainer == IonType.None)
+                return StateBeforeAnnotationDatagram;
+            Debug.Assert(newContainer.IsContainer());
+
+            //TODO handle the case for nesting parent that returns eof when its scope ends
+//            if (_nestingparent != None && CurrentDepth == 0) {
+//                new_state = STATE_EOF;
+//            }
+
+            switch (newContainer)
+            {
+                default:
+                    //should not happen
+                    throw new IonException($"{newContainer} is no container");
+                case IonType.Struct:
+                case IonType.List:
+                    return StateAfterValueContents;
+                case IonType.Sexp:
+                    return StateBeforeAnnotationSexp;
+                case IonType.Datagram:
+                    return StateBeforeAnnotationDatagram;
+            }
+        }
+
+        private class ContainerStack
+        {
+            private readonly RawTextReader _rawTextReader;
+            private IonType[] _array;
+
+            public ContainerStack(RawTextReader rawTextReader, int initialCapacity)
+            {
+                Debug.Assert(initialCapacity > 0);
+                _rawTextReader = rawTextReader;
+                _array = new IonType[initialCapacity];
+            }
+
+            public IonType PushContainer(IonType containerType)
+            {
+                EnsureCapacity(Count);
+                _array[Count] = containerType;
+                SetContainerFlags(containerType);
+
+                return _array[Count++];
+            }
+
+            public IonType Peek()
+            {
+                if (Count == 0)
+                    throw new IndexOutOfRangeException();
+                return _array[Count - 1];
+            }
+
+            public IonType Pop()
+            {
+                if (Count == 0)
+                    throw new IndexOutOfRangeException();
+                var ret = _array[--Count];
+
+                //TODO should we do book keeping here?
+                _rawTextReader._eof = false;
+                _rawTextReader._hasNextCalled = false;
+                var topState = _array[Count - 1];
+                SetContainerFlags(topState);
+                _rawTextReader._state = GetStateAfterContainer(topState);
+
+                return ret;
+            }
+
+            public void Clear() => Count = 0;
+
+            public IonType First() => _array[0];
+
+            public int Count { get; private set; }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void SetContainerFlags(IonType type)
+            {
+                switch (type)
+                {
+                    default:
+                        throw new IonException($"{type} is no container");
+                    case IonType.Struct:
+                        _rawTextReader._containerIsStruct = true;
+                        _rawTextReader._containerProhibitsCommas = false;
+                        return;
+                    case IonType.List:
+                        _rawTextReader._containerIsStruct = false;
+                        _rawTextReader._containerProhibitsCommas = false;
+                        return;
+                    case IonType.Datagram:
+                        _rawTextReader._containerIsStruct = false;
+                        _rawTextReader._containerProhibitsCommas = true;
+                        return;
+                    case IonType.Sexp:
+                        _rawTextReader._containerIsStruct = false;
+                        _rawTextReader._containerProhibitsCommas = false;
+                        return;
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void EnsureCapacity(int forIndex)
+            {
+                if (forIndex < _array.Length) return;
+                //resize
+                Array.Resize(ref _array, _array.Length * 2);
+            }
         }
     }
 }
