@@ -19,7 +19,16 @@ namespace IonDotnet
         /// <exception cref="System.IO.IOException">When error happens while writing data to output stream</exception>
         void Flush(Stream outputStream);
 
-        void Finish(Stream outputStream = null);
+        void Flush(ref byte[] bytes);
+
+        /// <summary>
+        /// Flush the content to a memory segment
+        /// </summary>
+        /// <param name="buffer">Memory segment</param>
+        /// <returns>Number of bytes written</returns>
+        int Flush(Memory<byte> buffer);
+
+        void Finish();
 
         void SetFieldName(string name);
 

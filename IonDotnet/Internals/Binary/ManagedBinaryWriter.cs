@@ -233,7 +233,53 @@ namespace IonDotnet.Internals.Binary
 
         public void Flush(Stream outputStream)
         {
-            if (_userWriter.GetDepth() != 0) return;
+            if (!PrepareFlush())
+                return;
+
+            var sl = _symbolsWriter.PrepareFlush();
+            _symbolsWriter.Flush(outputStream);
+
+            var ul = _userWriter.PrepareFlush();
+            _userWriter.Flush(outputStream);
+        }
+
+        public void Flush(ref byte[] bytes)
+        {
+            if (!PrepareFlush())
+                return;
+
+            var sLength = _symbolsWriter.PrepareFlush();
+            var uLength = _userWriter.PrepareFlush();
+            var tLength = sLength + uLength;
+            if (bytes == null || bytes.Length < tLength)
+            {
+                bytes = new byte[tLength];
+            }
+
+            _symbolsWriter.Flush(bytes);
+            _userWriter.Flush(new Memory<byte>(bytes, sLength, uLength));
+        }
+
+        public int Flush(Memory<byte> buffer)
+        {
+            if (!PrepareFlush())
+                return 0;
+
+            var sLength = _symbolsWriter.PrepareFlush();
+            var uLength = _userWriter.PrepareFlush();
+            var tLength = sLength + uLength;
+            if (buffer.Length < tLength)
+                return 0;
+
+            _symbolsWriter.Flush(buffer);
+            _userWriter.Flush(buffer.Slice(sLength, uLength));
+            return tLength;
+        }
+
+        private bool PrepareFlush()
+        {
+            if (_userWriter.GetDepth() != 0)
+                return false;
 
             switch (_symbolState)
             {
@@ -252,20 +298,18 @@ namespace IonDotnet.Internals.Binary
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
+            
             _symbolState = SymbolState.LocalSymbolsFlushed;
 
-            _symbolsWriter.FlushAndFinish(outputStream);
-            _userWriter.FlushAndFinish(outputStream);
+            return true;
         }
 
-        public void Finish(Stream outputStream)
+        public void Finish()
         {
             if (_userWriter.GetDepth() != 0) throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
-            if (outputStream != null)
-            {
-                Flush(outputStream);
-            }
+
+            _symbolsWriter.Finish();
+            _userWriter.Finish();
 
             //reset local symbols
             _locals.Clear();

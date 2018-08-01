@@ -198,36 +198,68 @@ namespace IonDotnet.Internals.Binary
         //this is not supposed to be called ever
         public ISymbolTable SymbolTable => SharedSymbolTable.GetSystem(1);
 
-        //Flush() and Finish() will never be called at this level, so just in case 
-        //they're implemented explicitly
-
-        void IIonWriter.Flush(Stream outputStream)
-        {
-        }
-
-        void IIonWriter.Finish(Stream outputStream)
-        {
-        }
-
+        /// <inheritdoc />
         /// <summary>
-        /// Flush the content to this 
+        /// Simply write the buffers, <see cref="PrepareFlush"/> should be called first
         /// </summary>
-        /// <param name="outputStream">Write all contents here</param>
-        internal void FlushAndFinish(Stream outputStream)
+        /// <param name="outputStream">Stream to flush</param>
+        public void Flush(Stream outputStream)
         {
-            Debug.Assert(_containerStack.Count == 1);
+            Debug.Assert(_containerStack.Count == 1, $"{_containerStack.Count}");
             Debug.Assert(outputStream?.CanWrite == true);
-
             var currentSequence = _containerStack.Peek().Sequence;
-            //wrapup to append all data to the sequence
-            _dataBuffer.Wrapup();
+
+            //now write
             foreach (var segment in currentSequence)
             {
                 outputStream.Write(segment.Span);
             }
 
             outputStream.Flush();
+        }
 
+        //this won't be called at this level
+        void IIonWriter.Flush(ref byte[] bytes)
+        {
+        }
+
+        public int Flush(Memory<byte> buffer)
+        {
+            //raw writer shouldn't have to do the checking
+            var offset = 0;
+            var currentSequence = _containerStack.Peek().Sequence;
+            foreach (var segment in currentSequence)
+            {
+                segment.CopyTo(buffer.Slice(offset));
+                offset += segment.Length;
+            }
+
+            return offset;
+        }
+
+        /// <summary>
+        /// This will stage the remaining writes in the buffer to be flushed, should be called before 'flush()'
+        /// </summary>
+        /// <returns>Total size of the bytes to be flushed</returns>
+        internal int PrepareFlush()
+        {
+            var topContainer = _containerStack.Peek();
+            //wrapup to append all data to the sequence
+            //but first, remember the previous position so we can update the length
+            var currIdx = topContainer.Sequence.Count;
+            _dataBuffer.Wrapup();
+            var increased = 0;
+            for (var i = currIdx; i < topContainer.Sequence.Count; i++)
+            {
+                increased += topContainer.Sequence[i].Length;
+            }
+
+            _containerStack.IncreaseCurrentContainerLength(increased);
+            return (int) topContainer.Length;
+        }
+
+        public void Finish()
+        {
             //reset the states
             _dataBuffer.Reset();
             //double calls to Reset() should be fine
@@ -769,6 +801,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteIonVersionMarker()
         {
             _dataBuffer.WriteUint32(0xE0_01_00_EA);
+            _containerStack.IncreaseCurrentContainerLength(4);
         }
 
         public bool IsStreamCopyOptimized()

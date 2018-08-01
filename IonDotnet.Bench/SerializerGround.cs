@@ -112,28 +112,6 @@ namespace IonDotnet.Bench
             }
         }
 
-        public enum ExperimentResult
-        {
-            Success,
-            Failure,
-            Unknown
-        }
-
-        private class Experiment
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public DateTimeOffset StartDate { get; set; }
-            // public TimeSpan Duration { get; set; }
-            public bool IsActive { get; set; }
-            public byte[] SampleData { get; set; }
-            public decimal Budget { get; set; }
-
-            // [JsonConverter(typeof(StringEnumConverter))]
-            public ExperimentResult Result { get; set; }
-        }
-
         [MemoryDiagnoser]
         public class Benchmark
         {
@@ -142,7 +120,6 @@ namespace IonDotnet.Bench
 
             private static List<Experiment> GenerateArray()
             {
-                var random = new Random();
                 var l = new List<Experiment>();
                 for (var i = 0; i < Times; i++)
                 {
@@ -165,7 +142,7 @@ namespace IonDotnet.Bench
 
             private readonly IonSerialization _serializer = new IonSerialization();
 
-            [Benchmark]
+//            [Benchmark]
             public int JsonDotnet()
             {
                 var s = JsonConvert.SerializeObject(Data);
@@ -175,18 +152,19 @@ namespace IonDotnet.Bench
             [Benchmark]
             public int IonDotnet()
             {
-                var b = IonSerialization.Serialize(Data);
+                var b = IonSerializerExpression.Serialize(Data);
                 return b.Length;
             }
 
             private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
-            [Benchmark]
+//            [Benchmark]
             public void IonDotnetManual()
             {
                 //                _serializer.Serialize(Data);
                 //                using (var stream = new MemoryStream())
                 //                {
+                byte[] bytes = null;
                 Writer.StepIn(IonType.List);
                 foreach (var poco in Data)
                 {
@@ -211,7 +189,8 @@ namespace IonDotnet.Bench
                 }
 
                 Writer.StepOut();
-                //                        writer.Finish(stream);
+                Writer.Flush(ref bytes);
+                Writer.Finish();
 
                 //                }
             }

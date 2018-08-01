@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -52,15 +51,13 @@ namespace IonDotnet.Tests.Internals
             var val = decimal.Parse(format);
 
             Console.WriteLine(val);
-            using (var stream = new MemoryStream())
+
+            using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.WriteDecimal(val);
-                    writer.Flush(stream);
-                    var bytes = stream.ToArray();
-                    Assert.AreEqual(val, ReadUtils.Binary.ReadSingleDecimal(bytes));
-                }
+                writer.WriteDecimal(val);
+                byte[] bytes = null;
+                writer.Flush(ref bytes);
+                Assert.AreEqual(val, ReadUtils.Binary.ReadSingleDecimal(bytes));
             }
         }
 

@@ -253,7 +253,6 @@ namespace IonDotnet.Internals.Binary
 
         private void Skip(int length)
         {
-            Console.WriteLine($"skip {length}");
             if (length < 0) throw new ArgumentException(nameof(length));
             if (_localRemaining == NoLimit)
             {

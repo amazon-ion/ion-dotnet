@@ -19,13 +19,11 @@ namespace IonDotnet.Serialization
         public static byte[] Serialize(object obj, IScalarWriter scalarWriter = null)
         {
             //prepare infrastructure
-            using (var stream = new MemoryStream())
-            {
-                WriteObject(BinWriter, obj, scalarWriter);
-                BinWriter.Finish(stream);
-
-                return stream.ToArray();
-            }
+            byte[] bytes = null;
+            WriteObject(BinWriter, obj, scalarWriter);
+            BinWriter.Flush(ref bytes);
+            BinWriter.Finish();
+            return bytes;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

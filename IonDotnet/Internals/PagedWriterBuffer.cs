@@ -669,6 +669,9 @@ namespace IonDotnet.Internals
         public IList<Memory<byte>> Wrapup()
         {
             Debug.Assert(_currentSequence != null);
+
+            if (_writtenSoFar == 0)
+                return _currentSequence;
             if (_runningIndex >= _writtenSoFar)
             {
                 //this means that all the bytes written since the last wrapup() fits in one block
