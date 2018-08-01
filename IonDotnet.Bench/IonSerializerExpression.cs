@@ -55,6 +55,7 @@ namespace IonDotnet.Bench
             byte[] bytes = null;
             action(obj, Writer);
             Writer.Flush(ref bytes);
+            Writer.Finish();
             return bytes;
         }
 

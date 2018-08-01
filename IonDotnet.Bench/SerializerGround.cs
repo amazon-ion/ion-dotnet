@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -142,7 +143,7 @@ namespace IonDotnet.Bench
 
             private readonly IonSerialization _serializer = new IonSerialization();
 
-//            [Benchmark]
+            [Benchmark]
             public int JsonDotnet()
             {
                 var s = JsonConvert.SerializeObject(Data);
@@ -158,7 +159,7 @@ namespace IonDotnet.Bench
 
             private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
-//            [Benchmark]
+            [Benchmark]
             public void IonDotnetManual()
             {
                 //                _serializer.Serialize(Data);
@@ -223,38 +224,6 @@ namespace IonDotnet.Bench
         public void Run(string[] args)
         {
             BenchmarkRunner.Run<Benchmark>();
-            //            var jsonString = GetJson(@"https://api.foursquare.com/v2/venues/explore?near=NYC
-            //                &oauth_token=IRLTRG22CDJ3K2IQLQVR1EP4DP5DLHP343SQFQZJOVILQVKV&v=20180728");
-            //
-            //            var obj = JsonConvert.DeserializeObject<RootObject>(jsonString);
-            //            var jsonBytes = Encoding.UTF8.GetBytes(jsonString);
-            //            var ionBytes = IonSerialization.Serialize(obj);
-            //
-            //            Console.WriteLine($"JSON size: {jsonBytes.Length}");
-            //            Console.WriteLine($"ION size: {ionBytes.Length}");
-            //
-            //            var compressedJson = Compress(jsonBytes);
-            //            var compressedIon = Compress(ionBytes);
-            //            Console.WriteLine($"compressed JSON size: {compressedJson.Length}");
-            //            Console.WriteLine($"compressed ION size: {compressedIon.Length}");
-            // var experiment = new Experiment
-            // {
-            //     Name = "Boxing Perftest",
-            //     Duration = TimeSpan.FromSeconds(90),
-            //     Id = 233,
-            //     StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
-            //     IsActive = true,
-            //     Description = "Measure performance impact of boxing",
-            //     Result = ExperimentResult.Failure,
-            //     SampleData = new byte[100],
-            //     Budget = decimal.Parse("12345.01234567890123456789")
-            // };
-            // new Random().NextBytes(experiment.SampleData);
-            // var converter = new TimeSpanConverter();
-            // byte[] ionBytes = IonSerialization.Serialize(experiment, converter);
-            // var d = IonSerialization.Deserialize<Experiment>(ionBytes, converter);
-
-            // Console.WriteLine(JsonConvert.SerializeObject(d, Formatting.Indented));
         }
     }
 }
