@@ -34,7 +34,6 @@ namespace IonDotnet.Bench
         private static readonly ConstructorInfo TimeStampFromDateTimeOffset = typeof(Timestamp).GetConstructor(new[] {typeof(DateTimeOffset)});
 
         private static readonly Dictionary<Type, Delegate> Cache = new Dictionary<Type, Delegate>();
-        private static readonly Delegate CachedAct = GetAction<List<Experiment>>();
 
 
         private static Action<T, ManagedBinaryWriter> GetAction<T>()
@@ -43,9 +42,9 @@ namespace IonDotnet.Bench
             if (Cache.TryGetValue(type, out var action))
                 return (Action<T, ManagedBinaryWriter>) action;
 
-            var objParam = Expression.Parameter(typeof(T), "obj");
+            var objParam = Expression.Parameter(type, "obj");
             var writerParam = Expression.Parameter(typeof(ManagedBinaryWriter), "writer");
-            var writeActionExpression = GetWriteActionForType(typeof(T), objParam, writerParam);
+            var writeActionExpression = GetWriteActionForType(type, objParam, writerParam);
             if (writeActionExpression == null)
                 throw new IonException("Cannot create concrete type");
 
@@ -93,7 +92,9 @@ namespace IonDotnet.Bench
             Expression structExpression = Expression.Call(writerExpression, StepInMethod, Expression.Constant(IonType.Struct));
             foreach (var propertyInfo in properties)
             {
-                if (!propertyInfo.CanRead) continue;
+                if (!propertyInfo.CanRead)
+                    continue;
+
                 var propertyValueExp = Expression.Property(target, propertyInfo);
                 var writeValueExpression = GetWriteActionForType(propertyInfo.PropertyType, propertyValueExp, writerExpression);
                 var setFieldNameExp = Expression.Call(writerExpression, SetFieldNameMethod, Expression.Constant(propertyInfo.Name));

@@ -150,7 +150,7 @@ namespace IonDotnet.Internals.Text
 
         private readonly ContainerStack _containerStack;
 
-        protected RawTextReader(Stream input, bool isByteData, IonType parent = IonType.None)
+        protected RawTextReader(TextStream input, bool isByteData, IonType parent = IonType.None)
         {
             _state = GetStateAtContainerStart(parent);
             _currentValueBuffer = new StringBuilder();

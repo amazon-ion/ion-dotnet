@@ -18,9 +18,13 @@ namespace IonDotnet.Utils
         private const int UNICODE_CONTINUATION_BYTE_MASK = 0x3F; // 6 bits in each continuation
 
         private const int MAXIMUM_UTF16_1_CHAR_CODE_POINT = 0x0000FFFF;
+        private const int SURROGATE_MASK = unchecked((int) 0xFFFFFC00);
         private const int SURROGATE_OFFSET = 0x00010000;
         private const int HIGH_SURROGATE = 0x0000D800; // 0b 1101 1000 0000 0000
         private const int LOW_SURROGATE = 0x0000DC00; // 0b 1101 1100 0000 0000
+        private const int surrogate_value_mask = (int) ~0xFFFFFC00;
+        private const int surrogate_utf32_shift = 10;
+        private const int surrogate_utf32_offset = 0x10000;
 
         public enum ProhibitionContext
         {
@@ -42,6 +46,21 @@ namespace IonDotnet.Utils
                 return isControl && !isWhiteSpace;
             var isNewLine = c == 0x0A || c == 0x0D;
             return isControl && !isWhiteSpace && !isNewLine;
+        }
+
+        // these help convert from Java UTF-16 to Unicode Scalars (aka unicode code
+        // points (aka characters)) which are "32" bit values (really just 21 bits)
+        // the DON'T check validity of their input, they expect that to have happened
+        // already.  This is a perf issue since normally this check has been done
+        // to detect that these routines should be called at all - no need to do it
+        // twice.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int MakeUnicodeScalar(int highSurrogate, int lowSurrogate)
+        {
+            var c = (highSurrogate & surrogate_value_mask) << surrogate_utf32_shift;
+            c |= lowSurrogate & surrogate_value_mask;
+            c += surrogate_utf32_offset;
+            return c;
         }
 
         /// <summary>
