@@ -3,6 +3,9 @@ Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for dotnet
 ### Note 
 This project is still in early development and not ready for production use.
 
+[Basic usage](https://github.com/dhhoang/IonDotnet/blob/master/README.md#basic-usage)
+[Performance](https://github.com/dhhoang/IonDotnet/blob/master/README.md#benchmark)
+
 ### Basic usage
 IonDotnet can (de)serialize any POCO object 
 
