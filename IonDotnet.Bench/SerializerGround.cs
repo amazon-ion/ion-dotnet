@@ -151,10 +151,15 @@ namespace IonDotnet.Bench
             }
 
             [Benchmark]
-            public int IonDotnet()
+            public void IonDotnetExp()
             {
-                var b = IonSerializerExpression.Serialize(Data);
-                return b.Length;
+                IonSerializerExpression.Serialize(Data);
+            }
+
+            [Benchmark]
+            public void IonDotnetReflection()
+            {
+                IonSerialization.Serialize(Data);
             }
 
             private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);

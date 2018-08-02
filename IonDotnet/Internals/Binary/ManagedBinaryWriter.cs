@@ -236,11 +236,13 @@ namespace IonDotnet.Internals.Binary
             if (!PrepareFlush())
                 return;
 
-            var sl = _symbolsWriter.PrepareFlush();
+            _symbolsWriter.PrepareFlush();
             _symbolsWriter.Flush(outputStream);
 
-            var ul = _userWriter.PrepareFlush();
+            _userWriter.PrepareFlush();
             _userWriter.Flush(outputStream);
+            
+            Finish();
         }
 
         public void Flush(ref byte[] bytes)
@@ -258,6 +260,8 @@ namespace IonDotnet.Internals.Binary
 
             _symbolsWriter.Flush(bytes);
             _userWriter.Flush(new Memory<byte>(bytes, sLength, uLength));
+            
+            Finish();
         }
 
         public int Flush(Memory<byte> buffer)
@@ -273,6 +277,7 @@ namespace IonDotnet.Internals.Binary
 
             _symbolsWriter.Flush(buffer);
             _userWriter.Flush(buffer.Slice(sLength, uLength));
+            Finish();
             return tLength;
         }
 

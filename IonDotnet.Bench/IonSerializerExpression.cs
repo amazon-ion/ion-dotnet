@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using FastExpressionCompiler;
 using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Bench
@@ -32,10 +33,16 @@ namespace IonDotnet.Bench
         private static readonly ConstructorInfo TimeStampFromDateTime = typeof(Timestamp).GetConstructor(new[] {typeof(DateTime)});
         private static readonly ConstructorInfo TimeStampFromDateTimeOffset = typeof(Timestamp).GetConstructor(new[] {typeof(DateTimeOffset)});
 
-        private static readonly object cachedAction = GetAction<List<Experiment>>();
+        private static readonly Dictionary<Type, Delegate> Cache = new Dictionary<Type, Delegate>();
+        private static readonly Delegate CachedAct = GetAction<List<Experiment>>();
+
 
         private static Action<T, ManagedBinaryWriter> GetAction<T>()
         {
+            var type = typeof(T);
+            if (Cache.TryGetValue(type, out var action))
+                return (Action<T, ManagedBinaryWriter>) action;
+
             var objParam = Expression.Parameter(typeof(T), "obj");
             var writerParam = Expression.Parameter(typeof(ManagedBinaryWriter), "writer");
             var writeActionExpression = GetWriteActionForType(typeof(T), objParam, writerParam);
@@ -44,18 +51,19 @@ namespace IonDotnet.Bench
 
             var lambdaExp = Expression.Lambda<Action<T, ManagedBinaryWriter>>(writeActionExpression, objParam, writerParam);
 
-            Action<T, ManagedBinaryWriter> action = lambdaExp.Compile();
-            return action;
+            Action<T, ManagedBinaryWriter> act = lambdaExp.CompileFast();
+            Cache.Add(type, act);
+
+            return act;
         }
 
         public static byte[] Serialize<T>(T obj)
         {
-            Action<T, ManagedBinaryWriter> action = (Action<T, ManagedBinaryWriter>) cachedAction;
+            var action = GetAction<T>();
             //now write
             byte[] bytes = null;
             action(obj, Writer);
             Writer.Flush(ref bytes);
-            Writer.Finish();
             return bytes;
         }
 

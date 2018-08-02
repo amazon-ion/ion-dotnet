@@ -22,7 +22,6 @@ namespace IonDotnet.Serialization
             byte[] bytes = null;
             WriteObject(BinWriter, obj, scalarWriter);
             BinWriter.Flush(ref bytes);
-            BinWriter.Finish();
             return bytes;
         }
 
