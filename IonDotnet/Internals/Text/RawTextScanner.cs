@@ -4,17 +4,15 @@ using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Text
 {
-    internal sealed class RawTextScanner
+    internal sealed partial class RawTextScanner
     {
         private readonly TextStream _input;
-        private readonly bool _isByteData;
 
         private readonly Stack<int> _unreadStack;
 
-        public RawTextScanner(TextStream input, bool isByteData)
+        public RawTextScanner(TextStream input)
         {
             _input = input;
-            _isByteData = isByteData;
             _unreadStack = new Stack<int>();
         }
 

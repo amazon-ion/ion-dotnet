@@ -20,5 +20,11 @@ namespace IonDotnet.Internals.Text
         /// </summary>
         /// <returns>The unit read</returns>
         public abstract int Read();
+
+        /// <summary>
+        /// Try to unread the character unit
+        /// </summary>
+        /// <param name="c">Has to be most-recently read unit</param>
+        public abstract void Unread(int c);
     }
 }

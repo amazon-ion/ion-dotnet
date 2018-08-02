@@ -150,11 +150,11 @@ namespace IonDotnet.Internals.Text
 
         private readonly ContainerStack _containerStack;
 
-        protected RawTextReader(TextStream input, bool isByteData, IonType parent = IonType.None)
+        protected RawTextReader(TextStream input, IonType parent = IonType.None)
         {
             _state = GetStateAtContainerStart(parent);
             _currentValueBuffer = new StringBuilder();
-            _scanner = new RawTextScanner(input, isByteData);
+            _scanner = new RawTextScanner(input);
             _eof = false;
             _hasNextCalled = false;
             _containerStack = new ContainerStack(this, 6);
