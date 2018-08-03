@@ -8,6 +8,13 @@ namespace IonDotnet.Internals.Text
 {
     internal sealed class RawTextScanner
     {
+        private enum CommentStrategy
+        {
+            Ignore,
+            Error,
+            Break
+        }
+
         private readonly TextStream _input;
         private int _token = -1;
         private bool _unfinishedToken;
@@ -32,22 +39,159 @@ namespace IonDotnet.Internals.Text
                     throw new InvalidTokenException(_token);
                 case TextConstants.TokenStringDoubleQuote:
                     SkipDoubleQuotedString();
-                    c = SkipOverWhiteSpace();
+                    c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
             }
 
             if (TextConstants.IsWhiteSpace(c))
             {
-                c = SkipOverWhiteSpace();
+                c = SkipOverWhiteSpace(CommentStrategy.Ignore);
             }
 
             _unfinishedToken = false;
             return c;
         }
 
-        private int SkipOverWhiteSpace()
+        private bool OnComment(CommentStrategy commentStrategy)
         {
-            throw new NotImplementedException();
+            //A '/' character has been found, so break the loop as it may be a valid blob character.
+            if (commentStrategy == CommentStrategy.Break)
+                return false;
+
+            int next;
+            //Skip over all of the comment's text.
+            if (commentStrategy == CommentStrategy.Ignore)
+            {
+                next = ReadChar();
+                switch (next)
+                {
+                    default:
+                        UnreadChar(next);
+                        return false;
+                    case '/':
+                        //valid comment
+                        SkipSingleLineComment();
+                        return true;
+                    case '*':
+                        //valid block comment
+                        SkipBlockComment();
+                        return true;
+                }
+            }
+
+            //here means CommentStrategy.Error
+            //If it's a valid comment, throw an error.
+            next = ReadChar();
+            if (next == '/' || next == '*')
+                throw new InvalidTokenException("Illegal comment");
+
+            UnreadChar(next);
+            return false;
+        }
+
+        /// <summary>
+        /// Must be called right after "/*"
+        /// </summary>
+        private void SkipBlockComment()
+        {
+            while (true)
+            {
+                var c = ReadChar();
+                switch (c)
+                {
+                    case -1:
+                        throw new InvalidTokenException("Bad start of comment token");
+                    case '*':
+                        // read back to back '*'s until you hit a '/' and terminate the comment
+                        // or you see a non-'*'; in which case you go back to the outer loop.
+                        // this just avoids the read-unread pattern on every '*' in a line of '*'
+                        // commonly found at the top and bottom of block comments
+                        while (true)
+                        {
+                            c = ReadChar();
+                            if (c == '/')
+                                return;
+                            if (c != '*')
+                                break;
+                        }
+
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Must be called right after "//"
+        /// </summary>
+        private void SkipSingleLineComment()
+        {
+            while (true)
+            {
+                var c = ReadChar();
+                switch (c)
+                {
+                    // new line normalization and counting is handled in read_char
+                    case CharacterSequence.CharSeqNewlineSequence1:
+                    case CharacterSequence.CharSeqNewlineSequence2:
+                    case CharacterSequence.CharSeqNewlineSequence3:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                    case -1:
+                        return;
+                }
+
+                //still in the comment, read another character
+            }
+        }
+
+        /// <summary>
+        /// Skip whitespace
+        /// </summary>
+        /// <param name="commentStrategy">Comment strategy to apply</param>
+        /// <returns>Next char in the stream</returns>
+        private int SkipOverWhiteSpace(CommentStrategy commentStrategy)
+        {
+            SkipWhiteSpace(commentStrategy);
+            return ReadChar();
+        }
+
+        private bool SkipWhiteSpace(CommentStrategy commentStrategy)
+        {
+            var anyWhitespace = false;
+            int c;
+            while (true)
+            {
+                c = ReadChar();
+                switch (c)
+                {
+                    default:
+                        goto Done;
+                    case ' ':
+                    case '\t':
+                    case CharacterSequence.CharSeqNewlineSequence1:
+                    case CharacterSequence.CharSeqNewlineSequence2:
+                    case CharacterSequence.CharSeqNewlineSequence3:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                        // new line normalization and counting is handled in ReadChar
+                        anyWhitespace = true;
+                        break;
+                    case '/':
+                        if (!OnComment(commentStrategy))
+                        {
+                            goto Done;
+                        }
+
+                        anyWhitespace = true;
+                        break;
+                }
+            }
+
+            Done:
+            UnreadChar(c);
+            return anyWhitespace;
         }
 
         /// <summary>
