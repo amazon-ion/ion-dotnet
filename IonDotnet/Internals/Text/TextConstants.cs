@@ -4,32 +4,35 @@ using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Text
 {
-    internal class TextConstants
+    /// <summary>
+    /// Contains constants that refer to escaped character sequence, could be newline or escaped
+    /// </summary>
+    internal static class CharacterSequence
     {
-        /// <summary>
-        /// Contains constants that refer to escaped character sequence, could be newline or escaped
-        /// </summary>
-        public static class CharacterSequence
-        {
-            public const int CharSeqEof = -1; // matches -1 (stream eof)
-            public const int CharSeqStringTerminator = -2; // can't be >=0, ==-1 (eof), nor -2 (empty esc)
-            public const int CharSeqStringNonTerminator = -3; // used for a pair of triple quotes treated a nothing
+        public const int CharSeqEof = -1; // matches -1 (stream eof)
+        public const int CharSeqStringTerminator = -2; // can't be >=0, ==-1 (eof), nor -2 (empty esc)
+        public const int CharSeqStringNonTerminator = -3; // used for a pair of triple quotes treated a nothing
 
-            public const int CharSeqNewlineSequence1 = -4; // single new line
-            public const int CharSeqNewlineSequence2 = -5; // single carriage return
-            public const int CharSeqNewlineSequence3 = -6; // new line - carriage return pair
-            public const int CharSeqEscapedNewlineSequence1 = -7; // escape followed by new line
-            public const int CharSeqEscapedNewlineSequence2 = -8; // escape followed by carriage return
-            public const int CharSeqEscapedNewlineSequence3 = -9; // escape followed by new line - carriage return pair
-        }
+        public const int CharSeqNewlineSequence1 = -4; // single new line
+        public const int CharSeqNewlineSequence2 = -5; // single carriage return
+        public const int CharSeqNewlineSequence3 = -6; // new line - carriage return pair
+        public const int CharSeqEscapedNewlineSequence1 = -7; // escape followed by new line
+        public const int CharSeqEscapedNewlineSequence2 = -8; // escape followed by carriage return
+        public const int CharSeqEscapedNewlineSequence3 = -9; // escape followed by new line - carriage return pair
+    }
 
+    /// <summary>
+    /// Text-related constants
+    /// </summary>
+    internal static class TextConstants
+    {
         #region Tokens
 
         /**
          * A bunch of tokens const, note that these are used for reference, not the
          * actual ASCII values
          */
-        
+
         public const int TokenError = -1;
         public const int TokenEof = 0;
 

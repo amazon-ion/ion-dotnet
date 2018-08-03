@@ -1,11 +1,21 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text;
 using IonDotnet.Systems;
 using IonDotnet.Utils;
-using static IonDotnet.Internals.Text.TextConstants;
 
 namespace IonDotnet.Internals.Text
 {
+    /// <summary>
+    /// This class is responsible for the main parsing/reading logic, which works directly with the
+    /// <see cref="TextStream"/> abstraction to scan the input for interesting token as well as provide
+    /// the method for reading the value.
+    /// </summary>
+    /// <remarks>
+    /// At any point during the parsing, there is one active _token type that represent the current state
+    /// of the input. The raw text reader class can based on that token to read/load value, or to perform
+    /// actions such as skipping to next token.
+    /// </remarks>
     internal sealed class RawTextScanner
     {
         private enum CommentStrategy
@@ -16,12 +26,58 @@ namespace IonDotnet.Internals.Text
         }
 
         private readonly TextStream _input;
-        private int _token = -1;
+        public int Token { get; private set; } = -1;
+
         private bool _unfinishedToken;
 
         public RawTextScanner(TextStream input)
         {
             _input = input;
+        }
+
+        public int NextToken()
+        {
+            var token = -1;
+            var c = _unfinishedToken ? SkipToEnd() : SkipOverWhiteSpace(CommentStrategy.Ignore);
+
+            _unfinishedToken = true;
+
+            switch (c)
+            {
+                default:
+                    throw new InvalidTokenException(c);
+                case -1:
+                    return FinishNextToken(TextConstants.TokenEof, true);
+                case '/':
+                    UnreadChar(c);
+                    return FinishNextToken(TextConstants.TokenSymbolOperator, true);
+                case ':':
+                    var c2 = ReadChar();
+                    if (c2 == ':')
+                        return FinishNextToken(TextConstants.TokenDoubleColon, true);
+
+                    UnreadChar(c2);
+                    return FinishNextToken(TextConstants.TokenColon, true);
+                case '{':
+                    c2 = ReadChar();
+                    if (c2 == '{')
+                        return FinishNextToken(TextConstants.TokenOpenDoubleBrace, true);
+                    UnreadChar(c2);
+                    return FinishNextToken(TextConstants.TokenOpenBrace, true);
+                case '}':
+                    // detection of double closing braces is done
+                    // in the parser in the blob and clob handling
+                    // state - it's otherwise ambiguous with closing
+                    // two structs together. see tryForDoubleBrace() below
+                    return FinishNextToken(TextConstants.TokenCloseBrace, false);
+            }
+        }
+
+        private int FinishNextToken(int token, bool contentIsWaiting)
+        {
+            Token = token;
+            _unfinishedToken = contentIsWaiting;
+            return token;
         }
 
         /// <summary>
@@ -32,11 +88,11 @@ namespace IonDotnet.Internals.Text
         private int SkipToEnd()
         {
             int c;
-            switch (_token)
+            switch (Token)
             {
                 default:
                     //Unknown token
-                    throw new InvalidTokenException(_token);
+                    throw new InvalidTokenException(Token);
                 case TextConstants.TokenStringDoubleQuote:
                     SkipDoubleQuotedString();
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
@@ -509,8 +565,13 @@ namespace IonDotnet.Internals.Text
 
         private int ReadChar()
         {
-            return _input.Read();
-            //TODO handle eating newline sequences
+            var c = _input.Read();
+            if (c == '\n' || c == '\r')
+            {
+                c = EatNewLineSequence(c);
+            }
+
+            return c;
         }
 
         /// <summary>
@@ -520,8 +581,45 @@ namespace IonDotnet.Internals.Text
         /// <param name="c">Char to unread</param>
         private void UnreadChar(int c)
         {
-            //TODO check for newline and escaped sequence
-            _input.Unread(c);
+            if (c >= 0)
+            {
+                _input.Unread(c);
+                return;
+            }
+
+            switch (c)
+            {
+                default:
+                    Debug.Assert(false, $"Invalid character encountered: {c}");
+                    break;
+                case CharacterSequence.CharSeqNewlineSequence1:
+                    _input.Unread('\n');
+                    break;
+                case CharacterSequence.CharSeqNewlineSequence2:
+                    _input.Unread('\r');
+                    break;
+                case CharacterSequence.CharSeqNewlineSequence3:
+                    _input.Unread('\n');
+                    _input.Unread('\r');
+                    break;
+                case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                    _input.Unread('\n');
+                    _input.Unread('\\');
+                    break;
+                case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                    _input.Unread('\r');
+                    _input.Unread('\\');
+                    break;
+                case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                    _input.Unread('\n');
+                    _input.Unread('\r');
+                    _input.Unread('\\');
+                    break;
+                case CharacterSequence.CharSeqEof:
+                    //TODO can you 'unread' an EOF?
+                    _input.Unread(CharacterSequence.CharSeqEof);
+                    break;
+            }
         }
     }
 }
