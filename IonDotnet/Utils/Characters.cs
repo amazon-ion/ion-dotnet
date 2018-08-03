@@ -146,7 +146,7 @@ namespace IonDotnet.Utils
         public static bool NeedsSurrogateEncoding(int unicodeScalar) => unicodeScalar > MAXIMUM_UTF16_1_CHAR_CODE_POINT;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static char HighSurrogate(int unicodeScalar)
+        public static char GetHighSurrogate(int unicodeScalar)
         {
             Debug.Assert(unicodeScalar > MAXIMUM_UTF16_1_CHAR_CODE_POINT);
             var c = (unicodeScalar - SURROGATE_OFFSET) >> 10;
@@ -154,11 +154,66 @@ namespace IonDotnet.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static char LowSurrogate(int unicodeScalar)
+        public static char GetLowSurrogate(int unicodeScalar)
         {
             Debug.Assert(unicodeScalar > MAXIMUM_UTF16_1_CHAR_CODE_POINT);
             var c = (unicodeScalar - SURROGATE_OFFSET) & 0x3ff;
             return (char) ((c | LOW_SURROGATE) & 0xffff);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool Is7BitChar(int c) => (c & ~0x7f) == 0;
+
+        public const int EscapeNotDefined = -11;
+        public const int ESCAPE_HEX = -16;
+        public const int ESCAPE_BIG_U = -15;
+        public const int ESCAPE_LITTLE_U = -14;
+        private const int ESCAPE_REMOVES_NEWLINE2 = -13;
+        private const int ESCAPE_REMOVES_NEWLINE = -12;
+
+        public static int GetEscapeReplacementCharacter(int c)
+        {
+            switch (c)
+            {
+                default:
+                    return EscapeNotDefined;
+                case '0':
+                    return 0; //    \u0000  \0  alert NUL
+                case 'a':
+                    return 7; //    \u0007  \a  alert BEL
+                case 'b':
+                    return 8; //    \u0008  \b  backspace BS
+                case 't':
+                    return 9; //    \u0009  \t  horizontal tab HT
+                case 'n':
+                    return '\n'; //    \ u000A  \ n  linefeed LF
+                case 'f':
+                    return 0x0c; //    \u000C  \f  form feed FF
+                case 'r':
+                    return '\r'; //    \ u000D  \ r  carriage return CR
+                case 'v':
+                    return 0x0b; //    \u000B  \v  vertical tab VT
+                case '"':
+                    return '"'; //    \u0022  \"  double quote
+                case '\'':
+                    return '\''; //    \u0027  \'  single quote
+                case '?':
+                    return '?'; //    \u003F  \?  question mark
+                case '\\':
+                    return '\\'; //    \u005C  \\  backslash
+                case '/':
+                    return '/'; //    \u002F  \/  forward slash nothing  \NL  escaped NL expands to nothing
+                case '\n':
+                    return ESCAPE_REMOVES_NEWLINE; // slash-new line the new line eater
+                case '\r':
+                    return ESCAPE_REMOVES_NEWLINE2; // slash-new line the new line eater
+                case 'x':
+                    return ESCAPE_HEX; //      \xHH  2-digit hexadecimal unicode character equivalent to \ u00HH
+                case 'u':
+                    return ESCAPE_LITTLE_U; //    any  \ uHHHH  4-digit hexadecimal unicode character
+                case 'U':
+                    return ESCAPE_BIG_U;
+            }
         }
     }
 }
