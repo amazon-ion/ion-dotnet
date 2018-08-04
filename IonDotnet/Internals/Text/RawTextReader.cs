@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Conversions;
+
+// ReSharper disable ImpureMethodCallOnReadonlyValueField
 
 namespace IonDotnet.Internals.Text
 {
@@ -141,12 +144,17 @@ namespace IonDotnet.Internals.Text
         private readonly StringBuilder _currentValueBuffer;
         private readonly ValueVariant _v;
         private readonly RawTextScanner _scanner;
+        private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
+
         private int _state;
         private bool _eof;
 
+        private IonType _valueType;
         private bool _containerIsStruct; // helper bool's set on push and pop and used
         private bool _containerProhibitsCommas; // frequently during state transitions actions
         private bool _hasNextCalled;
+        private string _fieldName;
+        private int _fieldNameSid = SymbolToken.UnknownSid;
 
         private readonly ContainerStack _containerStack;
 
@@ -165,7 +173,66 @@ namespace IonDotnet.Internals.Text
             _currentValueBuffer.Clear();
         }
 
+        private bool HasNext()
+        {
+            if (_hasNextCalled || _eof)
+                return _eof != true;
+
+            FinishValue();
+            ClearValue();
+            ParseNext();
+
+            _hasNextCalled = true;
+            return _eof != true;
+        }
+
+        private void ClearValue()
+        {
+            _valueType = IonType.None;
+            //TODO lob
+            ClearCurrentBuffer();
+            _annotations.Clear();
+            ClearFieldName();
+            _v.Clear();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ClearFieldName()
+        {
+            _fieldName = null;
+            _fieldNameSid = SymbolToken.UnknownSid;
+        }
+
+        private void ParseNext()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void FinishValue()
+        {
+            if (_scanner.UnfinishedToken)
+            {
+                _scanner.FinishToken();
+                _state = GetStateAfterValue(_containerStack.Peek());
+            }
+            _hasNextCalled = false;
+        }
+
         public IonType MoveNext()
+        {
+            if (!HasNext())
+                return IonType.None;
+
+            if (_valueType == IonType.None && _scanner.UnfinishedToken)
+            {
+                LoadTokenContents(_scanner.Token);
+            }
+
+            _hasNextCalled = false;
+            return _valueType;
+        }
+
+        private void LoadTokenContents(int scannerToken)
         {
             throw new NotImplementedException();
         }
@@ -300,6 +367,27 @@ namespace IonDotnet.Internals.Text
                     return StateBeforeFieldName;
                 case IonType.List:
                     return StateBeforeAnnotationContained;
+                case IonType.Sexp:
+                    return StateBeforeAnnotationSexp;
+                case IonType.Datagram:
+                    return StateBeforeAnnotationDatagram;
+            }
+        }
+
+        private static int GetStateAfterValue(IonType currentContainerType)
+        {
+            //TODO handle nested parent
+//            if (_nesting_parent != null && getDepth() == 0) {
+//                state_after_scalar = STATE_EOF;
+//            }
+
+            switch (currentContainerType)
+            {
+                default:
+                    throw new IonException($"{currentContainerType} is no container");
+                case IonType.List:
+                case IonType.Struct:
+                    return StateAfterValueContents;
                 case IonType.Sexp:
                     return StateBeforeAnnotationSexp;
                 case IonType.Datagram:

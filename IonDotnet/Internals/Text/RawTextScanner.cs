@@ -28,7 +28,7 @@ namespace IonDotnet.Internals.Text
         private readonly TextStream _input;
         public int Token { get; private set; } = -1;
 
-        private bool _unfinishedToken;
+        public bool UnfinishedToken { get; private set; }
 
         public RawTextScanner(TextStream input)
         {
@@ -37,10 +37,10 @@ namespace IonDotnet.Internals.Text
 
         public int NextToken()
         {
-            var token = -1;
-            var c = _unfinishedToken ? SkipToEnd() : SkipOverWhiteSpace(CommentStrategy.Ignore);
+            int token;
+            var c = UnfinishedToken ? SkipToEnd() : SkipOverWhiteSpace(CommentStrategy.Ignore);
 
-            _unfinishedToken = true;
+            UnfinishedToken = true;
 
             switch (c)
             {
@@ -70,13 +70,346 @@ namespace IonDotnet.Internals.Text
                     // state - it's otherwise ambiguous with closing
                     // two structs together. see tryForDoubleBrace() below
                     return FinishNextToken(TextConstants.TokenCloseBrace, false);
+                case '[':
+                    return FinishNextToken(TextConstants.TokenOpenSquare, true);
+                case ']':
+                    return FinishNextToken(TextConstants.TokenCloseBrace, false);
+                case '(':
+                    return FinishNextToken(TextConstants.TokenOpenParen, true);
+                case ')':
+                    return FinishNextToken(TextConstants.TokenCloseParen, false);
+                case ',':
+                    return FinishNextToken(TextConstants.TokenComma, false);
+                case '.':
+                    //TODO peek?
+                    c2 = ReadChar();
+                    UnreadChar(c2);
+                    if (!TextConstants.IsValidExtendedSymbolCharacter(c2))
+                        return FinishNextToken(TextConstants.TokenDot, false);
+                    UnreadChar('.');
+                    return FinishNextToken(TextConstants.TokenSymbolOperator, true);
+                case '\'':
+                    if (Is2SingleQuotes())
+                        return FinishNextToken(TextConstants.TokenStringTripleQuote, true);
+                    return FinishNextToken(TextConstants.TokenSymbolQuoted, true);
+                case '+':
+                    if (PeekInf(c))
+                        return FinishNextToken(TextConstants.TokenFloatInf, false);
+                    UnreadChar(c);
+                    return FinishNextToken(TextConstants.TokenSymbolOperator, true);
+                case '#':
+                case '<':
+                case '>':
+                case '*':
+                case '=':
+                case '^':
+                case '&':
+                case '|':
+                case '~':
+                case ';':
+                case '!':
+                case '?':
+                case '@':
+                case '%':
+                case '`':
+                    UnreadChar(c);
+                    return FinishNextToken(TextConstants.TokenSymbolOperator, true);
+                case 'a':
+                case 'b':
+                case 'c':
+                case 'd':
+                case 'e':
+                case 'f':
+                case 'g':
+                case 'h':
+                case 'i':
+                case 'j':
+                case 'k':
+                case 'l':
+                case 'm':
+                case 'n':
+                case 'o':
+                case 'p':
+                case 'q':
+                case 'r':
+                case 's':
+                case 't':
+                case 'u':
+                case 'v':
+                case 'w':
+                case 'x':
+                case 'y':
+                case 'z':
+                case 'A':
+                case 'B':
+                case 'C':
+                case 'D':
+                case 'E':
+                case 'F':
+                case 'G':
+                case 'H':
+                case 'I':
+                case 'J':
+                case 'K':
+                case 'L':
+                case 'M':
+                case 'N':
+                case 'O':
+                case 'P':
+                case 'Q':
+                case 'R':
+                case 'S':
+                case 'T':
+                case 'U':
+                case 'V':
+                case 'W':
+                case 'X':
+                case 'Y':
+                case 'Z':
+                case '$':
+                case '_':
+                    UnreadChar(c);
+                    return FinishNextToken(TextConstants.TokenSymbolIdentifier, true);
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                    token = ScanForNumericType(c);
+                    UnreadChar(c);
+                    return FinishNextToken(token, true);
+                case '-':
+                    // see if we have a number or what might be an extended symbol
+                    //TODO peek()
+                    c2 = ReadChar();
+                    UnreadChar(c2);
+                    if (char.IsDigit((char) c2))
+                    {
+                        token = ScanForNegativeNumbericType(c);
+                        UnreadChar(c);
+                        return FinishNextToken(token, true);
+                    }
+
+                    // this will consume the inf if it succeeds
+                    if (PeekInf(c))
+                        return FinishNextToken(TextConstants.TokenFloatMinusInf, false);
+
+                    UnreadChar(c);
+                    return FinishNextToken(TextConstants.TokenSymbolOperator, true);
             }
+        }
+
+        /// <summary>
+        /// Variant of <see cref="ScanForNumericType"/> where the passed in start
+        /// character is '-'. 
+        /// </summary>
+        /// <param name="c">First character, should be '-'</param>
+        /// <returns>Numeric token type</returns>
+        /// <exception cref="InvalidTokenException">When an illegal token is encountered</exception>
+        /// <remarks>This will unread the minus sign</remarks>
+        private int ScanForNegativeNumbericType(int c)
+        {
+            Debug.Assert(c == '-');
+            c = ReadChar();
+            var t = ScanForNumericType(c);
+            if (t == TextConstants.TokenTimestamp)
+                throw new InvalidTokenException(c);
+
+            // and the caller need to unread the '-'
+            //TODO why c?
+            UnreadChar(c);
+            return t;
+        }
+
+        /// <summary>
+        /// We encountered a numeric character (digit or minus), now we scan a little
+        /// way ahead to spot some of the numeric types.
+        /// <para>
+        /// This only looks far enough (2-6 chars) to identify hex and timestamp,
+        /// it might encounter chars like 'd' or 'e' and decide if this token is float
+        /// or decimal (or int), but it might return TOKEN_UNKNOWN_NUMERIC
+        /// </para>
+        /// </summary>
+        /// <param name="c1">First numeric char</param>
+        /// <returns>Numeric token type</returns>
+        /// <remarks>It will unread everything it reads, and the character passed in as the first digit</remarks>
+        private int ScanForNumericType(int c1)
+        {
+            var t = TextConstants.TokenUnknownNumeric;
+            Span<int> readChars = stackalloc int[6];
+            var readCharCount = 0;
+            Debug.Assert(char.IsDigit((char) c1));
+
+            var c = ReadChar();
+            readChars[readCharCount++] = c;
+            if (c1 == '0')
+            {
+                //check for hex
+                switch (c)
+                {
+                    default:
+                        if (IsTerminatingCharacter(c))
+                        {
+                            t = TextConstants.TokenInt;
+                        }
+
+                        break;
+                    case 'x':
+                    case 'X':
+                        t = TextConstants.TokenHex;
+                        break;
+                    case 'd':
+                    case 'D':
+                        t = TextConstants.TokenDecimal;
+                        break;
+                    case 'e':
+                    case 'E':
+                        t = TextConstants.TokenFloat;
+                        break;
+                    case 'b':
+                    case 'B':
+                        t = TextConstants.TokenBinary;
+                        break;
+                }
+            }
+
+            if (t == TextConstants.TokenUnknownNumeric)
+            {
+                if (char.IsDigit((char) c))
+                {
+                    //2nd digit
+                    // it might be a timestamp if we have 4 digits, a dash,
+                    // and a digit
+                    c = ReadChar();
+                    readChars[readCharCount++] = c;
+                    if (char.IsDigit((char) c))
+                    {
+                        //digit 3
+                        c = ReadChar();
+                        readChars[readCharCount++] = c;
+                        if (char.IsDigit((char) c))
+                        {
+                            //digit 4, year
+                            c = ReadChar();
+                            readChars[readCharCount++] = c;
+                            if (c == '-' || c == 'T')
+                            {
+                                // we have dddd- or ddddT looks like a timestamp
+                                // (or invalid input)
+                                t = TextConstants.TokenTimestamp;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // unread whatever we read, including the passed in char
+            do
+            {
+                readCharCount--;
+                c = readChars[readCharCount];
+                UnreadChar(c);
+            } while (readCharCount > 0);
+
+            return t;
+        }
+
+        private bool IsTerminatingCharacter(int c)
+        {
+            switch (c)
+            {
+                default:
+                    return TextConstants.IsNumericStop(c);
+                case '/':
+                    //TODO peek
+                    c = ReadChar();
+                    UnreadChar(c);
+                    return c == '/' || c == '*';
+                case CharacterSequence.CharSeqNewlineSequence1:
+                case CharacterSequence.CharSeqNewlineSequence2:
+                case CharacterSequence.CharSeqNewlineSequence3:
+                case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Turns out ion-text allows +inf and -inf
+        /// </summary>
+        private bool PeekInf(int c)
+        {
+            if (c != '+' && c != '-')
+                return false;
+
+            c = ReadChar();
+            if (c == 'i')
+            {
+                c = ReadChar();
+                if (c == 'n')
+                {
+                    c = ReadChar();
+                    if (c == 'f')
+                    {
+                        c = ReadChar();
+                        if (IsTerminatingCharacter(c))
+                        {
+                            UnreadChar(c);
+                            return true;
+                        }
+
+                        UnreadChar(c);
+                        c = 'f';
+                    }
+
+                    UnreadChar(c);
+                    c = 'n';
+                }
+
+                UnreadChar(c);
+                c = 'i';
+            }
+
+            UnreadChar(c);
+            return false;
+        }
+
+        /// <summary>
+        /// This peeks ahead to see if the next two characters are single quotes.
+        /// This would finish off a triple quote when the first quote has been read. 
+        /// </summary>
+        /// <returns>True if the next two characters are single quotes</returns>
+        /// <remarks>
+        /// If it suceeds it will consume the 2 quotes.
+        /// If it fails it will unread. 
+        /// </remarks>
+        private bool Is2SingleQuotes()
+        {
+            var c = ReadChar();
+            if (c != '\'')
+            {
+                UnreadChar(c);
+                return false;
+            }
+
+            c = ReadChar();
+            if (c == '\'') return true;
+
+            UnreadChar(c);
+            UnreadChar('\'');
+            return false;
         }
 
         private int FinishNextToken(int token, bool contentIsWaiting)
         {
             Token = token;
-            _unfinishedToken = contentIsWaiting;
+            UnfinishedToken = contentIsWaiting;
             return token;
         }
 
@@ -90,13 +423,68 @@ namespace IonDotnet.Internals.Text
             int c;
             switch (Token)
             {
-                default:
-                    //Unknown token
-                    throw new InvalidTokenException(Token);
+                case TextConstants.TokenUnknownNumeric:
+                    c = SkipOverNumber();
+                    break;
+                case TextConstants.TokenInt:
+                    c = SkipOverInt();
+                    break;
+                case TextConstants.TokenHex:
+                    c = SkipOverRadix(Radix.Hex);
+                    break;
+                case TextConstants.TokenBinary:
+                    c = SkipOverRadix(Radix.Binary);
+                    break;
+                case TextConstants.TokenDecimal:
+                    c = SkipOverRadix(Radix.Decimal);
+                    break;
+                case TextConstants.TokenFloat:
+                    c = SkipOverFloat();
+                    break;
+                case TextConstants.TokenTimestamp:
+                    c = SkipOverTimestamp();
+                    break;
+                case TextConstants.TokenSymbolIdentifier:
+                    c = SkipOverSymbolIdentifier();
+                    break;
+                case TextConstants.TokenSymbolQuoted:
+                    Debug.Assert(!Is2SingleQuotes());
+                    c = SkipSingleQuotedString();
+                    break;
+                case TextConstants.TokenSymbolOperator:
+                    c = SkipOverSymbolOperator();
+                    break;
                 case TextConstants.TokenStringDoubleQuote:
                     SkipDoubleQuotedString();
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
+                case TextConstants.TokenStringTripleQuote:
+                    skip_triple_quoted_string();
+                    c = SkipOverWhiteSpace(CommentStrategy.Ignore);
+                    break;
+
+                case TextConstants.TokenOpenDoubleBrace:
+                    // works just like a pair of nested structs
+                    // since "skip_over" doesn't care about formal
+                    // syntax (like requiring field names);
+                    skip_over_blob();
+                    c = ReadChar();
+                    break;
+                case TextConstants.TokenOpenBrace:
+                    skip_over_struct();
+                    c = ReadChar();
+                    break;
+                case TextConstants.TokenOpenParen:
+                    skip_over_sexp(); // you can't save point a scanned sexp (right now anyway)
+                    c = ReadChar();
+                    break;
+                case TextConstants.TokenOpenSquare:
+                    SkipOverList(); // you can't save point a scanned list (right now anyway)
+                    c = ReadChar();
+                    break;
+                default:
+                    //Unknown token
+                    throw new InvalidTokenException(Token);
             }
 
             if (TextConstants.IsWhiteSpace(c))
@@ -104,8 +492,73 @@ namespace IonDotnet.Internals.Text
                 c = SkipOverWhiteSpace(CommentStrategy.Ignore);
             }
 
-            _unfinishedToken = false;
+            UnfinishedToken = false;
             return c;
+        }
+
+        private void skip_over_blob()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void skip_over_struct()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void skip_over_sexp()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void skip_triple_quoted_string()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void SkipOverList()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverSymbolOperator()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipSingleQuotedString()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverSymbolIdentifier()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverTimestamp()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverFloat()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverRadix(Radix hex)
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverInt()
+        {
+            throw new NotImplementedException();
+        }
+
+        private int SkipOverNumber()
+        {
+            throw new NotImplementedException();
         }
 
         private bool OnComment(CommentStrategy commentStrategy)
@@ -620,6 +1073,18 @@ namespace IonDotnet.Internals.Text
                     _input.Unread(CharacterSequence.CharSeqEof);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Finish the current 'token', skip to end if neccessary.
+        /// </summary>
+        public void FinishToken()
+        {
+            if (!UnfinishedToken) return;
+
+            var c = SkipToEnd();
+            UnreadChar(c);
+            UnfinishedToken = false;
         }
     }
 }

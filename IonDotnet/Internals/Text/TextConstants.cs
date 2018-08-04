@@ -141,5 +141,79 @@ namespace IonDotnet.Internals.Text
         {
             throw new NotImplementedException();
         }
+
+        public static bool IsValidExtendedSymbolCharacter(int c)
+        {
+            if (!Characters.Is8BitChar(c))
+                return false;
+
+            switch (c)
+            {
+                default:
+                    return false;
+                case '*':
+                case '+':
+                case '-':
+                case '.':
+                case '/':
+                case ';':
+                case '<':
+                case '=':
+                case '>':
+                case '?':
+                case '@':
+                case '^':
+                case '`':
+                case '|':
+                case '~':
+                case '%':
+                case '!':
+                case '#':
+                case '&':
+                    return true;
+            }
+        }
+
+        public static bool IsNumericStop(int codePoint)
+        {
+            switch (codePoint)
+            {
+                case -1:
+                case '{':
+                case '}':
+                case '[':
+                case ']':
+                case '(':
+                case ')':
+                case ',':
+                case '\"':
+                case '\'':
+                case ' ':
+                case '\t':
+                case '\n':
+                case '\r':
+                    // Whitespace
+                    // case '/': // we check start of comment in the caller where we
+                    //              can peek ahead for the following slash or asterisk
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int HexToInt(char h)
+        {
+            if (h >= '0' && h <= '9')
+                return h - '0';
+
+            if (h >= 'a' && h <= 'f')
+                return h - 'a' + 10;
+
+            if (h >= 'A' && h <= 'F')
+                return h - 'A' + 10;
+
+            return -1;
+        }
     }
 }
