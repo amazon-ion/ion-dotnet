@@ -209,7 +209,6 @@ namespace IonDotnet.Internals.Text
             int temp_state;
             // TODO: there's a better way to do this
             var trailing_whitespace = false;
-            StringBuilder sb;
 
             var token = _scanner.NextToken();
             while (true)

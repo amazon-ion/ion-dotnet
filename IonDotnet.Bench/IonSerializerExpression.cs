@@ -34,7 +34,6 @@ namespace IonDotnet.Bench
         private static readonly ConstructorInfo TimeStampFromDateTimeOffset = typeof(Timestamp).GetConstructor(new[] { typeof(DateTimeOffset) });
 
         private static readonly Dictionary<Type, Delegate> Cache = new Dictionary<Type, Delegate>();
-        private static readonly Delegate LE = GetAction<List<Experiment>>();
 
         private static Action<T, ManagedBinaryWriter> GetAction<T>()
         {
@@ -58,7 +57,7 @@ namespace IonDotnet.Bench
 
         public static byte[] Serialize<T>(T obj)
         {
-            var action = (Action<T, ManagedBinaryWriter>)LE;
+            var action = GetAction<T>();
             // var action = GetAction<T>();
             //now write
             byte[] bytes = null;

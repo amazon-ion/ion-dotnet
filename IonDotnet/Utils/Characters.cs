@@ -8,23 +8,23 @@ namespace IonDotnet.Utils
     /// </summary>
     internal static class Characters
     {
-        private const int UNICODE_TWO_BYTE_HEADER = 0xC0; // 8 + 4 = 12 = 0xC0
-        private const int UNICODE_THREE_BYTE_HEADER = 0xE0; // 8+4+2 = 14 = 0xE0
-        private const int UNICODE_FOUR_BYTE_HEADER = 0xF0; // 8+4+2+1 = 15 = 0xF0
-        private const int UNICODE_CONTINUATION_BYTE_HEADER = 0x80;
-        private const int UNICODE_TWO_BYTE_MASK = 0x1F; // 8-3 = 5 bits
-        private const int UNICODE_THREE_BYTE_MASK = 0x0F; // 4 bits
-        private const int UNICODE_FOUR_BYTE_MASK = 0x07; // 3 bits
-        private const int UNICODE_CONTINUATION_BYTE_MASK = 0x3F; // 6 bits in each continuation
+        private const int UnicodeTwoByteHeader = 0xC0; // 8 + 4 = 12 = 0xC0
+        private const int UnicodeThreeByteHeader = 0xE0; // 8+4+2 = 14 = 0xE0
+        private const int UnicodeFourByteHeader = 0xF0; // 8+4+2+1 = 15 = 0xF0
+        private const int UnicodeContinuationByteHeader = 0x80;
+        private const int UnicodeTwoByteMask = 0x1F; // 8-3 = 5 bits
+        private const int UnicodeThreeByteMask = 0x0F; // 4 bits
+        private const int UnicodeFourByteMask = 0x07; // 3 bits
+        private const int UnicodeContinuationByteMask = 0x3F; // 6 bits in each continuation
 
-        private const int MAXIMUM_UTF16_1_CHAR_CODE_POINT = 0x0000FFFF;
-        private const int SURROGATE_MASK = unchecked((int) 0xFFFFFC00);
-        private const int SURROGATE_OFFSET = 0x00010000;
-        private const int HIGH_SURROGATE = 0x0000D800; // 0b 1101 1000 0000 0000
-        private const int LOW_SURROGATE = 0x0000DC00; // 0b 1101 1100 0000 0000
-        private const int surrogate_value_mask = (int) ~0xFFFFFC00;
-        private const int surrogate_utf32_shift = 10;
-        private const int surrogate_utf32_offset = 0x10000;
+        private const int MaximumUtf16OneCharCodePoint = 0x0000FFFF;
+        private const int SurrogateMask = unchecked((int) 0xFFFFFC00);
+        private const int SurrogateOffset = 0x00010000;
+        private const int HighSurrogate = 0x0000D800; // 0b 1101 1000 0000 0000
+        private const int LowSurrogate = 0x0000DC00; // 0b 1101 1100 0000 0000
+        private const int SurrogateValueMask = (int) ~0xFFFFFC00;
+        private const int SurrogateUtf32Shift = 10;
+        private const int SurrogateUtf32Offset = 0x10000;
 
         public enum ProhibitionContext
         {
@@ -57,9 +57,9 @@ namespace IonDotnet.Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int MakeUnicodeScalar(int highSurrogate, int lowSurrogate)
         {
-            var c = (highSurrogate & surrogate_value_mask) << surrogate_utf32_shift;
-            c |= lowSurrogate & surrogate_value_mask;
-            c += surrogate_utf32_offset;
+            var c = (highSurrogate & SurrogateValueMask) << SurrogateUtf32Shift;
+            c |= lowSurrogate & SurrogateValueMask;
+            c += SurrogateUtf32Offset;
             return c;
         }
 
@@ -72,7 +72,7 @@ namespace IonDotnet.Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char Utf8TwoByteScalar(int b1, int b2)
         {
-            var c = ((b1 & UNICODE_TWO_BYTE_MASK) << 6) | (b2 & UNICODE_CONTINUATION_BYTE_MASK);
+            var c = ((b1 & UnicodeTwoByteMask) << 6) | (b2 & UnicodeContinuationByteMask);
             return (char) c;
         }
 
@@ -86,9 +86,9 @@ namespace IonDotnet.Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Utf8ThreeByteScalar(int b1, int b2, int b3)
         {
-            var c = ((b1 & UNICODE_THREE_BYTE_MASK) << 12)
-                    | ((b2 & UNICODE_CONTINUATION_BYTE_MASK) << 6)
-                    | (b3 & UNICODE_CONTINUATION_BYTE_MASK);
+            var c = ((b1 & UnicodeThreeByteMask) << 12)
+                    | ((b2 & UnicodeContinuationByteMask) << 6)
+                    | (b3 & UnicodeContinuationByteMask);
             return c;
         }
 
@@ -103,10 +103,10 @@ namespace IonDotnet.Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Utf8FourByteScalar(int b1, int b2, int b3, int b4)
         {
-            var c = ((b1 & UNICODE_FOUR_BYTE_MASK) << 18)
-                    | ((b2 & UNICODE_CONTINUATION_BYTE_MASK) << 12)
-                    | ((b3 & UNICODE_CONTINUATION_BYTE_MASK) << 6)
-                    | (b4 & UNICODE_CONTINUATION_BYTE_MASK);
+            var c = ((b1 & UnicodeFourByteMask) << 18)
+                    | ((b2 & UnicodeContinuationByteMask) << 12)
+                    | ((b3 & UnicodeContinuationByteMask) << 6)
+                    | (b4 & UnicodeContinuationByteMask);
             return c;
         }
 
@@ -131,34 +131,34 @@ namespace IonDotnet.Utils
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsOneByteUtf8(int b) => (b & 0x80) == 0;
+        private static bool IsOneByteUtf8(int b) => (b & 0x80) == 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsTwoByteUtf8(int b) => (b & ~UNICODE_TWO_BYTE_MASK) == UNICODE_TWO_BYTE_HEADER;
+        private static bool IsTwoByteUtf8(int b) => (b & ~UnicodeTwoByteMask) == UnicodeTwoByteHeader;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsThreeByteUtf8(int b) => (b & ~UNICODE_THREE_BYTE_MASK) == UNICODE_THREE_BYTE_HEADER;
+        private static bool IsThreeByteUtf8(int b) => (b & ~UnicodeThreeByteMask) == UnicodeThreeByteHeader;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsFourByteUtf8(int b) => (b & ~UNICODE_FOUR_BYTE_MASK) == UNICODE_FOUR_BYTE_HEADER;
+        private static bool IsFourByteUtf8(int b) => (b & ~UnicodeFourByteMask) == UnicodeFourByteHeader;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool NeedsSurrogateEncoding(int unicodeScalar) => unicodeScalar > MAXIMUM_UTF16_1_CHAR_CODE_POINT;
+        public static bool NeedsSurrogateEncoding(int unicodeScalar) => unicodeScalar > MaximumUtf16OneCharCodePoint;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char GetHighSurrogate(int unicodeScalar)
         {
-            Debug.Assert(unicodeScalar > MAXIMUM_UTF16_1_CHAR_CODE_POINT);
-            var c = (unicodeScalar - SURROGATE_OFFSET) >> 10;
-            return (char) ((c | HIGH_SURROGATE) & 0xffff);
+            Debug.Assert(unicodeScalar > MaximumUtf16OneCharCodePoint);
+            var c = (unicodeScalar - SurrogateOffset) >> 10;
+            return (char) ((c | HighSurrogate) & 0xffff);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static char GetLowSurrogate(int unicodeScalar)
         {
-            Debug.Assert(unicodeScalar > MAXIMUM_UTF16_1_CHAR_CODE_POINT);
-            var c = (unicodeScalar - SURROGATE_OFFSET) & 0x3ff;
-            return (char) ((c | LOW_SURROGATE) & 0xffff);
+            Debug.Assert(unicodeScalar > MaximumUtf16OneCharCodePoint);
+            var c = (unicodeScalar - SurrogateOffset) & 0x3ff;
+            return (char) ((c | LowSurrogate) & 0xffff);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

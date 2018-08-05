@@ -254,7 +254,6 @@ namespace IonDotnet.Tests.Internals
         {
             using (var stream = new MemoryStream())
             {
-                List<(string key, object value)> kvps;
                 IIonWriter writer;
                 using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
