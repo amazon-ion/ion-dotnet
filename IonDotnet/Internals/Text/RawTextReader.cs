@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Conversions;
+using IonDotnet.Systems;
 
 // ReSharper disable ImpureMethodCallOnReadonlyValueField
 
 namespace IonDotnet.Internals.Text
 {
-    internal class RawTextReader : IIonReader
+    internal abstract class RawTextReader : IIonReader
     {
         #region States
 
@@ -141,15 +141,16 @@ namespace IonDotnet.Internals.Text
 
         #endregion
 
-        private readonly StringBuilder _currentValueBuffer;
-        private readonly ValueVariant _v;
-        private readonly RawTextScanner _scanner;
+        protected readonly StringBuilder _valueBuffer;
+        protected ValueVariant _v;
+        protected readonly RawTextScanner _scanner;
         private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private int _state;
         private bool _eof;
+        private bool _valueBufferLoaded;
 
-        private IonType _valueType;
+        protected IonType _valueType;
         private bool _containerIsStruct; // helper bool's set on push and pop and used
         private bool _containerProhibitsCommas; // frequently during state transitions actions
         private bool _hasNextCalled;
@@ -161,16 +162,16 @@ namespace IonDotnet.Internals.Text
         protected RawTextReader(TextStream input, IonType parent = IonType.None)
         {
             _state = GetStateAtContainerStart(parent);
-            _currentValueBuffer = new StringBuilder();
+            _valueBuffer = new StringBuilder();
             _scanner = new RawTextScanner(input);
             _eof = false;
             _hasNextCalled = false;
             _containerStack = new ContainerStack(this, 6);
         }
 
-        private void ClearCurrentBuffer()
+        protected void ClearValueBuffer()
         {
-            _currentValueBuffer.Clear();
+            _valueBuffer.Clear();
         }
 
         private bool HasNext()
@@ -190,7 +191,7 @@ namespace IonDotnet.Internals.Text
         {
             _valueType = IonType.None;
             //TODO lob
-            ClearCurrentBuffer();
+            ClearValueBuffer();
             _annotations.Clear();
             ClearFieldName();
             _v.Clear();
@@ -205,7 +206,94 @@ namespace IonDotnet.Internals.Text
 
         private void ParseNext()
         {
-            throw new NotImplementedException();
+            int temp_state;
+            // TODO: there's a better way to do this
+            var trailing_whitespace = false;
+            StringBuilder sb;
+
+            var token = _scanner.NextToken();
+            while (true)
+            {
+                int action = TransitionActions[_state, token];
+                switch (action)
+                {
+                    default:
+                        throw new InvalidTokenException(token);
+                    case ActionNotDefined:
+                        throw new IonException("Invalid state");
+                    case ActionEof:
+                        _state = StateEof;
+                        _eof = true;
+                        return;
+                    case ActionLoadFieldName:
+                        if (!IsInStruct)
+                            throw new IonException("Field names have to be inside struct");
+                        FinishValue();
+                        LoadTokenContents(token);
+                        var symtok = ParseSymbolToken(_valueBuffer, token);
+                        SetFieldName(symtok);
+                        ClearValueBuffer();
+                        token = _scanner.NextToken();
+                        if (token != TextConstants.TokenColon)
+                            throw new InvalidTokenException("Field name has to be followed by a colon");
+                        _scanner.MarkTokenFinished();
+                        _state = StateBeforeAnnotationContained;
+                        token = _scanner.NextToken();
+                        break;
+                    case ActionLoadScalar:
+                        if (token == TextConstants.TokenSymbolIdentifier)
+                        {
+                            throw new NotImplementedException();
+                        }
+                        else if (token == TextConstants.TokenDot)
+                        {
+                            throw new NotImplementedException();
+                        }
+                        else
+                        {
+                            // if it's not a symbol we just look at the token type
+                            _valueType = TextConstants.GetIonTypeOfToken(token);
+                        }
+
+                        _state = GetStateAfterValue(_containerStack.Peek());
+                        break;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetFieldName(in SymbolToken symtok)
+        {
+            _fieldName = symtok.Text;
+            _fieldNameSid = symtok.Sid;
+        }
+
+        private static SymbolToken ParseSymbolToken(StringBuilder sb, int token)
+        {
+            if (token == TextConstants.TokenSymbolIdentifier)
+            {
+                throw new NotImplementedException();
+//                int kw = TextConstants.keyword(sb, 0, sb.length());
+//                switch (kw)
+//                {
+//                    case TextConstants.KEYWORD_FALSE:
+//                    case TextConstants.KEYWORD_TRUE:
+//                    case TextConstants.KEYWORD_NULL:
+//                    case TextConstants.KEYWORD_NAN:
+//                        // keywords are not ok unless they're quoted
+//                        throw new IonException($"Cannot use unquoted keyword {sb}");
+//                    case TextConstants.KEYWORD_sid:
+//                        text = null;
+//                        sid = TextConstants.decodeSid(sb);
+//                        break;
+//                    default:
+//                        text = sb.toString();
+//                        sid = UNKNOWN_SYMBOL_ID;
+//                        break;
+//                }
+            }
+
+            return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
         }
 
         private void FinishValue()
@@ -215,6 +303,7 @@ namespace IonDotnet.Internals.Text
                 _scanner.FinishToken();
                 _state = GetStateAfterValue(_containerStack.Peek());
             }
+
             _hasNextCalled = false;
         }
 
@@ -232,19 +321,105 @@ namespace IonDotnet.Internals.Text
             return _valueType;
         }
 
-        private void LoadTokenContents(int scannerToken)
+        protected void LoadTokenContents(int scannerToken)
         {
-            throw new NotImplementedException();
+            if (_valueBufferLoaded)
+                return;
+
+            int c;
+            bool clobCharsOnly;
+            switch (scannerToken)
+            {
+                default:
+                    throw new InvalidTokenException(scannerToken);
+                case TextConstants.TokenUnknownNumeric:
+                case TextConstants.TokenInt:
+                case TextConstants.TokenBinary:
+                case TextConstants.TokenHex:
+                case TextConstants.TokenFloat:
+                case TextConstants.TokenDecimal:
+                case TextConstants.TokenTimestamp:
+                    _valueType = _scanner.LoadNumber(_valueBuffer);
+                    break;
+                case TextConstants.TokenSymbolIdentifier:
+                    _scanner.LoadSymbolIdentifier(_valueBuffer);
+                    _valueType = IonType.Symbol;
+                    break;
+                case TextConstants.TokenSymbolOperator:
+                    _scanner.LoadSymbolOperator(_valueBuffer);
+                    _valueType = IonType.Symbol;
+                    break;
+                case TextConstants.TokenSymbolQuoted:
+                    clobCharsOnly = IonType.Clob == _valueType;
+                    c = _scanner.LoadSingleQuotedString(_valueBuffer, clobCharsOnly);
+                    if (c == TextConstants.TokenEof)
+                        throw new UnexpectedEofException();
+
+                    _valueType = IonType.Symbol;
+                    break;
+                case TextConstants.TokenStringDoubleQuote:
+                    clobCharsOnly = IonType.Clob == _valueType;
+                    c = _scanner.LoadDoubleQuotedString(_valueBuffer, clobCharsOnly);
+                    if (c == TextConstants.TokenEof)
+                        throw new UnexpectedEofException();
+
+                    _valueType = IonType.String;
+                    break;
+                case TextConstants.TokenStringTripleQuote:
+                    clobCharsOnly = IonType.Clob == _valueType;
+                    c = _scanner.LoadTripleQuotedString(_valueBuffer, clobCharsOnly);
+                    if (c == TextConstants.TokenEof)
+                        throw new UnexpectedEofException();
+
+                    _valueType = IonType.String;
+                    break;
+            }
         }
 
         public void StepIn()
         {
-            throw new NotImplementedException();
+            if (!_valueType.IsContainer())
+                throw new InvalidOperationException($"Current value type {_valueType} is not a container");
+
+            _state = GetStateAtContainerStart(_valueType);
+            _containerStack.PushContainer(_valueType);
+            _scanner.FinishToken();
+            FinishValue();
+            if (_v.TypeSet.HasFlag(ScalarType.Null))
+            {
+                _eof = true;
+                _hasNextCalled = true;
+            }
+
+            _valueType = IonType.None;
         }
 
         public void StepOut()
         {
-            throw new NotImplementedException();
+            if (CurrentDepth < 1)
+                throw new InvalidOperationException("Already at outer most");
+
+            FinishValue();
+            switch (_containerStack.Peek())
+            {
+                default:
+                    throw new IonException("Invalid state");
+                case IonType.Datagram:
+                    break;
+                case IonType.List:
+                    _scanner.SkipOverList();
+                    break;
+                case IonType.Struct:
+                    _scanner.SkipOverStruct();
+                    break;
+                case IonType.Sexp:
+                    _scanner.SkipOverSexp();
+                    break;
+            }
+
+            _containerStack.Pop();
+            FinishValue();
+            ClearValue();
         }
 
         public int CurrentDepth
@@ -276,60 +451,43 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public string CurrentFieldName { get; }
+        public string CurrentFieldName
+        {
+            get
+            {
+                if (CurrentDepth == 0 && IsInStruct)
+                    return null;
+                if (_fieldName == null && _fieldNameSid > 0)
+                    throw new UnknownSymbolException(_fieldNameSid);
+                return _fieldName;
+            }
+        }
 
         public SymbolToken GetFieldNameSymbol()
         {
             throw new NotImplementedException();
         }
 
-        public bool CurrentIsNull { get; }
-        public bool IsInStruct { get; }
+        public abstract bool CurrentIsNull { get; }
+        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek() == IonType.Struct;
 
-        public bool BoolValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract bool BoolValue();
 
-        public int IntValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract int IntValue();
 
-        public long LongValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract long LongValue();
 
-        public BigInteger BigIntegerValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract BigInteger BigIntegerValue();
 
-        public double DoubleValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract double DoubleValue();
 
-        public decimal DecimalValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract decimal DecimalValue();
 
-        public Timestamp TimestampValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Timestamp TimestampValue();
 
-        public string StringValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract string StringValue();
 
-        public SymbolToken SymbolValue()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract SymbolToken SymbolValue();
 
         public int GetLobByteSize()
         {
@@ -433,13 +591,13 @@ namespace IonDotnet.Internals.Text
                 _array = new IonType[initialCapacity];
             }
 
-            public IonType PushContainer(IonType containerType)
+            public void PushContainer(IonType containerType)
             {
                 EnsureCapacity(Count);
                 _array[Count] = containerType;
                 SetContainerFlags(containerType);
 
-                return _array[Count++];
+                Count++;
             }
 
             public IonType Peek()

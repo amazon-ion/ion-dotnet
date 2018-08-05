@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -162,7 +163,7 @@ namespace IonDotnet.Bench
                 IonSerialization.Serialize(Data);
             }
 
-            private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
+            public static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
             [Benchmark]
             public void IonDotnetManual()
@@ -228,7 +229,59 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            BenchmarkRunner.Run<Benchmark>();
+            var dt = new DateTime(2000, 11, 11);
+            Console.WriteLine(dt.Kind);
+            var dtStr = dt.ToString("yyyy-MM-ddTHH:mm:ssK", CultureInfo.InvariantCulture);
+            Console.WriteLine(dtStr);
+            var dto = DateTimeOffset.Parse(dtStr);
+            Console.WriteLine(dto);
+
+//            BenchmarkRunner.Run<Benchmark>();
+            //warmup
+            // var sw = new Stopwatch();
+            // sw.Start();
+            // sw.Stop();
+            // for (var i = 0; i < 1000; i++)
+            // {
+            //     RunOnce();
+            // }
+
+            // sw.Start();
+
+            // for (var i = 0; i < 1000; i++)
+            // {
+            //     RunOnce();
+            // }
+
+            // sw.Stop();
+            // Console.WriteLine($"IonDotnet: writing took {sw.ElapsedTicks * 1.0 / TimeSpan.TicksPerMillisecond}ms");
+        }
+
+        private static void RunOnce()
+        {
+            Benchmark.Writer.StepIn(IonType.List);
+            for (var i = 0; i < 1000; i++)
+            {
+                Benchmark.Writer.StepIn(IonType.Struct);
+
+                Benchmark.Writer.SetFieldName("boolean");
+                Benchmark.Writer.WriteBool(true);
+                Benchmark.Writer.SetFieldName("string");
+                Benchmark.Writer.WriteString("this is a string");
+                Benchmark.Writer.SetFieldName("integer");
+                Benchmark.Writer.WriteInt(int.MaxValue);
+                Benchmark.Writer.SetFieldName("float");
+                Benchmark.Writer.WriteFloat(432.23123f);
+                Benchmark.Writer.SetFieldName("timestamp");
+                Benchmark.Writer.WriteTimestamp(new Timestamp(new DateTime(2000, 11, 11)));
+
+                Benchmark.Writer.StepOut();
+            }
+
+            byte[] bytes = null;
+            Benchmark.Writer.StepOut();
+            Benchmark.Writer.Flush(ref bytes);
+            Benchmark.Writer.Finish();
         }
     }
 }

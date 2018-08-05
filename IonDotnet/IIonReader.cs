@@ -67,31 +67,56 @@ namespace IonDotnet
 
         SymbolToken GetFieldNameSymbol();
 
+        /// <value>True if the current value is a null</value>
         bool CurrentIsNull { get; }
+
+        /// <value>True if reading a struct</value>
         bool IsInStruct { get; }
 
+        /// <returns>Current boolean value</returns>
         bool BoolValue();
 
+        /// <returns>Current int value</returns>
         int IntValue();
 
+        /// <returns>Current long value</returns>
         long LongValue();
 
+        /// <returns>Current BigInteger value</returns>
         BigInteger BigIntegerValue();
 
+        /// <returns>Current double value</returns>
         double DoubleValue();
 
+        /// <returns>Current decimal value</returns>
         decimal DecimalValue();
 
+        /// <returns>Current timestamp value</returns>
         Timestamp TimestampValue();
 
+        /// <returns>Current string value</returns>
         string StringValue();
 
+        /// <returns>Current symbol value</returns>
         SymbolToken SymbolValue();
 
+        /// <summary>
+        /// Get the size of the current lob value
+        /// </summary>
+        /// <returns>Size of the current lob value</returns>
         int GetLobByteSize();
 
+        /// <summary>
+        /// Copy the current blob value to a new byte array
+        /// </summary>
+        /// <returns>Reference to new byte array</returns>
         byte[] NewByteArray();
 
+        /// <summary>
+        /// Copy the current blob value to a buffer
+        /// </summary>
+        /// <param name="buffer">Buffer</param>
+        /// <returns>Number of bytes copied</returns>
         int GetBytes(ArraySegment<byte> buffer);
 
         bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);

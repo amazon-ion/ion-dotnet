@@ -19,6 +19,10 @@ namespace IonDotnet
         /// <exception cref="System.IO.IOException">When error happens while writing data to output stream</exception>
         void Flush(Stream outputStream);
 
+        /// <summary>
+        /// Flushes the buffers to a byte array
+        /// </summary>
+        /// <param name="bytes">Reference to the byte array</param>
         void Flush(ref byte[] bytes);
 
         /// <summary>
@@ -28,14 +32,28 @@ namespace IonDotnet
         /// <returns>Number of bytes written</returns>
         int Flush(Memory<byte> buffer);
 
+        /// <summary>
+        /// Mark the writer as 'finished', all written values will be erased
+        /// </summary>
         void Finish();
 
+        /// <summary>
+        /// Set the field name, must be called when in a Struct
+        /// </summary>
+        /// <param name="name">Field name</param>
         void SetFieldName(string name);
 
         void SetFieldNameSymbol(SymbolToken name);
 
+        /// <summary>
+        /// Step in a container
+        /// </summary>
+        /// <param name="type">Container type</param>
         void StepIn(IonType type);
 
+        /// <summary>
+        /// Step out of the current container
+        /// </summary>
         void StepOut();
 
         /// <summary>
@@ -57,7 +75,10 @@ namespace IonDotnet
         /// <remarks>This method iterates until <see cref="IIonReader.MoveNext"/> returns null and does not Step out</remarks>
         void WriteValues(IIonReader reader);
 
-
+        /// <summary>
+        /// Set the annotations of the current value
+        /// </summary>
+        /// <param name="annotations">Set of annotations</param>
         void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations);
     }
 }

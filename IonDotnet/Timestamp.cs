@@ -82,5 +82,16 @@ namespace IonDotnet
             LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
             DateTime = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
         }
+
+        /// <summary>
+        /// Parse an ISO-8601 Datetime format to the Timestamp
+        /// </summary>
+        /// <param name="s">ISO-8601 Datetime string</param>
+        /// <returns>Timestamp object</returns>
+        /// <exception cref="FormatException">Parameter is not a correct ISO-8601 string format</exception>
+        public static Timestamp Parse(string s)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

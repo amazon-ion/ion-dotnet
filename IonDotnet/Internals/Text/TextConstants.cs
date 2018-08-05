@@ -215,5 +215,31 @@ namespace IonDotnet.Internals.Text
 
             return -1;
         }
+
+        public static IonType GetIonTypeOfToken(int token)
+        {
+            switch (token)
+            {
+                case TokenInt:
+                case TokenBinary:
+                case TokenHex:
+                    return IonType.Int;
+                case TokenDecimal:
+                    return IonType.Decimal;
+                case TokenFloat:
+                    return IonType.Float;
+                case TokenTimestamp:
+                    return IonType.Timestamp;
+                case TokenSymbolIdentifier:
+                case TokenSymbolQuoted:
+                case TokenSymbolOperator:
+                    return IonType.Symbol;
+                case TokenStringDoubleQuote:
+                case TokenStringTripleQuote:
+                    return IonType.String;
+                default:
+                    return IonType.None;
+            }
+        }
     }
 }

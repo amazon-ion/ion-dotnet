@@ -5,24 +5,26 @@ using System.IO;
 
 namespace IonDotnet.Internals.Text
 {
-    internal class ByteTextStream : TextStream
+    internal class Utf8ByteStream : TextStream
     {
         private readonly Stream _inputStream;
         private readonly Stack<int> _unreadStack;
 
-        public ByteTextStream(Stream inputStream)
+        public Utf8ByteStream(Stream inputStream)
         {
             if (!inputStream.CanRead)
                 throw new ArgumentException("Inputstream must be readable", nameof(inputStream));
 
             _inputStream = inputStream;
-            if (inputStream.CanSeek)
+            if (!inputStream.CanSeek)
             {
                 _unreadStack = new Stack<int>();
             }
         }
 
         public override bool IsByteStream => true;
+
+        public override int UnitSize => sizeof(byte);
 
         public override int Read()
         {

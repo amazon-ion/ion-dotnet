@@ -15,11 +15,11 @@ namespace IonDotnet.Bench
 
         private static readonly MethodInfo EnumGetnameMethod = typeof(Enum).GetMethod(nameof(Enum.GetName));
 
-        private static readonly MethodInfo WriteNullTypeMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteNull), new[] {typeof(IonType)});
+        private static readonly MethodInfo WriteNullTypeMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteNull), new[] { typeof(IonType) });
         private static readonly MethodInfo WriteStringMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteString));
         private static readonly MethodInfo WriteBoolMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteBool));
-        private static readonly MethodInfo WriteIntMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] {typeof(long)});
-        private static readonly MethodInfo WriteBigIntegerMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] {typeof(BigInteger)});
+        private static readonly MethodInfo WriteIntMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] { typeof(long) });
+        private static readonly MethodInfo WriteBigIntegerMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] { typeof(BigInteger) });
         private static readonly MethodInfo WriteFloatMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteFloat));
         private static readonly MethodInfo WriteTimestampMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteTimestamp));
         private static readonly MethodInfo WriteDecimalMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteDecimal));
@@ -30,17 +30,17 @@ namespace IonDotnet.Bench
         private static readonly MethodInfo StepOutMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.StepOut));
         private static readonly MethodInfo SetFieldNameMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.SetFieldName));
 
-        private static readonly ConstructorInfo TimeStampFromDateTime = typeof(Timestamp).GetConstructor(new[] {typeof(DateTime)});
-        private static readonly ConstructorInfo TimeStampFromDateTimeOffset = typeof(Timestamp).GetConstructor(new[] {typeof(DateTimeOffset)});
+        private static readonly ConstructorInfo TimeStampFromDateTime = typeof(Timestamp).GetConstructor(new[] { typeof(DateTime) });
+        private static readonly ConstructorInfo TimeStampFromDateTimeOffset = typeof(Timestamp).GetConstructor(new[] { typeof(DateTimeOffset) });
 
         private static readonly Dictionary<Type, Delegate> Cache = new Dictionary<Type, Delegate>();
-
+        private static readonly Delegate LE = GetAction<List<Experiment>>();
 
         private static Action<T, ManagedBinaryWriter> GetAction<T>()
         {
             var type = typeof(T);
             if (Cache.TryGetValue(type, out var action))
-                return (Action<T, ManagedBinaryWriter>) action;
+                return (Action<T, ManagedBinaryWriter>)action;
 
             var objParam = Expression.Parameter(type, "obj");
             var writerParam = Expression.Parameter(typeof(ManagedBinaryWriter), "writer");
@@ -58,7 +58,8 @@ namespace IonDotnet.Bench
 
         public static byte[] Serialize<T>(T obj)
         {
-            var action = GetAction<T>();
+            var action = (Action<T, ManagedBinaryWriter>)LE;
+            // var action = GetAction<T>();
             //now write
             byte[] bytes = null;
             action(obj, Writer);
@@ -71,21 +72,15 @@ namespace IonDotnet.Bench
             Expression result;
             //scalar
             if ((result = TryGetWriteScalarExpression(type, target, writerExpression)) != null)
-            {
                 return result;
-            }
 
             //byte array
             if ((result = TryGetWriteByteArrayExpression(type, target, writerExpression)) != null)
-            {
                 return result;
-            }
 
             //collection
             if ((result = TryGetWriteListExpression(type, target, writerExpression)) != null)
-            {
                 return result;
-            }
 
             //struct
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -114,6 +109,7 @@ namespace IonDotnet.Bench
 
         private static Expression TryGetWriteListExpression(Type type, Expression target, ParameterExpression writerExpression)
         {
+            //TODO special treatment for array
             if (!typeof(IEnumerable).IsAssignableFrom(type))
                 return null;
 
@@ -150,12 +146,12 @@ namespace IonDotnet.Bench
             var breakLabel = Expression.Label("LoopBreak");
             var moveNextCall = Expression.Call(enumeratorVar, typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext)));
 
-            var loopExp = Expression.Block(new[] {enumeratorVar},
+            var loopExp = Expression.Block(new[] { enumeratorVar },
                 Expression.Assign(enumeratorVar, getEnumeratorCall),
                 Expression.Loop(
                     Expression.IfThenElse(
                         Expression.Equal(moveNextCall, Expression.Constant(true)),
-                        Expression.Block(new[] {loopVar},
+                        Expression.Block(new[] { loopVar },
                             Expression.Assign(loopVar, Expression.Property(enumeratorVar, "Current")),
                             GetWriteActionForType(genericType, loopVar, writerExpression)
                         ),
@@ -186,10 +182,10 @@ namespace IonDotnet.Bench
             }
 
             //TODO handle byte collection
-//            if (typeof(IEnumerable<byte>).IsAssignableFrom(type))
-//            {
-//                var arrayTarget = 
-//            }
+            //            if (typeof(IEnumerable<byte>).IsAssignableFrom(type))
+            //            {
+            //                var arrayTarget = 
+            //            }
 
             if (result == null)
                 return null;

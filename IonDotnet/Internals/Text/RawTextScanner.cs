@@ -26,6 +26,7 @@ namespace IonDotnet.Internals.Text
         }
 
         private readonly TextStream _input;
+        private int _base64PrefetchCount;
         public int Token { get; private set; } = -1;
 
         public bool UnfinishedToken { get; private set; }
@@ -471,11 +472,11 @@ namespace IonDotnet.Internals.Text
                     c = ReadChar();
                     break;
                 case TextConstants.TokenOpenBrace:
-                    skip_over_struct();
+                    SkipOverStruct();
                     c = ReadChar();
                     break;
                 case TextConstants.TokenOpenParen:
-                    skip_over_sexp(); // you can't save point a scanned sexp (right now anyway)
+                    SkipOverSexp(); // you can't save point a scanned sexp (right now anyway)
                     c = ReadChar();
                     break;
                 case TextConstants.TokenOpenSquare:
@@ -501,12 +502,12 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        private void skip_over_struct()
+        public void SkipOverStruct()
         {
             throw new NotImplementedException();
         }
 
-        private void skip_over_sexp()
+        public void SkipOverSexp()
         {
             throw new NotImplementedException();
         }
@@ -516,7 +517,7 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        private void SkipOverList()
+        public void SkipOverList()
         {
             throw new NotImplementedException();
         }
@@ -1085,6 +1086,37 @@ namespace IonDotnet.Internals.Text
             var c = SkipToEnd();
             UnreadChar(c);
             UnfinishedToken = false;
+        }
+
+        public void MarkTokenFinished()
+        {
+            UnfinishedToken = false;
+            _base64PrefetchCount = 0;
+        }
+        
+        public IonType LoadNumber(StringBuilder currentValueBuffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LoadSymbolIdentifier(StringBuilder currentValueBuffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LoadSymbolOperator(object sb)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int LoadSingleQuotedString(StringBuilder currentValueBuffer, bool clobCharsOnly)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int LoadTripleQuotedString(StringBuilder currentValueBuffer, bool clobCharsOnly)
+        {
+            throw new NotImplementedException();
         }
     }
 }

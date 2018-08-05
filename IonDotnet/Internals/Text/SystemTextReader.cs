@@ -1,0 +1,152 @@
+﻿using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Numerics;
+
+namespace IonDotnet.Internals.Text
+{
+    internal abstract class SystemTextReader : RawTextReader
+    {
+        private ISymbolTable _systemSymbols;
+
+        protected SystemTextReader(TextStream input, IonType parent = IonType.None) : base(input, parent)
+        {
+            _systemSymbols = SharedSymbolTable.GetSystem(1);
+        }
+
+        private void LoadOnce()
+        {
+            if (!_v.IsEmpty) return;
+            LoadScalarValue();
+        }
+
+        private void LoadScalarValue()
+        {
+            if (!_valueType.IsScalar()) return;
+
+            LoadTokenContents(_scanner.Token);
+
+            // we do this here (instead of in the case below so that we can modify
+            // the value while it's not a string, but still in the StringBuilder
+            if (_valueType == IonType.Decimal)
+            {
+                for (var i = 0; i < _valueBuffer.Length; i++)
+                {
+                    var c = _valueBuffer[i];
+                    if (c == 'd' || c == 'D')
+                    {
+                        _valueBuffer[i] = 'e';
+                    }
+                }
+            }
+            else if (_scanner.Token == TextConstants.TokenHex)
+            {
+                var negative = _valueBuffer[0] == '-';
+                var pos = negative ? 1 : 0;
+                Debug.Assert(_valueBuffer[1] == '0');
+                Debug.Assert(char.ToLower(_valueBuffer[2]) == 'x');
+
+                //delete '0x'
+                //TODO is there a better way?
+                _valueBuffer.Remove(pos, 2);
+            }
+            else if (_scanner.Token == TextConstants.TokenBinary)
+            {
+                var negative = _valueBuffer[0] == '-';
+                var pos = negative ? 1 : 0;
+                Debug.Assert(_valueBuffer[1] == '0');
+                Debug.Assert(char.ToLower(_valueBuffer[2]) == 'b');
+                //delete '0b'
+                //TODO is there a better way?
+                _valueBuffer.Remove(pos, 2);
+            }
+
+            //TODO is there a better way
+            var len = _valueBuffer.Length;
+            var s = _valueBuffer.ToString();
+            ClearValueBuffer();
+
+            switch (_scanner.Token)
+            {
+                default:
+                    throw new IonException($"Unrecognized token {_scanner.Token}");
+                case TextConstants.TokenUnknownNumeric:
+                    switch (_valueType)
+                    {
+                        default:
+                            throw new IonException($"Expected value type to be numeric, but is {_valueType}");
+                        case IonType.Int:
+                            SetInteger(Radix.Decimal, s);
+                            break;
+                        case IonType.Decimal:
+                            _v.DecimalValue = decimal.Parse(s);
+
+                            break;
+                        case IonType.Float:
+                            _v.DoubleValue = double.Parse(s);
+                            break;
+                        case IonType.Timestamp:
+                            _v.TimestampValue = Timestamp.Parse(s);
+                            break;
+                    }
+
+                    break;
+                case TextConstants.TokenInt:
+                    SetInteger(Radix.Decimal, s);
+                    break;
+                case TextConstants.TokenBinary:
+                    SetInteger(Radix.Binary, s);
+                    break;
+                case TextConstants.TokenHex:
+                    SetInteger(Radix.Hex, s);
+                    break;
+            }
+        }
+
+        private void SetInteger(Radix radix, string s)
+        {
+            var intBase = radix == Radix.Binary ? 2 : (radix == Radix.Decimal ? 10 : 16);
+            if (radix.IsInt(s))
+            {
+                _v.IntValue = Convert.ToInt32(s, intBase);
+                return;
+            }
+
+            if (radix.IsLong(s))
+            {
+                _v.LongValue = Convert.ToInt64(s, intBase);
+                return;
+            }
+
+            //bigint
+            if (intBase == 10)
+            {
+                _v.BigIntegerValue = BigInteger.Parse(s);
+                return;
+            }
+
+            if (intBase == 16)
+            {
+                _v.BigIntegerValue = BigInteger.Parse(s, NumberStyles.HexNumber);
+                return;
+            }
+
+            //does anyone really do this?
+            SetBigIntegerFromBinaryString(s);
+        }
+
+        private void SetBigIntegerFromBinaryString(string s)
+        {
+            var b = BigInteger.Zero;
+            foreach (var c in s)
+            {
+                if (c == '0')
+                    continue;
+                b = BigInteger.Multiply(b, 2);
+                b += 1;
+            }
+
+            _v.BigIntegerValue = b;
+        }
+    }
+}
