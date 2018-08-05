@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Text
@@ -80,11 +81,35 @@ namespace IonDotnet.Internals.Text
         #endregion
 
         public const int EscapeNotDefined = -11;
-        public const int ESCAPE_HEX = -16;
-        public const int ESCAPE_BIG_U = -15;
-        public const int ESCAPE_LITTLE_U = -14;
-        private const int ESCAPE_REMOVES_NEWLINE2 = -13;
-        private const int ESCAPE_REMOVES_NEWLINE = -12;
+        public const int EscapeHex = -16;
+        public const int EscapeBigU = -15;
+        public const int EscapeLittleU = -14;
+        private const int EscapeRemovesNewline2 = -13;
+        private const int EscapeRemovesNewline = -12;
+
+        #region Keywords
+
+        public const int KeywordUnrecognized = -1;
+        public const int KeywordNone = 0;
+        public const int KeywordTrue = 1;
+        public const int KeywordFalse = 2;
+        public const int KeywordNull = 3;
+        public const int KeywordBool = 4;
+        public const int KeywordInt = 5;
+        public const int KeywordFloat = 6;
+        public const int KeywordDecimal = 7;
+        public const int KeywordTimestamp = 8;
+        public const int KeywordSymbol = 9;
+        public const int KeywordString = 10;
+        public const int KeywordBlob = 11;
+        public const int KeywordClob = 12;
+        public const int KeywordList = 13;
+        public const int KeywordSexp = 14;
+        public const int KeywordStruct = 15;
+        public const int KeywordNan = 16;
+        public const int KeywordSid = 17;
+
+        #endregion
 
         public static int GetEscapeReplacementCharacter(int c)
         {
@@ -119,15 +144,15 @@ namespace IonDotnet.Internals.Text
                 case '/':
                     return '/'; //    \u002F  \/  forward slash nothing  \NL  escaped NL expands to nothing
                 case '\n':
-                    return ESCAPE_REMOVES_NEWLINE; // slash-new line the new line eater
+                    return EscapeRemovesNewline; // slash-new line the new line eater
                 case '\r':
-                    return ESCAPE_REMOVES_NEWLINE2; // slash-new line the new line eater
+                    return EscapeRemovesNewline2; // slash-new line the new line eater
                 case 'x':
-                    return ESCAPE_HEX; //      \xHH  2-digit hexadecimal unicode character equivalent to \ u00HH
+                    return EscapeHex; //      \xHH  2-digit hexadecimal unicode character equivalent to \ u00HH
                 case 'u':
-                    return ESCAPE_LITTLE_U; //    any  \ uHHHH  4-digit hexadecimal unicode character
+                    return EscapeLittleU; //    any  \ uHHHH  4-digit hexadecimal unicode character
                 case 'U':
-                    return ESCAPE_BIG_U;
+                    return EscapeBigU;
             }
         }
 
@@ -140,6 +165,27 @@ namespace IonDotnet.Internals.Text
         public static int HexDigitValue(int c)
         {
             throw new NotImplementedException();
+        }
+
+        public static bool IsValidSymbolCharacter(int c)
+        {
+            if (!Characters.Is8BitChar(c))
+                return false;
+
+            c &= 0xff;
+            if (c == '$' || c == '_')
+                return true;
+
+            if (c >= 'a' && c <= 'z')
+                return true;
+
+            if (c >= 'A' && c <= 'Z')
+                return true;
+
+            if (c >= '0' && c <= '9')
+                return true;
+
+            return false;
         }
 
         public static bool IsValidExtendedSymbolCharacter(int c)
@@ -240,6 +286,237 @@ namespace IonDotnet.Internals.Text
                 default:
                     return IonType.None;
             }
+        }
+
+        private static char charAt(this StringBuilder sb, int idx)
+        {
+            return sb[idx];
+        }
+
+        public static int GetKeyword(StringBuilder word, int start_word, int end_word)
+        {
+            int c = word[start_word];
+            var len = end_word - start_word; // +1 but we build that into the constants below
+            switch (c)
+            {
+                case '$':
+                    if (len > 1)
+                    {
+                        for (var i = start_word + 1; i < end_word; i++)
+                        {
+                            if (!char.IsDigit(word[i])) return -1;
+                        }
+
+                        return KeywordSid;
+                    }
+
+                    return -1;
+                case 'b':
+                    if (len == 4)
+                    {
+                        if (word[start_word + 1] == 'o'
+                            && word[start_word + 2] == 'o'
+                            && word[start_word + 3] == 'l'
+                        )
+                        {
+                            return KeywordBool;
+                        }
+
+                        if (word[start_word + 1] == 'l'
+                            && word[start_word + 2] == 'o'
+                            && word.charAt(start_word + 3) == 'b'
+                        )
+                        {
+                            return KeywordBlob;
+                        }
+                    }
+
+                    return -1;
+                case 'c':
+                    if (len == 4)
+                    {
+                        if (word.charAt(start_word + 1) == 'l'
+                            && word.charAt(start_word + 2) == 'o'
+                            && word.charAt(start_word + 3) == 'b'
+                        )
+                        {
+                            return KeywordClob;
+                        }
+                    }
+
+                    return -1;
+                case 'd':
+                    if (len == 7)
+                    {
+                        if (word.charAt(start_word + 1) == 'e'
+                            && word.charAt(start_word + 2) == 'c'
+                            && word.charAt(start_word + 3) == 'i'
+                            && word.charAt(start_word + 4) == 'm'
+                            && word.charAt(start_word + 5) == 'a'
+                            && word.charAt(start_word + 6) == 'l'
+                        )
+                        {
+                            return KeywordDecimal;
+                        }
+                    }
+
+                    return -1;
+                case 'f':
+                    if (len == 5)
+                    {
+                        if (word.charAt(start_word + 1) == 'a'
+                            && word.charAt(start_word + 2) == 'l'
+                            && word.charAt(start_word + 3) == 's'
+                            && word.charAt(start_word + 4) == 'e'
+                        )
+                        {
+                            return KeywordFalse;
+                        }
+
+                        if (word.charAt(start_word + 1) == 'l'
+                            && word.charAt(start_word + 2) == 'o'
+                            && word.charAt(start_word + 3) == 'a'
+                            && word.charAt(start_word + 4) == 't'
+                        )
+                        {
+                            return KeywordFloat;
+                        }
+                    }
+
+                    return -1;
+                case 'i':
+                    if (len == 3)
+                    {
+                        if (word.charAt(start_word + 1) == 'n')
+                        {
+                            if (word.charAt(start_word + 2) == 't')
+                            {
+                                return KeywordInt;
+                            }
+                        }
+                    }
+
+                    return -1;
+                case 'l':
+                    if (len == 4)
+                    {
+                        if (word.charAt(start_word + 1) == 'i'
+                            && word.charAt(start_word + 2) == 's'
+                            && word.charAt(start_word + 3) == 't'
+                        )
+                        {
+                            return KeywordList;
+                        }
+                    }
+
+                    return -1;
+                case 'n':
+                    if (len == 4)
+                    {
+                        if (word.charAt(start_word + 1) == 'u'
+                            && word.charAt(start_word + 2) == 'l'
+                            && word.charAt(start_word + 3) == 'l'
+                        )
+                        {
+                            return KeywordNull;
+                        }
+                    }
+                    else if (len == 3)
+                    {
+                        if (word.charAt(start_word + 1) == 'a'
+                            && word.charAt(start_word + 2) == 'n'
+                        )
+                        {
+                            return KeywordNan;
+                        }
+                    }
+
+                    return -1;
+                case 's':
+                    if (len == 4)
+                    {
+                        if (word.charAt(start_word + 1) == 'e'
+                            && word.charAt(start_word + 2) == 'x'
+                            && word.charAt(start_word + 3) == 'p'
+                        )
+                        {
+                            return KeywordSexp;
+                        }
+                    }
+                    else if (len == 6)
+                    {
+                        if (word.charAt(start_word + 1) == 't'
+                            && word.charAt(start_word + 2) == 'r'
+                        )
+                        {
+                            if (word.charAt(start_word + 3) == 'i'
+                                && word.charAt(start_word + 4) == 'n'
+                                && word.charAt(start_word + 5) == 'g'
+                            )
+                            {
+                                return KeywordString;
+                            }
+
+                            if (word.charAt(start_word + 3) == 'u'
+                                && word.charAt(start_word + 4) == 'c'
+                                && word.charAt(start_word + 5) == 't'
+                            )
+                            {
+                                return KeywordStruct;
+                            }
+
+                            return -1;
+                        }
+
+                        if (word.charAt(start_word + 1) == 'y'
+                            && word.charAt(start_word + 2) == 'm'
+                            && word.charAt(start_word + 3) == 'b'
+                            && word.charAt(start_word + 4) == 'o'
+                            && word.charAt(start_word + 5) == 'l'
+                        )
+                        {
+                            return KeywordSymbol;
+                        }
+                    }
+
+                    return -1;
+                case 't':
+                    if (len == 4)
+                    {
+                        if (word.charAt(start_word + 1) == 'r'
+                            && word.charAt(start_word + 2) == 'u'
+                            && word.charAt(start_word + 3) == 'e'
+                        )
+                        {
+                            return KeywordTrue;
+                        }
+                    }
+                    else if (len == 9)
+                    {
+                        if (word.charAt(start_word + 1) == 'i'
+                            && word.charAt(start_word + 2) == 'm'
+                            && word.charAt(start_word + 3) == 'e'
+                            && word.charAt(start_word + 4) == 's'
+                            && word.charAt(start_word + 5) == 't'
+                            && word.charAt(start_word + 6) == 'a'
+                            && word.charAt(start_word + 7) == 'm'
+                            && word.charAt(start_word + 8) == 'p'
+                        )
+                        {
+                            return KeywordTimestamp;
+                        }
+                    }
+
+                    return -1;
+                default:
+                    return -1;
+            }
+        }
+
+        public static int DecodeSid(StringBuilder sb)
+        {
+            var digits = sb.ToString(1, sb.Length);
+            return int.Parse(digits);
         }
     }
 }

@@ -148,7 +148,7 @@ namespace IonDotnet.Internals.Text
 
         private int _state;
         private bool _eof;
-        private bool _valueBufferLoaded;
+        protected int _valueKeyword;
 
         protected IonType _valueType;
         private bool _containerIsStruct; // helper bool's set on push and pop and used
@@ -159,7 +159,7 @@ namespace IonDotnet.Internals.Text
 
         private readonly ContainerStack _containerStack;
 
-        protected RawTextReader(TextStream input, IonType parent = IonType.None)
+        protected RawTextReader(TextStream input, IonType parent = IonType.Datagram)
         {
             _state = GetStateAtContainerStart(parent);
             _valueBuffer = new StringBuilder();
@@ -167,6 +167,7 @@ namespace IonDotnet.Internals.Text
             _eof = false;
             _hasNextCalled = false;
             _containerStack = new ContainerStack(this, 6);
+            _containerStack.PushContainer(IonType.Datagram);
         }
 
         protected void ClearValueBuffer()
@@ -227,7 +228,7 @@ namespace IonDotnet.Internals.Text
                     case ActionLoadFieldName:
                         if (!IsInStruct)
                             throw new IonException("Field names have to be inside struct");
-                        FinishValue();
+
                         LoadTokenContents(token);
                         var symtok = ParseSymbolToken(_valueBuffer, token);
                         SetFieldName(symtok);
@@ -239,6 +240,12 @@ namespace IonDotnet.Internals.Text
                         _state = StateBeforeAnnotationContained;
                         token = _scanner.NextToken();
                         break;
+                    case ActionLoadAnnotation:
+                        throw new NotImplementedException();
+                    case ActionStartStruct:
+                        _valueType = IonType.Struct;
+                        _state = StateBeforeFieldName;
+                        return;
                     case ActionLoadScalar:
                         if (token == TextConstants.TokenSymbolIdentifier)
                         {
@@ -255,7 +262,7 @@ namespace IonDotnet.Internals.Text
                         }
 
                         _state = GetStateAfterValue(_containerStack.Peek());
-                        break;
+                        return;
                 }
             }
         }
@@ -269,30 +276,23 @@ namespace IonDotnet.Internals.Text
 
         private static SymbolToken ParseSymbolToken(StringBuilder sb, int token)
         {
-            if (token == TextConstants.TokenSymbolIdentifier)
-            {
-                throw new NotImplementedException();
-//                int kw = TextConstants.keyword(sb, 0, sb.length());
-//                switch (kw)
-//                {
-//                    case TextConstants.KEYWORD_FALSE:
-//                    case TextConstants.KEYWORD_TRUE:
-//                    case TextConstants.KEYWORD_NULL:
-//                    case TextConstants.KEYWORD_NAN:
-//                        // keywords are not ok unless they're quoted
-//                        throw new IonException($"Cannot use unquoted keyword {sb}");
-//                    case TextConstants.KEYWORD_sid:
-//                        text = null;
-//                        sid = TextConstants.decodeSid(sb);
-//                        break;
-//                    default:
-//                        text = sb.toString();
-//                        sid = UNKNOWN_SYMBOL_ID;
-//                        break;
-//                }
-            }
+            if (token != TextConstants.TokenSymbolIdentifier)
+                return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
 
-            return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
+            var kw = TextConstants.GetKeyword(sb, 0, sb.Length);
+            switch (kw)
+            {
+                case TextConstants.KeywordFalse:
+                case TextConstants.KeywordTrue:
+                case TextConstants.KeywordNull:
+                case TextConstants.KeywordNan:
+                    // keywords are not ok unless they're quoted
+                    throw new IonException($"Cannot use unquoted keyword {sb}");
+                case TextConstants.KeywordSid:
+                    return new SymbolToken(null, TextConstants.DecodeSid(sb));
+                default:
+                    return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
+            }
         }
 
         private void FinishValue()
@@ -322,7 +322,7 @@ namespace IonDotnet.Internals.Text
 
         protected void LoadTokenContents(int scannerToken)
         {
-            if (_valueBufferLoaded)
+            if (_valueBuffer.Length > 0)
                 return;
 
             int c;
@@ -382,7 +382,8 @@ namespace IonDotnet.Internals.Text
 
             _state = GetStateAtContainerStart(_valueType);
             _containerStack.PushContainer(_valueType);
-            _scanner.FinishToken();
+            _scanner.MarkTokenFinished();
+
             FinishValue();
             if (_v.TypeSet.HasFlag(ScalarType.Null))
             {
@@ -443,7 +444,7 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public IonType CurrentType { get; }
+        public IonType CurrentType => _valueType;
 
         public IntegerSize GetIntegerSize()
         {

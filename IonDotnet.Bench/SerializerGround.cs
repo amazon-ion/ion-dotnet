@@ -11,6 +11,7 @@ using BenchmarkDotNet.Running;
 using IonDotnet.Conversions;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
+using IonDotnet.Internals.Text;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -229,12 +230,15 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            var dt = new DateTime(2000, 11, 11);
-            Console.WriteLine(dt.Kind);
-            var dtStr = dt.ToString("yyyy-MM-ddTHH:mm:ssK", CultureInfo.InvariantCulture);
-            Console.WriteLine(dtStr);
-            var dto = DateTimeOffset.Parse(dtStr);
-            Console.WriteLine(dto);
+            var data = DirStructure.ReadDataFile("javaout.ion");
+            var str = Encoding.ASCII.GetString(data);
+            var sq = new CharSequenceStream(str);
+            var reader = new SystemTextReader(sq);
+            Console.WriteLine(reader.MoveNext());
+            reader.StepIn();
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.IntValue());
 
 //            BenchmarkRunner.Run<Benchmark>();
             //warmup

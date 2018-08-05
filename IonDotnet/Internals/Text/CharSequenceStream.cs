@@ -8,6 +8,11 @@ namespace IonDotnet.Internals.Text
         private readonly ReadOnlyMemory<char> _chars;
         private int _idx;
 
+
+        public CharSequenceStream(string text) : this(text.AsMemory())
+        {
+        }
+
         public CharSequenceStream(ReadOnlyMemory<char> chars)
         {
             _chars = chars;

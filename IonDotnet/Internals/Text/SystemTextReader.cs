@@ -2,16 +2,31 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals.Text
 {
-    internal abstract class SystemTextReader : RawTextReader
+    internal class SystemTextReader : RawTextReader
     {
         private ISymbolTable _systemSymbols;
 
-        protected SystemTextReader(TextStream input, IonType parent = IonType.None) : base(input, parent)
+        public SystemTextReader(TextStream input, IonType parent = IonType.None) : base(input, parent)
         {
             _systemSymbols = SharedSymbolTable.GetSystem(1);
+        }
+
+        private void PrepareValue(ScalarType valueType)
+        {
+            LoadOnce();
+            if (valueType != ScalarType.Nothing && !_v.TypeSet.HasFlag(valueType))
+            {
+                CastCachedValue(valueType);
+            }
+        }
+
+        private void CastCachedValue(ScalarType valueType)
+        {
+            throw new NotImplementedException();
         }
 
         private void LoadOnce()
@@ -100,6 +115,62 @@ namespace IonDotnet.Internals.Text
                 case TextConstants.TokenHex:
                     SetInteger(Radix.Hex, s);
                     break;
+                case TextConstants.TokenDecimal:
+                    _v.DecimalValue = decimal.Parse(s);
+                    break;
+                case TextConstants.TokenFloat:
+                    _v.DoubleValue = double.Parse(s);
+                    break;
+                case TextConstants.TokenTimestamp:
+                    _v.TimestampValue = Timestamp.Parse(s);
+                    break;
+                case TextConstants.TokenSymbolIdentifier:
+                    if (CurrentIsNull)
+                    {
+                        _v.SetNull(_valueType);
+                        break;
+                    }
+
+                    switch (_valueType)
+                    {
+                        default:
+                            throw new IonException($"Unexpected type {_valueType}");
+                        case IonType.Symbol:
+                            _v.StringValue = s;
+                            break;
+                        case IonType.Float:
+                            if (_valueKeyword != TextConstants.KeywordNan)
+                                throw new IonException($"Unexpected keyword {s} as float");
+                            _v.DoubleValue = double.NaN;
+                            break;
+                        case IonType.Bool:
+                            if (_valueKeyword == TextConstants.KeywordTrue)
+                            {
+                                _v.BoolValue = true;
+                            }
+                            else if (_valueKeyword == TextConstants.KeywordFalse)
+                            {
+                                _v.BoolValue = false;
+                            }
+                            else
+                            {
+                                throw new IonException($"Unexpected keyword {s} as bool");
+                            }
+
+                            break;
+                    }
+
+                    break;
+                case TextConstants.TokenSymbolQuoted:
+                case TextConstants.TokenSymbolOperator:
+                case TextConstants.TokenStringDoubleQuote:
+                    _v.StringValue = s;
+                    break;
+                case TextConstants.TokenStringTripleQuote:
+                    // long strings (triple quoted strings) are never finished by the raw parser.
+                    // At most it reads the first triple quoted string.
+                    _v.StringValue = s;
+                    break;
             }
         }
 
@@ -147,6 +218,56 @@ namespace IonDotnet.Internals.Text
             }
 
             _v.BigIntegerValue = b;
+        }
+
+        public override bool CurrentIsNull { get; }
+
+        public override bool BoolValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int IntValue()
+        {
+            if (CurrentIsNull) throw new NullValueException();
+
+            PrepareValue(ScalarType.Int);
+            return _v.IntValue;
+        }
+
+        public override long LongValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override BigInteger BigIntegerValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double DoubleValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override decimal DecimalValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Timestamp TimestampValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string StringValue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override SymbolToken SymbolValue()
+        {
+            throw new NotImplementedException();
         }
     }
 }

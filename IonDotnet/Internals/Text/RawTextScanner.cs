@@ -18,6 +18,13 @@ namespace IonDotnet.Internals.Text
     /// </remarks>
     internal sealed class RawTextScanner
     {
+        private enum NumericState
+        {
+            Start,
+            Underscore,
+            Digit,
+        }
+
         private enum CommentStrategy
         {
             Ignore,
@@ -534,7 +541,14 @@ namespace IonDotnet.Internals.Text
 
         private int SkipOverSymbolIdentifier()
         {
-            throw new NotImplementedException();
+            var c = ReadChar();
+
+            while (TextConstants.IsValidSymbolCharacter(c))
+            {
+                c = ReadChar();
+            }
+
+            return c;
         }
 
         private int SkipOverTimestamp()
@@ -905,17 +919,17 @@ namespace IonDotnet.Internals.Text
             {
                 case TextConstants.EscapeNotDefined:
                     throw new InvalidTokenException(c2);
-                case TextConstants.ESCAPE_LITTLE_U:
+                case TextConstants.EscapeLittleU:
                     if (clob)
                         throw new InvalidTokenException(c1);
                     c2 = ReadHexEscapeSequence(4);
                     break;
-                case TextConstants.ESCAPE_BIG_U:
+                case TextConstants.EscapeBigU:
                     if (clob)
                         throw new InvalidTokenException(c1);
                     c2 = ReadHexEscapeSequence(8);
                     break;
-                case TextConstants.ESCAPE_HEX:
+                case TextConstants.EscapeHex:
                     c2 = ReadHexEscapeSequence(2);
                     break;
             }
@@ -1093,15 +1107,229 @@ namespace IonDotnet.Internals.Text
             UnfinishedToken = false;
             _base64PrefetchCount = 0;
         }
-        
-        public IonType LoadNumber(StringBuilder currentValueBuffer)
+
+        public IonType LoadNumber(StringBuilder valueBuffer)
+        {
+            var c = ReadChar();
+            var hasSign = c == '-' || c == '+';
+            if (hasSign)
+            {
+                // if there is a sign character, we just consume it
+                // here and get whatever is next in line
+                valueBuffer.Append((char) c);
+                c = ReadChar();
+            }
+
+            if (!char.IsDigit((char) c))
+            {
+                // if it's not a digit, this isn't a number the only non-digit it could have been was a
+                // sign character, and we'll have read past that by now
+                throw new InvalidTokenException(c);
+            }
+
+            var startWithZero = c == '0';
+            if (startWithZero)
+            {
+                var c2 = ReadChar();
+                if (Radix.Hex.IsPrefix(c2))
+                {
+                    valueBuffer.Append((char) c);
+                    c = LoadRadixValue(valueBuffer, hasSign, c2, Radix.Hex);
+                    return FinishLoadNumber(valueBuffer, c, TextConstants.TokenHex);
+                }
+
+                if (Radix.Binary.IsPrefix(c2))
+                {
+                    valueBuffer.Append((char) c);
+                    c = LoadRadixValue(valueBuffer, hasSign, c2, Radix.Hex);
+                    return FinishLoadNumber(valueBuffer, c, TextConstants.TokenHex);
+                }
+
+                UnreadChar(c2);
+            }
+
+            c = LoadDigits(valueBuffer, c);
+            if (c == '-' || c == 'T')
+            {
+                // this better be a timestamp and it starts with a 4 digit
+                // year followed by a dash and no leading sign
+                if (hasSign)
+                {
+                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char) c}");
+                }
+
+                var len = valueBuffer.Length;
+                if (len != 4)
+                {
+                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char) c}");
+                }
+
+                return LoadTimestamp(valueBuffer, c);
+            }
+
+            if (startWithZero)
+            {
+                // Ion doesn't allow leading zeros, so make sure our buffer only
+                // has one character.
+                var len = valueBuffer.Length;
+                if (hasSign)
+                {
+                    len--; // we don't count the sign
+                }
+
+                if (len != 1)
+                    throw new IonException("Invalid leading zero in number: " + valueBuffer);
+            }
+
+            int t;
+            if (c == '.')
+            {
+                // so if it's a float of some sort
+                // mark it as at least a DECIMAL
+                // and read the "fraction" digits
+                valueBuffer.Append((char) c);
+                c = ReadChar();
+                c = LoadDigits(valueBuffer, c);
+                t = TextConstants.TokenDecimal;
+            }
+            else
+            {
+                t = TextConstants.TokenInt;
+            }
+
+            // see if we have an exponential as in 2d+3
+            if (c == 'e' || c == 'E')
+            {
+                t = TextConstants.TokenFloat;
+                valueBuffer.Append((char) c);
+                c = LoadExponent(valueBuffer); // the unused lookahead char
+            }
+            else if (c == 'd' || c == 'D')
+            {
+                t = TextConstants.TokenDecimal;
+                valueBuffer.Append((char) c);
+                c = LoadExponent(valueBuffer);
+            }
+
+            return FinishLoadNumber(valueBuffer, c, t);
+        }
+
+        private IonType LoadTimestamp(StringBuilder valueBuffer, int i)
         {
             throw new NotImplementedException();
         }
 
-        public void LoadSymbolIdentifier(StringBuilder currentValueBuffer)
+        private int LoadExponent(StringBuilder valueBuffer)
         {
-            throw new NotImplementedException();
+            var c = ReadChar();
+            if (c == '-' || c == '+')
+            {
+                valueBuffer.Append((char) c);
+                c = ReadChar();
+            }
+
+            c = LoadDigits(valueBuffer, c);
+
+            if (c != '.') return c;
+
+            valueBuffer.Append((char) c);
+            c = ReadChar();
+            c = LoadDigits(valueBuffer, c);
+
+            return c;
+        }
+
+        private int LoadDigits(StringBuilder sb, int c)
+        {
+            if (!char.IsDigit((char) c))
+                return c;
+
+            sb.Append((char) c);
+
+            return ReadNumeric(sb, Radix.Decimal, NumericState.Digit);
+        }
+
+        private IonType FinishLoadNumber(StringBuilder numericText, int c, int token)
+        {
+            // all forms of numeric need to stop someplace rational
+            if (!IsTerminatingCharacter(c))
+                throw new InvalidTokenException($"Numeric value followed by invalid character: {numericText}{(char) c}");
+
+            // we read off the end of the number, so put back
+            // what we don't want, but what ever we have is an int
+            UnreadChar(c);
+            return TextConstants.GetIonTypeOfToken(token);
+        }
+
+        private int LoadRadixValue(StringBuilder sb, bool hasSign, int c2, Radix radix)
+        {
+            sb.Append((char) c2);
+
+            return ReadNumeric(sb, radix);
+        }
+
+        private int ReadNumeric(StringBuilder buffer, Radix radix) => ReadNumeric(buffer, radix, NumericState.Start);
+
+        private int ReadNumeric(StringBuilder buffer, Radix radix, NumericState state)
+        {
+            while (true)
+            {
+                var c = ReadChar();
+                switch (state)
+                {
+                    case NumericState.Start:
+                        if (radix.IsValidDigit(c))
+                        {
+                            buffer.Append(radix.NormalizeDigit((char) c));
+                            state = NumericState.Digit;
+                        }
+                        else
+                            return c;
+
+                        break;
+                    case NumericState.Digit:
+                        if (radix.IsValidDigit(c))
+                        {
+                            buffer.Append(radix.NormalizeDigit((char) c));
+                            state = NumericState.Digit;
+                        }
+                        else if (c == '_')
+                        {
+                            state = NumericState.Underscore;
+                        }
+                        else
+                            return c;
+
+                        break;
+                    case NumericState.Underscore:
+                        if (radix.IsValidDigit(c))
+                        {
+                            buffer.Append(radix.NormalizeDigit((char) c));
+                            state = NumericState.Digit;
+                        }
+                        else
+                        {
+                            UnreadChar(c);
+                            return '_';
+                        }
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(state), state, null);
+                }
+            }
+        }
+
+        public void LoadSymbolIdentifier(StringBuilder valueBuffer)
+        {
+            var c = ReadChar();
+            while (TextConstants.IsValidSymbolCharacter(c))
+            {
+                valueBuffer.Append((char) c);
+                c = ReadChar();
+            }
+
+            UnreadChar(c);
         }
 
         public void LoadSymbolOperator(object sb)
@@ -1109,12 +1337,12 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public int LoadSingleQuotedString(StringBuilder currentValueBuffer, bool clobCharsOnly)
+        public int LoadSingleQuotedString(StringBuilder valueBuffer, bool clobCharsOnly)
         {
             throw new NotImplementedException();
         }
 
-        public int LoadTripleQuotedString(StringBuilder currentValueBuffer, bool clobCharsOnly)
+        public int LoadTripleQuotedString(StringBuilder valueBuffer, bool clobCharsOnly)
         {
             throw new NotImplementedException();
         }
