@@ -35,7 +35,7 @@ namespace IonDotnet.Internals.Binary
             return token == default ? SymbolToken.UnknownSid : token.Sid;
         }
 
-        public abstract string FindKnownSymbol(int id);
+        public abstract string FindKnownSymbol(int sid);
 
         public void WriteTo(IIonWriter writer)
         {

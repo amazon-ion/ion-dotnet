@@ -142,11 +142,11 @@ namespace IonDotnet.Internals
             return _symbolMap.TryGetValue(text, out var sid) ? sid : SymbolToken.UnknownSid;
         }
 
-        public string FindKnownSymbol(int id)
+        public string FindKnownSymbol(int sid)
         {
-            if (id < 0) throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(id)} must be >=0");
+            if (sid < 0) throw new ArgumentOutOfRangeException(nameof(sid), $"{nameof(sid)} must be >=0");
 
-            if (id < _firstLocalId) return _imports.FindKnownSymbol(id);
+            if (sid < _firstLocalId) return _imports.FindKnownSymbol(sid);
 
             IList<string> names;
             //avoid locking if possible
@@ -163,7 +163,7 @@ namespace IonDotnet.Internals
                 }
             }
 
-            var offset = id - _firstLocalId;
+            var offset = sid - _firstLocalId;
             return offset < names.Count ? names[offset] : null;
         }
 

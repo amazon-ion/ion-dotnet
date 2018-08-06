@@ -489,16 +489,16 @@ namespace IonDotnet.Internals.Binary
                 return found ? new SymbolToken(text, sid) : default;
             }
 
-            public override string FindKnownSymbol(int id)
+            public override string FindKnownSymbol(int sid)
             {
                 foreach (var symbolTable in _writer._importContext.Parents)
                 {
-                    var text = symbolTable.FindKnownSymbol(id);
+                    var text = symbolTable.FindKnownSymbol(sid);
                     if (text == null) continue;
                     return text;
                 }
 
-                return _writer._locals.FirstOrDefault(kvp => kvp.Value == id).Key;
+                return _writer._locals.FirstOrDefault(kvp => kvp.Value == sid).Key;
             }
 
             public override IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_writer._locals.Keys);

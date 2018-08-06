@@ -11,45 +11,45 @@ namespace IonDotnet.Bench
 {
     public static class IonSerializerExpression
     {
-        private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
+        private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
         private static readonly MethodInfo EnumGetnameMethod = typeof(Enum).GetMethod(nameof(Enum.GetName));
 
-        private static readonly MethodInfo WriteNullTypeMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteNull), new[] { typeof(IonType) });
-        private static readonly MethodInfo WriteStringMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteString));
-        private static readonly MethodInfo WriteBoolMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteBool));
-        private static readonly MethodInfo WriteIntMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] { typeof(long) });
-        private static readonly MethodInfo WriteBigIntegerMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] { typeof(BigInteger) });
-        private static readonly MethodInfo WriteFloatMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteFloat));
-        private static readonly MethodInfo WriteTimestampMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteTimestamp));
-        private static readonly MethodInfo WriteDecimalMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteDecimal));
-        private static readonly MethodInfo WriteBlobMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteBlob));
-        private static readonly MethodInfo WriteSymbolMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.WriteSymbol));
+        private static readonly MethodInfo WriteNullTypeMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteNull), new[] { typeof(IonType) });
+        private static readonly MethodInfo WriteStringMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteString));
+        private static readonly MethodInfo WriteBoolMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteBool));
+        private static readonly MethodInfo WriteIntMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] { typeof(long) });
+        private static readonly MethodInfo WriteBigIntegerMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] { typeof(BigInteger) });
+        private static readonly MethodInfo WriteFloatMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteFloat));
+        private static readonly MethodInfo WriteTimestampMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteTimestamp));
+        private static readonly MethodInfo WriteDecimalMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteDecimal));
+        private static readonly MethodInfo WriteBlobMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteBlob));
+        private static readonly MethodInfo WriteSymbolMethod = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteSymbol));
 
-        private static readonly MethodInfo StepInMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.StepIn));
-        private static readonly MethodInfo StepOutMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.StepOut));
-        private static readonly MethodInfo SetFieldNameMethod = typeof(ManagedBinaryWriter).GetMethod(nameof(IIonWriter.SetFieldName));
+        private static readonly MethodInfo StepInMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.StepIn));
+        private static readonly MethodInfo StepOutMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.StepOut));
+        private static readonly MethodInfo SetFieldNameMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.SetFieldName));
 
         private static readonly ConstructorInfo TimeStampFromDateTime = typeof(Timestamp).GetConstructor(new[] { typeof(DateTime) });
         private static readonly ConstructorInfo TimeStampFromDateTimeOffset = typeof(Timestamp).GetConstructor(new[] { typeof(DateTimeOffset) });
 
         private static readonly Dictionary<Type, Delegate> Cache = new Dictionary<Type, Delegate>();
 
-        private static Action<T, ManagedBinaryWriter> GetAction<T>()
+        private static Action<T, IIonWriter> GetAction<T>()
         {
             var type = typeof(T);
             if (Cache.TryGetValue(type, out var action))
-                return (Action<T, ManagedBinaryWriter>)action;
+                return (Action<T, IIonWriter>)action;
 
             var objParam = Expression.Parameter(type, "obj");
-            var writerParam = Expression.Parameter(typeof(ManagedBinaryWriter), "writer");
+            var writerParam = Expression.Parameter(typeof(IIonWriter), "writer");
             var writeActionExpression = GetWriteActionForType(type, objParam, writerParam);
             if (writeActionExpression == null)
                 throw new IonException("Cannot create concrete type");
 
-            var lambdaExp = Expression.Lambda<Action<T, ManagedBinaryWriter>>(writeActionExpression, objParam, writerParam);
+            var lambdaExp = Expression.Lambda<Action<T, IIonWriter>>(writeActionExpression, objParam, writerParam);
 
-            Action<T, ManagedBinaryWriter> act = lambdaExp.CompileFast();
+            Action<T, IIonWriter> act = lambdaExp.CompileFast();
             Cache.Add(type, act);
 
             return act;

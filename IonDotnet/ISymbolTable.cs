@@ -115,9 +115,9 @@ namespace IonDotnet
         /// <summary>
         /// Gets the interned text for a symbol ID
         /// </summary>
-        /// <param name="id">The requested symbol ID.</param>
+        /// <param name="sid">The requested symbol ID.</param>
         /// <returns>The interned text associated with the symbol ID, or Null if undefined</returns>
-        string FindKnownSymbol(int id);
+        string FindKnownSymbol(int sid);
 
         /// <summary>
         /// Writes an Ion representation of this symbol table

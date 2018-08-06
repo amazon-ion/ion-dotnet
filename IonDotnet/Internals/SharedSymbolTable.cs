@@ -106,11 +106,11 @@ namespace IonDotnet.Internals
 
         public int FindSymbol(string name) => !_symbolsMap.TryGetValue(name, out var sid) ? SymbolToken.UnknownSid : sid;
 
-        public string FindKnownSymbol(int id)
+        public string FindKnownSymbol(int sid)
         {
-            if (id < 0) throw new ArgumentException($"Value must be >= 0", nameof(id));
-            var offset = id - 1;
-            return id != 0 && offset < _symbolNames.Length ? _symbolNames[offset] : null;
+            if (sid < 0) throw new ArgumentException($"Value must be >= 0", nameof(sid));
+            var offset = sid - 1;
+            return sid != 0 && offset < _symbolNames.Length ? _symbolNames[offset] : null;
         }
 
         public void WriteTo(IIonWriter writer)

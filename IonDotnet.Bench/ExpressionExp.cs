@@ -20,11 +20,17 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-//            var trueS = IonSerialization.Serialize(new Per
-//            {
-//                Name = "huy"
-//            });
-//            Console.WriteLine(string.Join(',', trueS.Select(b => $"{b:x2}")));
+            // var exp = typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext));
+            // var exp2 = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteString));
+            // Console.WriteLine(exp);
+            // Console.WriteLine(exp2);
+            // return;
+
+            //            var trueS = IonSerialization.Serialize(new Per
+            //            {
+            //                Name = "huy"
+            //            });
+            //            Console.WriteLine(string.Join(',', trueS.Select(b => $"{b:x2}")));
             var s = IonSerializerExpression.Serialize(new[]
             {
                 new Experiment
@@ -40,7 +46,7 @@ namespace IonDotnet.Bench
                     Budget = decimal.Parse("12345.01234567890123456789")
                 }
             });
-            
+
             var s2 = IonSerializerExpression.Serialize(new[]
             {
                 new Experiment
@@ -56,7 +62,7 @@ namespace IonDotnet.Bench
                     Budget = decimal.Parse("12345.01234567890123456789")
                 }
             });
-//            Console.WriteLine(string.Join(',', s.Select(b => $"{b:x2}")));
+            //            Console.WriteLine(string.Join(',', s.Select(b => $"{b:x2}")));
             var d = IonSerialization.Deserialize<Experiment[]>(s);
             var json = JsonConvert.SerializeObject(d, Formatting.Indented);
             Console.WriteLine(json);
