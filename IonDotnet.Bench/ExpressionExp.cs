@@ -43,7 +43,8 @@ namespace IonDotnet.Bench
                     Description = "Measure performance impact of boxing",
                     Result = ExperimentResult.Failure,
                     SampleData = new byte[100],
-                    Budget = decimal.Parse("12345.01234567890123456789")
+                    Budget = decimal.Parse("12345.01234567890123456789"),
+                    Outputs = new[] {1, 2, 3}
                 }
             });
 
@@ -66,7 +67,6 @@ namespace IonDotnet.Bench
             var d = IonSerialization.Deserialize<Experiment[]>(s);
             var json = JsonConvert.SerializeObject(d, Formatting.Indented);
             Console.WriteLine(json);
-            Console.WriteLine(typeof(IEnumerable).IsAssignableFrom(typeof(Memory<byte>)));
         }
     }
 }
