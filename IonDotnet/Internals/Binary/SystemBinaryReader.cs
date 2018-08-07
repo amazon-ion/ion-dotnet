@@ -110,7 +110,8 @@ namespace IonDotnet.Internals.Binary
                     //treat the symbol as int32, since it's cheap and there's no lookup
                     //until the text is required
                     var sid = ReadUlong(_valueLength);
-                    if (sid < 0 || sid > int.MaxValue) throw new IonException("Sid is not an uint32");
+                    if (sid < 0 || sid > int.MaxValue)
+                        throw new IonException("Sid is not an uint32");
                     _v.IntValue = (int) sid;
                     break;
                 case IonType.Decimal:
@@ -149,13 +150,15 @@ namespace IonDotnet.Internals.Binary
             if (_v.TypeSet.HasFlag(ScalarType.String)) return;
 
             var text = _symbolTable.FindKnownSymbol(_v.IntValue);
-            if (text == null) throw new UnknownSymbolException(_v.IntValue);
+            if (text == null)
+                throw new UnknownSymbolException(_v.IntValue);
             _v.AddValue(text);
         }
 
         public override BigInteger BigIntegerValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
 
             PrepareValue();
             return _v.BigIntegerValue;
@@ -163,28 +166,32 @@ namespace IonDotnet.Internals.Binary
 
         public override bool BoolValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
             PrepareValue();
             return _v.BoolValue;
         }
 
         public override Timestamp TimestampValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
             PrepareValue();
             return _v.TimestampValue;
         }
 
         public override decimal DecimalValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
             PrepareValue();
             return _v.DecimalValue;
         }
 
         public override double DoubleValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
             PrepareValue();
             return _v.DoubleValue;
         }
@@ -196,7 +203,8 @@ namespace IonDotnet.Internals.Binary
             if (_readerRoutine == null) return;
 
             var text = _symbolTable.FindKnownSymbol(annotId);
-            if (text == null) throw new UnknownSymbolException(annotId);
+            if (text == null)
+                throw new UnknownSymbolException(annotId);
             var token = new SymbolToken(text, annotId);
             _readerRoutine.OnAnnotation(token);
         }
@@ -210,7 +218,8 @@ namespace IonDotnet.Internals.Binary
                 if (_valueFieldId == SymbolToken.UnknownSid) return null;
 
                 var name = _symbolTable.FindKnownSymbol(_valueFieldId);
-                if (name == null) throw new UnknownSymbolException(_valueFieldId);
+                if (name == null)
+                    throw new UnknownSymbolException(_valueFieldId);
 
                 return name;
             }
@@ -236,21 +245,24 @@ namespace IonDotnet.Internals.Binary
 
         public override int IntValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
             PrepareValue();
             return _v.IntValue;
         }
 
         public override long LongValue()
         {
-            if (_valueIsNull) throw new NullValueException();
+            if (_valueIsNull)
+                throw new NullValueException();
             PrepareValue();
             return _v.LongValue;
         }
 
         public override string StringValue()
         {
-            if (!_valueType.IsText()) throw new InvalidOperationException($"Current value is not text, type {_valueType}");
+            if (!_valueType.IsText())
+                throw new InvalidOperationException($"Current value is not text, type {_valueType}");
             if (_valueIsNull) return null;
             PrepareValue();
 
@@ -264,7 +276,8 @@ namespace IonDotnet.Internals.Binary
 
         public override SymbolToken SymbolValue()
         {
-            if (_valueType != IonType.Symbol) throw new InvalidOperationException($"Current value is of type {_valueType}");
+            if (_valueType != IonType.Symbol)
+                throw new InvalidOperationException($"Current value is of type {_valueType}");
             if (_valueIsNull) return SymbolToken.None;
 
             LoadSymbolValue();

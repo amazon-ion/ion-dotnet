@@ -100,8 +100,8 @@ namespace IonDotnet.Conversions
             internal set
             {
                 _timestampValue = value;
-                AuthoritativeType = ScalarType.DateTime;
-                TypeSet = ScalarType.DateTime;
+                AuthoritativeType = ScalarType.Timestamp;
+                TypeSet = ScalarType.Timestamp;
             }
         }
         //TODO datetime
@@ -139,7 +139,7 @@ namespace IonDotnet.Conversions
                     AuthoritativeType = ScalarType.String;
                     break;
                 case IonType.Timestamp:
-                    AuthoritativeType = ScalarType.DateTime;
+                    AuthoritativeType = ScalarType.Timestamp;
                     break;
                 case IonType.Symbol:
                     AuthoritativeType = ScalarType.Int;
@@ -191,7 +191,7 @@ namespace IonDotnet.Conversions
                     break;
                 case Timestamp timestamp:
                     _timestampValue = timestamp;
-                    TypeSet |= ScalarType.DateTime;
+                    TypeSet |= ScalarType.Timestamp;
                     break;
             }
         }

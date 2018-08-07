@@ -288,21 +288,21 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        private static char charAt(this StringBuilder sb, int idx)
+        private static char CharAt(this StringBuilder sb, int idx)
         {
             return sb[idx];
         }
 
-        public static int GetKeyword(StringBuilder word, int start_word, int end_word)
+        public static int GetKeyword(StringBuilder word, int startWord, int endWord)
         {
-            int c = word[start_word];
-            var len = end_word - start_word; // +1 but we build that into the constants below
+            int c = word[startWord];
+            var len = endWord - startWord; // +1 but we build that into the constants below
             switch (c)
             {
                 case '$':
                     if (len > 1)
                     {
-                        for (var i = start_word + 1; i < end_word; i++)
+                        for (var i = startWord + 1; i < endWord; i++)
                         {
                             if (!char.IsDigit(word[i])) return -1;
                         }
@@ -314,17 +314,17 @@ namespace IonDotnet.Internals.Text
                 case 'b':
                     if (len == 4)
                     {
-                        if (word[start_word + 1] == 'o'
-                            && word[start_word + 2] == 'o'
-                            && word[start_word + 3] == 'l'
+                        if (word[startWord + 1] == 'o'
+                            && word[startWord + 2] == 'o'
+                            && word[startWord + 3] == 'l'
                         )
                         {
                             return KeywordBool;
                         }
 
-                        if (word[start_word + 1] == 'l'
-                            && word[start_word + 2] == 'o'
-                            && word.charAt(start_word + 3) == 'b'
+                        if (word[startWord + 1] == 'l'
+                            && word[startWord + 2] == 'o'
+                            && word.CharAt(startWord + 3) == 'b'
                         )
                         {
                             return KeywordBlob;
@@ -335,9 +335,9 @@ namespace IonDotnet.Internals.Text
                 case 'c':
                     if (len == 4)
                     {
-                        if (word.charAt(start_word + 1) == 'l'
-                            && word.charAt(start_word + 2) == 'o'
-                            && word.charAt(start_word + 3) == 'b'
+                        if (word.CharAt(startWord + 1) == 'l'
+                            && word.CharAt(startWord + 2) == 'o'
+                            && word.CharAt(startWord + 3) == 'b'
                         )
                         {
                             return KeywordClob;
@@ -348,12 +348,12 @@ namespace IonDotnet.Internals.Text
                 case 'd':
                     if (len == 7)
                     {
-                        if (word.charAt(start_word + 1) == 'e'
-                            && word.charAt(start_word + 2) == 'c'
-                            && word.charAt(start_word + 3) == 'i'
-                            && word.charAt(start_word + 4) == 'm'
-                            && word.charAt(start_word + 5) == 'a'
-                            && word.charAt(start_word + 6) == 'l'
+                        if (word.CharAt(startWord + 1) == 'e'
+                            && word.CharAt(startWord + 2) == 'c'
+                            && word.CharAt(startWord + 3) == 'i'
+                            && word.CharAt(startWord + 4) == 'm'
+                            && word.CharAt(startWord + 5) == 'a'
+                            && word.CharAt(startWord + 6) == 'l'
                         )
                         {
                             return KeywordDecimal;
@@ -364,19 +364,19 @@ namespace IonDotnet.Internals.Text
                 case 'f':
                     if (len == 5)
                     {
-                        if (word.charAt(start_word + 1) == 'a'
-                            && word.charAt(start_word + 2) == 'l'
-                            && word.charAt(start_word + 3) == 's'
-                            && word.charAt(start_word + 4) == 'e'
+                        if (word.CharAt(startWord + 1) == 'a'
+                            && word.CharAt(startWord + 2) == 'l'
+                            && word.CharAt(startWord + 3) == 's'
+                            && word.CharAt(startWord + 4) == 'e'
                         )
                         {
                             return KeywordFalse;
                         }
 
-                        if (word.charAt(start_word + 1) == 'l'
-                            && word.charAt(start_word + 2) == 'o'
-                            && word.charAt(start_word + 3) == 'a'
-                            && word.charAt(start_word + 4) == 't'
+                        if (word.CharAt(startWord + 1) == 'l'
+                            && word.CharAt(startWord + 2) == 'o'
+                            && word.CharAt(startWord + 3) == 'a'
+                            && word.CharAt(startWord + 4) == 't'
                         )
                         {
                             return KeywordFloat;
@@ -387,9 +387,9 @@ namespace IonDotnet.Internals.Text
                 case 'i':
                     if (len == 3)
                     {
-                        if (word.charAt(start_word + 1) == 'n')
+                        if (word.CharAt(startWord + 1) == 'n')
                         {
-                            if (word.charAt(start_word + 2) == 't')
+                            if (word.CharAt(startWord + 2) == 't')
                             {
                                 return KeywordInt;
                             }
@@ -400,9 +400,9 @@ namespace IonDotnet.Internals.Text
                 case 'l':
                     if (len == 4)
                     {
-                        if (word.charAt(start_word + 1) == 'i'
-                            && word.charAt(start_word + 2) == 's'
-                            && word.charAt(start_word + 3) == 't'
+                        if (word.CharAt(startWord + 1) == 'i'
+                            && word.CharAt(startWord + 2) == 's'
+                            && word.CharAt(startWord + 3) == 't'
                         )
                         {
                             return KeywordList;
@@ -413,9 +413,9 @@ namespace IonDotnet.Internals.Text
                 case 'n':
                     if (len == 4)
                     {
-                        if (word.charAt(start_word + 1) == 'u'
-                            && word.charAt(start_word + 2) == 'l'
-                            && word.charAt(start_word + 3) == 'l'
+                        if (word.CharAt(startWord + 1) == 'u'
+                            && word.CharAt(startWord + 2) == 'l'
+                            && word.CharAt(startWord + 3) == 'l'
                         )
                         {
                             return KeywordNull;
@@ -423,8 +423,8 @@ namespace IonDotnet.Internals.Text
                     }
                     else if (len == 3)
                     {
-                        if (word.charAt(start_word + 1) == 'a'
-                            && word.charAt(start_word + 2) == 'n'
+                        if (word.CharAt(startWord + 1) == 'a'
+                            && word.CharAt(startWord + 2) == 'n'
                         )
                         {
                             return KeywordNan;
@@ -435,9 +435,9 @@ namespace IonDotnet.Internals.Text
                 case 's':
                     if (len == 4)
                     {
-                        if (word.charAt(start_word + 1) == 'e'
-                            && word.charAt(start_word + 2) == 'x'
-                            && word.charAt(start_word + 3) == 'p'
+                        if (word.CharAt(startWord + 1) == 'e'
+                            && word.CharAt(startWord + 2) == 'x'
+                            && word.CharAt(startWord + 3) == 'p'
                         )
                         {
                             return KeywordSexp;
@@ -445,21 +445,21 @@ namespace IonDotnet.Internals.Text
                     }
                     else if (len == 6)
                     {
-                        if (word.charAt(start_word + 1) == 't'
-                            && word.charAt(start_word + 2) == 'r'
+                        if (word.CharAt(startWord + 1) == 't'
+                            && word.CharAt(startWord + 2) == 'r'
                         )
                         {
-                            if (word.charAt(start_word + 3) == 'i'
-                                && word.charAt(start_word + 4) == 'n'
-                                && word.charAt(start_word + 5) == 'g'
+                            if (word.CharAt(startWord + 3) == 'i'
+                                && word.CharAt(startWord + 4) == 'n'
+                                && word.CharAt(startWord + 5) == 'g'
                             )
                             {
                                 return KeywordString;
                             }
 
-                            if (word.charAt(start_word + 3) == 'u'
-                                && word.charAt(start_word + 4) == 'c'
-                                && word.charAt(start_word + 5) == 't'
+                            if (word.CharAt(startWord + 3) == 'u'
+                                && word.CharAt(startWord + 4) == 'c'
+                                && word.CharAt(startWord + 5) == 't'
                             )
                             {
                                 return KeywordStruct;
@@ -468,11 +468,11 @@ namespace IonDotnet.Internals.Text
                             return -1;
                         }
 
-                        if (word.charAt(start_word + 1) == 'y'
-                            && word.charAt(start_word + 2) == 'm'
-                            && word.charAt(start_word + 3) == 'b'
-                            && word.charAt(start_word + 4) == 'o'
-                            && word.charAt(start_word + 5) == 'l'
+                        if (word.CharAt(startWord + 1) == 'y'
+                            && word.CharAt(startWord + 2) == 'm'
+                            && word.CharAt(startWord + 3) == 'b'
+                            && word.CharAt(startWord + 4) == 'o'
+                            && word.CharAt(startWord + 5) == 'l'
                         )
                         {
                             return KeywordSymbol;
@@ -483,9 +483,9 @@ namespace IonDotnet.Internals.Text
                 case 't':
                     if (len == 4)
                     {
-                        if (word.charAt(start_word + 1) == 'r'
-                            && word.charAt(start_word + 2) == 'u'
-                            && word.charAt(start_word + 3) == 'e'
+                        if (word.CharAt(startWord + 1) == 'r'
+                            && word.CharAt(startWord + 2) == 'u'
+                            && word.CharAt(startWord + 3) == 'e'
                         )
                         {
                             return KeywordTrue;
@@ -493,14 +493,14 @@ namespace IonDotnet.Internals.Text
                     }
                     else if (len == 9)
                     {
-                        if (word.charAt(start_word + 1) == 'i'
-                            && word.charAt(start_word + 2) == 'm'
-                            && word.charAt(start_word + 3) == 'e'
-                            && word.charAt(start_word + 4) == 's'
-                            && word.charAt(start_word + 5) == 't'
-                            && word.charAt(start_word + 6) == 'a'
-                            && word.charAt(start_word + 7) == 'm'
-                            && word.charAt(start_word + 8) == 'p'
+                        if (word.CharAt(startWord + 1) == 'i'
+                            && word.CharAt(startWord + 2) == 'm'
+                            && word.CharAt(startWord + 3) == 'e'
+                            && word.CharAt(startWord + 4) == 's'
+                            && word.CharAt(startWord + 5) == 't'
+                            && word.CharAt(startWord + 6) == 'a'
+                            && word.CharAt(startWord + 7) == 'm'
+                            && word.CharAt(startWord + 8) == 'p'
                         )
                         {
                             return KeywordTimestamp;

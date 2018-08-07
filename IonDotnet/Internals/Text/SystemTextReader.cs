@@ -220,16 +220,21 @@ namespace IonDotnet.Internals.Text
             _v.BigIntegerValue = b;
         }
 
-        public override bool CurrentIsNull { get; }
+        public override bool CurrentIsNull => _v.TypeSet.HasFlag(ScalarType.Null);
 
         public override bool BoolValue()
         {
-            throw new NotImplementedException();
+            if (CurrentIsNull)
+                throw new NullValueException();
+
+            PrepareValue(ScalarType.Bool);
+            return _v.BoolValue;
         }
 
         public override int IntValue()
         {
-            if (CurrentIsNull) throw new NullValueException();
+            if (CurrentIsNull)
+                throw new NullValueException();
 
             PrepareValue(ScalarType.Int);
             return _v.IntValue;
@@ -237,32 +242,56 @@ namespace IonDotnet.Internals.Text
 
         public override long LongValue()
         {
-            throw new NotImplementedException();
+            if (CurrentIsNull)
+                throw new NullValueException();
+
+            PrepareValue(ScalarType.Long);
+            return _v.LongValue;
         }
 
         public override BigInteger BigIntegerValue()
         {
-            throw new NotImplementedException();
+            if (CurrentIsNull)
+                throw new NullValueException();
+
+            PrepareValue(ScalarType.BigInteger);
+            return _v.BigIntegerValue;
         }
 
         public override double DoubleValue()
         {
-            throw new NotImplementedException();
+            if (CurrentIsNull)
+                throw new NullValueException();
+
+            PrepareValue(ScalarType.Double);
+            return _v.DoubleValue;
         }
 
         public override decimal DecimalValue()
         {
-            throw new NotImplementedException();
+            if (CurrentIsNull)
+                throw new NullValueException();
+
+            PrepareValue(ScalarType.Decimal);
+            return _v.DecimalValue;
         }
 
         public override Timestamp TimestampValue()
         {
-            throw new NotImplementedException();
+            if (CurrentIsNull)
+                throw new NullValueException();
+
+            PrepareValue(ScalarType.Timestamp);
+            return _v.TimestampValue;
         }
 
         public override string StringValue()
         {
-            throw new NotImplementedException();
+            if (!_valueType.IsText())
+                throw new InvalidOperationException($"Value type {_valueType} is not text");
+
+            PrepareValue(ScalarType.String);
+            return _v.StringValue;
         }
 
         public override SymbolToken SymbolValue()

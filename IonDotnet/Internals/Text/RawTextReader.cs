@@ -209,7 +209,7 @@ namespace IonDotnet.Internals.Text
         {
             int temp_state;
             // TODO: there's a better way to do this
-            var trailing_whitespace = false;
+            var trailingWhitespace = false;
 
             var token = _scanner.NextToken();
             while (true)
@@ -241,7 +241,35 @@ namespace IonDotnet.Internals.Text
                         token = _scanner.NextToken();
                         break;
                     case ActionLoadAnnotation:
-                        throw new NotImplementedException();
+                        LoadTokenContents(token);
+                        trailingWhitespace = _scanner.SkipWhiteSpace();
+                        if (!_scanner.TrySkipDoubleColon())
+                        {
+                            _state = GetStateAfterAnnotation(_state, _containerStack.Peek());
+                            break;
+                        }
+
+                        var sym = ParseSymbolToken(_valueBuffer, token);
+                        _annotations.Add(sym);
+                        ClearValueBuffer();
+                        // Consumed the annotation, move on.
+                        // note: that peekDoubleColon() consumed the two colons
+                        // so nextToken won't see them
+                        token = _scanner.NextToken();
+                        switch (token)
+                        {
+                            case TextConstants.TokenSymbolIdentifier:
+                            case TextConstants.TokenSymbolQuoted:
+                                // This may be another annotation, so stay in this state
+                                // and come around the horn again to check it out.
+                                break;
+                            default:
+                                // we leave the error handling to the transition
+                                _state = GetStateAfterAnnotation(_state, _containerStack.Peek());
+                                break;
+                        }
+
+                        break;
                     case ActionStartStruct:
                         _valueType = IonType.Struct;
                         _state = StateBeforeFieldName;
@@ -249,11 +277,43 @@ namespace IonDotnet.Internals.Text
                     case ActionLoadScalar:
                         if (token == TextConstants.TokenSymbolIdentifier)
                         {
-                            throw new NotImplementedException();
+                            LoadTokenContents(token);
+                            _valueKeyword = TextConstants.GetKeyword(_valueBuffer, 0, _valueBuffer.Length);
+
+                            switch (_valueKeyword)
+                            {
+                                default:
+                                    _valueType = IonType.Symbol;
+                                    break;
+                                case TextConstants.KeywordNull:
+                                    throw new NotImplementedException();
+                                case TextConstants.KeywordTrue:
+                                    _valueType = IonType.Bool;
+                                    _v.BoolValue = true;
+                                    break;
+                                case TextConstants.KeywordFalse:
+                                    _valueType = IonType.Bool;
+                                    _v.BoolValue = false;
+                                    break;
+                                case TextConstants.KeywordNan:
+                                    _valueType = IonType.Float;
+                                    ClearValueBuffer();
+                                    _v.DoubleValue = double.NaN;
+                                    break;
+                                case TextConstants.KeywordSid:
+                                    var sid = TextConstants.DecodeSid(_valueBuffer);
+                                    _v.IntValue = sid;
+                                    _valueType = IonType.Symbol;
+                                    break;
+                            }
+
+                            ClearValueBuffer();
                         }
                         else if (token == TextConstants.TokenDot)
                         {
-                            throw new NotImplementedException();
+                            _valueType = IonType.Symbol;
+                            ClearValueBuffer();
+                            _v.StringValue = ".";
                         }
                         else
                         {
@@ -263,6 +323,14 @@ namespace IonDotnet.Internals.Text
 
                         _state = GetStateAfterValue(_containerStack.Peek());
                         return;
+                    case ActionEatComma:
+                        if (_containerProhibitsCommas)
+                            throw new InvalidTokenException(',');
+
+                        _state = _containerIsStruct ? StateBeforeFieldName : StateBeforeAnnotationContained;
+                        _scanner.MarkTokenFinished();
+                        token = _scanner.NextToken();
+                        break;
                 }
             }
         }
@@ -529,6 +597,32 @@ namespace IonDotnet.Internals.Text
                     return StateBeforeAnnotationSexp;
                 case IonType.Datagram:
                     return StateBeforeAnnotationDatagram;
+            }
+        }
+
+        private static int GetStateAfterAnnotation(int stateBeforeAnnotation, IonType container)
+        {
+            switch (stateBeforeAnnotation)
+            {
+                default:
+                    throw new IonException($"Invalid state before annotation {stateBeforeAnnotation}");
+                case StateAfterValueContents:
+                    switch (container)
+                    {
+                        default:
+                            throw new IonException($"{container} is no container");
+                        case IonType.Struct:
+                        case IonType.List:
+                        case IonType.Datagram:
+                            return StateBeforeValueContent;
+                        case IonType.Sexp:
+                            return StateBeforeValueContentSexp;
+                    }
+                case StateBeforeAnnotationDatagram:
+                case StateBeforeAnnotationContained:
+                    return StateBeforeValueContent;
+                case StateBeforeAnnotationSexp:
+                    return StateBeforeValueContentSexp;
             }
         }
 

@@ -122,6 +122,8 @@ namespace IonDotnet.Internals.Text
                 case '`':
                     UnreadChar(c);
                     return FinishNextToken(TextConstants.TokenSymbolOperator, true);
+                case '"':
+                    return FinishNextToken(TextConstants.TokenStringDoubleQuote, true);
                 case 'a':
                 case 'b':
                 case 'c':
@@ -444,7 +446,7 @@ namespace IonDotnet.Internals.Text
                     c = SkipOverRadix(Radix.Binary);
                     break;
                 case TextConstants.TokenDecimal:
-                    c = SkipOverRadix(Radix.Decimal);
+                    c = SkipOverDecimal();
                     break;
                 case TextConstants.TokenFloat:
                     c = SkipOverFloat();
@@ -556,24 +558,96 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        private int SkipOverFloat()
-        {
-            throw new NotImplementedException();
-        }
+        private int SkipOverFloat() => SkipOverNumber();
 
-        private int SkipOverRadix(Radix hex)
+        private int SkipOverDecimal() => SkipOverNumber();
+
+        private int SkipOverRadix(Radix radix)
         {
-            throw new NotImplementedException();
+            int c;
+
+            c = ReadChar();
+            if (c == '-')
+            {
+                c = ReadChar();
+            }
+
+            Debug.Assert(c == '0');
+            c = ReadChar();
+            Debug.Assert(radix.IsPrefix(c));
+
+            //TODO is this ok?
+//            c = ReadNumeric(NULL_APPENDABLE, radix);
+            SkipOverNumber();
+
+            if (!IsTerminatingCharacter(c))
+                throw new InvalidTokenException(c);
+
+            return c;
         }
 
         private int SkipOverInt()
         {
-            throw new NotImplementedException();
+            var c = ReadChar();
+            if (c == '-')
+            {
+                c = ReadChar();
+            }
+
+            c = SkipOverDigits(c);
+            if (!IsTerminatingCharacter(c))
+                throw new InvalidTokenException(c);
+
+            return c;
         }
 
         private int SkipOverNumber()
         {
-            throw new NotImplementedException();
+            var c = ReadChar();
+
+            // first consume any leading 0 to get it out of the way
+            if (c == '-')
+            {
+                c = ReadChar();
+            }
+
+            // could be a long int, a decimal, a float
+            // it cannot be a hex or a valid timestamp
+            // so scan digits - if decimal can more digits
+            // if d or e eat possible sign
+            // scan to end of digits
+            c = SkipOverDigits(c);
+            if (c == '.')
+            {
+                c = ReadChar();
+                c = SkipOverDigits(c);
+            }
+
+            if (c == 'd' || c == 'D' || c == 'e' || c == 'E')
+            {
+                c = ReadChar();
+                if (c == '-' || c == '+')
+                {
+                    c = ReadChar();
+                }
+
+                c = SkipOverDigits(c);
+            }
+
+            if (!IsTerminatingCharacter(c))
+                throw new InvalidTokenException(c);
+
+            return c;
+        }
+
+        private int SkipOverDigits(int c)
+        {
+            while (char.IsDigit((char) c))
+            {
+                c = ReadChar();
+            }
+
+            return c;
         }
 
         private bool OnComment(CommentStrategy commentStrategy)
@@ -670,17 +744,23 @@ namespace IonDotnet.Internals.Text
         }
 
         /// <summary>
+        /// Skip the whitespace and comments to the next token
+        /// </summary>
+        /// <returns>True if any whitespace is skipped</returns>
+        public bool SkipWhiteSpace() => SkipWhiteSpaceWithCommentStrategy(CommentStrategy.Ignore);
+
+        /// <summary>
         /// Skip whitespace
         /// </summary>
         /// <param name="commentStrategy">Comment strategy to apply</param>
-        /// <returns>Next char in the stream</returns>
+        /// <returns>Next char(token) in the stream</returns>
         private int SkipOverWhiteSpace(CommentStrategy commentStrategy)
         {
-            SkipWhiteSpace(commentStrategy);
+            SkipWhiteSpaceWithCommentStrategy(commentStrategy);
             return ReadChar();
         }
 
-        private bool SkipWhiteSpace(CommentStrategy commentStrategy)
+        private bool SkipWhiteSpaceWithCommentStrategy(CommentStrategy commentStrategy)
         {
             var anyWhitespace = false;
             int c;
@@ -783,6 +863,7 @@ namespace IonDotnet.Internals.Text
                         continue;
                     case -1:
                     case '"':
+                        FinishNextToken(TextConstants.TokenStringDoubleQuote, false);
                         return c;
                     case CharacterSequence.CharSeqNewlineSequence1:
                     case CharacterSequence.CharSeqNewlineSequence2:
@@ -808,6 +889,28 @@ namespace IonDotnet.Internals.Text
 
                 sb.Append((char) c);
             }
+        }
+
+        /// <summary>
+        /// peeks into the input stream to see if the next token would be a double colon.  If indeed this is the case
+        /// it skips the two colons and returns true.  If not it unreads the 1 or 2 real characters it read and return false.
+        /// </summary>
+        /// <returns>True if a double-colon token is skipped</returns>
+        /// <remarks>It always consumes any preceding whitespace.</remarks>
+        public bool TrySkipDoubleColon()
+        {
+            var c = SkipOverWhiteSpace(CommentStrategy.Ignore);
+            if (c != ':') {
+                UnreadChar(c);
+                return false;
+            }
+            c = ReadChar();
+            if (c == ':') 
+                return true;
+            
+            UnreadChar(c);
+            UnreadChar(':');
+            return false;
         }
 
         /// <summary>
@@ -1020,14 +1123,14 @@ namespace IonDotnet.Internals.Text
                     if (c2 == '\n')
                     {
                         // DOS <cr><lf> (\r\n)
-                        return CharacterSequence.CharSeqEscapedNewlineSequence3;
+                        return CharacterSequence.CharSeqNewlineSequence3;
                     }
 
                     //old Mac <cr> , fall back
                     UnreadChar(c2);
-                    return CharacterSequence.CharSeqEscapedNewlineSequence2;
+                    return CharacterSequence.CharSeqNewlineSequence2;
                 case '\n':
-                    return CharacterSequence.CharSeqEscapedNewlineSequence1;
+                    return CharacterSequence.CharSeqNewlineSequence1;
             }
         }
 
@@ -1134,14 +1237,14 @@ namespace IonDotnet.Internals.Text
                 if (Radix.Hex.IsPrefix(c2))
                 {
                     valueBuffer.Append((char) c);
-                    c = LoadRadixValue(valueBuffer, hasSign, c2, Radix.Hex);
+                    c = LoadRadixValue(valueBuffer, c2, Radix.Hex);
                     return FinishLoadNumber(valueBuffer, c, TextConstants.TokenHex);
                 }
 
                 if (Radix.Binary.IsPrefix(c2))
                 {
                     valueBuffer.Append((char) c);
-                    c = LoadRadixValue(valueBuffer, hasSign, c2, Radix.Hex);
+                    c = LoadRadixValue(valueBuffer, c2, Radix.Hex);
                     return FinishLoadNumber(valueBuffer, c, TextConstants.TokenHex);
                 }
 
@@ -1249,6 +1352,10 @@ namespace IonDotnet.Internals.Text
             return ReadNumeric(sb, Radix.Decimal, NumericState.Digit);
         }
 
+        /// <summary>
+        /// <see cref="LoadNumber"/> will always read 1 extra terminating character, so we unread it here
+        /// </summary>
+        /// <exception cref="InvalidTokenException">If the last character read is not a terminating char</exception>
         private IonType FinishLoadNumber(StringBuilder numericText, int c, int token)
         {
             // all forms of numeric need to stop someplace rational
@@ -1261,7 +1368,7 @@ namespace IonDotnet.Internals.Text
             return TextConstants.GetIonTypeOfToken(token);
         }
 
-        private int LoadRadixValue(StringBuilder sb, bool hasSign, int c2, Radix radix)
+        private int LoadRadixValue(StringBuilder sb, int c2, Radix radix)
         {
             sb.Append((char) c2);
 

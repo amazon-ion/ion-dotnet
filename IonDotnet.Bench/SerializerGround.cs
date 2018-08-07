@@ -230,17 +230,26 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-//            var data = DirStructure.ReadDataFile("javaout.ion");
-//            var str = Encoding.ASCII.GetString(data);
-//            var sq = new CharSequenceStream(str);
-//            var reader = new SystemTextReader(sq);
-//            Console.WriteLine(reader.MoveNext());
-//            reader.StepIn();
-//            Console.WriteLine(reader.MoveNext());
-//            Console.WriteLine(reader.CurrentFieldName);
-//            Console.WriteLine(reader.IntValue());
+            var data = DirStructure.ReadDataFile("javaout.ion");
+            var str = Encoding.ASCII.GetString(data);
+            var sq = new CharSequenceStream(str);
+            var reader = new SystemTextReader(sq);
+            Console.WriteLine(reader.MoveNext());
+            reader.StepIn();
 
-            BenchmarkRunner.Run<Benchmark>();
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.IntValue());
+
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.StringValue());
+            
+            
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.BoolValue());
+//            BenchmarkRunner.Run<Benchmark>();
             //warmup
             // var sw = new Stopwatch();
             // sw.Start();

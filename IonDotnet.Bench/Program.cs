@@ -2,14 +2,14 @@
 using System.Text;
 
 namespace IonDotnet.Bench
-{        
+{
     internal static class Program
     {
         public static void Main(string[] args)
         {
             if (args.Length == 0)
             {
-                Console.WriteLine($"usage: <prog> <runner_classname>");
+                Console.WriteLine("usage: <prog> <runner_classname>");
                 Environment.Exit(1);
             }
 
@@ -29,12 +29,12 @@ namespace IonDotnet.Bench
 
             try
             {
-                var instance = (IRunable) Activator.CreateInstance(thatclass);
-                instance.Run(args);
+                var instance = Activator.CreateInstance(thatclass) as IRunable;
+                instance?.Run(args);
             }
             catch (Exception e)
             {
-                Console.WriteLine("catched");
+                Console.WriteLine("Exception occurred");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
             }

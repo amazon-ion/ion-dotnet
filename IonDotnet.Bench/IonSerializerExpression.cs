@@ -41,18 +41,22 @@ namespace IonDotnet.Bench
             if (Cache.TryGetValue(type, out var action))
                 return (Action<T, IIonWriter>) action;
 
-            var objParam = Expression.Parameter(type, "obj");
-            var writerParam = Expression.Parameter(typeof(IIonWriter), "writer");
-            var writeActionExpression = GetWriteActionForType(type, objParam, writerParam);
-            if (writeActionExpression == null)
-                throw new IonException("Cannot create concrete type");
+            lock (Cache)
+            {
+                // this lock should only block Cache.Add()
+                var objParam = Expression.Parameter(type, "obj");
+                var writerParam = Expression.Parameter(typeof(IIonWriter), "writer");
+                var writeActionExpression = GetWriteActionForType(type, objParam, writerParam);
+                if (writeActionExpression == null)
+                    throw new IonException("Cannot create concrete type");
 
-            var lambdaExp = Expression.Lambda<Action<T, IIonWriter>>(writeActionExpression, objParam, writerParam);
+                var lambdaExp = Expression.Lambda<Action<T, IIonWriter>>(writeActionExpression, objParam, writerParam);
 
-            Action<T, IIonWriter> act = lambdaExp.CompileFast();
-            Cache.Add(type, act);
+                Action<T, IIonWriter> act = lambdaExp.CompileFast();
+                Cache.Add(type, act);
 
-            return act;
+                return act;
+            }
         }
 
         public static byte[] Serialize<T>(T obj)
@@ -153,7 +157,7 @@ namespace IonDotnet.Bench
             listExpression = Expression.Block(listExpression, loopExp, Expression.Call(writerExpression, StepOutMethod));
             //null check
             var notNull = Expression.NotEqual(target, Expression.Constant(null, type));
-            var result = Expression.Condition(notNull, listExpression, 
+            var result = Expression.Condition(notNull, listExpression,
                 Expression.Call(writerExpression, WriteNullTypeMethod, Expression.Constant(IonType.List)));
             return result;
         }
@@ -184,7 +188,7 @@ namespace IonDotnet.Bench
             enumArrayExpression = Expression.Block(enumArrayExpression, loopExp, Expression.Call(writerExpression, StepOutMethod));
             //null check
             var notNull = Expression.NotEqual(target, Expression.Constant(null, type));
-            var result = Expression.Condition(notNull, enumArrayExpression, 
+            var result = Expression.Condition(notNull, enumArrayExpression,
                 Expression.Call(writerExpression, WriteNullTypeMethod, Expression.Constant(IonType.List)));
             return result;
         }
@@ -226,8 +230,11 @@ namespace IonDotnet.Bench
         private static Expression TryGetWriteScalarExpression(Type type, Expression target, ParameterExpression writerExpression)
         {
             if (type.IsEnum)
-                return Expression.Call(writerExpression, WriteSymbolMethod,
-                    Expression.Call(EnumGetnameMethod, Expression.Constant(type), Expression.Convert(target, typeof(object))));
+                return Expression.Call(writerExpression, WriteSymbolMethod, Expression.Call(
+                    EnumGetnameMethod,
+                    Expression.Constant(type),
+                    Expression.Convert(target, typeof(object))
+                ));
 
 
             if (type == typeof(string))
