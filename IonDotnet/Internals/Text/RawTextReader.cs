@@ -507,17 +507,12 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public ISymbolTable GetSymbolTable()
-        {
-            throw new NotImplementedException();
-        }
+        // Symtab is irrelevant here
+        public ISymbolTable GetSymbolTable() => null;
 
         public IonType CurrentType => _valueType;
 
-        public IntegerSize GetIntegerSize()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract IntegerSize GetIntegerSize();
 
         public string CurrentFieldName
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Systems;
 using IonDotnet.Utils;
@@ -49,6 +50,20 @@ namespace IonDotnet.Internals.Text
             var c = UnfinishedToken ? SkipToEnd() : SkipOverWhiteSpace(CommentStrategy.Ignore);
 
             UnfinishedToken = true;
+
+            //get some of the common character out of the way to avoid long switch
+            if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+            {
+                UnreadChar(c);
+                return FinishNextToken(TextConstants.TokenSymbolIdentifier, true);
+            }
+
+            if (c >= '0' && c <= '9')
+            {
+                token = ScanForNumericType(c);
+                UnreadChar(c);
+                return FinishNextToken(token, true);
+            }
 
             switch (c)
             {
@@ -124,75 +139,10 @@ namespace IonDotnet.Internals.Text
                     return FinishNextToken(TextConstants.TokenSymbolOperator, true);
                 case '"':
                     return FinishNextToken(TextConstants.TokenStringDoubleQuote, true);
-                case 'a':
-                case 'b':
-                case 'c':
-                case 'd':
-                case 'e':
-                case 'f':
-                case 'g':
-                case 'h':
-                case 'i':
-                case 'j':
-                case 'k':
-                case 'l':
-                case 'm':
-                case 'n':
-                case 'o':
-                case 'p':
-                case 'q':
-                case 'r':
-                case 's':
-                case 't':
-                case 'u':
-                case 'v':
-                case 'w':
-                case 'x':
-                case 'y':
-                case 'z':
-                case 'A':
-                case 'B':
-                case 'C':
-                case 'D':
-                case 'E':
-                case 'F':
-                case 'G':
-                case 'H':
-                case 'I':
-                case 'J':
-                case 'K':
-                case 'L':
-                case 'M':
-                case 'N':
-                case 'O':
-                case 'P':
-                case 'Q':
-                case 'R':
-                case 'S':
-                case 'T':
-                case 'U':
-                case 'V':
-                case 'W':
-                case 'X':
-                case 'Y':
-                case 'Z':
                 case '$':
                 case '_':
                     UnreadChar(c);
                     return FinishNextToken(TextConstants.TokenSymbolIdentifier, true);
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    token = ScanForNumericType(c);
-                    UnreadChar(c);
-                    return FinishNextToken(token, true);
                 case '-':
                     // see if we have a number or what might be an extended symbol
                     //TODO peek()
@@ -477,7 +427,7 @@ namespace IonDotnet.Internals.Text
                     // works just like a pair of nested structs
                     // since "skip_over" doesn't care about formal
                     // syntax (like requiring field names);
-                    skip_over_blob();
+                    SkipOverBlob();
                     c = ReadChar();
                     break;
                 case TextConstants.TokenOpenBrace:
@@ -506,7 +456,7 @@ namespace IonDotnet.Internals.Text
             return c;
         }
 
-        private void skip_over_blob()
+        private void SkipOverBlob()
         {
             throw new NotImplementedException();
         }
@@ -564,9 +514,7 @@ namespace IonDotnet.Internals.Text
 
         private int SkipOverRadix(Radix radix)
         {
-            int c;
-
-            c = ReadChar();
+            var c = ReadChar();
             if (c == '-')
             {
                 c = ReadChar();
@@ -900,14 +848,16 @@ namespace IonDotnet.Internals.Text
         public bool TrySkipDoubleColon()
         {
             var c = SkipOverWhiteSpace(CommentStrategy.Ignore);
-            if (c != ':') {
+            if (c != ':')
+            {
                 UnreadChar(c);
                 return false;
             }
+
             c = ReadChar();
-            if (c == ':') 
+            if (c == ':')
                 return true;
-            
+
             UnreadChar(c);
             UnreadChar(':');
             return false;
@@ -1205,6 +1155,7 @@ namespace IonDotnet.Internals.Text
             UnfinishedToken = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MarkTokenFinished()
         {
             UnfinishedToken = false;
@@ -1287,13 +1238,14 @@ namespace IonDotnet.Internals.Text
             int t;
             if (c == '.')
             {
-                // so if it's a float of some sort
-                // mark it as at least a DECIMAL
-                // and read the "fraction" digits
+                // so if it's a floating point number
+                // here we check if the decimal places >15 then mark it as decimal,
+                // otherwise float/double should be fine. 
                 valueBuffer.Append((char) c);
                 c = ReadChar();
+                var l1 = valueBuffer.Length;
                 c = LoadDigits(valueBuffer, c);
-                t = TextConstants.TokenDecimal;
+                t = valueBuffer.Length - l1 > 15 ? TextConstants.TokenDecimal : TextConstants.TokenFloat;
             }
             else
             {
@@ -1365,6 +1317,9 @@ namespace IonDotnet.Internals.Text
             // we read off the end of the number, so put back
             // what we don't want, but what ever we have is an int
             UnreadChar(c);
+
+            //also, mark the current 'number' token as finished so it doesnt get skipped over
+            MarkTokenFinished();
             return TextConstants.GetIonTypeOfToken(token);
         }
 

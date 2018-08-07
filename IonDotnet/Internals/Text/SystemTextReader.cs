@@ -18,15 +18,6 @@ namespace IonDotnet.Internals.Text
         private void PrepareValue(ScalarType valueType)
         {
             LoadOnce();
-            if (valueType != ScalarType.Nothing && !_v.TypeSet.HasFlag(valueType))
-            {
-                CastCachedValue(valueType);
-            }
-        }
-
-        private void CastCachedValue(ScalarType valueType)
-        {
-            throw new NotImplementedException();
         }
 
         private void LoadOnce()
@@ -58,8 +49,8 @@ namespace IonDotnet.Internals.Text
             {
                 var negative = _valueBuffer[0] == '-';
                 var pos = negative ? 1 : 0;
-                Debug.Assert(_valueBuffer[1] == '0');
-                Debug.Assert(char.ToLower(_valueBuffer[2]) == 'x');
+                Debug.Assert(_valueBuffer[pos] == '0');
+                Debug.Assert(char.ToLower(_valueBuffer[pos + 1]) == 'x');
 
                 //delete '0x'
                 //TODO is there a better way?
@@ -218,6 +209,15 @@ namespace IonDotnet.Internals.Text
             }
 
             _v.BigIntegerValue = b;
+        }
+
+        public override IntegerSize GetIntegerSize()
+        {
+            LoadOnce();
+            if (_valueType != IonType.Int || _v.TypeSet.HasFlag(ScalarType.Null))
+                return IntegerSize.Unknown;
+
+            return _v.IntegerSize;
         }
 
         public override bool CurrentIsNull => _v.TypeSet.HasFlag(ScalarType.Null);

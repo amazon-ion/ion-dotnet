@@ -1,5 +1,11 @@
 {
   number:91,
   code: "red",
-  boolean:true
+  boolean:true,
+  float:32.1332,
+  hex:0x3f,
+  obj: {  
+    a:1,
+    b:false,
+  },
 }

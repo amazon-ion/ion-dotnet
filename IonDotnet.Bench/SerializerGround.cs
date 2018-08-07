@@ -249,6 +249,26 @@ namespace IonDotnet.Bench
             Console.WriteLine(reader.MoveNext());
             Console.WriteLine(reader.CurrentFieldName);
             Console.WriteLine(reader.BoolValue());
+            
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.DoubleValue());
+            
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.IntValue());
+            
+            Console.WriteLine(reader.MoveNext());
+            reader.StepIn();
+            
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.IntValue());
+            
+            Console.WriteLine(reader.MoveNext());
+            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine(reader.BoolValue());
+            
 //            BenchmarkRunner.Run<Benchmark>();
             //warmup
             // var sw = new Stopwatch();
