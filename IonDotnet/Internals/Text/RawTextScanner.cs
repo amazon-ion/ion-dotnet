@@ -419,7 +419,7 @@ namespace IonDotnet.Internals.Text
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
                 case TextConstants.TokenStringTripleQuote:
-                    skip_triple_quoted_string();
+                    SkipTripleQuotedString();
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
 
@@ -458,27 +458,156 @@ namespace IonDotnet.Internals.Text
 
         private void SkipOverBlob()
         {
-            throw new NotImplementedException();
+            //skip over whitespace, but not the '/' character, since it is a valid base64 char
+            var c = SkipOverWhiteSpace(CommentStrategy.Break);
+            while (true)
+            {
+                if (c == TextConstants.TokenEof)
+                    throw new UnexpectedEofException();
+                if (c == '}')
+                    break;
+                //TODO is there a better way? here we just 'pretend' to skip over whitespace and read the next char
+                c = SkipOverWhiteSpace(CommentStrategy.Break);
+            }
+
+            c = ReadChar();
+            if (c == TextConstants.TokenEof)
+                throw new UnexpectedEofException();
+            if (c != '}')
+                throw new IonException("Blob not closed properly");
         }
 
-        public void SkipOverStruct()
+        public void SkipOverStruct() => SkipOverContainer('}');
+
+        public void SkipOverSexp() => SkipOverContainer(')');
+
+        private void SkipTripleQuotedString()
         {
             throw new NotImplementedException();
         }
 
-        public void SkipOverSexp()
+        public void SkipOverList() => SkipOverContainer(']');
+
+        private void SkipOverContainer(char terminator)
         {
-            throw new NotImplementedException();
+            Debug.Assert(terminator == '}' || terminator == ']' || terminator == ')');
+
+            while (true)
+            {
+                var c = SkipOverWhiteSpace(CommentStrategy.Ignore);
+                switch (c)
+                {
+                    case -1:
+                        throw new UnexpectedEofException();
+                    case '}':
+                    case ']':
+                    case ')':
+                        // no point is checking this on every char
+                        if (c == terminator)
+                            return;
+                        break;
+                    case '"':
+                        SkipDoubleQuotedString();
+                        break;
+                    case '\'':
+                        if (Is2SingleQuotes())
+                        {
+                            SkipTripleQuotedString();
+                        }
+                        else
+                        {
+                            c = SkipSingleQuotedString();
+                            UnreadChar(c);
+                        }
+
+                        break;
+                    case '(':
+                        SkipOverContainer(')');
+                        break;
+                    case '[':
+                        SkipOverContainer(']');
+                        break;
+                    case '{':
+                        // this consumes lobs as well since the double
+                        // braces count correctly and the contents
+                        // of either clobs or blobs will be just content
+                        c = ReadChar();
+                        if (c == '{')
+                        {
+                            // 2nd '{' - it's a lob of some sort - let's find out what sort
+                            c = SkipOverWhiteSpace(CommentStrategy.Break);
+                            int lobType;
+                            if (c == '"')
+                            {
+                                //double-quoted clob
+                                lobType = TextConstants.TokenStringDoubleQuote;
+                            }
+                            else if (c == '\'')
+                            {
+                                //triple-quoted clob or error
+                                if (!Is2SingleQuotes())
+                                    throw new InvalidTokenException(c);
+
+                                lobType = TextConstants.TokenStringTripleQuote;
+                            }
+                            else
+                            {
+                                //blob
+                                UnreadChar(c);
+                                lobType = TextConstants.TokenOpenDoubleBrace;
+                            }
+
+                            SkipOverLob(lobType);
+                        }
+                        else if (c != '}')
+                        {
+                            // if c=='}' we just have an empty struct, ignore
+                            UnreadChar(c);
+                            SkipOverContainer('}');
+                        }
+
+                        break;
+                }
+            }
         }
 
-        private void skip_triple_quoted_string()
+        private void SkipOverLob(int lobType)
         {
-            throw new NotImplementedException();
+            switch (lobType)
+            {
+                default:
+                    throw new InvalidTokenException(lobType);
+                case TextConstants.TokenStringDoubleQuote:
+                    SkipDoubleQuotedString();
+                    SkipClobClosePunctuation();
+                    break;
+                case TextConstants.TokenStringTripleQuote:
+                    SkipTripleQuotedString();
+                    SkipClobClosePunctuation();
+                    break;
+                case TextConstants.TokenOpenDoubleBrace:
+                    SkipOverBlob();
+                    break;
+            }
         }
 
-        public void SkipOverList()
+        /// <summary>
+        /// Expect optional whitespace(s) and }}
+        /// </summary>
+        private void SkipClobClosePunctuation()
         {
-            throw new NotImplementedException();
+            var c = SkipOverWhiteSpace(CommentStrategy.Error);
+            if (c == '}')
+            {
+                c = ReadChar();
+                if (c == '}')
+                    return;
+                UnreadChar(c);
+                c = '}';
+            }
+
+            UnreadChar(c);
+            throw new IonException("Invalid clob closing punctuation");
         }
 
         private int SkipOverSymbolOperator()

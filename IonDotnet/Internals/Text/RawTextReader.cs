@@ -207,7 +207,6 @@ namespace IonDotnet.Internals.Text
 
         private void ParseNext()
         {
-            int temp_state;
             // TODO: there's a better way to do this
             var trailingWhitespace = false;
 
@@ -696,11 +695,11 @@ namespace IonDotnet.Internals.Text
                 return _array[Count - 1];
             }
 
-            public IonType Pop()
+            public void Pop()
             {
                 if (Count == 0)
                     throw new IndexOutOfRangeException();
-                var ret = _array[--Count];
+                Count--;
 
                 //TODO should we do book keeping here?
                 _rawTextReader._eof = false;
@@ -708,8 +707,6 @@ namespace IonDotnet.Internals.Text
                 var topState = _array[Count - 1];
                 SetContainerFlags(topState);
                 _rawTextReader._state = GetStateAfterContainer(topState);
-
-                return ret;
             }
 
             public void Clear() => Count = 0;

@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Text;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 using IonDotnet.Conversions;
-using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace IonDotnet.Bench
 {
@@ -230,91 +225,51 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            var data = DirStructure.ReadDataFile("javaout.ion");
+            var data = DirStructure.ReadDataFile("sample.ion");
             var str = Encoding.ASCII.GetString(data);
             var sq = new CharSequenceStream(str);
             var reader = new SystemTextReader(sq);
             Console.WriteLine(reader.MoveNext());
             reader.StepIn();
 
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
+            reader.MoveNext();
+            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
             Console.WriteLine(reader.IntValue());
 
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
+            reader.MoveNext();
+            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
             Console.WriteLine(reader.StringValue());
-            
-            
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
+
+
+            reader.MoveNext();
+            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
             Console.WriteLine(reader.BoolValue());
-            
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
+
+            reader.MoveNext();
+            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
             Console.WriteLine(reader.DoubleValue());
-            
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
-            Console.WriteLine(reader.IntValue());
-            
-            Console.WriteLine(reader.MoveNext());
+
+
+            reader.MoveNext();
             reader.StepIn();
-            
+
             Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
+            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
             Console.WriteLine(reader.IntValue());
-            
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentFieldName);
-            Console.WriteLine(reader.BoolValue());
-            
+//            
+//            Console.WriteLine(reader.MoveNext());
+//            Console.WriteLine(reader.CurrentFieldName);
+//            Console.WriteLine(reader.BoolValue());
+
+            reader.StepOut();
+
+            reader.MoveNext();
+            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
+            Console.WriteLine(reader.IntValue());
+
 //            BenchmarkRunner.Run<Benchmark>();
-            //warmup
-            // var sw = new Stopwatch();
-            // sw.Start();
-            // sw.Stop();
-            // for (var i = 0; i < 1000; i++)
-            // {
-            //     RunOnce();
-            // }
 
-            // sw.Start();
-
-            // for (var i = 0; i < 1000; i++)
-            // {
-            //     RunOnce();
-            // }
-
-            // sw.Stop();
-            // Console.WriteLine($"IonDotnet: writing took {sw.ElapsedTicks * 1.0 / TimeSpan.TicksPerMillisecond}ms");
         }
 
-        private static void RunOnce()
-        {
-            Benchmark.Writer.StepIn(IonType.List);
-            for (var i = 0; i < 1000; i++)
-            {
-                Benchmark.Writer.StepIn(IonType.Struct);
-
-                Benchmark.Writer.SetFieldName("boolean");
-                Benchmark.Writer.WriteBool(true);
-                Benchmark.Writer.SetFieldName("string");
-                Benchmark.Writer.WriteString("this is a string");
-                Benchmark.Writer.SetFieldName("integer");
-                Benchmark.Writer.WriteInt(int.MaxValue);
-                Benchmark.Writer.SetFieldName("float");
-                Benchmark.Writer.WriteFloat(432.23123f);
-                Benchmark.Writer.SetFieldName("timestamp");
-                Benchmark.Writer.WriteTimestamp(new Timestamp(new DateTime(2000, 11, 11)));
-
-                Benchmark.Writer.StepOut();
-            }
-
-            byte[] bytes = null;
-            Benchmark.Writer.StepOut();
-            Benchmark.Writer.Flush(ref bytes);
-            Benchmark.Writer.Finish();
-        }
     }
 }
