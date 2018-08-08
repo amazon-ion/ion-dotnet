@@ -521,7 +521,7 @@ namespace IonDotnet.Internals.Binary
 
         public byte[] NewByteArray() => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
-        public int GetBytes(ArraySegment<byte> buffer)
+        public int GetBytes(Span<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
         public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result) => throw new IonException($"Not supported in symbol talbe");

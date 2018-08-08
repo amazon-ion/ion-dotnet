@@ -633,7 +633,7 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public int GetBytes(ArraySegment<byte> buffer)
+        public int GetBytes(Span<byte> buffer)
         {
             throw new NotImplementedException();
         }

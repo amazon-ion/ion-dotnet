@@ -23,6 +23,7 @@ namespace IonDotnet
         /// Flushes the buffers to a byte array
         /// </summary>
         /// <param name="bytes">Reference to the byte array</param>
+        /// <remarks>If a null reference is passed in, the writer will allocate the reference</remarks>
         void Flush(ref byte[] bytes);
 
         /// <summary>

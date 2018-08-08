@@ -797,17 +797,19 @@ namespace IonDotnet.Internals.Binary
             return _input.ReadByte();
         }
 
-        private int ReadBytesIntoBuffer(ArraySegment<byte> buffer, int length)
+        private int ReadBytesIntoBuffer(Span<byte> buffer, int length)
         {
-            if (_localRemaining == NoLimit) return _input.Read(buffer.Array, buffer.Offset, length);
+            if (_localRemaining == NoLimit) 
+                return _input.Read(buffer);
 
             if (length > _localRemaining)
             {
-                if (_localRemaining < 1) throw new UnexpectedEofException(_input.Position);
+                if (_localRemaining < 1) 
+                    throw new UnexpectedEofException(_input.Position);
                 length = _localRemaining;
             }
 
-            var bytesRead = _input.Read(buffer.Array, buffer.Offset, length);
+            var bytesRead = _input.Read(buffer);
             _localRemaining -= bytesRead;
             return bytesRead;
         }
@@ -816,15 +818,16 @@ namespace IonDotnet.Internals.Binary
 
         public bool CurrentIsNull => _valueIsNull;
 
-        public int GetBytes(ArraySegment<byte> buffer)
+        public int GetBytes(Span<byte> buffer)
         {
             var length = GetLobByteSize();
-            if (length > buffer.Count)
+            if (length > buffer.Length)
             {
-                length = buffer.Count;
+                length = buffer.Length;
             }
 
-            if (_valueLobRemaining < 1) return 0;
+            if (_valueLobRemaining < 1) 
+                return 0;
 
             var readBytes = ReadBytesIntoBuffer(buffer, length);
             _valueLobRemaining -= readBytes;
@@ -868,7 +871,7 @@ namespace IonDotnet.Internals.Binary
             var length = GetLobByteSize();
             if (_valueIsNull) return null;
             var bytes = new byte[length];
-            GetBytes(new ArraySegment<byte>(bytes, 0, length));
+            GetBytes(bytes);
             return bytes;
         }
 

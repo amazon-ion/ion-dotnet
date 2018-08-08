@@ -117,7 +117,7 @@ namespace IonDotnet
         /// </summary>
         /// <param name="buffer">Buffer</param>
         /// <returns>Number of bytes copied</returns>
-        int GetBytes(ArraySegment<byte> buffer);
+        int GetBytes(Span<byte> buffer);
 
         bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
     }
