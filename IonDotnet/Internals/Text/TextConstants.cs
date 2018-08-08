@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Utils;
@@ -111,6 +112,12 @@ namespace IonDotnet.Internals.Text
 
         #endregion
 
+        #region KeywordBits
+
+        public const int TnMaxNameLength = 10; //"TIMESTAMP".Length+ 1; // so anything too long will be 0
+
+        #endregion
+
         public static int GetEscapeReplacementCharacter(int c)
         {
             switch (c)
@@ -156,15 +163,89 @@ namespace IonDotnet.Internals.Text
             }
         }
 
+        public static bool IsValidTerminatingCharForInf(int c)
+        {
+            if (Characters.Is8BitChar(c))
+                return false;
+
+            if (c >= 'a' && c <= 'z')
+                return false;
+            if (c >= 'A' && c <= 'Z')
+                return false;
+            if (c >= '0' && c <= '9')
+                return false;
+            if (c == '$' || c == '_')
+                return false;
+
+            return true;
+        }
+
+        // this can be faster but it's pretty unusual to be called.
+        public static int TypeNameKeyWordFromMask(Span<int> readAhead, int readCount)
+        {
+            if (CompareName(readAhead, readCount, "int"))
+                return KeywordInt;
+            if (CompareName(readAhead, readCount, "blob"))
+                return KeywordBlob;
+            if (CompareName(readAhead, readCount, "clob"))
+                return KeywordClob;
+            if (CompareName(readAhead, readCount, "bool"))
+                return KeywordBool;
+            if (CompareName(readAhead, readCount, "float"))
+                return KeywordFloat;
+            if (CompareName(readAhead, readCount, "decimal"))
+                return KeywordDecimal;
+            if (CompareName(readAhead, readCount, "timestamp"))
+                return KeywordTimestamp;
+            if (CompareName(readAhead, readCount, "string"))
+                return KeywordString;
+            if (CompareName(readAhead, readCount, "symbol"))
+                return KeywordSymbol;
+            if (CompareName(readAhead, readCount, "sexp"))
+                return KeywordSexp;
+            if (CompareName(readAhead, readCount, "list"))
+                return KeywordList;
+            if (CompareName(readAhead, readCount, "struct"))
+                return KeywordStruct;
+            if (CompareName(readAhead, readCount, "null"))
+                return KeywordNull;
+
+            return KeywordUnrecognized;
+        }
+
+        private static bool CompareName(Span<int> readAhead, int readCount, string name)
+        {
+            if (name.Length != readCount)
+                return false;
+
+            for (var i = 0; i < readCount; i++)
+            {
+                if (name[i] != readAhead[i])
+                    return false;
+            }
+
+            return true;
+        }
+
         public static bool IsValidEscapeStart(int c)
             => GetEscapeReplacementCharacter(c & 0xff) != EscapeNotDefined && Characters.Is8BitChar(c);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsWhiteSpace(int c) => c == ' ' || c == '\t' || c == '\n' || c == '\r';
 
-        public static int HexDigitValue(int c)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int HexDigitValue(int h)
         {
-            throw new NotImplementedException();
+            if (h >= '0' && h <= '9')
+                return h - '0';
+
+            if (h >= 'a' && h <= 'f')
+                return h - 'a' + 10;
+
+            if (h >= 'A' && h <= 'F')
+                return h - 'A' + 10;
+
+            return -1;
         }
 
         public static bool IsValidSymbolCharacter(int c)
@@ -247,21 +328,6 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int HexToInt(char h)
-        {
-            if (h >= '0' && h <= '9')
-                return h - '0';
-
-            if (h >= 'a' && h <= 'f')
-                return h - 'a' + 10;
-
-            if (h >= 'A' && h <= 'F')
-                return h - 'A' + 10;
-
-            return -1;
-        }
-
         public static IonType GetIonTypeOfToken(int token)
         {
             switch (token)
@@ -288,10 +354,7 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        private static char CharAt(this StringBuilder sb, int idx)
-        {
-            return sb[idx];
-        }
+        private static char CharAt(this StringBuilder sb, int idx) => sb[idx];
 
         public static int GetKeyword(StringBuilder word, int startWord, int endWord)
         {

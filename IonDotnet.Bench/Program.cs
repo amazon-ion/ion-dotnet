@@ -34,9 +34,18 @@ namespace IonDotnet.Bench
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception occurred");
+                Console.WriteLine($"Exception occurred: {e.GetType().Name}");
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
+                var ex = e.InnerException;
+                while (ex != null)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"Caused by: {ex.GetType().Name}");
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex.StackTrace);
+                    ex = ex.InnerException;
+                }
             }
         }
     }

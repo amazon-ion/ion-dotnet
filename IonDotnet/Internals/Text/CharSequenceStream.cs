@@ -26,6 +26,9 @@ namespace IonDotnet.Internals.Text
 
         public override void Unread(int c)
         {
+            //EOF
+            if (c == -1)
+                return;
             //since we have access to the memory layout we can just reduce the index;
             Debug.Assert(_idx > 0);
             Debug.Assert(_chars.Span[_idx - 1] == c);

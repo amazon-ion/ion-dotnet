@@ -1,4 +1,5 @@
 {
+  hello:null.int,
   number:91,
   code: "red",
   boolean:true,

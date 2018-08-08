@@ -273,6 +273,14 @@ namespace IonDotnet.Internals.Text
                         _valueType = IonType.Struct;
                         _state = StateBeforeFieldName;
                         return;
+                    case ActionStartList:
+                        _valueType = IonType.List;
+                        _state = StateBeforeAnnotationContained;
+                        return;
+                    case ActionStartSexp:
+                        _valueType = IonType.Sexp;
+                        _state = StateBeforeAnnotationSexp;
+                        return;
                     case ActionLoadScalar:
                         if (token == TextConstants.TokenSymbolIdentifier)
                         {
@@ -285,7 +293,8 @@ namespace IonDotnet.Internals.Text
                                     _valueType = IonType.Symbol;
                                     break;
                                 case TextConstants.KeywordNull:
-                                    throw new NotImplementedException();
+                                    ReadNullType(trailingWhitespace);
+                                    break;
                                 case TextConstants.KeywordTrue:
                                     _valueType = IonType.Bool;
                                     _v.BoolValue = true;
@@ -330,8 +339,71 @@ namespace IonDotnet.Internals.Text
                         _scanner.MarkTokenFinished();
                         token = _scanner.NextToken();
                         break;
+                    case ActionFinishDatagram:
+                        Debug.Assert(CurrentDepth == 0);
+                        _eof = true;
+                        _state = StateEof;
+                        return;
                 }
             }
+        }
+
+        private void ReadNullType(bool trailingWhitespace)
+        {
+            var kwt = trailingWhitespace ? TextConstants.KeywordNone : _scanner.PeekNullTypeSymbol();
+            switch (kwt)
+            {
+                case TextConstants.KeywordNull:
+                    _valueType = IonType.Null;
+                    break;
+                case TextConstants.KeywordBool:
+                    _valueType = IonType.Bool;
+                    break;
+                case TextConstants.KeywordInt:
+                    _valueType = IonType.Int;
+                    break;
+                case TextConstants.KeywordFloat:
+                    _valueType = IonType.Float;
+                    break;
+                case TextConstants.KeywordDecimal:
+                    _valueType = IonType.Decimal;
+                    break;
+                case TextConstants.KeywordTimestamp:
+                    _valueType = IonType.Timestamp;
+                    break;
+                case TextConstants.KeywordSymbol:
+                    _valueType = IonType.Symbol;
+                    break;
+                case TextConstants.KeywordString:
+                    _valueType = IonType.String;
+                    break;
+                case TextConstants.KeywordBlob:
+                    _valueType = IonType.Blob;
+                    break;
+                case TextConstants.KeywordClob:
+                    _valueType = IonType.Clob;
+                    break;
+                case TextConstants.KeywordList:
+                    _valueType = IonType.List;
+                    break;
+                case TextConstants.KeywordSexp:
+                    _valueType = IonType.Sexp;
+                    break;
+                case TextConstants.KeywordStruct:
+                    _valueType = IonType.Struct;
+                    break;
+                case TextConstants.KeywordNone:
+                    _valueType = IonType.Null;
+                    break; // this happens when there isn't a '.' otherwise peek
+                // throws the error or returns none
+                default:
+                    throw new IonException($"invalid keyword id ({kwt}) encountered while parsing a null");
+            }
+
+            // at this point we've consumed a dot '.' and it's preceding
+            // whitespace
+            // clear_value();
+            _v.SetNull(_valueType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

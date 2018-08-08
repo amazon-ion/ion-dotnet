@@ -138,8 +138,6 @@ namespace IonDotnet.Bench
                 return l;
             }
 
-            private readonly IonSerialization _serializer = new IonSerialization();
-
             [Benchmark]
             public int JsonDotnet()
             {
@@ -159,14 +157,11 @@ namespace IonDotnet.Bench
                 IonSerialization.Serialize(Data);
             }
 
-            public static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
+            private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
             [Benchmark]
             public void IonDotnetManual()
             {
-                //                _serializer.Serialize(Data);
-                //                using (var stream = new MemoryStream())
-                //                {
                 byte[] bytes = null;
                 Writer.StepIn(IonType.List);
                 foreach (var poco in Data)
@@ -232,30 +227,8 @@ namespace IonDotnet.Bench
             Console.WriteLine(reader.MoveNext());
             reader.StepIn();
 
-            reader.MoveNext();
-            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
-            Console.WriteLine(reader.IntValue());
-
-            reader.MoveNext();
-            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
-            Console.WriteLine(reader.StringValue());
-
-
-            reader.MoveNext();
-            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
-            Console.WriteLine(reader.BoolValue());
-
-            reader.MoveNext();
-            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
-            Console.WriteLine(reader.DoubleValue());
-
-
-            reader.MoveNext();
-            reader.StepIn();
-
             Console.WriteLine(reader.MoveNext());
-            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
-            Console.WriteLine(reader.IntValue());
+            Console.WriteLine(reader.CurrentIsNull);
 //            
 //            Console.WriteLine(reader.MoveNext());
 //            Console.WriteLine(reader.CurrentFieldName);
@@ -268,8 +241,6 @@ namespace IonDotnet.Bench
             Console.WriteLine(reader.IntValue());
 
 //            BenchmarkRunner.Run<Benchmark>();
-
         }
-
     }
 }

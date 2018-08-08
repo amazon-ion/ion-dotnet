@@ -12,7 +12,7 @@ namespace IonDotnet.Serialization
     /// <summary>
     /// Deserializer
     /// </summary>
-    public partial class IonSerialization
+    public static partial class IonSerialization
     {
         /// <summary>
         /// Deserialize a binary format to object type T

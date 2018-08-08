@@ -1537,5 +1537,64 @@ namespace IonDotnet.Internals.Text
         {
             throw new NotImplementedException();
         }
+
+        public int PeekNullTypeSymbol()
+        {
+            // the '.' has to follow the 'null' immediately
+            var c = ReadChar();
+            if (c != '.')
+            {
+                UnreadChar(c);
+                return TextConstants.KeywordNone;
+            }
+
+            // we have a dot, start reading through the following non-whitespace
+            // and we'll collect it so that we can unread it in the event
+            // we don't actually see a type name
+            Span<int> readAhead = stackalloc int[TextConstants.TnMaxNameLength + 1];
+            var readCount = 0;
+
+            while (readCount < TextConstants.TnMaxNameLength + 1)
+            {
+                c = ReadChar();
+                readAhead[readCount++] = c;
+                if (!char.IsLetter((char) c))
+                {
+                    // it's not a letter we care about but it is
+                    // a valid end of const, so maybe we have a keyword now
+                    // we always exit the loop here since we look
+                    // too far so any letter is invalid at pos 10
+                    break;
+                }
+            }
+
+            // now lets get the keyword value from our bit mask
+            // at this point we can fail since we may have hit
+            // a valid terminator before we're done with all key
+            // words.  We even have to check the length.
+            // for example "in)" matches both letters to the
+            // typename int and terminates validly - but isn't
+            // long enough, but with length we have enough to be sure
+            // with the actual type names we're using in 1.0
+            var kw = TextConstants.TypeNameKeyWordFromMask(readAhead, readCount - 1);
+            if (kw == TextConstants.KeywordUnrecognized)
+            {
+                var sb = new StringBuilder();
+                for (var i = 0; i < readCount; i++)
+                {
+                    //this is horrible but we're throwing anyway
+                    sb.Append((char) readAhead[i]);
+                }
+
+                throw new IonException($"invalid type name on a typed null value: {sb}");
+            }
+
+
+            // since we're accepting the rest we aren't unreading anything
+            // else - but we still have to unread the character that stopped us
+            UnreadChar(c);
+
+            return kw;
+        }
     }
 }

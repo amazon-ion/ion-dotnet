@@ -149,7 +149,7 @@ namespace IonDotnet.Conversions
                     break;
             }
 
-            TypeSet = ScalarType.Null;
+            TypeSet = ScalarType.Null | AuthoritativeType;
         }
 
         internal void AddValue<T>(T value)
