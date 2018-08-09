@@ -12,7 +12,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void Date_2000_11_20_8_20_15_Unknown()
         {
-            var data = DirStructure.ReadDataFile("ts_2000_11_20_8_20_15_unknown.bindat");
+            var data = DirStructure.ReadDataFile("binary/ts_2000_11_20_8_20_15_unknown.bindat");
             IIonReader reader = new UserBinaryReader(new MemoryStream(data));
             Assert.AreEqual(IonType.Timestamp, reader.MoveNext());
             var timeStamp = reader.TimestampValue();

@@ -69,7 +69,7 @@ namespace IonDotnet.Internals.Text
                 case Radix.Binary:
                     return c == '0' || c == '1';
                 case Radix.Decimal:
-                    return char.IsDigit((char)c);
+                    return char.IsDigit((char) c);
                 case Radix.Hex:
                     return c >= '0' && c <= '9'
                            || c >= 'a' && c <= 'f'
@@ -84,11 +84,11 @@ namespace IonDotnet.Internals.Text
             switch (radix)
             {
                 case Radix.Binary:
-                    return (char)c;
+                    return (char) c;
                 case Radix.Decimal:
-                    return (char)c;
+                    return (char) c;
                 case Radix.Hex:
-                    return char.ToLower((char)c);
+                    return char.ToLower((char) c);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(radix), radix, null);
             }
@@ -144,10 +144,11 @@ namespace IonDotnet.Internals.Text
         private static bool SmallerOrEqualMagnitude(in ReadOnlySpan<char> value, string image)
         {
             Debug.Assert(value.Length == image.Length);
-            for (var i = image.Length - 1; i >= 0; i--)
+            for (var i = 0; i < value.Length; i++)
             {
-                if (value[i] > image[i])
-                    return false;
+                if (value[i] == image[i])
+                    continue;
+                return value[i] <= image[i];
             }
 
             return true;

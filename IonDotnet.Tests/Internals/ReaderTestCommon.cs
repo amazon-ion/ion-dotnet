@@ -1,39 +1,22 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Numerics;
-using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 namespace IonDotnet.Tests.Internals
 {
-    [TestClass]
-    public class UserBinaryReaderTest
+    public static class ReaderTestCommon
     {
-        [TestMethod]
-        public void NonReadableStream_ThrowsArgumentException()
+        //empty content
+        public static void Empty(IIonReader reader)
         {
-            var mockStream = new Mock<Stream>();
-            mockStream.Setup(s => s.CanRead).Returns(false);
-            Assert.ThrowsException<ArgumentException>(() => new UserBinaryReader(mockStream.Object));
-        }
-
-        [TestMethod]
-        public void Empty()
-        {
-            var bytes = new byte[0];
-            IIonReader reader = new UserBinaryReader(new MemoryStream(bytes));
             Assert.AreEqual(IonType.None, reader.MoveNext());
         }
 
-        [TestMethod]
-        public void TrivialStruct()
+        //empty struct {}
+        public static void TrivialStruct(IIonReader reader)
         {
-            //empty struct {}
-            var trivial = DirStructure.ReadDataFile("trivial.bindat");
-            IIonReader reader = new UserBinaryReader(new MemoryStream(trivial));
             reader.MoveNext();
             Assert.AreEqual(IonType.Struct, reader.CurrentType);
             reader.StepIn();
@@ -51,22 +34,15 @@ namespace IonDotnet.Tests.Internals
         /// <summary>
         /// Test for single-value bool 
         /// </summary>
-        [TestMethod]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x11}, true)]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x10}, false)]
-        public void SingleBool(byte[] data, bool value)
+        public static void SingleBool(IIonReader reader, bool value)
         {
-            IIonReader reader = new UserBinaryReader(new MemoryStream(data));
             Assert.AreEqual(IonType.Bool, reader.MoveNext());
             Assert.AreEqual(value, reader.BoolValue());
         }
 
-        [TestMethod]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x24, 0x49, 0x96, 0x02, 0xD2}, 1234567890)]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x28, 0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, long.MaxValue / 2)]
-        public void SingleNumber(byte[] data, long value)
+        public static void SingleNumber(IIonReader reader, long value)
         {
-            IIonReader reader = new UserBinaryReader(new MemoryStream(data));
+            //a single number
             Assert.AreEqual(IonType.Int, reader.MoveNext());
             switch (reader.GetIntegerSize())
             {
@@ -86,12 +62,9 @@ namespace IonDotnet.Tests.Internals
             }
         }
 
-        [TestMethod]
-        public void OneBoolInStruct()
+        public static void OneBoolInStruct(IIonReader reader, bool value)
         {
             //simple datagram: {yolo:true}
-            var oneBool = DirStructure.ReadDataFile("onebool.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(oneBool));
             reader.MoveNext();
             Assert.AreEqual(IonType.Struct, reader.CurrentType);
             reader.StepIn();
@@ -105,8 +78,7 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(0, reader.CurrentDepth);
         }
 
-        [TestMethod]
-        public void FlatScalar()
+        public static void FlatScalar(IIonReader reader)
         {
             //a flat struct of scalar values:
             //boolean:true
@@ -115,9 +87,6 @@ namespace IonDotnet.Tests.Internals
             //longInt:int.Max*2
             //bigInt:long.Max*10
             //double:2213.1267567f
-            var flatScalar = DirStructure.ReadDataFile("flat_scalar.bindat");
-
-            var reader = new UserBinaryReader(new MemoryStream(flatScalar));
             reader.MoveNext();
             Assert.AreEqual(IonType.Struct, reader.CurrentType);
             reader.StepIn();
@@ -158,13 +127,9 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(0, reader.CurrentDepth);
         }
 
-        [TestMethod]
-        public void FlatIntList()
+        public static void FlatIntList(IIonReader reader)
         {
             //a flat list of ints [123,456,789]
-            var flatListInt = DirStructure.ReadDataFile("flatlist_int.bindat");
-
-            var reader = new UserBinaryReader(new MemoryStream(flatListInt));
             reader.MoveNext();
             Assert.AreEqual(IonType.List, reader.CurrentType);
             reader.StepIn();
@@ -187,16 +152,11 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(0, reader.CurrentDepth);
         }
 
-        [TestMethod]
-        public void ReadAnnotations_SingleField()
+        public static void ReadAnnotations_SingleField(IIonReader reader, SaveAnnotationsReaderRoutine converter)
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.ReadDataFile("annot_singlefield.bindat");
-
             var symbols = new[] {"years", "months", "days", "hours", "minutes", "seconds"};
-            var converter = new SaveAnnotationsReaderRoutine();
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField), converter);
 
             reader.MoveNext();
             reader.StepIn();
@@ -207,14 +167,10 @@ namespace IonDotnet.Tests.Internals
             Assert.IsTrue(symbols.SequenceEqual(converter.Symbols));
         }
 
-        [TestMethod]
-        public void SingleSymbol()
+        public static void SingleSymbol(IIonReader reader)
         {
             //struct with single symbol
             //{single_symbol:'something'}
-            var data = DirStructure.ReadDataFile("single_symbol.bindat");
-
-            var reader = new UserBinaryReader(new MemoryStream(data));
             reader.MoveNext();
             reader.StepIn();
             reader.MoveNext();
@@ -225,11 +181,8 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(expectedToken, reader.SymbolValue());
         }
 
-        [TestMethod]
-        public void SingleIntList()
+        public static void SingleIntList(IIonReader reader)
         {
-            var data = DirStructure.ReadDataFile("single_int_list.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(data));
             Assert.AreEqual(IonType.List, reader.MoveNext());
             reader.StepIn();
 
@@ -248,12 +201,8 @@ namespace IonDotnet.Tests.Internals
         /// <summary>
         /// Test for a typical json-style message
         /// </summary>
-        [TestMethod]
-        public void Combined1()
+        public static void Combined1(IIonReader reader)
         {
-            var data = DirStructure.ReadDataFile("combined1.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(data));
-
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             reader.StepIn();
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
@@ -305,11 +254,8 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(0, reader.CurrentDepth);
         }
 
-        [TestMethod]
-        public void Struct_OneBlob()
+        public static void Struct_OneBlob(IIonReader reader)
         {
-            var data = DirStructure.ReadDataFile("struct_oneblob.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(data));
             reader.MoveNext();
             reader.StepIn();
             Assert.AreEqual(IonType.Blob, reader.MoveNext());
@@ -318,7 +264,7 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(100, lobByteSize);
             var blob = new byte[lobByteSize];
             reader.GetBytes(blob);
-            
+
             for (var i = 0; i < 100; i++)
             {
                 Assert.AreEqual((byte) 1, blob[i]);

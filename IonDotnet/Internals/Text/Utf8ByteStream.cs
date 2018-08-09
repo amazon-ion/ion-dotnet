@@ -36,6 +36,9 @@ namespace IonDotnet.Internals.Text
 
         public override void Unread(int c)
         {
+            if (c == -1)
+                return;
+
             if (_unreadStack != null)
             {
                 _unreadStack.Push(c);

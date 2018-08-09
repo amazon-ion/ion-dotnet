@@ -344,6 +344,13 @@ namespace IonDotnet.Internals.Text
                         _eof = true;
                         _state = StateEof;
                         return;
+                    case ActionFinishContainer:
+                        _state = GetStateAfterContainer(_containerStack.Peek());
+                        _eof = true;
+                        return;
+                    case ActionFinishLob:
+                        _state = GetStateAfterValue(_containerStack.Peek());
+                        return;
                 }
             }
         }
@@ -546,13 +553,25 @@ namespace IonDotnet.Internals.Text
                 case IonType.Datagram:
                     break;
                 case IonType.List:
-                    _scanner.SkipOverList();
+                    if (!_eof)
+                    {
+                        _scanner.SkipOverList();
+                    }
+
                     break;
                 case IonType.Struct:
-                    _scanner.SkipOverStruct();
+                    if (!_eof)
+                    {
+                        _scanner.SkipOverStruct();
+                    }
+
                     break;
                 case IonType.Sexp:
-                    _scanner.SkipOverSexp();
+                    if (!_eof)
+                    {
+                        _scanner.SkipOverSexp();
+                    }
+
                     break;
             }
 

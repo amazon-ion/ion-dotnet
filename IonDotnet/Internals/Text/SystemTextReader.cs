@@ -10,12 +10,12 @@ namespace IonDotnet.Internals.Text
     {
         private ISymbolTable _systemSymbols;
 
-        public SystemTextReader(TextStream input, IonType parent = IonType.None) : base(input, parent)
+        public SystemTextReader(TextStream input, IonType parent) : base(input, parent)
         {
             _systemSymbols = SharedSymbolTable.GetSystem(1);
         }
 
-        private void PrepareValue(ScalarType valueType)
+        private void PrepareValue()
         {
             LoadOnce();
         }
@@ -68,7 +68,6 @@ namespace IonDotnet.Internals.Text
             }
 
             //TODO is there a better way
-            var len = _valueBuffer.Length;
             var s = _valueBuffer.ToString();
             ClearValueBuffer();
 
@@ -227,7 +226,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.Bool);
+            PrepareValue();
             return _v.BoolValue;
         }
 
@@ -236,7 +235,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.Int);
+            PrepareValue();
             return _v.IntValue;
         }
 
@@ -245,7 +244,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.Long);
+            PrepareValue();
             return _v.LongValue;
         }
 
@@ -254,7 +253,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.BigInteger);
+            PrepareValue();
             return _v.BigIntegerValue;
         }
 
@@ -263,7 +262,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.Double);
+            PrepareValue();
             return _v.DoubleValue;
         }
 
@@ -272,7 +271,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.Decimal);
+            PrepareValue();
             return _v.DecimalValue;
         }
 
@@ -281,7 +280,7 @@ namespace IonDotnet.Internals.Text
             if (CurrentIsNull)
                 throw new NullValueException();
 
-            PrepareValue(ScalarType.Timestamp);
+            PrepareValue();
             return _v.TimestampValue;
         }
 
@@ -290,7 +289,7 @@ namespace IonDotnet.Internals.Text
             if (!_valueType.IsText())
                 throw new InvalidOperationException($"Value type {_valueType} is not text");
 
-            PrepareValue(ScalarType.String);
+            PrepareValue();
             return _v.StringValue;
         }
 

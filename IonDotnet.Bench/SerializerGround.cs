@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
+using System.Numerics;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using IonDotnet.Conversions;
@@ -222,8 +223,7 @@ namespace IonDotnet.Bench
         {
             var data = DirStructure.ReadDataFile("sample.ion");
             var str = Encoding.ASCII.GetString(data);
-            var sq = new CharSequenceStream(str);
-            var reader = new SystemTextReader(sq);
+            var reader = new UserTextReader(str);
             Console.WriteLine(reader.MoveNext());
             reader.StepIn();
 
