@@ -176,9 +176,7 @@ namespace IonDotnet.Tests.Internals
             reader.MoveNext();
             Assert.AreEqual(IonType.Symbol, reader.CurrentType);
             Assert.AreEqual("single_symbol", reader.CurrentFieldName);
-            Assert.AreEqual("something", reader.StringValue());
-            var expectedToken = reader.GetSymbolTable().Find("something");
-            Assert.AreEqual(expectedToken, reader.SymbolValue());
+            Assert.AreEqual("something", reader.SymbolValue().Text);
         }
 
         public static void SingleIntList(IIonReader reader)

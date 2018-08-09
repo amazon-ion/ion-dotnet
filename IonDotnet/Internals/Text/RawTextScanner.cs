@@ -615,11 +615,6 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        private int SkipSingleQuotedString()
-        {
-            throw new NotImplementedException();
-        }
-
         private int SkipOverSymbolIdentifier()
         {
             var c = ReadChar();
@@ -968,6 +963,54 @@ namespace IonDotnet.Internals.Text
             }
         }
 
+        public int LoadSingleQuotedString(StringBuilder valueBuffer, bool clobCharsOnly)
+        {
+            while (true)
+            {
+                var c = ReadStringChar(Characters.ProhibitionContext.None);
+                switch (c)
+                {
+                    case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                        continue;
+                    case -1:
+                    case '\'':
+                        return c;
+                    case CharacterSequence.CharSeqNewlineSequence1:
+                    case CharacterSequence.CharSeqNewlineSequence2:
+                    case CharacterSequence.CharSeqNewlineSequence3:
+                        throw new InvalidTokenException(c);
+                    case '\\':
+                        c = ReadChar();
+                        c = ReadEscapedCharContent(c, clobCharsOnly);
+                        break;
+                    default:
+                        if (!clobCharsOnly && !Characters.Is7BitChar(c))
+                        {
+                            c = ReadLargeCharSequence(c);
+                        }
+
+                        break;
+                }
+
+                if (!clobCharsOnly)
+                {
+                    if (Characters.NeedsSurrogateEncoding(c))
+                    {
+                        valueBuffer.Append(Characters.GetHighSurrogate(c));
+                        c = Characters.GetLowSurrogate(c);
+                    }
+                }
+                else if (Characters.Is8BitChar(c))
+                {
+                    throw new InvalidTokenException(c);
+                }
+
+                valueBuffer.Append((char) c);
+            }
+        }
+
         /// <summary>
         /// peeks into the input stream to see if the next token would be a double colon.  If indeed this is the case
         /// it skips the two colons and returns true.  If not it unreads the 1 or 2 real characters it read and return false.
@@ -990,6 +1033,24 @@ namespace IonDotnet.Internals.Text
             UnreadChar(c);
             UnreadChar(':');
             return false;
+        }
+
+        private int SkipSingleQuotedString()
+        {
+            while (true)
+            {
+                var c = ReadStringChar(Characters.ProhibitionContext.None);
+                switch (c)
+                {
+                    case -1:
+                        throw new UnexpectedEofException();
+                    case '\'':
+                        return ReadChar();
+                    case '\\':
+                        ReadChar();
+                        break;
+                }
+            }
         }
 
         /// <summary>
@@ -1524,11 +1585,6 @@ namespace IonDotnet.Internals.Text
         }
 
         public void LoadSymbolOperator(object sb)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int LoadSingleQuotedString(StringBuilder valueBuffer, bool clobCharsOnly)
         {
             throw new NotImplementedException();
         }

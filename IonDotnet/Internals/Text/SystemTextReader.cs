@@ -8,7 +8,7 @@ namespace IonDotnet.Internals.Text
 {
     internal class SystemTextReader : RawTextReader
     {
-        private ISymbolTable _systemSymbols;
+        private readonly ISymbolTable _systemSymbols;
 
         public SystemTextReader(TextStream input, IonType parent) : base(input, parent)
         {
@@ -127,6 +127,8 @@ namespace IonDotnet.Internals.Text
                             throw new IonException($"Unexpected type {_valueType}");
                         case IonType.Symbol:
                             _v.StringValue = s;
+                            _v.IntValue = GetSymbolTable().FindSymbol(s);
+                            _v.AuthoritativeType = ScalarType.String;
                             break;
                         case IonType.Float:
                             if (_valueKeyword != TextConstants.KeywordNan)
@@ -209,6 +211,8 @@ namespace IonDotnet.Internals.Text
 
             _v.BigIntegerValue = b;
         }
+
+        public override ISymbolTable GetSymbolTable() => _systemSymbols;
 
         public override IntegerSize GetIntegerSize()
         {
@@ -295,7 +299,11 @@ namespace IonDotnet.Internals.Text
 
         public override SymbolToken SymbolValue()
         {
-            throw new NotImplementedException();
+            if (_valueType != IonType.Symbol)
+                throw new InvalidOperationException($"Current value is of type {_valueType}");
+
+            PrepareValue();
+            return new SymbolToken(_v.StringValue, _v.IntValue);
         }
     }
 }

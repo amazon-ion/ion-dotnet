@@ -597,8 +597,7 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        // Symtab is irrelevant here
-        public ISymbolTable GetSymbolTable() => null;
+        public abstract ISymbolTable GetSymbolTable();
 
         public IonType CurrentType => _valueType;
 
