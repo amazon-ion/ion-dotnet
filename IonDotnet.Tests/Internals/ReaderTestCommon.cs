@@ -11,6 +11,8 @@ namespace IonDotnet.Tests.Internals
         //empty content
         public static void Empty(IIonReader reader)
         {
+            //also convieniently testing symtab
+            Assert.IsNotNull(reader.GetSymbolTable());
             Assert.AreEqual(IonType.None, reader.MoveNext());
         }
 
@@ -62,12 +64,13 @@ namespace IonDotnet.Tests.Internals
             }
         }
 
-        public static void OneBoolInStruct(IIonReader reader, bool value)
+        public static void OneBoolInStruct(IIonReader reader)
         {
             //simple datagram: {yolo:true}
             reader.MoveNext();
             Assert.AreEqual(IonType.Struct, reader.CurrentType);
             reader.StepIn();
+            Assert.IsTrue(reader.IsInStruct);
             Assert.AreEqual(1, reader.CurrentDepth);
             reader.MoveNext();
             Assert.AreEqual(IonType.Bool, reader.CurrentType);
@@ -90,6 +93,7 @@ namespace IonDotnet.Tests.Internals
             reader.MoveNext();
             Assert.AreEqual(IonType.Struct, reader.CurrentType);
             reader.StepIn();
+            Assert.IsTrue(reader.IsInStruct);
             Assert.AreEqual(1, reader.CurrentDepth);
 
             reader.MoveNext();
@@ -165,6 +169,11 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
             Assert.IsTrue(symbols.SequenceEqual(converter.Symbols));
+
+            foreach (var s in symbols)
+            {
+                Assert.IsTrue(converter.Symbols.Contains(s));
+            }
         }
 
         public static void SingleSymbol(IIonReader reader)
@@ -203,6 +212,7 @@ namespace IonDotnet.Tests.Internals
         {
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             reader.StepIn();
+            Assert.IsTrue(reader.IsInStruct);
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             Assert.AreEqual("menu", reader.CurrentFieldName);
             reader.StepIn();
@@ -223,6 +233,7 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             Assert.AreEqual("deep1", reader.CurrentFieldName);
             reader.StepIn();
+            Assert.IsTrue(reader.IsInStruct);
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             Assert.AreEqual("deep2", reader.CurrentFieldName);
             reader.StepIn();

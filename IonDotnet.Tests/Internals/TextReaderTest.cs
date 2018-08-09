@@ -77,10 +77,10 @@ namespace IonDotnet.Tests.Internals
             //simple datagram: {yolo:true}
             var oneBool = DirStructure.ReadDataFile("text/onebool.ion");
             var reader = new UserTextReader(new MemoryStream(oneBool));
-            ReaderTestCommon.OneBoolInStruct(reader, true);
+            ReaderTestCommon.OneBoolInStruct(reader);
 
             reader = new UserTextReader(Encoding.UTF8.GetString(oneBool));
-            ReaderTestCommon.OneBoolInStruct(reader, true);
+            ReaderTestCommon.OneBoolInStruct(reader);
         }
 
         [TestMethod]

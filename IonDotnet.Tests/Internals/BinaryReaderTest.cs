@@ -62,7 +62,7 @@ namespace IonDotnet.Tests.Internals
             //simple datagram: {yolo:true}
             var oneBool = DirStructure.ReadDataFile("binary/onebool.bindat");
             var reader = new UserBinaryReader(new MemoryStream(oneBool));
-            ReaderTestCommon.OneBoolInStruct(reader, true);
+            ReaderTestCommon.OneBoolInStruct(reader);
         }
 
         [TestMethod]
