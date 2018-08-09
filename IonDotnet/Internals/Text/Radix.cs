@@ -148,7 +148,7 @@ namespace IonDotnet.Internals.Text
             {
                 if (value[i] == image[i])
                     continue;
-                return value[i] <= image[i];
+                return value[i] < image[i];
             }
 
             return true;

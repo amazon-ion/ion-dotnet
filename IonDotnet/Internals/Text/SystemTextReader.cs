@@ -201,11 +201,18 @@ namespace IonDotnet.Internals.Text
         private void SetBigIntegerFromBinaryString(string s)
         {
             var b = BigInteger.Zero;
-            foreach (var c in s)
+            var start = 0;
+
+            while (start < s.Length && s[start++] != 0)
             {
-                if (c == '0')
-                    continue;
+            }
+
+            for (var i = s.Length - 1; i >= start; i--)
+            {
                 b = BigInteger.Multiply(b, 2);
+                if (s[i] == '0')
+                    continue;
+
                 b += 1;
             }
 
