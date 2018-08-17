@@ -10,14 +10,6 @@ namespace IonDotnet.Bench
     // ReSharper disable once UnusedMember.Global
     public class ExpressionExp : IRunable
     {
-        private class Per
-        {
-            public string Name { get; set; }
-            public int Age { get; set; }
-            public DateTimeOffset Birth { get; set; }
-            public decimal Money { get; set; }
-        }
-
         public void Run(string[] args)
         {
             // var exp = typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext));

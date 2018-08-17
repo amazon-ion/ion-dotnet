@@ -331,9 +331,9 @@ namespace IonDotnet.Internals.Binary
             _userWriter.SetFieldNameSymbol(token);
         }
 
-        public void SetFieldNameSymbol(SymbolToken name)
+        public void SetFieldNameSymbol(SymbolToken symbol)
         {
-            var token = InternSymbol(name);
+            var token = InternSymbol(symbol);
             _userWriter.SetFieldNameSymbol(token);
         }
 

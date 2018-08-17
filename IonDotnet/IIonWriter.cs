@@ -44,7 +44,7 @@ namespace IonDotnet
         /// <param name="name">Field name</param>
         void SetFieldName(string name);
 
-        void SetFieldNameSymbol(SymbolToken name);
+        void SetFieldNameSymbol(SymbolToken symbol);
 
         /// <summary>
         /// Step in a container

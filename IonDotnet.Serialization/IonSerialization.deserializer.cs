@@ -236,7 +236,7 @@ namespace IonDotnet.Serialization
             if (type == typeof(DateTime))
             {
                 if (reader.CurrentType != IonType.Timestamp) goto NoMatch;
-                result = reader.TimestampValue().DateTime;
+                result = reader.TimestampValue().DateTimeValue;
                 return true;
             }
 

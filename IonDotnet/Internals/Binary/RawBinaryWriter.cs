@@ -275,10 +275,10 @@ namespace IonDotnet.Internals.Binary
 
         public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
 
-        public void SetFieldNameSymbol(SymbolToken name)
+        public void SetFieldNameSymbol(SymbolToken symbol)
         {
             if (!IsInStruct) throw new IonException($"Has to be in a struct to set a field name");
-            _currentFieldSymbolToken = name;
+            _currentFieldSymbolToken = symbol;
         }
 
         public void StepIn(IonType type)
@@ -640,7 +640,7 @@ namespace IonDotnet.Internals.Binary
             var newContainer = _containerStack.PushContainer(ContainerType.Value);
             var totalLength = 0;
             _dataBuffer.StartStreak(newContainer.Sequence);
-            if (value.DateTime.Kind == DateTimeKind.Unspecified || value.DateTime.Kind == DateTimeKind.Local)
+            if (value.DateTimeValue.Kind == DateTimeKind.Unspecified || value.DateTimeValue.Kind == DateTimeKind.Local)
             {
                 //unknown offset
                 totalLength++;
@@ -654,35 +654,35 @@ namespace IonDotnet.Internals.Binary
             _containerStack.IncreaseCurrentContainerLength(totalLength);
 
             //don't update totallength here
-            WriteVarUint(value.DateTime.Year);
-            WriteVarUint(value.DateTime.Month);
-            WriteVarUint(value.DateTime.Day);
+            WriteVarUint(value.DateTimeValue.Year);
+            WriteVarUint(value.DateTimeValue.Month);
+            WriteVarUint(value.DateTimeValue.Day);
 
             short precision = 0;
             //we support up to ticks precision
-            decimal tickRemainder = value.DateTime.Ticks % TimeSpan.TicksPerSecond;
+            decimal tickRemainder = value.DateTimeValue.Ticks % TimeSpan.TicksPerSecond;
             if (tickRemainder != 0)
             {
                 precision = fracPrecision;
             }
-            else if (value.DateTime.Second != 0)
+            else if (value.DateTimeValue.Second != 0)
             {
                 precision = secondPrecision;
             }
-            else if (value.DateTime.Hour != 0 || value.DateTime.Minute != 0)
+            else if (value.DateTimeValue.Hour != 0 || value.DateTimeValue.Minute != 0)
             {
                 precision = minutePrecision;
             }
 
             if (precision >= minutePrecision)
             {
-                WriteVarUint(value.DateTime.Hour);
-                WriteVarUint(value.DateTime.Minute);
+                WriteVarUint(value.DateTimeValue.Hour);
+                WriteVarUint(value.DateTimeValue.Minute);
             }
 
             if (precision >= secondPrecision)
             {
-                WriteVarUint(value.DateTime.Second);
+                WriteVarUint(value.DateTimeValue.Second);
             }
 
             if (precision == fracPrecision)
@@ -804,10 +804,7 @@ namespace IonDotnet.Internals.Binary
             _containerStack.IncreaseCurrentContainerLength(4);
         }
 
-        public bool IsStreamCopyOptimized()
-        {
-            throw new NotImplementedException();
-        }
+        public bool IsStreamCopyOptimized => throw new NotImplementedException();
 
         internal IWriterBuffer GetLengthBuffer() => _lengthBuffer;
         internal IWriterBuffer GetDataBuffer() => _dataBuffer;

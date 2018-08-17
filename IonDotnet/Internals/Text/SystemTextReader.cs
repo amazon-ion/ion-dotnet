@@ -312,5 +312,15 @@ namespace IonDotnet.Internals.Text
             PrepareValue();
             return new SymbolToken(_v.StringValue, _v.IntValue);
         }
+
+        public override int GetBytes(Span<byte> buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override byte[] NewByteArray()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

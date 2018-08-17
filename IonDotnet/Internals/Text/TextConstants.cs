@@ -15,12 +15,35 @@ namespace IonDotnet.Internals.Text
         public const int CharSeqStringTerminator = -2; // can't be >=0, ==-1 (eof), nor -2 (empty esc)
         public const int CharSeqStringNonTerminator = -3; // used for a pair of triple quotes treated a nothing
 
-        public const int CharSeqNewlineSequence1 = -4; // single new line
-        public const int CharSeqNewlineSequence2 = -5; // single carriage return
-        public const int CharSeqNewlineSequence3 = -6; // new line - carriage return pair
-        public const int CharSeqEscapedNewlineSequence1 = -7; // escape followed by new line
-        public const int CharSeqEscapedNewlineSequence2 = -8; // escape followed by carriage return
-        public const int CharSeqEscapedNewlineSequence3 = -9; // escape followed by new line - carriage return pair
+        /// <summary>
+        /// Single new line '\n'
+        /// </summary>
+        public const int CharSeqNewlineSequence1 = -4;
+
+        /// <summary>
+        ///  Single carriage return '\r'
+        /// </summary>
+        public const int CharSeqNewlineSequence2 = -5;
+
+        /// <summary>
+        /// New line - carriage return pair '\r\n'
+        /// </summary>
+        public const int CharSeqNewlineSequence3 = -6;
+
+        /// <summary>
+        /// Escape followed by new line
+        /// </summary>
+        public const int CharSeqEscapedNewlineSequence1 = -7;
+
+        /// <summary>
+        /// Escape followed by carriage return
+        /// </summary>
+        public const int CharSeqEscapedNewlineSequence2 = -8;
+
+        /// <summary>
+        /// Escape followed by new line - carriage return pair
+        /// </summary>
+        public const int CharSeqEscapedNewlineSequence3 = -9;
     }
 
     /// <summary>

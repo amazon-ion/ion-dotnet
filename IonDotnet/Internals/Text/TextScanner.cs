@@ -17,7 +17,7 @@ namespace IonDotnet.Internals.Text
     /// of the input. The raw text reader class can based on that token to read/load value, or to perform
     /// actions such as skipping to next token.
     /// </remarks>
-    internal sealed class RawTextScanner
+    internal sealed class TextScanner
     {
         private enum NumericState
         {
@@ -39,7 +39,7 @@ namespace IonDotnet.Internals.Text
 
         public bool UnfinishedToken { get; private set; }
 
-        public RawTextScanner(TextStream input)
+        public TextScanner(TextStream input)
         {
             _input = input;
         }
@@ -961,6 +961,46 @@ namespace IonDotnet.Internals.Text
 
                 sb.Append((char) c);
             }
+        }
+
+        /// <summary>
+        /// Peeks into the input stream to see what non-whitespace character is coming up.
+        /// </summary>
+        /// <returns>The type of token next to '{{'</returns>
+        /// <remarks>This will unread whatever non-whitespace character it read</remarks>
+        public int PeekLobStartPunctuation()
+        {
+            int c = SkipOverWhiteSpace(CommentStrategy.Break);
+            if (c == '"')
+            {
+                //unread_char(c);
+                return TextConstants.TokenStringDoubleQuote;
+            }
+
+            if (c != '\'')
+            {
+                UnreadChar(c);
+                return TextConstants.TokenError;
+            }
+
+            c = ReadChar();
+            if (c != '\'')
+            {
+                UnreadChar(c);
+                UnreadChar('\'');
+                return TextConstants.TokenError;
+            }
+
+            c = ReadChar();
+            if (c != '\'')
+            {
+                UnreadChar(c);
+                UnreadChar('\'');
+                UnreadChar('\'');
+                return TextConstants.TokenError;
+            }
+
+            return TextConstants.TokenStringTripleQuote;
         }
 
         public int LoadSingleQuotedString(StringBuilder valueBuffer, bool clobCharsOnly)

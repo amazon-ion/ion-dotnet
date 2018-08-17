@@ -2,14 +2,12 @@
 {
     internal interface IPrivateWriter : IIonWriter
     {
-        ICatalog Catalog { get; }
-
         bool IsFieldNameSet();
 
         int GetDepth();
 
         void WriteIonVersionMarker();
 
-        bool IsStreamCopyOptimized();
+        bool IsStreamCopyOptimized { get; }
     }
 }

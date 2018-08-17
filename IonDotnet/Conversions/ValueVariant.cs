@@ -3,6 +3,9 @@ using System.Numerics;
 
 namespace IonDotnet.Conversions
 {
+    /// <summary>
+    /// Structure that holds the loaded value from IonReader
+    /// </summary>
     public struct ValueVariant
     {
         private int _intValue;

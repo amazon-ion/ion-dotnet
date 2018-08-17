@@ -143,7 +143,7 @@ namespace IonDotnet.Internals.Text
 
         protected readonly StringBuilder _valueBuffer;
         protected ValueVariant _v;
-        protected readonly RawTextScanner _scanner;
+        protected readonly TextScanner _scanner;
         private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private int _state;
@@ -158,12 +158,13 @@ namespace IonDotnet.Internals.Text
         private int _fieldNameSid = SymbolToken.UnknownSid;
 
         private readonly ContainerStack _containerStack;
+        private int _lobToken;
 
         protected RawTextReader(TextStream input, IonType parent = IonType.Datagram)
         {
             _state = GetStateAtContainerStart(parent);
             _valueBuffer = new StringBuilder();
-            _scanner = new RawTextScanner(input);
+            _scanner = new TextScanner(input);
             _eof = false;
             _hasNextCalled = false;
             _containerStack = new ContainerStack(this, 6);
@@ -280,6 +281,25 @@ namespace IonDotnet.Internals.Text
                     case ActionStartSexp:
                         _valueType = IonType.Sexp;
                         _state = StateBeforeAnnotationSexp;
+                        return;
+                    case ActionStartLob:
+                        switch (_scanner.PeekLobStartPunctuation())
+                        {
+                            case TextConstants.TokenStringDoubleQuote:
+                                _lobToken = TextConstants.TokenStringDoubleQuote;
+                                _valueType = IonType.Clob;
+                                break;
+                            case TextConstants.TokenStringTripleQuote:
+                                _lobToken = TextConstants.TokenStringTripleQuote;
+                                _valueType = IonType.Clob;
+                                break;
+                            default:
+                                _state = StateInBlobContent;
+                                _lobToken = TextConstants.TokenOpenDoubleBrace;
+                                _valueType = IonType.Blob;
+                                break;
+                        }
+
                         return;
                     case ActionLoadScalar:
                         if (token == TextConstants.TokenSymbolIdentifier)
@@ -646,15 +666,9 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public byte[] NewByteArray()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract byte[] NewByteArray();
 
-        public int GetBytes(Span<byte> buffer)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract int GetBytes(Span<byte> buffer);
 
         public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
         {
