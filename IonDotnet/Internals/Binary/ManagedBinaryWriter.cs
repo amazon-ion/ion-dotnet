@@ -231,7 +231,7 @@ namespace IonDotnet.Internals.Binary
             _symbolsWriter?.GetDataBuffer().Dispose();
         }
 
-        public void Flush(Stream outputStream)
+        internal void Flush(Stream outputStream)
         {
             if (!PrepareFlush())
                 return;
@@ -245,7 +245,7 @@ namespace IonDotnet.Internals.Binary
             Finish();
         }
 
-        public void Flush(ref byte[] bytes)
+        internal void Flush(ref byte[] bytes)
         {
             if (!PrepareFlush())
                 return;
@@ -264,7 +264,7 @@ namespace IonDotnet.Internals.Binary
             Finish();
         }
 
-        public int Flush(Memory<byte> buffer)
+        internal int Flush(Memory<byte> buffer)
         {
             if (!PrepareFlush())
                 return 0;
@@ -281,6 +281,11 @@ namespace IonDotnet.Internals.Binary
             return tLength;
         }
 
+        public void Flush()
+        {
+            //do nothing
+        }
+        
         private bool PrepareFlush()
         {
             if (_userWriter.GetDepth() != 0)

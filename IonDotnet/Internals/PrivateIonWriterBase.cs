@@ -149,5 +149,6 @@ namespace IonDotnet.Internals
         public abstract bool IsFieldNameSet();
         public abstract int GetDepth();
         public abstract void WriteIonVersionMarker();
+        public abstract void Flush();
     }
 }

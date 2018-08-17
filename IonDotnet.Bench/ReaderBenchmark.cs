@@ -8,7 +8,7 @@ namespace IonDotnet.Bench
 {
     public class ReaderBenchmark : IRunable
     {
-        private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
+        private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
         public void Run(string[] args)
         {

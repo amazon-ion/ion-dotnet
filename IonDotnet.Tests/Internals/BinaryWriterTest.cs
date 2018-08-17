@@ -131,8 +131,7 @@ namespace IonDotnet.Tests.Internals
             using (var stream = new MemoryStream())
             {
                 List<(string key, object value)> kvps;
-                IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 
@@ -156,8 +155,7 @@ namespace IonDotnet.Tests.Internals
         {
             using (var stream = new MemoryStream())
             {
-                IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 
@@ -199,8 +197,7 @@ namespace IonDotnet.Tests.Internals
             new Random().NextBytes(blob);
             using (var stream = new MemoryStream())
             {
-                IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 
@@ -254,8 +251,7 @@ namespace IonDotnet.Tests.Internals
         {
             using (var stream = new MemoryStream())
             {
-                IIonWriter writer;
-                using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.Struct);
 

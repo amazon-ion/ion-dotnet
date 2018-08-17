@@ -219,7 +219,7 @@ namespace IonDotnet.Internals.Binary
         }
 
         //this won't be called at this level
-        void IIonWriter.Flush(ref byte[] bytes)
+        void IIonWriter.Flush()
         {
         }
 

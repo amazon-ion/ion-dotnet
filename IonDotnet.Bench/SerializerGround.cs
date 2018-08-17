@@ -158,7 +158,7 @@ namespace IonDotnet.Bench
                 IonSerialization.Serialize(Data);
             }
 
-            private static readonly IIonWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
+            private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 
             [Benchmark]
             public void IonDotnetManual()

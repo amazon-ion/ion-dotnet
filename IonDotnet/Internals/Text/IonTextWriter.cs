@@ -10,7 +10,7 @@ namespace IonDotnet.Internals.Text
     internal class IonTextWriter : SystemWriter
     {
         private readonly Stack<(IonType containerType, bool pendingComma)> _containerStack = new Stack<(IonType containerType, bool pendingComma)>(6);
-        private readonly IonTextStreamWriter _textWriter;
+        private readonly IonTextRawWriter _textWriter;
         private readonly IonTextOptions _options;
 
         private bool _isInStruct;
@@ -23,8 +23,9 @@ namespace IonDotnet.Internals.Text
             IonWriterBuilderBase.InitialIvmHandlingOption ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default)
             : base(ivmHandlingOption)
         {
-            _textWriter = new IonTextStreamWriter(textWriter);
+            _textWriter = new IonTextRawWriter(textWriter);
             _options = textOptions;
+            _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
         }
 
         private void WriteLeadingWhiteSpace()
@@ -147,6 +148,10 @@ namespace IonDotnet.Internals.Text
                 var sym = AssumeFieldNameSymbol();
                 WriteFieldNameToken(sym);
                 _textWriter.Write(':');
+                if (_options.PrettyPrint)
+                {
+                    _textWriter.Write(' ');
+                }
                 ClearFieldName();
                 followingLongString = false;
             }
@@ -175,8 +180,13 @@ namespace IonDotnet.Internals.Text
             // Flush if a top-level-value was written
             if (GetDepth() == 0)
             {
-                _textWriter.Flush();
+                Flush();
             }
+        }
+
+        public override void Flush()
+        {
+            _textWriter.Flush();
         }
 
         public override void WriteNull()

@@ -6,12 +6,12 @@ namespace IonDotnet.Internals.Text
     /// <summary>
     /// Extends .NET <see cref="System.IO.StreamWriter"/> to include some writing functions
     /// </summary>
-    internal class IonTextStreamWriter
+    internal class IonTextRawWriter
     {
         private readonly TextWriter _writer;
 
 
-        public static readonly string[] ZeroPadding = {"", "0", "00", "000", "0000", "00000", "000000", "0000000",};
+        private static readonly string[] ZeroPadding = {"", "0", "00", "000", "0000", "00000", "000000", "0000000",};
 
         /// <summary>
         /// Escapes for U+00 through U+FF, for use in double-quoted Ion strings. This includes escapes
@@ -25,7 +25,7 @@ namespace IonDotnet.Internals.Text
 
         private static readonly string[] JsonEscapeCodes;
 
-        static IonTextStreamWriter()
+        static IonTextRawWriter()
         {
             StringEscapeCodes = new string[256];
             StringEscapeCodes[0x00] = "\\0";
@@ -97,7 +97,7 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public IonTextStreamWriter(TextWriter writer)
+        public IonTextRawWriter(TextWriter writer)
         {
             _writer = writer;
         }
@@ -171,7 +171,7 @@ namespace IonDotnet.Internals.Text
 
         private void WriteStringWithEscapes(string text)
         {
-            //TODO handle different symbolvariant
+            //TODO handle different string types
             _writer.Write(text);
         }
 
