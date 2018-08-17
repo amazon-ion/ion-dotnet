@@ -13,7 +13,7 @@ namespace IonDotnet.Bench
             var writer = new StringWriter();
             var s = new IonTextWriter(writer, new IonTextOptions
             {
-                PrettyPrint = true
+                PrettyPrint = false
             });
             s.StepIn(IonType.Struct);
             s.SetFieldName("no");
@@ -26,9 +26,32 @@ namespace IonDotnet.Bench
             s.WriteBool(true);
             s.SetFieldName("float");
             s.WriteFloat(4.2312321);
-//            s.SetFieldName("symbol");
-//            s.WriteSymbol("dadasdSym");
+            s.SetFieldName("symbol");
+            s.WriteSymbol("dadasdSym");
+            s.SetFieldName("datetime");
+            s.WriteTimestamp(new Timestamp(DateTime.Now));
             s.StepOut();
+            
+            s.SetFieldName("listint");
+            s.StepIn(IonType.List);
+            
+            s.StepIn(IonType.Struct);
+            s.SetFieldName("int");
+            s.WriteInt(1);
+            s.StepOut();
+            
+            s.StepIn(IonType.Struct);
+            s.SetFieldName("int");
+            s.WriteInt(2);
+            s.StepOut();
+            
+            s.StepIn(IonType.Struct);
+            s.SetFieldName("int");
+            s.WriteInt(3);
+            s.StepOut();
+            
+            s.StepOut();
+            
             s.StepOut();
             s.Finish();
             var r = writer.ToString();

@@ -75,17 +75,27 @@ namespace IonDotnet
             }
         }
 
+        /// <summary>
+        /// Initialize the timestamp with a local DateTime value, UTC offset is set to unknown
+        /// </summary>
+        /// <param name="dateTimeValue">Local datetime value</param>
         public Timestamp(DateTime dateTimeValue)
         {
-            DateTimeValue = dateTimeValue;
+            DateTimeValue = DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified);
             //we have no idea about the local offset except when it's 0, so no change here
             LocalOffset = 0;
         }
 
+        /// <summary>
+        /// Initialize the timestamp with a <see cref="DateTimeOffset"/> value
+        /// </summary>
+        /// <param name="dateTimeOffset"></param>
         public Timestamp(DateTimeOffset dateTimeOffset)
         {
             LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
-            DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
+            DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0
+                ? DateTimeKind.Utc
+                : DateTimeKind.Local);
         }
 
         /// <summary>

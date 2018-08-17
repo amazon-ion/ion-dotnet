@@ -1,14 +1,27 @@
 ﻿using System;
-using System.Buffers.Text;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using IonDotnet.Systems;
+using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Text
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// Deals with writing Ion text form
+    /// </summary>
     internal class IonTextWriter : SystemWriter
     {
+        private enum SymbolVariant
+        {
+            Unknown,
+            Identifier,
+            Quoted,
+            Operator
+        }
+
         private readonly Stack<(IonType containerType, bool pendingComma)> _containerStack = new Stack<(IonType containerType, bool pendingComma)>(6);
         private readonly IonTextRawWriter _textWriter;
         private readonly IonTextOptions _options;
@@ -52,24 +65,47 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        private void WriteSymbolToken(string value)
+        private void WriteSymbolText(string text, SymbolVariant symbolVariant = SymbolVariant.Unknown)
         {
             if (_options.SymbolAsString)
             {
                 if (_options.StringAsJson)
                 {
-                    _textWriter.WriteJsonString(value);
+                    _textWriter.WriteJsonString(text);
                 }
                 else
                 {
-                    _textWriter.WriteString(value);
+                    _textWriter.WriteString(text);
                 }
 
                 return;
             }
 
             //TODO handle different kinds of SymbolVariant
-            _textWriter.Write(value);
+            if (symbolVariant == SymbolVariant.Unknown)
+            {
+                symbolVariant = GetSymbolVariant(text);
+            }
+
+            switch (symbolVariant)
+            {
+                case SymbolVariant.Identifier:
+                    _textWriter.Write(text);
+                    break;
+                case SymbolVariant.Operator:
+                    if (_containerStack.Count > 0 && _containerStack.Peek().containerType == IonType.Sexp)
+                    {
+                        _textWriter.Write(text);
+                        break;
+                    }
+
+                    goto case SymbolVariant.Quoted;
+                case SymbolVariant.Quoted:
+                    _textWriter.WriteSingleQuotedSymbol(text);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(symbolVariant), symbolVariant, null);
+            }
         }
 
         private void WriteFieldNameToken(SymbolToken token)
@@ -81,7 +117,7 @@ namespace IonDotnet.Internals.Text
                 return;
             }
 
-            WriteSymbolToken(token.Text);
+            WriteSymbolText(token.Text);
         }
 
         private void WriteAnnotations()
@@ -137,6 +173,20 @@ namespace IonDotnet.Internals.Text
             return followingLongString;
         }
 
+        protected override void WriteSymbolString(string value)
+        {
+            if (value == null)
+            {
+                WriteNull(IonType.Symbol);
+                return;
+            }
+
+            StartValue();
+            //we write all symbol values with single-quote
+            WriteSymbolText(value, SymbolVariant.Quoted);
+            CloseValue();
+        }
+
         protected override void StartValue()
         {
             base.StartValue();
@@ -152,6 +202,7 @@ namespace IonDotnet.Internals.Text
                 {
                     _textWriter.Write(' ');
                 }
+
                 ClearFieldName();
                 followingLongString = false;
             }
@@ -308,11 +359,6 @@ namespace IonDotnet.Internals.Text
             CloseValue();
         }
 
-        public override void WriteSymbol(string symbol)
-        {
-            throw new NotImplementedException();
-        }
-
         public override void WriteString(string value)
         {
             StartValue();
@@ -443,6 +489,28 @@ namespace IonDotnet.Internals.Text
                 throw new InvalidOperationException("Already at top-level");
 
             var top = _containerStack.Pop();
+
+            var parentType = _containerStack.Count == 0 ? IonType.Datagram : _containerStack.Peek().containerType;
+            switch (parentType)
+            {
+                case IonType.Sexp:
+                    _isInStruct = false;
+                    _separatorCharacter = ' ';
+                    break;
+                case IonType.List:
+                    _isInStruct = false;
+                    _separatorCharacter = ',';
+                    break;
+                case IonType.Struct:
+                    _isInStruct = true;
+                    _separatorCharacter = ',';
+                    break;
+                default:
+                    _isInStruct = false;
+                    _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
+                    break;
+            }
+
             _pendingSeparator = top.pendingComma;
             char closer;
             switch (top.containerType)
@@ -475,5 +543,148 @@ namespace IonDotnet.Internals.Text
         public override bool IsInStruct => _isInStruct;
 
         public override int GetDepth() => _containerStack.Count;
+
+        private static bool IsIdentifierPart(char c)
+        {
+            if (c >= 'a' && c <= 'z')
+                return true;
+            if (c >= 'A' && c <= 'Z')
+                return true;
+            if (c >= '0' && c <= '9')
+                return true;
+
+            return c == '_' || c == '$';
+        }
+
+        private static bool IsIdentifierKeyword(string text)
+        {
+            var pos = 0;
+            var valuelen = text.Length;
+
+            if (valuelen == 0)
+            {
+                return false;
+            }
+
+            var keyword = false;
+
+            // there has to be at least 1 character or we wouldn't be here
+            switch (text[pos++])
+            {
+                case '$':
+                    if (valuelen == 1) return false;
+                    while (pos < valuelen)
+                    {
+                        var c = text[pos++];
+                        if (!char.IsDigit(c)) return false;
+                    }
+
+                    return true;
+                case 'f':
+                    if (valuelen == 5 //      'f'
+                        && text[pos++] == 'a'
+                        && text[pos++] == 'l'
+                        && text[pos++] == 's'
+                        && text[pos] == 'e'
+                    )
+                    {
+                        keyword = true;
+                    }
+
+                    break;
+                case 'n':
+                    if (valuelen == 4 //      'n'
+                        && text[pos++] == 'u'
+                        && text[pos++] == 'l'
+                        && text[pos++] == 'l'
+                    )
+                    {
+                        keyword = true;
+                    }
+                    else if (valuelen == 3 // 'n'
+                             && text[pos++] == 'a'
+                             && text[pos] == 'n'
+                    )
+                    {
+                        keyword = true;
+                    }
+
+                    break;
+                case 't':
+                    if (valuelen == 4 //      't'
+                        && text[pos++] == 'r'
+                        && text[pos++] == 'u'
+                        && text[pos] == 'e'
+                    )
+                    {
+                        keyword = true;
+                    }
+
+                    break;
+            }
+
+            return keyword;
+        }
+
+        private static bool IsOperatorPart(char c)
+        {
+            //TODO stackalloc
+            var operatorChars = new[]
+            {
+                '<', '>', '=', '+', '-', '*', '&', '^', '%',
+                '~', '/', '?', '.', ';', '!', '|', '@', '`', '#'
+            };
+            return Characters.Is8BitChar(c) && operatorChars.Contains(c);
+        }
+
+        private static SymbolVariant GetSymbolVariant(string symbol)
+        {
+            var length = symbol.Length; // acts as null check
+
+            // If the symbol's text matches an Ion keyword or it's an empty symbol, we must quote it.
+            // Eg, the symbol 'false' and '' must be rendered quoted.
+            if (length == 0 || IsIdentifierKeyword(symbol))
+            {
+                return SymbolVariant.Quoted;
+            }
+
+            var c = symbol[0];
+            // Surrogates are neither identifierStart nor operatorPart, so the
+            // first one we hit will fall through and return QUOTED.
+            // TODO test that
+
+            if (IsIdentifierPart(c))
+            {
+                for (var ii = 0; ii < length; ii++)
+                {
+                    c = symbol[ii];
+                    if (c == '\'' || c < 32 || c > 126
+                        || !IsIdentifierPart(c))
+                    {
+                        return SymbolVariant.Quoted;
+                    }
+                }
+
+                return SymbolVariant.Identifier;
+            }
+
+            if (IsOperatorPart(c))
+            {
+                for (var ii = 0; ii < length; ii++)
+                {
+                    c = symbol[ii];
+                    // We don't need to look for escapes since all
+                    // operator characters are ASCII.
+                    if (!IsOperatorPart(c))
+                    {
+                        return SymbolVariant.Quoted;
+                    }
+                }
+
+                return SymbolVariant.Operator;
+            }
+
+            return SymbolVariant.Quoted;
+        }
     }
 }

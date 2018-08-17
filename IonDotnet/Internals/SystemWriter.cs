@@ -5,11 +5,12 @@ using IonDotnet.Utils;
 
 namespace IonDotnet.Internals
 {
+    /// <inheritdoc />
     /// <summary>
     /// Base class for text and tree writer (why is this called 'system' ?) 
     /// </summary>
     internal abstract class SystemWriter : PrivateIonWriterBase
-    {
+    {        
         private string _fieldName;
         private int _fieldNameSid = SymbolToken.UnknownSid;
         private IonWriterBuilderBase.InitialIvmHandlingOption _ivmHandlingOption;
@@ -73,6 +74,19 @@ namespace IonDotnet.Internals
         {
             _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
         }
+        
+        public override void WriteSymbol(string symbol)
+        {
+            if (SystemSymbols.Ion10 == symbol && GetDepth()==0 && _annotations.Count==0)
+            {
+                WriteIonVersionMarker();
+                return;
+            }
+            
+            WriteSymbolString(symbol);
+        }
+
+        protected abstract void WriteSymbolString(string value);
 
         /// <summary>
         /// Assume that we have a field name text or sid set
