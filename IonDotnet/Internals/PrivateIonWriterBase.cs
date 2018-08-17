@@ -136,9 +136,6 @@ namespace IonDotnet.Internals
         public abstract void AddTypeAnnotation(string annotation);
         public abstract void Dispose();
         public abstract ISymbolTable SymbolTable { get; }
-        public abstract void Flush(Stream outputStream);
-        public abstract void Flush(ref byte[] bytes);
-        public abstract int Flush(Memory<byte> buffer);
         public abstract void Finish();
         public abstract void SetFieldName(string name);
         public abstract void SetFieldNameSymbol(SymbolToken symbol);

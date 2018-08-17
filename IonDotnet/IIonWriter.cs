@@ -13,26 +13,6 @@ namespace IonDotnet
     {
         ISymbolTable SymbolTable { get; }
 
-        /// <summary>
-        /// Flushes this writer by writing any buffered output to the underlying output target.
-        /// </summary>
-        /// <exception cref="System.IO.IOException">When error happens while writing data to output stream</exception>
-//        void Flush(Stream outputStream);
-
-        /// <summary>
-        /// Flushes the buffers to a byte array
-        /// </summary>
-        /// <param name="bytes">Reference to the byte array</param>
-        /// <remarks>If a null reference is passed in, the writer will allocate the reference</remarks>
-//        void Flush(ref byte[] bytes);
-
-        /// <summary>
-        /// Flush the content to a memory segment
-        /// </summary>
-        /// <param name="buffer">Memory segment</param>
-        /// <returns>Number of bytes written</returns>
-//        int Flush(Memory<byte> buffer);
-
         void Flush();
         
         /// <summary>

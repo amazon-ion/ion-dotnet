@@ -13,7 +13,7 @@ namespace IonDotnet.Bench
             var writer = new StringWriter();
             var s = new IonTextWriter(writer, new IonTextOptions
             {
-                PrettyPrint = false
+                PrettyPrint = true
             });
             s.StepIn(IonType.Struct);
             s.SetFieldName("no");
@@ -53,6 +53,9 @@ namespace IonDotnet.Bench
             s.StepOut();
             
             s.StepOut();
+            
+            s.WriteString("aftermath");
+            
             s.Finish();
             var r = writer.ToString();
             Console.WriteLine(r);

@@ -419,21 +419,6 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public override void Flush(Stream outputStream)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Flush(ref byte[] bytes)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int Flush(Memory<byte> buffer)
-        {
-            throw new NotImplementedException();
-        }
-
         public override void Finish()
         {
             _textWriter.Flush();
