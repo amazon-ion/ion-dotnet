@@ -708,6 +708,14 @@ namespace IonDotnet.Internals
 //            }
 //
 //            _bufferBlocks.Clear();
+
+            //temporary solution: keep 1 block
+            while (_bufferBlocks.Count > 1)
+            {
+                var idx = _bufferBlocks.Count - 1;
+                ArrayPool<byte>.Shared.Return(_bufferBlocks[idx]);
+                _bufferBlocks.RemoveAt(idx);
+            }
         }
 
         public void Dispose()

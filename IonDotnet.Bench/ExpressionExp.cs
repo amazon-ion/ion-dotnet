@@ -56,7 +56,7 @@ namespace IonDotnet.Bench
                 }
             });
             //            Console.WriteLine(string.Join(',', s.Select(b => $"{b:x2}")));
-            var d = IonSerialization.Deserialize<Experiment[]>(s);
+            var d = IonSerialization.Binary.Deserialize<Experiment[]>(s);
             var json = JsonConvert.SerializeObject(d, Formatting.Indented);
             Console.WriteLine(json);
         }

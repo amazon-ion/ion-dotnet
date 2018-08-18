@@ -12,26 +12,9 @@ namespace IonDotnet.Serialization
     /// <summary>
     /// Deserializer
     /// </summary>
-    public static partial class IonSerialization
+    internal static partial class IonSerializationPrivate
     {
-        /// <summary>
-        /// Deserialize a binary format to object type T
-        /// </summary>
-        /// <param name="binary">Binary input</param>
-        /// <param name="scalarConverter"></param>
-        /// <typeparam name="T">Type of object to deserialize to</typeparam>
-        /// <returns>Deserialized object</returns>
-        public static T Deserialize<T>(byte[] binary, IScalarConverter scalarConverter = null)
-        {
-            using (var stream = new MemoryStream(binary))
-            {
-                var reader = new UserBinaryReader(stream, scalarConverter);
-                reader.MoveNext();
-                return (T) Deserialize(reader, typeof(T), scalarConverter);
-            }
-        }
-
-        private static object Deserialize(IIonReader reader, Type type, IScalarConverter scalarConverter)
+        internal static object Deserialize(IIonReader reader, Type type, IScalarConverter scalarConverter)
         {
             object t = null;
 

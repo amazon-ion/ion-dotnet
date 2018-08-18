@@ -4,20 +4,13 @@ namespace IonDotnet.Systems
 {
     public class IonTextOptions
     {
-        public IonTextOptions()
-        {
-            LongStringThreshold = 30;
-        }
+        public static readonly IonTextOptions Default = new IonTextOptions();
 
         private string _lineSeparator;
 
         public bool PrettyPrint { get; set; }
 
-        public string LineSeparator
-        {
-            get => _lineSeparator ?? Environment.NewLine;
-            set => _lineSeparator = value;
-        }
+        public string LineSeparator { get; set; } = Environment.NewLine;
 
         public bool SymbolAsString { get; set; }
 
@@ -29,6 +22,8 @@ namespace IonDotnet.Systems
 
         public bool TimestampAsMillis { get; set; }
 
-        public int LongStringThreshold { get; set; }
+        public int LongStringThreshold { get; set; } = 64;
+
+        public bool WriteVersionMarker { get; set; }
     }
 }

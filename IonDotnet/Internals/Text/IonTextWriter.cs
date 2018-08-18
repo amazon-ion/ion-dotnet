@@ -32,9 +32,10 @@ namespace IonDotnet.Internals.Text
         private bool _followingLongString;
         private char _separatorCharacter;
 
-        public IonTextWriter(TextWriter textWriter, IonTextOptions textOptions,
-            IonWriterBuilderBase.InitialIvmHandlingOption ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default)
-            : base(ivmHandlingOption)
+        public IonTextWriter(TextWriter textWriter, IonTextOptions textOptions)
+            : base(textOptions.WriteVersionMarker
+                ? IonWriterBuilderBase.InitialIvmHandlingOption.Ensure
+                : IonWriterBuilderBase.InitialIvmHandlingOption.Suppress)
         {
             _textWriter = new IonTextRawWriter(textWriter);
             _options = textOptions;
@@ -158,7 +159,12 @@ namespace IonDotnet.Internals.Text
                     followingLongString = false;
                 }
 
-                _textWriter.Write(_options.LineSeparator);
+                if (_ivmHandlingOption == IonWriterBuilderBase.InitialIvmHandlingOption.Default)
+                {
+                    //this mean we've written something
+                    _textWriter.Write(_options.LineSeparator);
+                }
+
                 WriteLeadingWhiteSpace();
             }
             else if (_pendingSeparator)
@@ -488,6 +494,8 @@ namespace IonDotnet.Internals.Text
             }
 
             _textWriter.Write(opener);
+            //we've started the value and written something, ivm no longer needed
+            _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
             _pendingSeparator = false;
             _followingLongString = false;
         }

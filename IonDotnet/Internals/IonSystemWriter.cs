@@ -13,7 +13,7 @@ namespace IonDotnet.Internals
     {
         private string _fieldName;
         private int _fieldNameSid = SymbolToken.UnknownSid;
-        private IonWriterBuilderBase.InitialIvmHandlingOption _ivmHandlingOption;
+        protected IonWriterBuilderBase.InitialIvmHandlingOption _ivmHandlingOption;
         protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private readonly ISymbolTable _symbolTable;
@@ -129,7 +129,7 @@ namespace IonDotnet.Internals
 
         protected void EndValue()
         {
-            _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Suppress;
+            _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using IonDotnet.Internals.Text;
+using IonDotnet.Serialization;
 using IonDotnet.Systems;
 
 namespace IonDotnet.Bench
@@ -10,50 +11,22 @@ namespace IonDotnet.Bench
     {
         public void Run(string[] args)
         {
-            var writer = new StringWriter();
-            var s = new IonTextWriter(writer, new IonTextOptions
+            var exp = new Experiment
             {
-                PrettyPrint = true
-            });
-            s.StepIn(IonType.Struct);
-            s.SetFieldName("no");
-            s.StepIn(IonType.Struct);
-            s.SetFieldName("lo");
-            s.WriteString("yes");
-            s.SetFieldName("num");
-            s.WriteInt(23321);
-            s.SetFieldName("bool");
-            s.WriteBool(true);
-            s.SetFieldName("float");
-            s.WriteFloat(4.2312321);
-            s.SetFieldName("symbol");
-            s.WriteSymbol("dadasdSym");
-            s.SetFieldName("datetime");
-            s.WriteTimestamp(new Timestamp(DateTime.Now));
-            s.StepOut();
+                Name = "Boxing Perftest",
+                // Duration = TimeSpan.FromSeconds(90),
+                Id = 233,
+                StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
+                IsActive = true,
+                Description = "Measure performance impact of boxing",
+                Result = ExperimentResult.Failure,
+                SampleData = new byte[100],
+                Budget = decimal.Parse("12345.01234567890123456789"),
+                Outputs = new[] {1, 2, 3}
+            };
 
-            s.SetFieldName("list");
-            s.StepIn(IonType.List);
-
-            s.StepIn(IonType.Struct);
-            s.SetFieldName("int");
-            s.WriteInt(1);
-            s.StepOut();
-
-            s.StepIn(IonType.Struct);
-            s.SetFieldName("blob");
-            s.WriteBlob(new byte[20]);
-            s.StepOut();
-
-            s.StepOut();
-
-            s.StepOut();
-
-            s.WriteString("aftermath");
-
-            s.Finish();
-            var r = writer.ToString();
-            Console.WriteLine(r);
+            var text = IonSerialization.Text.Serialize(exp, new IonTextOptions {PrettyPrint = true});
+            Console.WriteLine(text);
         }
     }
 }
