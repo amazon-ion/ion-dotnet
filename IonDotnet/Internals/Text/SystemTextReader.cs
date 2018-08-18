@@ -219,6 +219,26 @@ namespace IonDotnet.Internals.Text
             _v.BigIntegerValue = b;
         }
 
+        private void LoadLobContent()
+        {
+            //check if we already loaded
+            if (_lobBuffer != null)
+                return;
+
+            //TODO handle other types of lob content
+            switch (_lobToken)
+            {
+                case TextConstants.TokenOpenDoubleBrace:
+                    ClearValueBuffer();
+                    _scanner.LoadBlob(_valueBuffer);
+                    break;
+            }
+
+            //TODO this is horrible but does it matter?
+            _lobBuffer = Convert.FromBase64String(_valueBuffer.ToString());
+            ClearValueBuffer();
+        }
+
         public override ISymbolTable GetSymbolTable() => _systemSymbols;
 
         public override IntegerSize GetIntegerSize()
@@ -315,12 +335,31 @@ namespace IonDotnet.Internals.Text
 
         public override int GetBytes(Span<byte> buffer)
         {
-            throw new NotImplementedException();
+            LoadLobContent();
+            if (_lobValuePosition == _lobBuffer.Length)
+                return 0;
+
+            Span<byte> span = _lobBuffer;
+            var remaining = _lobBuffer.Length - _lobValuePosition;
+            var bytes = remaining > buffer.Length ? buffer.Length : remaining;
+
+            span.Slice(_lobValuePosition, bytes).CopyTo(buffer);
+            _lobValuePosition += bytes;
+            return bytes;
         }
 
         public override byte[] NewByteArray()
         {
-            throw new NotImplementedException();
+            LoadLobContent();
+            var newArray = new byte[_lobBuffer.Length];
+            Buffer.BlockCopy(_lobBuffer, 0, newArray, 0, newArray.Length);
+            return newArray;
+        }
+
+        public override int GetLobByteSize()
+        {
+            LoadLobContent();
+            return _lobBuffer.Length;
         }
     }
 }

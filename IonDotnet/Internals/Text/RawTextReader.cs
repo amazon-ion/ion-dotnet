@@ -158,7 +158,9 @@ namespace IonDotnet.Internals.Text
         private int _fieldNameSid = SymbolToken.UnknownSid;
 
         private readonly ContainerStack _containerStack;
-        private int _lobToken;
+        protected int _lobToken;
+        protected int _lobValuePosition;
+        protected byte[] _lobBuffer;
 
         protected RawTextReader(TextStream input, IonType parent = IonType.Datagram)
         {
@@ -197,6 +199,8 @@ namespace IonDotnet.Internals.Text
             _annotations.Clear();
             ClearFieldName();
             _v.Clear();
+            _lobValuePosition = 0;
+            _lobBuffer = null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -661,10 +665,7 @@ namespace IonDotnet.Internals.Text
 
         public abstract SymbolToken SymbolValue();
 
-        public int GetLobByteSize()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract int GetLobByteSize();
 
         public abstract byte[] NewByteArray();
 

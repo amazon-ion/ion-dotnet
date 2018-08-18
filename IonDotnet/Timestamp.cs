@@ -6,7 +6,7 @@ namespace IonDotnet
 {
     public readonly struct Timestamp
     {
-        internal static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
         /// <summary>
         /// Date time value
@@ -18,10 +18,14 @@ namespace IonDotnet
         /// </summary>
         public readonly int LocalOffset;
 
+        /// <summary>
+        /// Initialize a new Timestamp structure
+        /// </summary>
         public Timestamp(int year, int month, int day, int hour, int minute, int second, in decimal frac)
         {
             //offset unknown
-            if (frac >= 1) throw new ArgumentException("Fraction must be < 1", nameof(frac));
+            if (frac >= 1)
+                throw new ArgumentException("Fraction must be < 1", nameof(frac));
 
             var ticks = (int) (frac * TimeSpan.TicksPerSecond);
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified)
@@ -32,7 +36,8 @@ namespace IonDotnet
         public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac)
         {
             //offset known
-            if (frac >= 1) throw new ArgumentException("Fraction must be < 1", nameof(frac));
+            if (frac >= 1)
+                throw new ArgumentException("Fraction must be < 1", nameof(frac));
 
             var ticks = (int) (frac * TimeSpan.TicksPerSecond);
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local)
@@ -126,6 +131,14 @@ namespace IonDotnet
         /// <exception cref="FormatException">Parameter is not a correct ISO-8601 string format</exception>
         public static Timestamp Parse(string s)
         {
+            //TODO can this go wrong?
+            if (s.Contains('Z') || s.Contains('z') || s.Contains('+'))
+            {
+                //offset present
+                var dto = DateTimeOffset.Parse(s);
+                return new Timestamp(dto);
+            }
+
             throw new NotImplementedException();
         }
 

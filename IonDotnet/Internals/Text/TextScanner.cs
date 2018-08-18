@@ -477,6 +477,26 @@ namespace IonDotnet.Internals.Text
                 throw new IonException("Blob not closed properly");
         }
 
+        public void LoadBlob(StringBuilder sb)
+        {
+            var c = SkipOverWhiteSpace(CommentStrategy.Break);
+            while (true)
+            {
+                if (c == TextConstants.TokenEof)
+                    throw new UnexpectedEofException();
+                if (c == '}')
+                    break;
+                sb.Append((char) c);
+                c = SkipOverWhiteSpace(CommentStrategy.Break);
+            }
+            
+            c = ReadChar();
+            if (c == TextConstants.TokenEof)
+                throw new UnexpectedEofException();
+            if (c != '}')
+                throw new IonException("Blob not closed properly");
+        }
+
         public void SkipOverStruct() => SkipOverContainer('}');
 
         public void SkipOverSexp() => SkipOverContainer(')');

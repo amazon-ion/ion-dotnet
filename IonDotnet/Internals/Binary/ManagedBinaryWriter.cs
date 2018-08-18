@@ -9,7 +9,7 @@ using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Binary
 {
-    internal sealed class ManagedBinaryWriter : IIonWriter
+    internal sealed class ManagedBinaryWriter : PrivateIonWriterBase
     {
         private sealed class PagedWriter256Buffer : PagedWriterBuffer
         {
@@ -36,12 +36,8 @@ namespace IonDotnet.Internals.Binary
             public ImportedSymbolsContext(ISymbolTable[] imports)
             {
                 Parents = imports;
-                //add all the system symbols
-//                foreach (var systemSymbolToken in Symbols.SystemSymbolTokens)
-//                {
-//                    _dict.Add(systemSymbolToken.Text, systemSymbolToken.Sid);
-//                }
 
+                //add all the system symbols
                 LocalSidStart = SystemSymbols.Ion10MaxId + 1;
                 foreach (var symbolTable in imports)
                 {
@@ -84,7 +80,8 @@ namespace IonDotnet.Internals.Binary
 //                    return true;
 //                }
 
-                if (Parents.Length == 0) return false;
+                if (Parents.Length == 0)
+                    return false;
 
                 return _dict.TryGetValue(text, out val);
             }
@@ -212,13 +209,13 @@ namespace IonDotnet.Internals.Binary
             return Intern(token.Text);
         }
 
-        public ISymbolTable SymbolTable => _localSymbolTableView ?? (_localSymbolTableView = new LocalSymbolTableView(this));
+        public override ISymbolTable SymbolTable => _localSymbolTableView ?? (_localSymbolTableView = new LocalSymbolTableView(this));
 
         /// <inheritdoc />
         /// <summary>
         /// This is supposed to close the writer and release all their resources
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             //first try to flush things out
 //            Flush();
@@ -241,7 +238,7 @@ namespace IonDotnet.Internals.Binary
 
             _userWriter.PrepareFlush();
             _userWriter.Flush(outputStream);
-            
+
             Finish();
         }
 
@@ -260,7 +257,7 @@ namespace IonDotnet.Internals.Binary
 
             _symbolsWriter.Flush(bytes);
             _userWriter.Flush(new Memory<byte>(bytes, sLength, uLength));
-            
+
             Finish();
         }
 
@@ -281,11 +278,16 @@ namespace IonDotnet.Internals.Binary
             return tLength;
         }
 
-        public void Flush()
+        public override void WriteIonVersionMarker()
+        {
+            //do nothing, Ivm is always written
+        }
+
+        public override void Flush()
         {
             //do nothing
         }
-        
+
         private bool PrepareFlush()
         {
             if (_userWriter.GetDepth() != 0)
@@ -308,13 +310,13 @@ namespace IonDotnet.Internals.Binary
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             _symbolState = SymbolState.LocalSymbolsFlushed;
 
             return true;
         }
 
-        public void Finish()
+        public override void Finish()
         {
             if (_userWriter.GetDepth() != 0) throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
 
@@ -327,7 +329,7 @@ namespace IonDotnet.Internals.Binary
             _symbolState = SymbolState.SystemSymbols;
         }
 
-        public void SetFieldName(string name)
+        public override void SetFieldName(string name)
         {
             if (!IsInStruct) throw new IonException("Cannot set a field name if the current container is not struct");
             if (name == null) throw new ArgumentNullException(nameof(name));
@@ -336,92 +338,82 @@ namespace IonDotnet.Internals.Binary
             _userWriter.SetFieldNameSymbol(token);
         }
 
-        public void SetFieldNameSymbol(SymbolToken symbol)
+        public override void SetFieldNameSymbol(SymbolToken symbol)
         {
             var token = InternSymbol(symbol);
             _userWriter.SetFieldNameSymbol(token);
         }
 
-        public void StepIn(IonType type)
+        public override void StepIn(IonType type)
         {
             // TODO implement top-level symbol table
             _userWriter.StepIn(type);
         }
 
-        public void StepOut()
+        public override void StepOut()
         {
             // TODO implement top-level symbol table
             _userWriter.StepOut();
         }
 
-        public bool IsInStruct => _userWriter.IsInStruct;
+        public override bool IsInStruct => _userWriter.IsInStruct;
 
-        public void WriteValue(IIonReader reader)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WriteValues(IIonReader reader)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WriteNull()
+        public override void WriteNull()
         {
             _userWriter.WriteNull();
         }
 
-        public void WriteNull(IonType type)
+        public override void WriteNull(IonType type)
         {
             _userWriter.WriteNull(type);
         }
 
-        public void WriteBool(bool value)
+        public override void WriteBool(bool value)
         {
             _userWriter.WriteBool(value);
         }
 
-        public void WriteInt(long value)
+        public override void WriteInt(long value)
         {
             _userWriter.WriteInt(value);
         }
 
-        public void WriteInt(BigInteger value)
+        public override void WriteInt(BigInteger value)
         {
             _userWriter.WriteInt(value);
         }
 
-        public void WriteFloat(double value)
+        public override void WriteFloat(double value)
         {
             _userWriter.WriteFloat(value);
         }
 
-        public void WriteDecimal(decimal value)
+        public override void WriteDecimal(decimal value)
         {
             _userWriter.WriteDecimal(value);
         }
 
-        public void WriteTimestamp(Timestamp value)
+        public override void WriteTimestamp(Timestamp value)
         {
             _userWriter.WriteTimestamp(value);
         }
 
-        public void WriteSymbol(string symbol)
+        public override void WriteSymbol(string symbol)
         {
             var token = Intern(symbol);
             _userWriter.WriteSymbolToken(token);
         }
 
-        public void WriteString(string value)
+        public override void WriteString(string value)
         {
             _userWriter.WriteString(value);
         }
 
-        public void WriteBlob(ReadOnlySpan<byte> value) => _userWriter.WriteBlob(value);
+        public override void WriteBlob(ReadOnlySpan<byte> value) => _userWriter.WriteBlob(value);
 
-        public void WriteClob(ReadOnlySpan<byte> value) => _userWriter.WriteClob(value);
+        public override void WriteClob(ReadOnlySpan<byte> value) => _userWriter.WriteClob(value);
 
-        public void SetTypeAnnotation(string annotation)
+        public override void SetTypeAnnotation(string annotation)
         {
             if (annotation == default) throw new ArgumentNullException(nameof(annotation));
 
@@ -430,7 +422,7 @@ namespace IonDotnet.Internals.Binary
             _userWriter.AddTypeAnnotationSymbol(token);
         }
 
-        public void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
+        public override void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
         {
             if (annotations == null) throw new ArgumentNullException(nameof(annotations));
             foreach (var annotation in annotations)
@@ -440,7 +432,17 @@ namespace IonDotnet.Internals.Binary
             }
         }
 
-        public void AddTypeAnnotation(string annotation)
+        public override bool IsFieldNameSet()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int GetDepth()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void AddTypeAnnotation(string annotation)
         {
             var token = Intern(annotation);
             _userWriter.AddTypeAnnotationSymbol(token);

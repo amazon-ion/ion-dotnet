@@ -12,7 +12,7 @@ namespace IonDotnet.Internals.Text
     /// <summary>
     /// Deals with writing Ion text form
     /// </summary>
-    internal class IonTextWriter : SystemWriter
+    internal class IonTextWriter : IonSystemWriter
     {
         private enum SymbolVariant
         {
@@ -187,6 +187,17 @@ namespace IonDotnet.Internals.Text
             CloseValue();
         }
 
+        protected override void WriteIonVersionMarker(ISymbolTable systemSymtab)
+        {
+            _isWritingIvm = true;
+
+            StartValue();
+            WriteSymbolText(systemSymtab.IonVersionId, SymbolVariant.Identifier);
+            CloseValue();
+
+            _isWritingIvm = false;
+        }
+
         protected override void StartValue()
         {
             base.StartValue();
@@ -235,10 +246,7 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public override void Flush()
-        {
-            _textWriter.Flush();
-        }
+        public override void Flush() => _textWriter.Flush();
 
         public override void WriteNull()
         {
@@ -411,12 +419,28 @@ namespace IonDotnet.Internals.Text
 
         public override void WriteClob(ReadOnlySpan<byte> value)
         {
-            throw new NotImplementedException();
+            StartValue();
+
+            _textWriter.Write("{{");
+            if (_options.PrettyPrint)
+            {
+                _textWriter.Write(' ');
+            }
+
+            _textWriter.WriteClobAsString(value);
+            if (_options.PrettyPrint)
+            {
+                _textWriter.Write(' ');
+            }
+
+            _textWriter.Write("}}");
+
+            CloseValue();
         }
 
         public override void Dispose()
         {
-            throw new NotImplementedException();
+            //TODO is there anything to do here?
         }
 
         public override void Finish()

@@ -9,17 +9,17 @@ namespace IonDotnet.Internals
     /// <summary>
     /// Base class for text and tree writer (why is this called 'system' ?) 
     /// </summary>
-    internal abstract class SystemWriter : PrivateIonWriterBase
-    {        
+    internal abstract class IonSystemWriter : PrivateIonWriterBase
+    {
         private string _fieldName;
         private int _fieldNameSid = SymbolToken.UnknownSid;
         private IonWriterBuilderBase.InitialIvmHandlingOption _ivmHandlingOption;
         protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
-        protected ISymbolTable _symbolTable;
+        private readonly ISymbolTable _symbolTable;
         private readonly ISymbolTable _systemSymtab;
 
-        protected SystemWriter(IonWriterBuilderBase.InitialIvmHandlingOption ivmHandlingOption)
+        protected IonSystemWriter(IonWriterBuilderBase.InitialIvmHandlingOption ivmHandlingOption)
         {
             _systemSymtab = SharedSymbolTable.GetSystem(1);
             _symbolTable = _systemSymtab;
@@ -72,21 +72,30 @@ namespace IonDotnet.Internals
 
         public override void WriteIonVersionMarker()
         {
+            if (GetDepth() != 0)
+                throw new InvalidOperationException($"Cannot write Ivm at depth {GetDepth()}");
+
+            if (_systemSymtab.IonVersionId != SystemSymbols.Ion10)
+                throw new UnsupportedIonVersionException(_symbolTable.IonVersionId);
+
             _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
+            WriteIonVersionMarker(_systemSymtab);
         }
-        
+
         public override void WriteSymbol(string symbol)
         {
-            if (SystemSymbols.Ion10 == symbol && GetDepth()==0 && _annotations.Count==0)
+            if (SystemSymbols.Ion10 == symbol && GetDepth() == 0 && _annotations.Count == 0)
             {
                 WriteIonVersionMarker();
                 return;
             }
-            
+
             WriteSymbolString(symbol);
         }
 
         protected abstract void WriteSymbolString(string value);
+
+        protected abstract void WriteIonVersionMarker(ISymbolTable systemSymtab);
 
         /// <summary>
         /// Assume that we have a field name text or sid set

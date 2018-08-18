@@ -169,6 +169,23 @@ namespace IonDotnet.Internals.Text
             _writer.Write("'''");
         }
 
+        public void WriteClobAsString(ReadOnlySpan<byte> clobBytes)
+        {
+            foreach (var b in clobBytes)
+            {
+                var c = (char) (b & 0xff);
+                var escapedByte = StringEscapeCodes[c];
+                if (escapedByte != null)
+                {
+                    _writer.Write(escapedByte);
+                }
+                else
+                {
+                    _writer.Write(c);
+                }
+            }
+        }
+
         private void WriteStringWithEscapes(string text)
         {
             //TODO handle different string types
@@ -184,9 +201,9 @@ namespace IonDotnet.Internals.Text
         public void Flush() => _writer.Flush();
 
         public void Write(long l) => _writer.Write(l);
-        
+
         public void Write(double d) => _writer.Write(d);
-        
+
         public void Write(decimal d) => _writer.Write(d);
     }
 }

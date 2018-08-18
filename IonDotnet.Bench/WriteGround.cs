@@ -31,31 +31,26 @@ namespace IonDotnet.Bench
             s.SetFieldName("datetime");
             s.WriteTimestamp(new Timestamp(DateTime.Now));
             s.StepOut();
-            
-            s.SetFieldName("listint");
+
+            s.SetFieldName("list");
             s.StepIn(IonType.List);
-            
+
             s.StepIn(IonType.Struct);
             s.SetFieldName("int");
             s.WriteInt(1);
             s.StepOut();
-            
+
             s.StepIn(IonType.Struct);
-            s.SetFieldName("int");
-            s.WriteInt(2);
+            s.SetFieldName("blob");
+            s.WriteBlob(new byte[20]);
             s.StepOut();
-            
-            s.StepIn(IonType.Struct);
-            s.SetFieldName("int");
-            s.WriteInt(3);
+
             s.StepOut();
-            
+
             s.StepOut();
-            
-            s.StepOut();
-            
+
             s.WriteString("aftermath");
-            
+
             s.Finish();
             var r = writer.ToString();
             Console.WriteLine(r);

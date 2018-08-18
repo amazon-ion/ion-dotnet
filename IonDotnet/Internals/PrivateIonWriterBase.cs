@@ -7,7 +7,7 @@ using System.Numerics;
 namespace IonDotnet.Internals
 {
     /// <summary>
-    /// Base logic for (Supposedly)  all ion writers.
+    /// Base logic for (supposedly)  all Ion writers.
     /// </summary>
     internal abstract class PrivateIonWriterBase : IPrivateWriter
     {
@@ -22,7 +22,17 @@ namespace IonDotnet.Internals
 
         public void WriteValues(IIonReader reader)
         {
-            throw new NotImplementedException();
+            //TODO possible optimization?
+            if (reader.CurrentType == IonType.None)
+            {
+                reader.MoveNext();
+            }
+
+            while (reader.CurrentType != IonType.None)
+            {
+                WriteValue(reader);
+                reader.MoveNext();
+            }
         }
 
         private void WriteValueRecursively(IonType type, IIonReader reader)
