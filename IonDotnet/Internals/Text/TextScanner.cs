@@ -489,7 +489,7 @@ namespace IonDotnet.Internals.Text
                 sb.Append((char) c);
                 c = SkipOverWhiteSpace(CommentStrategy.Break);
             }
-            
+
             c = ReadChar();
             if (c == TextConstants.TokenEof)
                 throw new UnexpectedEofException();
@@ -1519,9 +1519,162 @@ namespace IonDotnet.Internals.Text
             return FinishLoadNumber(valueBuffer, c, t);
         }
 
-        private IonType LoadTimestamp(StringBuilder valueBuffer, int i)
+        private void load_fixed_digits(StringBuilder sb, int len)
         {
-            throw new NotImplementedException();
+            int c;
+
+            switch (len)
+            {
+                default:
+                    while (len > 4)
+                    {
+                        c = ReadChar();
+                        if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                        sb.Append((char) c);
+                        len--;
+                    }
+
+                    // fall through
+                    goto case 4;
+                case 4:
+                    c = ReadChar();
+                    if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                    sb.Append((char) c);
+                    // fall through
+                    goto case 3;
+                case 3:
+                    c = ReadChar();
+                    if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                    sb.Append((char) c);
+                    // fall through
+                    goto case 2;
+                case 2:
+                    c = ReadChar();
+                    if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                    sb.Append((char) c);
+                    // fall through
+                    goto case 1;
+                case 1:
+                    c = ReadChar();
+                    if (!char.IsDigit((char) c))
+                        throw new InvalidTokenException(c);
+                    sb.Append((char) c);
+                    break;
+            }
+        }
+
+        private IonType LoadTimestamp(StringBuilder sb, int c)
+        {
+            // we read the year in our caller, we should only be
+            // here is we read 4 digits and then a dash or a 'T'
+            Debug.Assert(c == '-' || c == 'T');
+
+            sb.Append((char) c);
+
+            // if it's 'T' we done: yyyyT
+            if (c == 'T')
+            {
+                c = ReadChar(); // because we'll unread it before we return
+                return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
+            }
+
+            // read month
+            load_fixed_digits(sb, 2);
+
+            c = ReadChar();
+            if (c == 'T')
+            {
+                sb.Append((char) c);
+                c = ReadChar(); // because we'll unread it before we return
+                return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
+            }
+
+            if (c != '-') 
+                throw new InvalidTokenException(c);
+
+            // read day
+            sb.Append((char) c);
+            load_fixed_digits(sb, 2);
+
+            // look for the 'T', otherwise we're done (and happy about it)
+            c = ReadChar();
+            if (c != 'T')
+            {
+                return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
+            }
+
+            // so either we're done or we must at least hours and minutes
+            // hour
+            sb.Append((char) c);
+            c = ReadChar();
+            if (!char.IsDigit((char) c))
+            {
+                return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
+            }
+
+            sb.Append((char) c);
+            load_fixed_digits(sb, 1); // we already read the first digit
+            c = ReadChar();
+            if (c != ':') throw new InvalidTokenException(c);
+
+            // minutes
+            sb.Append((char) c);
+            load_fixed_digits(sb, 2);
+            c = ReadChar();
+            if (c == ':')
+            {
+                // seconds are optional
+                // and first we'll have the whole seconds
+                sb.Append((char) c);
+                load_fixed_digits(sb, 2);
+                c = ReadChar();
+                if (c == '.')
+                {
+                    sb.Append((char) c);
+                    c = ReadChar();
+                    // Per spec and W3C Note http://www.w3.org/TR/NOTE-datetime
+                    // We require at least one digit after the decimal point.
+                    if (!char.IsDigit((char) c))
+                        throw new InvalidTokenException(c);
+
+                    c = LoadDigits(sb, c);
+                }
+            }
+
+            // since we have a time, we have to have a timezone of some sort
+            // the timezone offset starts with a '+' '-' 'Z' or 'z'
+            if (c == 'z' || c == 'Z')
+            {
+                sb.Append((char) c);
+                // read ahead since we'll check for a valid ending in a bit
+                c = ReadChar();
+            }
+            else if (c == '+' || c == '-')
+            {
+                // then ... hours of time offset
+                sb.Append((char) c);
+                load_fixed_digits(sb, 2);
+                c = ReadChar();
+                if (c != ':')
+                {
+                    // those hours need their minutes if it wasn't a 'z'
+                    // (above) then it has to be a +/- hours { : minutes }
+                    throw new InvalidTokenException(c);
+                }
+
+                // and finally the *not* optional minutes of time offset
+                sb.Append((char) c);
+                load_fixed_digits(sb, 2);
+                c = ReadChar();
+            }
+            else
+            {
+                // some sort of offset is required with a time value
+                // if it wasn't a 'z' (above) then it has to be a +/- hours { : minutes }
+                throw new InvalidTokenException(c);
+            }
+
+            return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
         }
 
         private int LoadExponent(StringBuilder valueBuffer)

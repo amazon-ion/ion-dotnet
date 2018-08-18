@@ -3,10 +3,9 @@ using System.Diagnostics;
 using IonDotnet.Internals.Binary;
 
 // ReSharper disable UnusedMember.Global
-
 namespace IonDotnet.Bench
 {
-    public class ReaderBenchmark : IRunable
+    public class WriterBenchmark : IRunable
     {
         private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
 

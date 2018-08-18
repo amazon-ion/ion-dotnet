@@ -132,14 +132,37 @@ namespace IonDotnet
         public static Timestamp Parse(string s)
         {
             //TODO can this go wrong?
-            if (s.Contains('Z') || s.Contains('z') || s.Contains('+'))
+            const string minusZero = "-00:00";
+            var endsWithMinusZero = false;
+            var offsetKnown = s.Contains('Z') || s.Contains('z') || s.Contains('+');
+            if (!offsetKnown)
+            {
+                if (s.EndsWith(minusZero))
+                {
+                    endsWithMinusZero = true;
+                }
+                else
+                {
+                    offsetKnown = s.Length >= 6 && s[s.Length - 3] == ':' && s[s.Length - 3] == '-';
+                }
+            }
+
+            if (offsetKnown)
             {
                 //offset present
                 var dto = DateTimeOffset.Parse(s);
                 return new Timestamp(dto);
             }
 
-            throw new NotImplementedException();
+            var span = s.AsSpan();
+            if (endsWithMinusZero)
+            {
+                span = span.Slice(0, s.Length - minusZero.Length);
+            }
+
+            var dt = DateTime.Parse(span);
+            dt = DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
+            return new Timestamp(dt);
         }
 
         public override string ToString()
