@@ -29,7 +29,7 @@ var experiment = new Experiment
     StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
     IsActive = true,
     Result = ExperimentResult.Failure,
-    SampleData = new byte[100],
+    SampleData = new byte[10],
     Budget = decimal.Parse("12345.01234567890123456789"),
     Outputs = new[] {1, 2, 3}
 };
@@ -54,7 +54,7 @@ Console.WriteLine(text);
     Description: "Measure performance impact of boxing",
     StartDate: 2018-07-21T11:11:11.0000000+00:00,
     IsActive: true,
-    SampleData: {{ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA== }},
+    SampleData: {{ AAAAAAAAAAAAAA== }},
     Budget: 12345.01234567890123456789,
     Result: 'Failure',
     Outputs: [

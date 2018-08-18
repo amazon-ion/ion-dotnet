@@ -20,7 +20,7 @@ namespace IonDotnet.Bench
                 IsActive = true,
                 Description = "Measure performance impact of boxing",
                 Result = ExperimentResult.Failure,
-                SampleData = new byte[100],
+                SampleData = new byte[10],
                 Budget = decimal.Parse("12345.01234567890123456789"),
                 Outputs = new[] {1, 2, 3}
             };
