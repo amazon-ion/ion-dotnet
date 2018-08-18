@@ -19,6 +19,7 @@ private class Experiment
     public byte[] SampleData { get; set; }
     public decimal Budget { get; set; }
     public ExperimentResult Result { get; set; }
+    public int[] Outputs { get; set; }
 }
 
 var experiment = new Experiment
@@ -29,7 +30,8 @@ var experiment = new Experiment
     IsActive = true,
     Result = ExperimentResult.Failure,
     SampleData = new byte[100],
-    Budget = decimal.Parse("12345.01234567890123456789")
+    Budget = decimal.Parse("12345.01234567890123456789"),
+    Outputs = new[] {1, 2, 3}
 };
 
 //Serialize an object to byte array

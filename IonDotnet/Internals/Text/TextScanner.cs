@@ -495,6 +495,9 @@ namespace IonDotnet.Internals.Text
                 throw new UnexpectedEofException();
             if (c != '}')
                 throw new IonException("Blob not closed properly");
+            //now we've seen }}, unread them so they can be skipped
+            UnreadChar('}');
+            UnreadChar('}');
         }
 
         public void SkipOverStruct() => SkipOverContainer('}');
@@ -1036,6 +1039,7 @@ namespace IonDotnet.Internals.Text
                         continue;
                     case -1:
                     case '\'':
+                        UnreadChar(c);
                         return c;
                     case CharacterSequence.CharSeqNewlineSequence1:
                     case CharacterSequence.CharSeqNewlineSequence2:
@@ -1589,7 +1593,7 @@ namespace IonDotnet.Internals.Text
                 return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
             }
 
-            if (c != '-') 
+            if (c != '-')
                 throw new InvalidTokenException(c);
 
             // read day

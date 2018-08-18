@@ -27,6 +27,7 @@ namespace IonDotnet.Bench
 
             var text = IonSerialization.Text.Serialize(exp, new IonTextOptions {PrettyPrint = true});
             Console.WriteLine(text);
+            var obj = IonSerialization.Text.Deserialize<Experiment>(text);
         }
     }
 }
