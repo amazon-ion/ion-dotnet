@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Numerics;
 using System.Text;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 using IonDotnet.Conversions;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
+// ReSharper disable All
 
 namespace IonDotnet.Bench
 {
@@ -111,10 +114,9 @@ namespace IonDotnet.Bench
             }
         }
 
-        [MemoryDiagnoser]
-        public class Benchmark
+        public abstract class Benchmark
         {
-            private static readonly List<Experiment> Data = GenerateArray();
+            protected static readonly List<Experiment> Data = GenerateArray();
             private const int Times = 1000;
 
             private static List<Experiment> GenerateArray()
@@ -138,58 +140,48 @@ namespace IonDotnet.Bench
 
                 return l;
             }
+        }
+
+        [MemoryDiagnoser]
+        public class BinaryBenchmark : Benchmark
+        {
+            private static readonly ManagedBinaryWriter Mbw = new ManagedBinaryWriter(new ISymbolTable[0]);
+            private static readonly JsonSerializer JSerializer = new JsonSerializer();
 
             [Benchmark]
-            public int JsonDotnet()
+            public byte[] JsonDotnetBytes()
             {
-                var s = JsonConvert.SerializeObject(Data);
-                return Encoding.UTF8.GetBytes(s).Length;
-            }
-
-            [Benchmark]
-            public void IonDotnetExp()
-            {
-                IonExpressionBinary.Serialize(Data);
-            }
-
-            [Benchmark]
-            public void IonDotnetReflection()
-            {
-                IonSerialization.Binary.Serialize(Data);
-            }
-
-            private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
-
-            [Benchmark]
-            public void IonDotnetManual()
-            {
-                byte[] bytes = null;
-                Writer.StepIn(IonType.List);
-                foreach (var poco in Data)
+                using (var memStream = new MemoryStream())
                 {
-                    Writer.StepIn(IonType.Struct);
-
-                    Writer.SetFieldName("Id");
-                    Writer.WriteInt(poco.Id);
-                    Writer.SetFieldName("Name");
-                    Writer.WriteString(poco.Name);
-                    Writer.SetFieldName("Description");
-                    Writer.WriteString(poco.Description);
-                    Writer.SetFieldName("StartDate");
-                    Writer.WriteTimestamp(new Timestamp(poco.StartDate));
-                    Writer.SetFieldName("IsActive");
-                    Writer.WriteBool(poco.IsActive);
-                    Writer.SetFieldName("SampleData");
-                    Writer.WriteBlob(poco.SampleData);
-                    Writer.SetFieldName("Budget");
-                    Writer.WriteDecimal(poco.Budget);
-
-                    Writer.StepOut();
+                    using (var streamWriter = new StreamWriter(memStream, Encoding.UTF8))
+                    {
+                        JSerializer.Serialize(streamWriter, Data);
+                        return memStream.ToArray();
+                    }
                 }
+            }
 
-                Writer.StepOut();
-                Writer.Flush(ref bytes);
-                Writer.Finish();
+
+            [Benchmark]
+            public byte[] IonDotnetExpBinary()
+            {
+                return IonExpressionBinary.Serialize(Data);
+            }
+        }
+
+        [MemoryDiagnoser]
+        public class TextBenchmark : Benchmark
+        {
+            [Benchmark]
+            public string IonDotnetText()
+            {
+                return IonExpressionText.Serialize(Data);
+            }
+
+            [Benchmark]
+            public string JsonDotnetString()
+            {
+                return JsonConvert.SerializeObject(Data);
             }
         }
 
@@ -219,22 +211,8 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-            var data = DirStructure.ReadDataFile("sample.ion");
-            var str = Encoding.ASCII.GetString(data);
-            var reader = new UserTextReader(str);
-            Console.WriteLine(reader.MoveNext());
-            reader.StepIn();
-
-            Console.WriteLine(reader.MoveNext());
-            Console.WriteLine(reader.CurrentIsNull);
-
-            reader.StepOut();
-
-            reader.MoveNext();
-            Console.WriteLine($"[{reader.CurrentType}]{reader.CurrentFieldName}");
-            Console.WriteLine(reader.IntValue());
-
-//            BenchmarkRunner.Run<Benchmark>();
+            BenchmarkRunner.Run<TextBenchmark>();
+            BenchmarkRunner.Run<BinaryBenchmark>();
         }
     }
 }

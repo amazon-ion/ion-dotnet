@@ -5,6 +5,7 @@ namespace IonDotnet.Bench
     public static class IonExpressionBinary
     {
         private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
+
         
         public static byte[] Serialize<T>(T obj)
         {

@@ -67,17 +67,7 @@ Console.WriteLine(text);
 ```
 
 ### Benchmarks
-#### Serialization: Text vs JSON.NET
-Test: Serialize 1 record
-```
-             Method |     Mean |     Error |    StdDev |  Gen 0 | Allocated |
-------------------- |---------:|----------:|----------:|-------:|----------:|
- JsonDotnetToString | 3.170 us | 0.0619 us | 0.0782 us | 0.8049 |   2.48 KB |
-      IonDotnetText | 2.201 us | 0.0413 us | 0.0460 us | 0.6561 |   2.02 KB |
-```
-
-#### Serialization: Binary vs JSON.NET
-Test: serialize 1000 records
+Environment
 ```
 BenchmarkDotNet=v0.11.0, OS=Windows 10.0.17134.191 (1803/April2018Update/Redstone4)
 Intel Core i7-6700HQ CPU 2.60GHz (Max: 2.59GHz) (Skylake), 1 CPU, 8 logical and 4 physical cores
@@ -85,13 +75,24 @@ Frequency=2531251 Hz, Resolution=395.0616 ns, Timer=TSC
 .NET Core SDK=2.1.302
   [Host]     : .NET Core 2.1.2 (CoreCLR 4.6.26628.05, CoreFX 4.6.26629.01), 64bit RyuJIT
   DefaultJob : .NET Core 2.1.2 (CoreCLR 4.6.26628.05, CoreFX 4.6.26629.01), 64bit RyuJIT
-  
-                  Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 |  Allocated |
------------------------- |---------:|----------:|----------:|---------:|---------:|---------:|-----------:|
-              JSONDotnet | 3.198 ms | 0.0291 ms | 0.0272 ms | 371.0938 | 371.0938 | 371.0938 | 1575.56 KB |
- IonReflectionSerializer | 5.406 ms | 0.1076 ms | 0.1057 ms |  54.6875 |  15.6250 |        - |  522.33 KB |
-        IonExpSerializer | 2.731 ms | 0.0287 ms | 0.0269 ms |  35.1563 |  11.7188 |        - |  412.95 KB |
-         IonDotnetManual | 2.288 ms | 0.0322 ms | 0.0302 ms |  31.2500 |  11.7188 |        - |  383.37 KB |
+```
+
+#### Serialization: Text vs JSON.NET
+Test: Serialize 1000 record
+```
+           Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
+----------------- |---------:|----------:|----------:|---------:|---------:|---------:|----------:|
+    IonDotnetText | 2.030 ms | 0.0378 ms | 0.0388 ms | 417.9688 | 312.5000 | 183.5938 |   1.91 MB |
+ JsonDotnetString | 2.611 ms | 0.0488 ms | 0.0433 ms | 351.5625 | 277.3438 | 167.9688 |   1.58 MB |
+```
+
+#### Serialization: Binary vs JSON.NET
+Test: serialize 1000 records
+```
+             Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 |  Allocated |
+------------------- |---------:|----------:|----------:|---------:|---------:|---------:|-----------:|
+    JsonDotnetBytes | 2.807 ms | 0.0520 ms | 0.0486 ms | 433.5938 | 347.6563 | 347.6563 | 1594.46 KB |
+ IonDotnetExpBinary | 2.576 ms | 0.0507 ms | 0.0660 ms |  58.5938 |  58.5938 |  58.5938 |  382.47 KB |
 ```
 
 #### Compared to Java implementation
