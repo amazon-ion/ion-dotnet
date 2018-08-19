@@ -378,7 +378,7 @@ namespace IonDotnet.Internals.Binary
             //if we get here we have more bits that we have room for
             throw new OverflowException($"VarUint overflow at {_input.Position}, current fieldname {CurrentFieldName}");
 
-        Done:
+            Done:
             return ret;
         }
 
@@ -413,7 +413,7 @@ namespace IonDotnet.Internals.Binary
             //if we get here we have more bits that we have room for
             throw new OverflowException($"VarUint overflow at {_input.Position}, fieldname {CurrentFieldName}");
 
-        Done:
+            Done:
             return bn;
         }
 
@@ -451,7 +451,7 @@ namespace IonDotnet.Internals.Binary
             //here means overflow
             throw new OverflowException();
 
-        Done:
+            Done:
             //non-negative, return now
             if (!isNegative) return true;
 
@@ -479,35 +479,35 @@ namespace IonDotnet.Internals.Binary
                     throw new ArgumentOutOfRangeException(nameof(length), "length must be <=8");
                 case 8:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 7;
                 case 7:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 6;
                 case 6:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 5;
                 case 5:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 4;
                 case 4:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 3;
                 case 3:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 2;
                 case 2:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 1;
                 case 1:
                     if ((b = ReadByte()) < 0) throw new UnexpectedEofException();
-                    ret = (ret << 8) | (uint)b;
+                    ret = (ret << 8) | (uint) b;
                     goto case 0;
                 case 0:
                     break;
@@ -536,7 +536,7 @@ namespace IonDotnet.Internals.Binary
 
             if (_localRemaining == 0)
             {
-                dec = new decimal(0, 0, 0, false, (byte)exponent);
+                dec = new decimal(0, 0, 0, false, (byte) exponent);
             }
             else
             {
@@ -567,7 +567,7 @@ namespace IonDotnet.Internals.Binary
                     high = ReadBigEndian(mantissaBytes.Slice(0, offset));
                 }
 
-                dec = new decimal(low, mid, high, isNegative, (byte)exponent);
+                dec = new decimal(low, mid, high, isNegative, (byte) exponent);
             }
 
             _localRemaining = saveLimit;
@@ -646,7 +646,8 @@ namespace IonDotnet.Internals.Binary
         protected BigInteger ReadBigInteger(int length, bool isNegative)
         {
             //TODO this is bad, do better
-            if (length == 0) return BigInteger.Zero;
+            if (length == 0) 
+                return BigInteger.Zero;
 
             var bytes = new byte[length];
             ReadAll(new ArraySegment<byte>(bytes, 0, length), length);
@@ -666,7 +667,7 @@ namespace IonDotnet.Internals.Binary
 
             if (length != 4 && length != 8) throw new IonException($"Float length must be 0|4|8, length is {length}");
             var bits = ReadUlong(length);
-            return length == 4 ? BitConverter.Int32BitsToSingle((int)bits) : BitConverter.Int64BitsToDouble(bits);
+            return length == 4 ? BitConverter.Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
         }
 
         /// <summary>
@@ -873,8 +874,6 @@ namespace IonDotnet.Internals.Binary
             return _valueLobRemaining;
         }
 
-        public abstract long LongValue();
-
         public byte[] NewByteArray()
         {
             var length = GetLobByteSize();
@@ -960,7 +959,7 @@ namespace IonDotnet.Internals.Binary
                 if (distance > 0)
                 {
                     Debug.Assert(distance < int.MaxValue);
-                    Skip((int)distance);
+                    Skip((int) distance);
                 }
             }
             else if (nextPosition < currentPosition)
@@ -972,6 +971,8 @@ namespace IonDotnet.Internals.Binary
         }
 
         public abstract string StringValue();
+
+        public abstract long LongValue();
 
         public abstract SymbolToken SymbolValue();
 

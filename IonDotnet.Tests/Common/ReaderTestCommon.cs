@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests.Internals
+namespace IonDotnet.Tests.Common
 {
     public static class ReaderTestCommon
     {

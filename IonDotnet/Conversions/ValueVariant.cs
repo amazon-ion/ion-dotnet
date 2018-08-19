@@ -107,7 +107,6 @@ namespace IonDotnet.Conversions
                 TypeSet = ScalarType.Timestamp;
             }
         }
-        //TODO datetime
 
         public bool IsEmpty => AuthoritativeType == ScalarType.Nothing;
         public ScalarType TypeSet { get; private set; }

@@ -1391,7 +1391,6 @@ namespace IonDotnet.Internals.Text
                     _input.Unread('\\');
                     break;
                 case CharacterSequence.CharSeqEof:
-                    //TODO can you 'unread' an EOF?
                     _input.Unread(CharacterSequence.CharSeqEof);
                     break;
             }
@@ -1806,9 +1805,98 @@ namespace IonDotnet.Internals.Text
             throw new NotImplementedException();
         }
 
-        public int LoadTripleQuotedString(StringBuilder valueBuffer, bool clobCharsOnly)
+        private int ReadTripleQuotedChar(bool isClob)
         {
-            throw new NotImplementedException();
+            var c = ReadStringChar(Characters.ProhibitionContext.LongChar);
+            switch (c)
+            {
+                case '\'':
+                    if (Is2SingleQuotes())
+                    {
+                        // so at this point we are at the end of the closing
+                        // triple quote - so we need to look ahead to see if
+                        // there's just whitespace and a new opening triple quote
+                        c = SkipOverWhiteSpace(CommentStrategy.Ignore);
+                        if (c == '\'' && Is2SingleQuotes())
+                        {
+                            // there's another segment so read the next segment as well
+                            // since we're now just before char 1 of the next segment
+                            // loop again, but don't append this char
+                            return CharacterSequence.CharSeqStringNonTerminator;
+                        }
+
+                        // end of last segment - we're done (although we read a bit too far)
+                        UnreadChar(c);
+                        c = CharacterSequence.CharSeqStringTerminator;
+                    }
+
+                    break;
+                case '\\':
+                    c = ReadEscapedChar(c, isClob);
+                    break;
+                case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                case CharacterSequence.CharSeqNewlineSequence1:
+                case CharacterSequence.CharSeqNewlineSequence2:
+                case CharacterSequence.CharSeqNewlineSequence3:
+                    break;
+                case -1:
+                    break;
+                default:
+                    if (!isClob && !Characters.Is7BitChar(c))
+                    {
+                        c = ReadLargeCharSequence(c);
+                    }
+
+                    break;
+            }
+
+            return c;
+        }
+
+        public int LoadTripleQuotedString(StringBuilder sb, bool isClob)
+        {
+            int c;
+
+            for (;;)
+            {
+                c = ReadTripleQuotedChar(isClob);
+                switch (c)
+                {
+                    case CharacterSequence.CharSeqStringTerminator:
+                    case CharacterSequence.CharSeqEof: // was EOF
+                        return c;
+                    // new line normalization and counting is handled in read_char
+                    case CharacterSequence.CharSeqNewlineSequence1:
+                        c = '\n';
+                        break;
+                    case CharacterSequence.CharSeqNewlineSequence2:
+                        c = '\n';
+                        break;
+                    case CharacterSequence.CharSeqNewlineSequence3:
+                        c = '\n';
+                        break;
+                    case CharacterSequence.CharSeqEscapedNewlineSequence1:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence2:
+                    case CharacterSequence.CharSeqEscapedNewlineSequence3:
+                    case CharacterSequence.CharSeqStringNonTerminator:
+                        continue;
+                }
+
+                // if this isn't a clob we need to decode UTF8 and
+                // handle surrogate encoding (otherwise we don't care)
+                if (!isClob)
+                {
+                    if (Characters.NeedsSurrogateEncoding(c))
+                    {
+                        sb.Append(Characters.GetHighSurrogate(c));
+                        c = Characters.GetLowSurrogate(c);
+                    }
+                }
+
+                sb.Append((char) c);
+            }
         }
 
         public int PeekNullTypeSymbol()

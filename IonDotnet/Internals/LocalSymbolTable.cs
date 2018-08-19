@@ -99,7 +99,8 @@ namespace IonDotnet.Internals
         public SymbolToken Intern(string text)
         {
             var token = Find(text);
-            if (token != default) return token;
+            if (token != default) 
+                return token;
             //TODO validate symbol
 
             var sid = PutSymbol(text);

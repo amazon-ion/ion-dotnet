@@ -126,9 +126,11 @@ namespace IonDotnet.Internals
         /// </summary>
         /// <param name="version">Ion version</param>
         /// <returns>System symbol table</returns>
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
         internal static ISymbolTable GetSystem(int version)
         {
-            if (version != 1) throw new ArgumentException("only Ion 1.0 system symbols are supported");
+            if (version != 1) 
+                throw new ArgumentException("only Ion 1.0 system symbols are supported");
             return Ion10SystemSymtab;
         }
 

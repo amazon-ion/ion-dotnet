@@ -44,7 +44,6 @@ namespace IonDotnet.Internals.Binary
         private const int S_STRUCT_CLOSE = 20;
         private const int S_EOF = 21;
 
-        //TODO re-implement this with C# flag enum sometime
         private const int HAS_NAME = 0x01;
         private const int HAS_VERSION = 0x02;
         private const int HAS_MAX_ID = 0x04;

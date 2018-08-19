@@ -432,15 +432,9 @@ namespace IonDotnet.Internals.Binary
             }
         }
 
-        public override bool IsFieldNameSet()
-        {
-            throw new NotImplementedException();
-        }
+        public override bool IsFieldNameSet() => _userWriter.IsFieldNameSet();
 
-        public override int GetDepth()
-        {
-            throw new NotImplementedException();
-        }
+        public override int GetDepth() => _userWriter.GetDepth();
 
         public override void AddTypeAnnotation(string annotation)
         {

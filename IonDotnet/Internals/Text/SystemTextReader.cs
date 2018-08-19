@@ -22,13 +22,15 @@ namespace IonDotnet.Internals.Text
 
         private void LoadOnce()
         {
-            if (!_v.IsEmpty) return;
+            if (!_v.IsEmpty)
+                return;
             LoadScalarValue();
         }
 
         private void LoadScalarValue()
         {
-            if (!_valueType.IsScalar()) return;
+            if (!_valueType.IsScalar())
+                return;
 
             LoadTokenContents(_scanner.Token);
 
@@ -346,6 +348,12 @@ namespace IonDotnet.Internals.Text
             span.Slice(_lobValuePosition, bytes).CopyTo(buffer);
             _lobValuePosition += bytes;
             return bytes;
+        }
+
+        public override bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
+        {
+            PrepareValue();
+            return scalarConverter.TryConvertTo(targetType, _v, out result);
         }
 
         public override byte[] NewByteArray()

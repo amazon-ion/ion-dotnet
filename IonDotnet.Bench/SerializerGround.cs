@@ -190,8 +190,6 @@ namespace IonDotnet.Bench
                 Writer.StepOut();
                 Writer.Flush(ref bytes);
                 Writer.Finish();
-
-                //                }
             }
         }
 
@@ -229,10 +227,6 @@ namespace IonDotnet.Bench
 
             Console.WriteLine(reader.MoveNext());
             Console.WriteLine(reader.CurrentIsNull);
-//            
-//            Console.WriteLine(reader.MoveNext());
-//            Console.WriteLine(reader.CurrentFieldName);
-//            Console.WriteLine(reader.BoolValue());
 
             reader.StepOut();
 

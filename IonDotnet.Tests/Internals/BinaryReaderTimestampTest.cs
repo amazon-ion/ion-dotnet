@@ -13,7 +13,7 @@ namespace IonDotnet.Tests.Internals
         {
             var data = DirStructure.ReadDataFile("binary/ts_2000_11_20_8_20_15_unknown.bindat");
             IIonReader reader = new UserBinaryReader(new MemoryStream(data));
-            ReaderTimestampTestCommon.Date_2000_11_20_8_20_15_Unknown(reader);
+            ReaderTimestampCommon.Date_2000_11_20_8_20_15_Unknown(reader);
         }
     }
 }

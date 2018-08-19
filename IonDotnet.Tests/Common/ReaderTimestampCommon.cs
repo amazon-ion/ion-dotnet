@@ -1,9 +1,9 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests.Internals
+namespace IonDotnet.Tests.Common
 {
-    internal static class ReaderTimestampTestCommon
+    internal static class ReaderTimestampCommon
     {
         public static void Date_2000_11_20_8_20_15_Unknown(IIonReader reader)
         {

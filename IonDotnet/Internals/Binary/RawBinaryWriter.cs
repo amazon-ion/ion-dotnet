@@ -300,8 +300,10 @@ namespace IonDotnet.Internals.Binary
 
         public void StepOut()
         {
-            if (_currentFieldSymbolToken != default) throw new IonException("Cannot step out with field name set");
-            if (_annotations.Count > 0) throw new IonException("Cannot step out with annotations set");
+            if (_currentFieldSymbolToken != default) 
+                throw new IonException("Cannot step out with field name set");
+            if (_annotations.Count > 0) 
+                throw new IonException("Cannot step out with annotations set");
 
             //TODO check if this container is actually list or struct
             var currentContainerType = _containerStack.Peek().Type;

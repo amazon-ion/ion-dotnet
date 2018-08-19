@@ -194,7 +194,6 @@ namespace IonDotnet.Internals.Text
         private void ClearValue()
         {
             _valueType = IonType.None;
-            //TODO lob
             ClearValueBuffer();
             _annotations.Clear();
             ClearFieldName();
@@ -212,7 +211,6 @@ namespace IonDotnet.Internals.Text
 
         private void ParseNext()
         {
-            // TODO: there's a better way to do this
             var trailingWhitespace = false;
 
             var token = _scanner.NextToken();
@@ -641,7 +639,8 @@ namespace IonDotnet.Internals.Text
 
         public SymbolToken GetFieldNameSymbol()
         {
-            throw new NotImplementedException();
+            //TODO in_struct_internal?
+            return new SymbolToken(_fieldName, _fieldNameSid);
         }
 
         public abstract bool CurrentIsNull { get; }
@@ -671,10 +670,7 @@ namespace IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
-        public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
 
         private static int GetStateAtContainerStart(IonType container)
         {
@@ -806,15 +802,12 @@ namespace IonDotnet.Internals.Text
                     throw new IndexOutOfRangeException();
                 Count--;
 
-                //TODO should we do book keeping here?
                 _rawTextReader._eof = false;
                 _rawTextReader._hasNextCalled = false;
                 var topState = _array[Count - 1];
                 SetContainerFlags(topState);
                 _rawTextReader._state = GetStateAfterContainer(topState);
             }
-
-            public void Clear() => Count = 0;
 
             public IonType First() => _array[0];
 

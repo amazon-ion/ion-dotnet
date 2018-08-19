@@ -6,7 +6,7 @@ namespace IonDotnet.Tests.Common
 {
     internal static class DirStructure
     {
-        public static DirectoryInfo GetRootDir()
+        private static DirectoryInfo GetRootDir()
         {
             var dirInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
             while (!string.Equals(dirInfo.Name, "iondotnet.tests", StringComparison.OrdinalIgnoreCase))
@@ -17,7 +17,7 @@ namespace IonDotnet.Tests.Common
             return dirInfo;
         }
 
-        public static DirectoryInfo TestDatDir()
+        private static DirectoryInfo TestDatDir()
         {
             var root = GetRootDir();
             return root.GetDirectories().Single(d => string.Equals(d.Name, "testdat", StringComparison.OrdinalIgnoreCase));

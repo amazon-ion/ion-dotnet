@@ -61,7 +61,6 @@ namespace IonDotnet.Serialization
                 }
 
                 //Write everything to list now
-                //TODO do we enforce generic type?
                 var enumerable = (IEnumerable) obj;
                 writer.StepIn(IonType.List);
                 foreach (var item in enumerable)

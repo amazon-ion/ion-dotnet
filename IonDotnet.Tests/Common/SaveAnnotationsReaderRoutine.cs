@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using IonDotnet.Conversions;
 
 namespace IonDotnet.Tests.Common
@@ -21,7 +20,5 @@ namespace IonDotnet.Tests.Common
         {
             Symbols.Add(symbolToken.Text);
         }
-
-        public bool TryConvertTo<T>(out T result) => throw new InvalidOperationException("This just saves annotations");
     }
 }
