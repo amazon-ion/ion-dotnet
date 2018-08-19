@@ -579,9 +579,7 @@ namespace IonDotnet.Internals.Text
             var valuelen = text.Length;
 
             if (valuelen == 0)
-            {
                 return false;
-            }
 
             var keyword = false;
 
@@ -589,11 +587,13 @@ namespace IonDotnet.Internals.Text
             switch (text[pos++])
             {
                 case '$':
-                    if (valuelen == 1) return false;
+                    if (valuelen == 1)
+                        return false;
                     while (pos < valuelen)
                     {
                         var c = text[pos++];
-                        if (!char.IsDigit(c)) return false;
+                        if (!char.IsDigit(c))
+                            return false;
                     }
 
                     return true;
@@ -675,33 +675,26 @@ namespace IonDotnet.Internals.Text
                 for (var ii = 0; ii < length; ii++)
                 {
                     c = symbol[ii];
-                    if (c == '\'' || c < 32 || c > 126
-                        || !IsIdentifierPart(c))
-                    {
+                    if (c == '\'' || c < 32 || c > 126 || !IsIdentifierPart(c))
                         return SymbolVariant.Quoted;
-                    }
                 }
 
                 return SymbolVariant.Identifier;
             }
 
-            if (IsOperatorPart(c))
-            {
-                for (var ii = 0; ii < length; ii++)
-                {
-                    c = symbol[ii];
-                    // We don't need to look for escapes since all
-                    // operator characters are ASCII.
-                    if (!IsOperatorPart(c))
-                    {
-                        return SymbolVariant.Quoted;
-                    }
-                }
+            if (!IsOperatorPart(c))
+                return SymbolVariant.Quoted;
 
-                return SymbolVariant.Operator;
+            for (var ii = 0; ii < length; ii++)
+            {
+                c = symbol[ii];
+                // We don't need to look for escapes since all
+                // operator characters are ASCII.
+                if (!IsOperatorPart(c))
+                    return SymbolVariant.Quoted;
             }
 
-            return SymbolVariant.Quoted;
+            return SymbolVariant.Operator;
         }
     }
 }
