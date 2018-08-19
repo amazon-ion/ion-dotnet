@@ -23,7 +23,7 @@ namespace IonDotnet.Bench
             //                Name = "huy"
             //            });
             //            Console.WriteLine(string.Join(',', trueS.Select(b => $"{b:x2}")));
-            var s = IonSerializerExpression.Serialize(new[]
+            var s = IonExpressionBinary.Serialize(new[]
             {
                 new Experiment
                 {
@@ -40,7 +40,7 @@ namespace IonDotnet.Bench
                 }
             });
 
-            var s2 = IonSerializerExpression.Serialize(new[]
+            var s2 = IonExpressionBinary.Serialize(new[]
             {
                 new Experiment
                 {

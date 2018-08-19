@@ -149,7 +149,7 @@ namespace IonDotnet.Bench
             [Benchmark]
             public void IonDotnetExp()
             {
-                IonSerializerExpression.Serialize(Data);
+                IonExpressionBinary.Serialize(Data);
             }
 
             [Benchmark]

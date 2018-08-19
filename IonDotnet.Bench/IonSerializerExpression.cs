@@ -11,8 +11,6 @@ namespace IonDotnet.Bench
 {
     public static class IonSerializerExpression
     {
-        private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
-
         private static readonly MethodInfo EnumGetnameMethod = typeof(Enum).GetMethod(nameof(Enum.GetName));
 
         private static readonly MethodInfo WriteNullTypeMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteNull), new[] {typeof(IonType)});
@@ -35,7 +33,7 @@ namespace IonDotnet.Bench
 
         private static readonly Dictionary<Type, Delegate> Cache = new Dictionary<Type, Delegate>();
 
-        private static Action<T, IIonWriter> GetAction<T>()
+        public static Action<T, IIonWriter> GetAction<T>()
         {
             var type = typeof(T);
             if (Cache.TryGetValue(type, out var action))
@@ -57,17 +55,6 @@ namespace IonDotnet.Bench
 
                 return act;
             }
-        }
-
-        public static byte[] Serialize<T>(T obj)
-        {
-            var action = GetAction<T>();
-            // var action = GetAction<T>();
-            //now write
-            byte[] bytes = null;
-            action(obj, Writer);
-            Writer.Flush(ref bytes);
-            return bytes;
         }
 
         private static Expression GetWriteActionForType(Type type, Expression target, ParameterExpression writerExpression)

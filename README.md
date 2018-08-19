@@ -67,7 +67,16 @@ Console.WriteLine(text);
 ```
 
 ### Benchmarks
-#### Serialization: compared to JSON.NET
+#### Serialization: Text vs JSON.NET
+Test: Serialize 1 record
+```
+             Method |     Mean |     Error |    StdDev |  Gen 0 | Allocated |
+------------------- |---------:|----------:|----------:|-------:|----------:|
+ JsonDotnetToString | 3.170 us | 0.0619 us | 0.0782 us | 0.8049 |   2.48 KB |
+      IonDotnetText | 2.201 us | 0.0413 us | 0.0460 us | 0.6561 |   2.02 KB |
+```
+
+#### Serialization: Binary vs JSON.NET
 Test: serialize 1000 records
 ```
 BenchmarkDotNet=v0.11.0, OS=Windows 10.0.17134.191 (1803/April2018Update/Redstone4)

@@ -1,16 +1,56 @@
 ﻿using System;
-using System.IO;
-using IonDotnet.Internals.Text;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 using IonDotnet.Serialization;
 using IonDotnet.Systems;
+using Newtonsoft.Json;
 
 namespace IonDotnet.Bench
 {
     // ReSharper disable once UnusedMember.Global
     public class WriteGround : IRunable
     {
+        [MemoryDiagnoser]
+        public class SerBenchmark
+        {
+            private static readonly Experiment Exp = new Experiment
+            {
+                Name = "Boxing Perftest",
+                // Duration = TimeSpan.FromSeconds(90),
+                Id = 233,
+                StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
+                IsActive = true,
+                Description = "Measure performance impact of boxing",
+                Result = ExperimentResult.Failure,
+                SampleData = new byte[10],
+                Budget = decimal.Parse("12345.01234567890123456789"),
+                Outputs = new[] {1, 2, 3}
+            };
+
+            [Benchmark]
+            public void JsonDotnetToString()
+            {
+                JsonConvert.SerializeObject(Exp);
+            }
+
+            [Benchmark]
+            public void IonDotnetText()
+            {
+                IonExpressionText.Serialize(Exp);
+            }
+        }
+
+        // ReSharper disable once UnusedMember.Local
+        private void RunBenchmark()
+        {
+            BenchmarkRunner.Run<SerBenchmark>();
+        }
+        
         public void Run(string[] args)
         {
+            RunBenchmark();
+            return;
+            
             var experiment = new Experiment
             {
                 Name = "Boxing Perftest",
@@ -33,10 +73,10 @@ namespace IonDotnet.Bench
 
             //Serialize an object to string
             string text = IonSerialization.Text.Serialize(experiment, new IonTextOptions {PrettyPrint = true});
-            
+
             //Deserialize a string to an object
             deserialized = IonSerialization.Text.Deserialize<Experiment>(text);
-            
+
             Console.WriteLine(text);
             /* Output
             {

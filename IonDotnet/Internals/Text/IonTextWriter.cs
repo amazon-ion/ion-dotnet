@@ -32,6 +32,13 @@ namespace IonDotnet.Internals.Text
         private bool _followingLongString;
         private char _separatorCharacter;
 
+        public IonTextWriter(TextWriter textWriter) : base(IonWriterBuilderBase.InitialIvmHandlingOption.Default)
+        {
+            _textWriter = new IonTextRawWriter(textWriter);
+            _options = IonTextOptions.Default;
+            _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
+        }
+
         public IonTextWriter(TextWriter textWriter, IonTextOptions textOptions)
             : base(textOptions.WriteVersionMarker
                 ? IonWriterBuilderBase.InitialIvmHandlingOption.Ensure
