@@ -1,0 +1,14 @@
+{
+  open:"open",
+  structure:{
+    open:"open",
+    structure:{
+      int:33,
+      float:3.23e0
+    },
+    int:33,
+    float:3.23e0
+  },
+  string:"this is a string",
+  bool:true
+}

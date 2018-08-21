@@ -279,18 +279,34 @@ namespace IonDotnet.Tests.Common
             }
         }
 
+        /// <remarks>See text/twolayer.ion for content</remarks>
         public static void TwoLayer_TestStepoutSkip(IIonReader reader)
         {
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             reader.StepIn();
             Assert.AreEqual(IonType.String, reader.MoveNext());
             Assert.AreEqual("open", reader.CurrentFieldName);
-            
+
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             Assert.AreEqual("structure", reader.CurrentFieldName);
             reader.StepIn();
-            //skip
+
+            Assert.AreEqual(IonType.String, reader.MoveNext());
+            Assert.AreEqual("open", reader.CurrentFieldName);
+            Assert.AreEqual(IonType.Struct, reader.MoveNext());
+            Assert.AreEqual("structure", reader.CurrentFieldName);
+            reader.StepIn();
+
+            Assert.AreEqual(IonType.Int, reader.MoveNext());
+            Assert.AreEqual("int", reader.CurrentFieldName);
+            //1st skip
             reader.StepOut();
+
+            Assert.AreEqual(IonType.Int, reader.MoveNext());
+            Assert.AreEqual("int", reader.CurrentFieldName);
+            //2nd skip
+            reader.StepOut();
+            
             Assert.AreEqual(IonType.String, reader.MoveNext());
             Assert.AreEqual("this is a string", reader.StringValue());
             Assert.AreEqual(IonType.Bool, reader.MoveNext());

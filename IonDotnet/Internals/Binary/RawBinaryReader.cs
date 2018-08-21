@@ -681,7 +681,7 @@ namespace IonDotnet.Internals.Binary
         {
             // the java impl allows skipping the annotations so we can read it even if
             // _state == AfterValue. We don't allow that here
-            if (_state != State.BeforeValue) 
+            if (_state != State.BeforeValue)
                 throw new InvalidOperationException("Value is not ready");
 
             //reset the annotation list
@@ -936,7 +936,7 @@ namespace IonDotnet.Internals.Binary
 
             var (parentRemaining, _) = _containerStack.Pop();
             var parentTid = _containerStack.Count == 0 ? BinaryConstants.TidDatagram : _containerStack.Peek().typeTid;
-
+        
             _eof = false;
 //            _parentTid = parentTid;
             IsInStruct = parentTid == BinaryConstants.TidStruct;

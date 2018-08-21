@@ -142,6 +142,10 @@ namespace IonDotnet.Tests.Internals
             ReaderTestCommon.Struct_OneBlob(reader);
         }
 
+        /// <summary>
+        /// Aims to test the correctness of skipping with step in-out in the middle
+        /// of container
+        /// </summary>
         [TestMethod]
         public void TwoLayer_TestStepout_Skip()
         {
