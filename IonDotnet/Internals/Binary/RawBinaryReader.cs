@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -19,7 +18,11 @@ namespace IonDotnet.Internals.Binary
     /// </summary>
     internal abstract class RawBinaryReader : IIonReader
     {
+        /// <summary>
+        /// The <see cref="_localRemaining"/> value for depth 0 (datagram)
+        /// </summary>
         private const int NoLimit = int.MinValue;
+
         private const int DefaultContainerStackSize = 6;
 
         protected enum State
@@ -48,10 +51,8 @@ namespace IonDotnet.Internals.Binary
         protected int _valueFieldId;
         protected int _valueTid;
         protected int _valueLength;
-        private int _parentTid;
         protected bool _moveNextNeeded;
         private bool _structIsOrdered;
-        private readonly bool _annotationRequested;
         private bool _valueLobReady;
         private int _valueLobRemaining;
         protected bool _hasSymbolTableAnnotation;
@@ -59,23 +60,20 @@ namespace IonDotnet.Internals.Binary
         // top of the container stack
         protected int _annotationCount;
 
-        protected long _positionStart;
-        protected long _positionLength;
-
         /// <summary>
         /// A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         /// position is stored in the first 'long' of the stack item
         /// </summary>
-        private readonly Stack<(long position, int localRemaining, int typeTid)> _containerStack;
+        private readonly Stack<(int localRemaining, int typeTid)> _containerStack;
 
         protected RawBinaryReader(Stream input)
         {
-            if (input == null || !input.CanRead) throw new ArgumentException("Input not readable", nameof(input));
+            if (input == null || !input.CanRead)
+                throw new ArgumentException("Input not readable", nameof(input));
 
             _input = input;
 
             _localRemaining = NoLimit;
-            _parentTid = BinaryConstants.TidDatagram;
             _valueFieldId = SymbolToken.UnknownSid;
             _state = State.BeforeTid;
             _eof = false;
@@ -83,11 +81,8 @@ namespace IonDotnet.Internals.Binary
             _valueIsNull = false;
             _valueIsTrue = false;
             IsInStruct = false;
-            _parentTid = 0;
-            _annotationRequested = false;
-            _containerStack = new Stack<(long position, int localRemaining, int typeTid)>(DefaultContainerStackSize);
+            _containerStack = new Stack<(int localRemaining, int typeTid)>(DefaultContainerStackSize);
 
-            _positionStart = -1;
             _v = new ValueVariant();
         }
 
@@ -199,9 +194,12 @@ namespace IonDotnet.Internals.Binary
 
         private void LoadVersionMarker()
         {
-            if (ReadByte() != 0x01) throw new IonException("Invalid binary format");
-            if (ReadByte() != 0x00) throw new IonException("Invalid binary format");
-            if (ReadByte() != 0xea) throw new IonException("Invalid binary format");
+            if (ReadByte() != 0x01)
+                throw new IonException("Invalid binary format");
+            if (ReadByte() != 0x00)
+                throw new IonException("Invalid binary format");
+            if (ReadByte() != 0xea)
+                throw new IonException("Invalid binary format");
 
             // so it's a 4 byte version marker - make it look like
             // the symbol $ion_1_0 ...
@@ -252,9 +250,16 @@ namespace IonDotnet.Internals.Binary
             }
         }
 
+        /// <summary>
+        /// Skip-ahead of the input stream in the current container
+        /// </summary>
+        /// <param name="length">Maximum skip length</param>
+        /// <exception cref="ArgumentException">When <paramref name="length"/> is less than 0</exception>
+        /// <exception cref="UnexpectedEofException">If the current container has no remaining bytes</exception>
         private void Skip(int length)
         {
-            if (length < 0) throw new ArgumentException(nameof(length));
+            if (length < 0)
+                throw new ArgumentException(nameof(length));
             if (_localRemaining == NoLimit)
             {
                 //TODO try doing better here
@@ -268,7 +273,8 @@ namespace IonDotnet.Internals.Binary
 
             if (length > _localRemaining)
             {
-                if (_localRemaining < 1) throw new UnexpectedEofException(_input.Position);
+                if (_localRemaining < 1)
+                    throw new UnexpectedEofException();
                 length = _localRemaining;
             }
 
@@ -289,10 +295,9 @@ namespace IonDotnet.Internals.Binary
         /// <exception cref="IonException">If invalid states occurs</exception>
         private int ReadTypeId()
         {
-            var startOfTid = _input.Position;
-            var startOfValue = startOfTid + 1;
             var tdRead = ReadByte();
-            if (tdRead < 0) return BinaryConstants.Eof;
+            if (tdRead < 0)
+                return BinaryConstants.Eof;
 
             var tid = BinaryConstants.GetTypeCode(tdRead);
             if (tid == BinaryConstants.TidClob)
@@ -315,7 +320,6 @@ namespace IonDotnet.Internals.Binary
             else if (len == BinaryConstants.LnIsVarLen)
             {
                 len = ReadVarUint();
-                startOfValue = _input.Position;
             }
             else if (tid == BinaryConstants.TidNull)
             {
@@ -352,14 +356,11 @@ namespace IonDotnet.Internals.Binary
                 if (_structIsOrdered)
                 {
                     len = ReadVarUint();
-                    startOfValue = _input.Position;
                 }
             }
 
             _valueTid = tid;
             _valueLength = len;
-            _positionLength = len + (startOfValue - startOfTid);
-            _positionStart = startOfTid;
             return tid;
         }
 
@@ -369,14 +370,15 @@ namespace IonDotnet.Internals.Binary
             for (var i = 0; i < 5; i++)
             {
                 var b = ReadByte();
-                if (b < 0) throw new UnexpectedEofException(_input.Position);
+                if (b < 0)
+                    throw new UnexpectedEofException();
 
                 ret = (ret << 7) | (b & 0x7F);
                 if ((b & 0x80) != 0) goto Done;
             }
 
             //if we get here we have more bits that we have room for
-            throw new OverflowException($"VarUint overflow at {_input.Position}, current fieldname {CurrentFieldName}");
+            throw new OverflowException($"VarUint overflow at, current fieldname {CurrentFieldName}");
 
             Done:
             return ret;
@@ -403,7 +405,7 @@ namespace IonDotnet.Internals.Binary
             for (var i = 0; i < 4; i++)
             {
                 if ((b = ReadByte()) < 0)
-                    throw new UnexpectedEofException(_input.Position);
+                    throw new UnexpectedEofException();
                 output = (output << 7) | (b & 0x7F);
                 bn++;
                 if ((b & 0x80) != 0)
@@ -411,7 +413,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             //if we get here we have more bits that we have room for
-            throw new OverflowException($"VarUint overflow at {_input.Position}, fieldname {CurrentFieldName}");
+            throw new OverflowException($"VarUint overflow, fieldname {CurrentFieldName}");
 
             Done:
             return bn;
@@ -646,7 +648,7 @@ namespace IonDotnet.Internals.Binary
         protected BigInteger ReadBigInteger(int length, bool isNegative)
         {
             //TODO this is bad, do better
-            if (length == 0) 
+            if (length == 0)
                 return BigInteger.Zero;
 
             var bytes = new byte[length];
@@ -665,7 +667,8 @@ namespace IonDotnet.Internals.Binary
         {
             if (length == 0) return 0;
 
-            if (length != 4 && length != 8) throw new IonException($"Float length must be 0|4|8, length is {length}");
+            if (length != 4 && length != 8)
+                throw new IonException($"Float length must be 0|4|8, length is {length}");
             var bits = ReadUlong(length);
             return length == 4 ? BitConverter.Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
         }
@@ -674,11 +677,12 @@ namespace IonDotnet.Internals.Binary
         /// Load the annotations of the current value into
         /// </summary>
         /// <returns>Number of annotations</returns>
-        private void LoadAnnotations(int annotLength, bool save)
+        private void LoadAnnotations(int annotLength)
         {
             // the java impl allows skipping the annotations so we can read it even if
             // _state == AfterValue. We don't allow that here
-            if (_state != State.BeforeValue) throw new InvalidOperationException("Value is not ready");
+            if (_state != State.BeforeValue) 
+                throw new InvalidOperationException("Value is not ready");
 
             //reset the annotation list
             _annotationCount = 0;
@@ -710,7 +714,7 @@ namespace IonDotnet.Internals.Binary
             //In which case we'll just go through to the wrapped value
             //Unlike the java impl, there is no save point here, so this either loads the annotations, or it doesnt
             var annotLength = ReadVarUint();
-            LoadAnnotations(annotLength, _annotationRequested);
+            LoadAnnotations(annotLength);
 
             // this will both get the type id and it will reset the
             // length as well (over-writing the len + annotations value
@@ -771,7 +775,7 @@ namespace IonDotnet.Internals.Binary
             while (length > 0)
             {
                 var amount = _input.Read(buffer.Array, offset, length);
-                if (amount <= 0) throw new UnexpectedEofException(_input.Position);
+                if (amount <= 0) throw new UnexpectedEofException();
 
                 _localRemaining -= amount;
                 length -= amount;
@@ -815,8 +819,7 @@ namespace IonDotnet.Internals.Binary
             if (length > _localRemaining)
             {
                 if (_localRemaining < 1)
-                    throw new UnexpectedEofException(_input.Position);
-                length = _localRemaining;
+                    throw new UnexpectedEofException();
             }
 
             var bytesRead = _input.Read(buffer);
@@ -857,7 +860,6 @@ namespace IonDotnet.Internals.Binary
 
         public IonType CurrentType => _valueType;
 
-
         public bool IsInStruct { get; private set; }
 
         public int GetLobByteSize()
@@ -885,7 +887,8 @@ namespace IonDotnet.Internals.Binary
 
         public virtual IonType MoveNext()
         {
-            if (_eof) return IonType.None;
+            if (_eof)
+                return IonType.None;
             if (_moveNextNeeded)
             {
                 try
@@ -905,50 +908,48 @@ namespace IonDotnet.Internals.Binary
 
         public void StepIn()
         {
-            if (_eof) throw new InvalidOperationException("Reached the end of the stream");
-            if (_valueType != IonType.List
-                && _valueType != IonType.Struct
-                && _valueType != IonType.Sexp)
-            {
-                throw new InvalidOperationException($"Cannot step in value {_valueType}");
-            }
+            if (_eof)
+                throw new InvalidOperationException("Reached the end of the stream");
+            if (!_valueType.IsContainer())
+                throw new InvalidOperationException($"{_valueType} is no container");
 
             // first push place where we'll take up our next value processing when we step out
-            var currentPosition = _input.Position;
-            var nextPosition = currentPosition + _valueLength;
             var nextRemaining = _localRemaining;
             if (nextRemaining != NoLimit)
             {
                 nextRemaining = Math.Max(0, nextRemaining - _valueLength);
             }
 
-            _containerStack.Push((nextPosition, nextRemaining, _parentTid));
+            _containerStack.Push((nextRemaining, _valueTid));
             IsInStruct = _valueTid == BinaryConstants.TidStruct;
             _localRemaining = _valueLength;
             _state = IsInStruct ? State.BeforeField : State.BeforeTid;
-            _parentTid = _valueTid;
+//            _parentTid = _valueTid;
             ClearValue();
             _moveNextNeeded = true;
         }
 
         public void StepOut()
         {
-            if (CurrentDepth < 1) throw new InvalidOperationException("Cannot step out, current depth is 0");
+            if (CurrentDepth < 1)
+                throw new InvalidOperationException("Cannot step out, current depth is 0");
 
-            var (nextPosition, localRemaining, parentTid) = _containerStack.Pop();
+            var (parentRemaining, _) = _containerStack.Pop();
+            var parentTid = _containerStack.Count == 0 ? BinaryConstants.TidDatagram : _containerStack.Peek().typeTid;
+
             _eof = false;
-            _parentTid = parentTid;
-            IsInStruct = _parentTid == BinaryConstants.TidStruct;
+//            _parentTid = parentTid;
+            IsInStruct = parentTid == BinaryConstants.TidStruct;
             _state = IsInStruct ? State.BeforeField : State.BeforeTid;
             _moveNextNeeded = true;
             ClearValue();
 
-            var currentPosition = _input.Position;
-            if (nextPosition > currentPosition)
+            if (_localRemaining > 0)
             {
                 //didn't read all the previous container
                 //skip all the remaining bytes
-                var distance = nextPosition - currentPosition;
+                var distance = _localRemaining;
+                Debug.Assert(distance == _localRemaining);
                 const int maxSkip = int.MaxValue - 1;
                 while (distance > maxSkip)
                 {
@@ -959,15 +960,11 @@ namespace IonDotnet.Internals.Binary
                 if (distance > 0)
                 {
                     Debug.Assert(distance < int.MaxValue);
-                    Skip((int) distance);
+                    Skip(distance);
                 }
             }
-            else if (nextPosition < currentPosition)
-            {
-                throw new IonException($"Invalid position during stepout, curr:{currentPosition}, next:{nextPosition}");
-            }
 
-            _localRemaining = localRemaining;
+            _localRemaining = parentRemaining;
         }
 
         public abstract string StringValue();

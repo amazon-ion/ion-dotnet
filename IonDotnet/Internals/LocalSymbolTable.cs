@@ -99,7 +99,7 @@ namespace IonDotnet.Internals
         public SymbolToken Intern(string text)
         {
             var token = Find(text);
-            if (token != default) 
+            if (token != default)
                 return token;
             //TODO validate symbol
 
@@ -240,6 +240,12 @@ namespace IonDotnet.Internals
             reader.StepOut();
         }
 
+        /// <summary>
+        /// Try to read the symbols used in this datagram
+        /// </summary>
+        /// <param name="reader">Datagram reader</param>
+        /// <param name="isOnStruct">Reader is before the $ion_symbol_table struct</param>
+        /// <returns>Local symbol table</returns>
         public static LocalSymbolTable Read(IIonReader reader, bool isOnStruct)
         {
             var imports = ReadLocalSymbolTableImports(reader, isOnStruct, out var symbolList);

@@ -65,15 +65,6 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
-        //        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //        private void UpdateCurrentContainerLength(long increase)
-        //        {
-        //            if (_containerStack.Count == 0) return;
-        //            //pop and push, should be quick
-        //            var ( sequence, type, length) = _containerStack.Pop();
-        //            _containerStack.Push((sequence, type, length + increase));
-        //        }
-
         /// <summary>
         /// Prepare the field name and annotations (if any)
         /// </summary>
@@ -81,9 +72,7 @@ namespace IonDotnet.Internals.Binary
         private void PrepareValue()
         {
             if (IsInStruct && _currentFieldSymbolToken == default)
-            {
                 throw new InvalidOperationException("In a struct but field name is not set");
-            }
 
             if (_currentFieldSymbolToken != default)
             {
@@ -134,7 +123,8 @@ namespace IonDotnet.Internals.Binary
         private void PopContainer()
         {
             var popped = _containerStack.Pop();
-            if (_containerStack.Count == 0) return;
+            if (_containerStack.Count == 0)
+                return;
 
 
             var wrappedList = _dataBuffer.Wrapup();
@@ -198,7 +188,6 @@ namespace IonDotnet.Internals.Binary
         //this is not supposed to be called ever
         public ISymbolTable SymbolTable => SharedSymbolTable.GetSystem(1);
 
-        /// <inheritdoc />
         /// <summary>
         /// Simply write the buffers, <see cref="PrepareFlush"/> should be called first
         /// </summary>
@@ -277,13 +266,15 @@ namespace IonDotnet.Internals.Binary
 
         public void SetFieldNameSymbol(SymbolToken symbol)
         {
-            if (!IsInStruct) throw new IonException($"Has to be in a struct to set a field name");
+            if (!IsInStruct)
+                throw new IonException("Has to be in a struct to set a field name");
             _currentFieldSymbolToken = symbol;
         }
 
         public void StepIn(IonType type)
         {
-            if (!type.IsContainer()) throw new IonException($"Cannot step into {type}");
+            if (!type.IsContainer())
+                throw new IonException($"Cannot step into {type}");
 
             PrepareValue();
             //wrapup the current writes
@@ -300,9 +291,9 @@ namespace IonDotnet.Internals.Binary
 
         public void StepOut()
         {
-            if (_currentFieldSymbolToken != default) 
+            if (_currentFieldSymbolToken != default)
                 throw new IonException("Cannot step out with field name set");
-            if (_annotations.Count > 0) 
+            if (_annotations.Count > 0)
                 throw new IonException("Cannot step out with annotations set");
 
             //TODO check if this container is actually list or struct
@@ -457,7 +448,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             //TODO is this different than java, is there a no-alloc way?
-            var buffer = value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var buffer = value.ToByteArray(true, true);
             WriteTypedBytes(type, buffer);
 
             FinishValue();
@@ -794,8 +785,6 @@ namespace IonDotnet.Internals.Binary
             // so nothing to do here
         }
 
-        public ICatalog Catalog => throw new NotSupportedException();
-
         public bool IsFieldNameSet() => _currentFieldSymbolToken != default;
 
         public int GetDepth() => _containerStack.Count - 1;
@@ -855,13 +844,15 @@ namespace IonDotnet.Internals.Binary
 
             public ContainerInfo Peek()
             {
-                if (Count == 0) throw new IndexOutOfRangeException();
+                if (Count == 0)
+                    throw new IndexOutOfRangeException();
                 return _array[Count - 1];
             }
 
             public ContainerInfo Pop()
             {
-                if (Count == 0) throw new IndexOutOfRangeException();
+                if (Count == 0)
+                    throw new IndexOutOfRangeException();
                 var ret = _array[--Count];
                 return ret;
             }
@@ -872,17 +863,13 @@ namespace IonDotnet.Internals.Binary
                 Count = 0;
             }
 
-            public ContainerInfo First()
-            {
-                return _array[0];
-            }
-
             public int Count { get; private set; }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void EnsureCapacity(int forIndex)
             {
-                if (forIndex < _array.Length) return;
+                if (forIndex < _array.Length)
+                    return;
                 //resize
                 Array.Resize(ref _array, _array.Length * 2);
             }

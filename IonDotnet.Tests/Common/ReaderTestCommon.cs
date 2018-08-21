@@ -278,5 +278,23 @@ namespace IonDotnet.Tests.Common
                 Assert.AreEqual((byte) 1, blob[i]);
             }
         }
+
+        public static void TwoLayer_TestStepoutSkip(IIonReader reader)
+        {
+            Assert.AreEqual(IonType.Struct, reader.MoveNext());
+            reader.StepIn();
+            Assert.AreEqual(IonType.String, reader.MoveNext());
+            Assert.AreEqual("open", reader.CurrentFieldName);
+            
+            Assert.AreEqual(IonType.Struct, reader.MoveNext());
+            Assert.AreEqual("structure", reader.CurrentFieldName);
+            reader.StepIn();
+            //skip
+            reader.StepOut();
+            Assert.AreEqual(IonType.String, reader.MoveNext());
+            Assert.AreEqual("this is a string", reader.StringValue());
+            Assert.AreEqual(IonType.Bool, reader.MoveNext());
+            Assert.AreEqual(true, reader.BoolValue());
+        }
     }
 }

@@ -141,5 +141,14 @@ namespace IonDotnet.Tests.Internals
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.Struct_OneBlob(reader);
         }
+
+        [TestMethod]
+        public void TwoLayer_TestStepout_Skip()
+        {
+            const string fileName = "binary/twolayer.bindat";
+            var data = DirStructure.ReadDataFile(fileName);
+            var reader = new UserBinaryReader(new MemoryStream(data));
+            ReaderTestCommon.TwoLayer_TestStepoutSkip(reader);
+        }
     }
 }

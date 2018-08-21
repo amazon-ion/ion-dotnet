@@ -1338,6 +1338,10 @@ namespace IonDotnet.Internals.Text
             }
         }
 
+        /// <summary>
+        /// Read a character unit, and the following new line sequence
+        /// </summary>
+        /// <returns>The read character (or the new-line sequence)</returns>
         private int ReadChar()
         {
             var c = _input.Read();
@@ -1522,7 +1526,7 @@ namespace IonDotnet.Internals.Text
             return FinishLoadNumber(valueBuffer, c, t);
         }
 
-        private void load_fixed_digits(StringBuilder sb, int len)
+        private void LoadFixedDigits(StringBuilder sb, int len)
         {
             int c;
 
@@ -1582,7 +1586,7 @@ namespace IonDotnet.Internals.Text
             }
 
             // read month
-            load_fixed_digits(sb, 2);
+            LoadFixedDigits(sb, 2);
 
             c = ReadChar();
             if (c == 'T')
@@ -1597,7 +1601,7 @@ namespace IonDotnet.Internals.Text
 
             // read day
             sb.Append((char) c);
-            load_fixed_digits(sb, 2);
+            LoadFixedDigits(sb, 2);
 
             // look for the 'T', otherwise we're done (and happy about it)
             c = ReadChar();
@@ -1616,20 +1620,20 @@ namespace IonDotnet.Internals.Text
             }
 
             sb.Append((char) c);
-            load_fixed_digits(sb, 1); // we already read the first digit
+            LoadFixedDigits(sb, 1); // we already read the first digit
             c = ReadChar();
             if (c != ':') throw new InvalidTokenException(c);
 
             // minutes
             sb.Append((char) c);
-            load_fixed_digits(sb, 2);
+            LoadFixedDigits(sb, 2);
             c = ReadChar();
             if (c == ':')
             {
                 // seconds are optional
                 // and first we'll have the whole seconds
                 sb.Append((char) c);
-                load_fixed_digits(sb, 2);
+                LoadFixedDigits(sb, 2);
                 c = ReadChar();
                 if (c == '.')
                 {
@@ -1656,7 +1660,7 @@ namespace IonDotnet.Internals.Text
             {
                 // then ... hours of time offset
                 sb.Append((char) c);
-                load_fixed_digits(sb, 2);
+                LoadFixedDigits(sb, 2);
                 c = ReadChar();
                 if (c != ':')
                 {
@@ -1667,7 +1671,7 @@ namespace IonDotnet.Internals.Text
 
                 // and finally the *not* optional minutes of time offset
                 sb.Append((char) c);
-                load_fixed_digits(sb, 2);
+                LoadFixedDigits(sb, 2);
                 c = ReadChar();
             }
             else

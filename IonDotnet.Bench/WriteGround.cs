@@ -45,12 +45,9 @@ namespace IonDotnet.Bench
         {
             BenchmarkRunner.Run<SerBenchmark>();
         }
-        
+
         public void Run(string[] args)
         {
-            RunBenchmark();
-            return;
-            
             var experiment = new Experiment
             {
                 Name = "Boxing Perftest",

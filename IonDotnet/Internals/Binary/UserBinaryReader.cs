@@ -26,7 +26,8 @@ namespace IonDotnet.Internals.Binary
 
         protected override bool HasNext()
         {
-            if (_eof || !_moveNextNeeded) return !_eof;
+            if (_eof || !_moveNextNeeded) 
+                return !_eof;
 
             while (!_eof && _moveNextNeeded)
             {
@@ -49,7 +50,8 @@ namespace IonDotnet.Internals.Binary
                 // trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
                 // we already count the number of annotations
-                if (_annotationCount != 0) return;
+                if (_annotationCount != 0) 
+                    return;
 
                 LoadOnce();
 
