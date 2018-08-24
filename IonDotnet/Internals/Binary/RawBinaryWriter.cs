@@ -6,6 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace IonDotnet.Internals.Binary
 {
@@ -192,7 +193,7 @@ namespace IonDotnet.Internals.Binary
         /// Simply write the buffers, <see cref="PrepareFlush"/> should be called first
         /// </summary>
         /// <param name="outputStream">Stream to flush</param>
-        public void Flush(Stream outputStream)
+        public async Task Flush(Stream outputStream)
         {
             Debug.Assert(_containerStack.Count == 1, $"{_containerStack.Count}");
             Debug.Assert(outputStream?.CanWrite == true);
@@ -201,7 +202,7 @@ namespace IonDotnet.Internals.Binary
             //now write
             foreach (var segment in currentSequence)
             {
-                outputStream.Write(segment.Span);
+                await outputStream.WriteAsync(segment);
             }
 
             outputStream.Flush();

@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 using IonDotnet.Conversions;
 using IonDotnet.Internals.Binary;
 
@@ -6,15 +8,30 @@ namespace IonDotnet.Serialization
 {
     public class IonBinarySerializer
     {
-        private readonly ManagedBinaryWriter _binWriter = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
-
         public byte[] Serialize<T>(T obj, IScalarWriter scalarWriter = null)
         {
             byte[] bytes = null;
-            IonSerializationPrivate.WriteObject(_binWriter, obj, scalarWriter);
-            _binWriter.Flush(ref bytes);
-            _binWriter.Finish();
+            using (var binWriter = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+            {
+                IonSerializationPrivate.WriteObject(binWriter, obj, scalarWriter);
+                binWriter.Flush(ref bytes);
+                binWriter.Finish();
+            }
+
             return bytes;
+        }
+
+        public async Task Serialize<T>(T obj, Stream stream, IScalarWriter scalarWriter = null)
+        {
+            if (!stream.CanWrite)
+                throw new ArgumentException("Stream must be writable", nameof(stream));
+
+
+            using (var binWriter = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+            {
+                IonSerializationPrivate.WriteObject(binWriter, obj, scalarWriter);
+                await binWriter.FlushAsync(stream);
+            }
         }
 
         /// <summary>

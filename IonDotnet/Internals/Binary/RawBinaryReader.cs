@@ -968,35 +968,21 @@ namespace IonDotnet.Internals.Binary
         }
 
         public abstract string StringValue();
-
         public abstract long LongValue();
-
         public abstract SymbolToken SymbolValue();
-
         public abstract string CurrentFieldName { get; }
-
         public abstract SymbolToken GetFieldNameSymbol();
-
         public abstract IntegerSize GetIntegerSize();
-
         public abstract ISymbolTable GetSymbolTable();
-
         public abstract int IntValue();
-
         public abstract BigInteger BigIntegerValue();
-
         public abstract bool BoolValue();
-
         public abstract Timestamp TimestampValue();
-
         public abstract decimal DecimalValue();
-
         public abstract double DoubleValue();
 
         protected abstract void OnValueStart();
-
         protected abstract void OnAnnotation(int annotationId);
-
         protected abstract void OnValueEnd();
     }
 }

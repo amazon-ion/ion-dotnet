@@ -653,12 +653,21 @@ namespace IonDotnet.Internals.Text
         private static bool IsOperatorPart(char c)
         {
             //TODO stackalloc
-            var operatorChars = new[]
+            if (!Characters.Is8BitChar(c))
+                return false;
+            Span<int> operatorChars = stackalloc int[]
             {
                 '<', '>', '=', '+', '-', '*', '&', '^', '%',
                 '~', '/', '?', '.', ';', '!', '|', '@', '`', '#'
             };
-            return Characters.Is8BitChar(c) && operatorChars.Contains(c);
+
+            foreach (var operatorChar in operatorChars)
+            {
+                if (operatorChar == c)
+                    return true;
+            }
+
+            return false;
         }
 
         private static SymbolVariant GetSymbolVariant(string symbol)

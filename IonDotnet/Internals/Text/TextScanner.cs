@@ -346,7 +346,7 @@ namespace IonDotnet.Internals.Text
         /// </summary>
         /// <returns>True if the next two characters are single quotes</returns>
         /// <remarks>
-        /// If it suceeds it will consume the 2 quotes.
+        /// If it succeeds it will consume the 2 quotes.
         /// If it fails it will unread. 
         /// </remarks>
         private bool Is2SingleQuotes()

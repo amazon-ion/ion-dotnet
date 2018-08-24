@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace IonDotnet.Internals.Text
+﻿namespace IonDotnet.Internals.Text
 {
     /// <summary>
     /// A unified stream that can represent both text and Utf-8 bytes

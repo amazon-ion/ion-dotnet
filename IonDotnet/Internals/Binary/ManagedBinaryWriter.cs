@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Binary
@@ -228,16 +229,16 @@ namespace IonDotnet.Internals.Binary
             _symbolsWriter?.GetDataBuffer().Dispose();
         }
 
-        internal void Flush(Stream outputStream)
+        internal async Task FlushAsync(Stream outputStream)
         {
             if (!PrepareFlush())
                 return;
 
             _symbolsWriter.PrepareFlush();
-            _symbolsWriter.Flush(outputStream);
+            await _symbolsWriter.Flush(outputStream);
 
             _userWriter.PrepareFlush();
-            _userWriter.Flush(outputStream);
+            await _userWriter.Flush(outputStream);
 
             Finish();
         }

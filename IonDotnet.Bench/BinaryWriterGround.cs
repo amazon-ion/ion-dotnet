@@ -41,7 +41,7 @@ namespace IonDotnet.Bench
 
             writer.StepOut();
             writer.WriteInt(int.MaxValue);
-            writer.Flush(outputStream);
+            writer.FlushAsync(outputStream).Wait();
             writer.Dispose();
 
             var bytes = outputStream.ToArray();

@@ -1,6 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
 using IonDotnet.Conversions;
-using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 using IonDotnet.Systems;
 
@@ -17,6 +18,20 @@ namespace IonDotnet.Serialization
             var writer = new IonTextWriter(sw, options);
             IonSerializationPrivate.WriteObject(writer, obj, scalarWriter);
             return sw.ToString();
+        }
+
+        public Task SerializeAsync<T>(T obj, Stream stream, IonTextOptions options)
+        {
+            if (!stream.CanWrite)
+                throw new ArgumentException("Stream must be writable", nameof(stream));
+
+            using (var streamWriter = new StreamWriter(stream))
+            {
+                var writer = new IonTextWriter(streamWriter, options);
+                IonSerializationPrivate.WriteObject(writer, obj, null);
+            }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

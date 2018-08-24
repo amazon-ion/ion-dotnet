@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,13 +13,13 @@ namespace IonDotnet.Tests.Internals
     public class BinaryWriterTest
     {
         [TestMethod]
-        public void WriteEmptyDatagram()
+        public async Task WriteEmptyDatagram()
         {
             using (var stream = new MemoryStream())
             {
                 using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                     Assert.IsTrue(ReadUtils.Binary.DatagramEmpty(stream.ToArray()));
                 }
             }
@@ -34,7 +35,7 @@ namespace IonDotnet.Tests.Internals
                 using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
                 {
                     writer.WriteBool(val);
-                    writer.Flush(stream);
+                    writer.FlushAsync(stream);
                     var bytes = stream.ToArray();
                     Assert.AreEqual(val, ReadUtils.Binary.ReadSingleBool(bytes));
                 }
@@ -62,7 +63,7 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void WriteEmptyStruct()
+        public async Task WriteEmptyStruct()
         {
             using (var stream = new MemoryStream())
             {
@@ -70,7 +71,7 @@ namespace IonDotnet.Tests.Internals
                 {
                     writer.StepIn(IonType.Struct);
                     writer.StepOut();
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                     var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
                     Assert.IsTrue(reader.NextIsEmptyStruct());
                 }
@@ -88,7 +89,7 @@ namespace IonDotnet.Tests.Internals
         [DataRow(10)]
         [DataRow(400)]
         [DataRow(1000)]
-        public void WriteLayersDeep(int depth)
+        public async Task WriteLayersDeep(int depth)
         {
             using (var stream = new MemoryStream())
             {
@@ -109,7 +110,7 @@ namespace IonDotnet.Tests.Internals
                         writer.StepOut();
                     }
 
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                 }
 
                 var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
@@ -126,7 +127,7 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void WriteFlatStruct()
+        public async Task WriteFlatStruct()
         {
             using (var stream = new MemoryStream())
             {
@@ -138,7 +139,7 @@ namespace IonDotnet.Tests.Internals
                     kvps = WriteFlat(writer);
 
                     writer.StepOut();
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                 }
 
                 var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
@@ -151,7 +152,7 @@ namespace IonDotnet.Tests.Internals
         [DataRow(1)]
         [DataRow(10)]
         [DataRow(50)]
-        public void WriteObjectWithAnnotations(int annotationCount)
+        public async Task WriteObjectWithAnnotations(int annotationCount)
         {
             using (var stream = new MemoryStream())
             {
@@ -168,7 +169,7 @@ namespace IonDotnet.Tests.Internals
                     writer.WriteString("FieldValue");
 
                     writer.StepOut();
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                 }
 
                 var annotReader = new SaveAnnotationsReaderRoutine();
@@ -191,7 +192,7 @@ namespace IonDotnet.Tests.Internals
         [DataRow(10)]
         [DataRow(50)]
         [DataRow(2000)]
-        public void WriteStructWithSingleBlob(int blobSize)
+        public async Task WriteStructWithSingleBlob(int blobSize)
         {
             var blob = new byte[blobSize];
             new Random().NextBytes(blob);
@@ -205,7 +206,7 @@ namespace IonDotnet.Tests.Internals
                     writer.WriteBlob(blob);
 
                     writer.StepOut();
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                 }
 
                 var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
@@ -247,7 +248,7 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void WriteNulls()
+        public async Task WriteNulls()
         {
             using (var stream = new MemoryStream())
             {
@@ -265,7 +266,7 @@ namespace IonDotnet.Tests.Internals
                     }
 
                     writer.StepOut();
-                    writer.Flush(stream);
+                    await writer.FlushAsync(stream);
                 }
 
                 var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
