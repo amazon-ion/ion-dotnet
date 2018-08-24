@@ -84,11 +84,11 @@ namespace IonDotnet.Internals.Text
                             SetInteger(Radix.Decimal, s);
                             break;
                         case IonType.Decimal:
-                            _v.DecimalValue = decimal.Parse(s);
+                            _v.DecimalValue = decimal.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
 
                             break;
                         case IonType.Float:
-                            _v.DoubleValue = double.Parse(s);
+                            _v.DoubleValue = double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
                             break;
                         case IonType.Timestamp:
                             _v.TimestampValue = Timestamp.Parse(s);
@@ -106,10 +106,10 @@ namespace IonDotnet.Internals.Text
                     SetInteger(Radix.Hex, s);
                     break;
                 case TextConstants.TokenDecimal:
-                    _v.DecimalValue = decimal.Parse(s);
+                    _v.DecimalValue = decimal.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
                     break;
                 case TextConstants.TokenFloat:
-                    _v.DoubleValue = double.Parse(s);
+                    _v.DoubleValue = double.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
                     break;
                 case TextConstants.TokenTimestamp:
                     _v.TimestampValue = Timestamp.Parse(s);
@@ -184,13 +184,13 @@ namespace IonDotnet.Internals.Text
             //bigint
             if (intBase == 10)
             {
-                _v.BigIntegerValue = BigInteger.Parse(s);
+                _v.BigIntegerValue = BigInteger.Parse(s, System.Globalization.CultureInfo.InvariantCulture);
                 return;
             }
 
             if (intBase == 16)
             {
-                _v.BigIntegerValue = BigInteger.Parse(s, NumberStyles.HexNumber);
+                _v.BigIntegerValue = BigInteger.Parse(s, NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);
                 return;
             }
 

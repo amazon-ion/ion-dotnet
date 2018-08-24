@@ -132,7 +132,7 @@ namespace IonDotnet.Bench
                         Description = "Measure performance impact of boxing",
                         Result = ExperimentResult.Failure,
                         SampleData = new byte[100],
-                        Budget = decimal.Parse("12345.01234567890123456789")
+                        Budget = decimal.Parse("12345.01234567890123456789", System.Globalization.CultureInfo.InvariantCulture)
                     });
                 }
 
