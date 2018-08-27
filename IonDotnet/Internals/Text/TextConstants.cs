@@ -589,7 +589,7 @@ namespace IonDotnet.Internals.Text
         public static int DecodeSid(StringBuilder sb)
         {
             var digits = sb.ToString(1, sb.Length);
-            return int.Parse(digits);
+            return int.Parse(digits, System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 }
