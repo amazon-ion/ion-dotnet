@@ -4,7 +4,7 @@ Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for dotnet
 This project is still in early development and not ready for production use.
 
 [Basic usage](https://github.com/dhhoang/IonDotnet/blob/master/README.md#basic-usage)  
-[Performance](https://github.com/dhhoang/IonDotnet/blob/master/README.md#benchmarks)
+[Benchmarks](https://github.com/dhhoang/IonDotnet/blob/master/README.md#benchmarks)
 
 ### Basic usage
 IonDotnet can (de)serialize any POCO object 
@@ -66,6 +66,22 @@ Console.WriteLine(text);
 */
 ```
 
+### Setup
+This repository contains a git submodule called ion-tests, which holds test data used by ion-java's unit tests.  
+Clone the whole repository and initialize the submodule by:
+```
+$ git clone --recurse-submodules git@github.com:dhhoang/IonDotnet.git
+```
+Or you can initilize the submodules in the clone
+```
+$ git submodule init
+$ git submodule update
+```
+The project currently uses default dotnet [CLI](https://docs.microsoft.com/en-us/dotnet/core/tools/?tabs=netcore2x) tools,
+you can build the project simply by:
+```
+$ dotnet build
+``` 
 ### Benchmarks
 Environment
 ```
