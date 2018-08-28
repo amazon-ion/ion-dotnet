@@ -1,0 +1,9 @@
+language: csharp
+solution: IonDotnet.sln
+dotnet: 2.1
+mono: none
+script:
+  - dotnet build
+  - cd IonDotnet.Tests
+  - dotnet test
+  - cd ..
