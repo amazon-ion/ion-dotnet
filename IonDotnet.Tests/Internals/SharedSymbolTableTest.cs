@@ -69,7 +69,7 @@ namespace IonDotnet.Tests.Internals
                 Assert.AreSame(symbol, token.Text);
             }
 
-            var unknown = table.Find($"{string.Join(',', symbols)}key");
+            var unknown = table.Find($"{string.Join(",", symbols)}key");
             Assert.AreEqual(SymbolToken.None, unknown);
             Assert.ThrowsException<ArgumentNullException>(() => table.Find(null));
         }

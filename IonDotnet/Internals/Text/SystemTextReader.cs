@@ -171,13 +171,13 @@ namespace IonDotnet.Internals.Text
         private void SetInteger(Radix radix, string s)
         {
             var intBase = radix == Radix.Binary ? 2 : (radix == Radix.Decimal ? 10 : 16);
-            if (radix.IsInt(s))
+            if (radix.IsInt(s.AsSpan()))
             {
                 _v.IntValue = Convert.ToInt32(s, intBase);
                 return;
             }
 
-            if (radix.IsLong(s))
+            if (radix.IsLong(s.AsSpan()))
             {
                 _v.LongValue = Convert.ToInt64(s, intBase);
                 return;

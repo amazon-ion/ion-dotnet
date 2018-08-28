@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Conversions;
 using IonDotnet.Systems;
+#if !(NETSTANDARD2_0 || NET45 || NET46)
+using BitConverterEx = System.BitConverter;
+#endif
 
 namespace IonDotnet.Internals.Binary
 {
@@ -670,7 +673,7 @@ namespace IonDotnet.Internals.Binary
             if (length != 4 && length != 8)
                 throw new IonException($"Float length must be 0|4|8, length is {length}");
             var bits = ReadUlong(length);
-            return length == 4 ? BitConverter.Int32BitsToSingle((int) bits) : BitConverter.Int64BitsToDouble(bits);
+            return length == 4 ? BitConverterEx.Int32BitsToSingle((int) bits) : BitConverterEx.Int64BitsToDouble(bits);
         }
 
         /// <summary>
