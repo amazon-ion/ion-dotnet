@@ -23,7 +23,7 @@ namespace IonDotnet.Internals.Text
         {
             Start,
             Underscore,
-            Digit,
+            Digit
         }
 
         private enum CommentStrategy

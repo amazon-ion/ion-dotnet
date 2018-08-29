@@ -1,5 +1,8 @@
 # IonDotnet
 Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for dotnet 
+
+[![Build Status](https://travis-ci.org/dhhoang/IonDotnet.svg?branch=master)](https://travis-ci.org/dhhoang/IonDotnet)
+
 ### Note 
 This project is still in early development and not ready for production use.
 
