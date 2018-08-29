@@ -3,6 +3,9 @@ solution: IonDotnet.sln
 dotnet: 2.1
 mono: none
 
+git:
+  submodules: false
+
 script:
   - git submodule init
   - git submodule update
