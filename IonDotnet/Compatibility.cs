@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-#if NETSTANDARD2_0 || NET45 || NET46
+#if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
 namespace System.Collections.Generic
 {
     internal static class DictionaryExtensions
@@ -67,7 +67,7 @@ namespace System.IO
 }
 #endif
 
-#if NETSTANDARD2_0 || NET45 || NET46
+#if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
 namespace System.Text
 {
     internal static class EncodingExtensions
@@ -115,7 +115,7 @@ namespace System.Text
 
 #endif
 
-#if NETSTANDARD2_0 || NET45 || NET46
+#if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
 namespace System
 {
 

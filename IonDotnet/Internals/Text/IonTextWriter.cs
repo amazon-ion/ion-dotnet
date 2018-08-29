@@ -412,7 +412,7 @@ namespace IonDotnet.Internals.Text
             StartValue();
 
             //TODO high-perf no-alloc encoding?
-#if NET45 || NET46 || NETSTANDARD2_0
+#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
             var base64 = Convert.ToBase64String(value.ToArray());
 #else
             var base64 = Convert.ToBase64String(value);

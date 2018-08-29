@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -239,7 +238,7 @@ namespace IonDotnet.Internals.Lite
 
         protected void CheckLocked()
         {
-            if (IsLocked()) throw new ReadOnlyException();
+            if (IsLocked()) throw new InvalidOperationException("Value is locked");
         }
 
         protected abstract int GetHashCode(ISymbolTableProvider symbolTableProvider);

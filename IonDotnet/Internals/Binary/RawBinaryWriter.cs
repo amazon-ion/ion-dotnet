@@ -7,7 +7,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-#if !(NETSTANDARD2_0 || NET45 || NET46)
+#if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
 #endif
 
@@ -459,7 +459,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             //TODO is this different than java, is there a no-alloc way?
-#if NET45 || NET46 || NETSTANDARD2_0
+#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
             var buffer = value.ToByteArray();
 #else
             var buffer = value.ToByteArray(isUnsigned: true, isBigEndian: true);

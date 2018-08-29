@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 
 namespace IonDotnet.Internals.Lite
@@ -199,7 +198,7 @@ namespace IonDotnet.Internals.Lite
         private static void ValidateNewChild(IonValueLite child)
         {
             if (child.Container != null) throw new ContainedValueException();
-            if (child.ReadOnly) throw new ReadOnlyException();
+            if (child.ReadOnly) throw new InvalidOperationException("IonContainer is read-only");
 
             if (child is IIonDatagram) throw new InvalidOperationException("IonDatagram can not be inserted into another IonContainer.");
         }
