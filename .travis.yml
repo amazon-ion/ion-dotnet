@@ -3,10 +3,14 @@ solution: IonDotnet.sln
 dotnet: 2.1
 mono: none
 
-addons:
-  ssh_known_hosts:
-    - 192.30.253.112
-  
+git:
+  submodules: false
+
+before_install:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
+
+
 script:
   - git submodule init
   - git sumodule update
