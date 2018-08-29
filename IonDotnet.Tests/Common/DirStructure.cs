@@ -20,7 +20,12 @@ namespace IonDotnet.Tests.Common
         private static DirectoryInfo TestDatDir()
         {
             var root = GetRootDir();
-            return root.GetDirectories().Single(d => string.Equals(d.Name, "testdat", StringComparison.OrdinalIgnoreCase));
+            var rootList = root.GetDirectories();
+            return new DirectoryInfo($@"{rootList[0].FullName}
+                {Path.DirectorySeparatorChar}..
+                {Path.DirectorySeparatorChar}..
+                {Path.DirectorySeparatorChar}
+                ion-tests{Path.DirectorySeparatorChar}iontestdata");
         }
 
         public static byte[] ReadDataFile(string relativePath)
