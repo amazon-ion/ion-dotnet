@@ -5,10 +5,12 @@ mono: none
 
 git:
   submodules: false
+  
+before_install:
+  - sed -i 's/git@github.com:/https://github.com/amzn/ion-tests.git//' .gitmodules
+  - git submodule update --init --recursive
 
 script:
-  - git submodule init
-  - git submodule update
   - dotnet build
   - cd IonDotnet.Tests
   - dotnet test
