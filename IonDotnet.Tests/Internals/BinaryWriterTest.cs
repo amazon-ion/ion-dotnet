@@ -49,7 +49,7 @@ namespace IonDotnet.Tests.Internals
         [DataRow("-3.01234567890123456789")]
         public void WriteSingleDecimal(string format)
         {
-            var val = decimal.Parse(format);
+            var val = decimal.Parse(format, System.Globalization.CultureInfo.InvariantCulture);
 
             Console.WriteLine(val);
 
