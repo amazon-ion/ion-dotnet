@@ -13,7 +13,7 @@ before_install:
 
 script:
   - git submodule init
-  - git sumodule update
+  - git submodule update
   - dotnet build
   - cd IonDotnet.Tests
   - dotnet test
