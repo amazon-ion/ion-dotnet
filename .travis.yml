@@ -3,14 +3,13 @@ solution: IonDotnet.sln
 dotnet: 2.1
 mono: none
 
-git:
-  submodules: false
+addons:
+  ssh_known_hosts:
+    - 192.30.253.112
   
-before_install:
-  - sed -i 's/git@github.com:/https://github.com/amzn/ion-tests.git//' .gitmodules
-  - git submodule update --init --recursive
-
 script:
+  - git submodule init
+  - git sumodule update
   - dotnet build
   - cd IonDotnet.Tests
   - dotnet test
