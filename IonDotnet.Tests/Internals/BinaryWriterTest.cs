@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
+using IonDotnet.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Internals
@@ -12,16 +13,27 @@ namespace IonDotnet.Tests.Internals
     [TestClass]
     public class BinaryWriterTest
     {
+        private MemoryStream _memoryStream;
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            _memoryStream = new MemoryStream();
+        }
+
+        [TestCleanup]
+        public void Cleanup()
+        {
+            _memoryStream.Dispose();
+        }
+
         [TestMethod]
         public async Task WriteEmptyDatagram()
         {
-            using (var stream = new MemoryStream())
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    await writer.FlushAsync(stream);
-                    Assert.IsTrue(ReadUtils.Binary.DatagramEmpty(stream.ToArray()));
-                }
+                await writer.FlushAsync();
+                Assert.IsTrue(ReadUtils.Binary.DatagramEmpty(_memoryStream.GetWrittenBuffer()));
             }
         }
 
@@ -30,15 +42,12 @@ namespace IonDotnet.Tests.Internals
         [DataRow(false)]
         public void WriteSingleBool(bool val)
         {
-            using (var stream = new MemoryStream())
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.WriteBool(val);
-                    writer.FlushAsync(stream);
-                    var bytes = stream.ToArray();
-                    Assert.AreEqual(val, ReadUtils.Binary.ReadSingleBool(bytes));
-                }
+                writer.WriteBool(val);
+                writer.Flush();
+                var bytes = _memoryStream.GetWrittenBuffer();
+                Assert.AreEqual(val, ReadUtils.Binary.ReadSingleBool(bytes));
             }
         }
 
@@ -53,11 +62,11 @@ namespace IonDotnet.Tests.Internals
 
             Console.WriteLine(val);
 
-            using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
                 writer.WriteDecimal(val);
-                byte[] bytes = null;
-                writer.Flush(ref bytes);
+                writer.Flush();
+                var bytes = _memoryStream.GetWrittenBuffer();
                 Assert.AreEqual(val, ReadUtils.Binary.ReadSingleDecimal(bytes));
             }
         }
@@ -65,16 +74,13 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public async Task WriteEmptyStruct()
         {
-            using (var stream = new MemoryStream())
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.StepIn(IonType.Struct);
-                    writer.StepOut();
-                    await writer.FlushAsync(stream);
-                    var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
-                    Assert.IsTrue(reader.NextIsEmptyStruct());
-                }
+                writer.StepIn(IonType.Struct);
+                writer.StepOut();
+                await writer.FlushAsync();
+                var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()));
+                Assert.IsTrue(reader.NextIsEmptyStruct());
             }
         }
 
@@ -91,60 +97,54 @@ namespace IonDotnet.Tests.Internals
         [DataRow(1000)]
         public async Task WriteLayersDeep(int depth)
         {
-            using (var stream = new MemoryStream())
+            List<(string key, object value)> kvps;
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                List<(string key, object value)> kvps;
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.StepIn(IonType.Struct);
-                    for (var i = 0; i < depth - 1; i++)
-                    {
-                        writer.SetFieldName($"layer{i}");
-                        writer.StepIn(IonType.Struct);
-                    }
-
-                    kvps = WriteFlat(writer);
-
-                    for (var i = 0; i < depth; i++)
-                    {
-                        writer.StepOut();
-                    }
-
-                    await writer.FlushAsync(stream);
-                }
-
-                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
+                writer.StepIn(IonType.Struct);
                 for (var i = 0; i < depth - 1; i++)
                 {
-                    Console.WriteLine(i);
-                    Assert.AreEqual(IonType.Struct, reader.MoveNext());
-                    Console.WriteLine(reader.CurrentFieldName);
-                    reader.StepIn();
+                    writer.SetFieldName($"layer{i}");
+                    writer.StepIn(IonType.Struct);
                 }
 
-                ReadUtils.AssertFlatStruct(reader, kvps);
+                kvps = WriteFlat(writer);
+
+                for (var i = 0; i < depth; i++)
+                {
+                    writer.StepOut();
+                }
+
+                await writer.FlushAsync();
             }
+
+            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()));
+            for (var i = 0; i < depth - 1; i++)
+            {
+                Console.WriteLine(i);
+                Assert.AreEqual(IonType.Struct, reader.MoveNext());
+                Console.WriteLine(reader.CurrentFieldName);
+                reader.StepIn();
+            }
+
+            ReadUtils.AssertFlatStruct(reader, kvps);
         }
 
         [TestMethod]
         public async Task WriteFlatStruct()
         {
-            using (var stream = new MemoryStream())
+            List<(string key, object value)> kvps;
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                List<(string key, object value)> kvps;
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.StepIn(IonType.Struct);
+                writer.StepIn(IonType.Struct);
 
-                    kvps = WriteFlat(writer);
+                kvps = WriteFlat(writer);
 
-                    writer.StepOut();
-                    await writer.FlushAsync(stream);
-                }
-
-                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
-                ReadUtils.AssertFlatStruct(reader, kvps);
+                writer.StepOut();
+                await writer.FlushAsync();
             }
+
+            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()));
+            ReadUtils.AssertFlatStruct(reader, kvps);
         }
 
         [TestMethod]
@@ -154,35 +154,32 @@ namespace IonDotnet.Tests.Internals
         [DataRow(50)]
         public async Task WriteObjectWithAnnotations(int annotationCount)
         {
-            using (var stream = new MemoryStream())
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.StepIn(IonType.Struct);
+                writer.StepIn(IonType.Struct);
 
-                    writer.SetFieldName("FieldName");
-                    for (var i = 0; i < annotationCount; i++)
-                    {
-                        writer.AddTypeAnnotation($"annot_{i}");
-                    }
-
-                    writer.WriteString("FieldValue");
-
-                    writer.StepOut();
-                    await writer.FlushAsync(stream);
-                }
-
-                var annotReader = new SaveAnnotationsReaderRoutine();
-                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()), annotReader);
-                reader.MoveNext();
-                reader.StepIn();
-                reader.MoveNext();
-                //load the value
-                reader.StringValue();
+                writer.SetFieldName("FieldName");
                 for (var i = 0; i < annotationCount; i++)
                 {
-                    Assert.IsTrue(annotReader.Symbols.Contains($"annot_{i}"));
+                    writer.AddTypeAnnotation($"annot_{i}");
                 }
+
+                writer.WriteString("FieldValue");
+
+                writer.StepOut();
+                await writer.FlushAsync();
+            }
+
+            var annotReader = new SaveAnnotationsReaderRoutine();
+            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()), annotReader);
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+            //load the value
+            reader.StringValue();
+            for (var i = 0; i < annotationCount; i++)
+            {
+                Assert.IsTrue(annotReader.Symbols.Contains($"annot_{i}"));
             }
         }
 
@@ -196,30 +193,27 @@ namespace IonDotnet.Tests.Internals
         {
             var blob = new byte[blobSize];
             new Random().NextBytes(blob);
-            using (var stream = new MemoryStream())
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.StepIn(IonType.Struct);
+                writer.StepIn(IonType.Struct);
 
-                    writer.SetFieldName("blob");
-                    writer.WriteBlob(blob);
+                writer.SetFieldName("blob");
+                writer.WriteBlob(blob);
 
-                    writer.StepOut();
-                    await writer.FlushAsync(stream);
-                }
-
-                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
-                reader.MoveNext();
-                reader.StepIn();
-                Assert.AreEqual(IonType.Blob, reader.MoveNext());
-                var size = reader.GetLobByteSize();
-                Assert.AreEqual(blobSize, size);
-                var readBlob = new byte[size];
-                reader.GetBytes(readBlob);
-
-                Assert.IsTrue(blob.SequenceEqual(readBlob));
+                writer.StepOut();
+                await writer.FlushAsync();
             }
+
+            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()));
+            reader.MoveNext();
+            reader.StepIn();
+            Assert.AreEqual(IonType.Blob, reader.MoveNext());
+            var size = reader.GetLobByteSize();
+            Assert.AreEqual(blobSize, size);
+            var readBlob = new byte[size];
+            reader.GetBytes(readBlob);
+
+            Assert.IsTrue(blob.SequenceEqual(readBlob));
         }
 
         [TestMethod]
@@ -241,7 +235,7 @@ namespace IonDotnet.Tests.Internals
             }
 
             IIonWriter writer;
-            using (writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
+            using (writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
                 Assert.ThrowsException<IonException>(() => writeAlot(writer));
             }
@@ -250,40 +244,37 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public async Task WriteNulls()
         {
-            using (var stream = new MemoryStream())
+            using (var writer = new ManagedBinaryWriter(_memoryStream, BinaryConstants.EmptySymbolTablesArray))
             {
-                using (var writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray))
-                {
-                    writer.StepIn(IonType.Struct);
-
-                    foreach (var iType in Enum.GetValues(typeof(IonType)))
-                    {
-                        if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
-
-                        var name = Enum.GetName(typeof(IonType), iType);
-                        writer.SetFieldName($"null_{name}");
-                        writer.WriteNull((IonType) iType);
-                    }
-
-                    writer.StepOut();
-                    await writer.FlushAsync(stream);
-                }
-
-                var reader = new UserBinaryReader(new MemoryStream(stream.ToArray()));
-                reader.MoveNext();
-                reader.StepIn();
+                writer.StepIn(IonType.Struct);
 
                 foreach (var iType in Enum.GetValues(typeof(IonType)))
                 {
                     if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
+
                     var name = Enum.GetName(typeof(IonType), iType);
-                    Assert.AreEqual((IonType) iType, reader.MoveNext());
-                    Assert.AreEqual($"null_{name}", reader.CurrentFieldName);
-                    Assert.IsTrue(reader.CurrentIsNull);
+                    writer.SetFieldName($"null_{name}");
+                    writer.WriteNull((IonType) iType);
                 }
 
-                reader.StepOut();
+                writer.StepOut();
+                await writer.FlushAsync();
             }
+
+            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()));
+            reader.MoveNext();
+            reader.StepIn();
+
+            foreach (var iType in Enum.GetValues(typeof(IonType)))
+            {
+                if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
+                var name = Enum.GetName(typeof(IonType), iType);
+                Assert.AreEqual((IonType) iType, reader.MoveNext());
+                Assert.AreEqual($"null_{name}", reader.CurrentFieldName);
+                Assert.IsTrue(reader.CurrentIsNull);
+            }
+
+            reader.StepOut();
         }
 
         /// <summary>

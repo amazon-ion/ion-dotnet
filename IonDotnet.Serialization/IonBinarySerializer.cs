@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using IonDotnet.Conversions;
 using IonDotnet.Internals.Binary;
+using IonDotnet.Utils;
 
 namespace IonDotnet.Serialization
 {
@@ -19,7 +20,7 @@ namespace IonDotnet.Serialization
                     binWriter.Finish();
                 }
 
-                return stream.ToArray();
+                return stream.GetWrittenBuffer();
             }
         }
 

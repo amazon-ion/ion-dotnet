@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using IonDotnet.Internals.Binary;
+using IonDotnet.Utils;
 
 namespace IonDotnet.Bench
 {
@@ -17,9 +18,7 @@ namespace IonDotnet.Bench
                 action(obj, writer);
                 writer.Flush();
                 writer.Finish();
-                //TODO does GetBuffer() returns the correct size?
-                var buffer = stream.GetBuffer();
-                return buffer.Length == stream.Length ? buffer : stream.ToArray();
+                return stream.GetWrittenBuffer();
             }
         }
     }
