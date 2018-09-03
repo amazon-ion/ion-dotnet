@@ -96,9 +96,14 @@ namespace IonDotnet.Internals.Binary
         private LocalSymbolTableView _localSymbolTableView;
         private readonly ImportedSymbolsContext _importContext;
         private SymbolState _symbolState;
+        private readonly Stream _outputStream;
 
-        public ManagedBinaryWriter(ISymbolTable[] importedTables)
+        public ManagedBinaryWriter(Stream outputStream, ISymbolTable[] importedTables)
         {
+            if (!outputStream.CanWrite)
+                throw new ArgumentException("Output stream must be writable", nameof(outputStream));
+
+            _outputStream = outputStream;
             //raw writers and their buffers
             var lengthWriterBuffer = new PagedWriter256Buffer();
             var lengthSegment = new List<Memory<byte>>(2);
@@ -229,64 +234,85 @@ namespace IonDotnet.Internals.Binary
             _symbolsWriter?.GetDataBuffer().Dispose();
         }
 
-        internal async Task FlushAsync(Stream outputStream)
-        {
-            if (!PrepareFlush())
-                return;
-
-            _symbolsWriter.PrepareFlush();
-            await _symbolsWriter.Flush(outputStream);
-
-            _userWriter.PrepareFlush();
-            await _userWriter.Flush(outputStream);
-
-            Finish();
-        }
-
-        internal void Flush(ref byte[] bytes)
+        public override async Task FlushAsync()
         {
             if (!PrepareFlush())
                 return;
 
             var sLength = _symbolsWriter.PrepareFlush();
             var uLength = _userWriter.PrepareFlush();
-            var tLength = sLength + uLength;
-            if (bytes == null || bytes.Length < tLength)
+
+            if (_outputStream is MemoryStream memoryStream)
             {
-                bytes = new byte[tLength];
+                var tLength = sLength + uLength;
+                memoryStream.Capacity += tLength;
             }
 
-            _symbolsWriter.Flush(bytes);
-            _userWriter.Flush(new Memory<byte>(bytes, sLength, uLength));
+            await _symbolsWriter.FlushAsync(_outputStream);
+            await _userWriter.FlushAsync(_outputStream);
 
             Finish();
-        }
-
-        internal int Flush(Memory<byte> buffer)
-        {
-            if (!PrepareFlush())
-                return 0;
-
-            var sLength = _symbolsWriter.PrepareFlush();
-            var uLength = _userWriter.PrepareFlush();
-            var tLength = sLength + uLength;
-            if (buffer.Length < tLength)
-                return 0;
-
-            _symbolsWriter.Flush(buffer);
-            _userWriter.Flush(buffer.Slice(sLength, uLength));
-            Finish();
-            return tLength;
-        }
-
-        public override void WriteIonVersionMarker()
-        {
-            //do nothing, Ivm is always written
         }
 
         public override void Flush()
         {
-            //do nothing
+            if (!PrepareFlush())
+                return;
+
+            var sLength = _symbolsWriter.PrepareFlush();
+            var uLength = _userWriter.PrepareFlush();
+
+            if (_outputStream is MemoryStream memoryStream)
+            {
+                var tLength = sLength + uLength;
+                memoryStream.Capacity += tLength;
+            }
+
+            _symbolsWriter.Flush(_outputStream);
+            _userWriter.Flush(_outputStream);
+
+            Finish();
+        }
+
+//        internal void Flush(ref byte[] bytes)
+//        {
+//            if (!PrepareFlush())
+//                return;
+//
+//            var sLength = _symbolsWriter.PrepareFlush();
+//            var uLength = _userWriter.PrepareFlush();
+//            var tLength = sLength + uLength;
+//            if (bytes == null || bytes.Length < tLength)
+//            {
+//                bytes = new byte[tLength];
+//            }
+//
+//            _symbolsWriter.Flush(bytes);
+//            _userWriter.Flush(new Memory<byte>(bytes, sLength, uLength));
+//
+//            Finish();
+//        }
+//
+//        internal int Flush(Memory<byte> buffer)
+//        {
+//            if (!PrepareFlush())
+//                return 0;
+//
+//            var sLength = _symbolsWriter.PrepareFlush();
+//            var uLength = _userWriter.PrepareFlush();
+//            var tLength = sLength + uLength;
+//            if (buffer.Length < tLength)
+//                return 0;
+//
+//            _symbolsWriter.Flush(buffer);
+//            _userWriter.Flush(buffer.Slice(sLength, uLength));
+//            Finish();
+//            return tLength;
+//        }
+
+        public override void WriteIonVersionMarker()
+        {
+            //do nothing, Ivm is always written
         }
 
         private bool PrepareFlush()
@@ -319,7 +345,8 @@ namespace IonDotnet.Internals.Binary
 
         public override void Finish()
         {
-            if (_userWriter.GetDepth() != 0) throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
+            if (_userWriter.GetDepth() != 0)
+                throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
 
             _symbolsWriter.Finish();
             _userWriter.Finish();

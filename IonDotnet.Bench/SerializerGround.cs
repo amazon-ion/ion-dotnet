@@ -145,7 +145,6 @@ namespace IonDotnet.Bench
         [MemoryDiagnoser]
         public class BinaryBenchmark : Benchmark
         {
-            private static readonly ManagedBinaryWriter Mbw = new ManagedBinaryWriter(new ISymbolTable[0]);
             private static readonly JsonSerializer JSerializer = new JsonSerializer();
 
             [Benchmark]

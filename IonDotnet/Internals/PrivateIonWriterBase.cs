@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace IonDotnet.Internals
 {
@@ -146,6 +146,7 @@ namespace IonDotnet.Internals
         public abstract void AddTypeAnnotation(string annotation);
         public abstract void Dispose();
         public abstract ISymbolTable SymbolTable { get; }
+        public abstract void Flush();
         public abstract void Finish();
         public abstract void SetFieldName(string name);
         public abstract void SetFieldNameSymbol(SymbolToken symbol);
@@ -156,6 +157,6 @@ namespace IonDotnet.Internals
         public abstract bool IsFieldNameSet();
         public abstract int GetDepth();
         public abstract void WriteIonVersionMarker();
-        public abstract void Flush();
+        public abstract Task FlushAsync();
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 using IonDotnet.Systems;
 using IonDotnet.Utils;
 
@@ -252,13 +253,14 @@ namespace IonDotnet.Internals.Text
             _pendingSeparator = true;
             _followingLongString = false;
 
-            // Flush if a top-level-value was written
+            // TODO Flush if a top-level-value was written
             if (GetDepth() == 0)
             {
-                Flush();
+//                Flush();
             }
         }
 
+        public override Task FlushAsync() => _textWriter.FlushAsync();
         public override void Flush() => _textWriter.Flush();
 
         public override void WriteNull()
@@ -271,60 +273,60 @@ namespace IonDotnet.Internals.Text
         public override void WriteNull(IonType type)
         {
             StartValue();
-            string nullimage;
+            string nullImage;
             if (_options.UntypedNull)
             {
-                nullimage = "null";
+                nullImage = "null";
             }
             else
             {
                 switch (type)
                 {
                     case IonType.Null:
-                        nullimage = "null";
+                        nullImage = "null";
                         break;
                     case IonType.Bool:
-                        nullimage = "null.bool";
+                        nullImage = "null.bool";
                         break;
                     case IonType.Int:
-                        nullimage = "null.int";
+                        nullImage = "null.int";
                         break;
                     case IonType.Float:
-                        nullimage = "null.float";
+                        nullImage = "null.float";
                         break;
                     case IonType.Decimal:
-                        nullimage = "null.decimal";
+                        nullImage = "null.decimal";
                         break;
                     case IonType.Timestamp:
-                        nullimage = "null.timestamp";
+                        nullImage = "null.timestamp";
                         break;
                     case IonType.Symbol:
-                        nullimage = "null.symbol";
+                        nullImage = "null.symbol";
                         break;
                     case IonType.String:
-                        nullimage = "null.string";
+                        nullImage = "null.string";
                         break;
                     case IonType.Clob:
-                        nullimage = "null.clob";
+                        nullImage = "null.clob";
                         break;
                     case IonType.Blob:
-                        nullimage = "null.blob";
+                        nullImage = "null.blob";
                         break;
                     case IonType.List:
-                        nullimage = "null.list";
+                        nullImage = "null.list";
                         break;
                     case IonType.Sexp:
-                        nullimage = "null.sexp";
+                        nullImage = "null.sexp";
                         break;
                     case IonType.Struct:
-                        nullimage = "null.struct";
+                        nullImage = "null.struct";
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(type), type, null);
                 }
             }
 
-            _textWriter.Write(nullimage);
+            _textWriter.Write(nullImage);
             CloseValue();
         }
 
@@ -458,7 +460,7 @@ namespace IonDotnet.Internals.Text
 
         public override void Finish()
         {
-            _textWriter.Flush();
+//            _textWriter.Flush();
         }
 
         public override void StepIn(IonType type)

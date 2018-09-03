@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Numerics;
+using System.Threading.Tasks;
 
 namespace IonDotnet
 {
@@ -13,11 +12,24 @@ namespace IonDotnet
     {
         ISymbolTable SymbolTable { get; }
 
-        void Flush();
-        
         /// <summary>
-        /// Mark the writer as 'finished', all written values will be erased
+        /// Flush all the pending written data to the output stream asynchronously.
         /// </summary>
+        /// <returns>The task representing flush operation.</returns>
+        Task FlushAsync();
+
+        /// <summary>
+        /// Flush all the pending written data to the output stream (blocking).
+        /// </summary>
+        void Flush();
+
+        /// <summary>
+        /// Mark the writer as 'finished', all written values will be erased.
+        /// </summary>
+        /// <remarks>
+        /// This will NOT flush the data to the output stream. Users of <see cref="IIonWriter"/> must
+        /// call <see cref="FlushAsync"/> before finishing.
+        /// </remarks>
         void Finish();
 
         /// <summary>

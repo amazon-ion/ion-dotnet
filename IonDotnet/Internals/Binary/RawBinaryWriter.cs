@@ -190,10 +190,10 @@ namespace IonDotnet.Internals.Binary
         public ISymbolTable SymbolTable => SharedSymbolTable.GetSystem(1);
 
         /// <summary>
-        /// Simply write the buffers, <see cref="PrepareFlush"/> should be called first
+        /// Simply write the buffers (async), <see cref="PrepareFlush"/> should be called first
         /// </summary>
-        /// <param name="outputStream">Stream to flush</param>
-        public async Task Flush(Stream outputStream)
+        /// <param name="outputStream">Stream to flush to</param>
+        public async Task FlushAsync(Stream outputStream)
         {
             Debug.Assert(_containerStack.Count == 1, $"{_containerStack.Count}");
             Debug.Assert(outputStream?.CanWrite == true);
@@ -208,23 +208,30 @@ namespace IonDotnet.Internals.Binary
             outputStream.Flush();
         }
 
-        //this won't be called at this level
-        void IIonWriter.Flush()
+        /// <summary>
+        /// Simply write the buffers (blocking), <see cref="PrepareFlush"/> should be called first
+        /// </summary>
+        /// <param name="outputStream">Stream to flush to</param>
+        public void Flush(Stream outputStream)
         {
-        }
-
-        public int Flush(Memory<byte> buffer)
-        {
-            //raw writer shouldn't have to do the checking
-            var offset = 0;
+            Debug.Assert(_containerStack.Count == 1, $"{_containerStack.Count}");
+            Debug.Assert(outputStream?.CanWrite == true);
             var currentSequence = _containerStack.Peek().Sequence;
+
+            //now write
             foreach (var segment in currentSequence)
             {
-                segment.CopyTo(buffer.Slice(offset));
-                offset += segment.Length;
+                outputStream.Write(segment.Span);
             }
 
-            return offset;
+            outputStream.Flush();
+        }
+
+        //these won't be called at this level
+        Task IIonWriter.FlushAsync() => Task.CompletedTask;
+
+        void IIonWriter.Flush()
+        {
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace IonDotnet.Bench
         {
             var outputStream = new MemoryStream();
 
-            var writer = new ManagedBinaryWriter(new ISymbolTable[0]);
+            var writer = new ManagedBinaryWriter(outputStream, new ISymbolTable[0]);
             writer.StepIn(IonType.Struct);
 
             writer.SetFieldName("yes");
@@ -41,7 +41,7 @@ namespace IonDotnet.Bench
 
             writer.StepOut();
             writer.WriteInt(int.MaxValue);
-            writer.FlushAsync(outputStream).Wait();
+            writer.FlushAsync().Wait();
             writer.Dispose();
 
             var bytes = outputStream.ToArray();

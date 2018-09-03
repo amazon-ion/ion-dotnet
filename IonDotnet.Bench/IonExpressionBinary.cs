@@ -1,21 +1,26 @@
-﻿using IonDotnet.Internals.Binary;
+﻿using System.IO;
+using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Bench
 {
     public static class IonExpressionBinary
     {
-        private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
-
-        
         public static byte[] Serialize<T>(T obj)
         {
             var action = IonSerializerExpression.GetAction<T>();
+
             // var action = GetAction<T>();
             //now write
-            byte[] bytes = null;
-            action(obj, Writer);
-            Writer.Flush(ref bytes);
-            return bytes;
+            using (var stream = new MemoryStream())
+            {
+                var writer = new ManagedBinaryWriter(stream, BinaryConstants.EmptySymbolTablesArray);
+                action(obj, writer);
+                writer.Flush();
+                writer.Finish();
+                //TODO does GetBuffer() returns the correct size?
+                var buffer = stream.GetBuffer();
+                return buffer.Length == stream.Length ? buffer : stream.ToArray();
+            }
         }
     }
 }

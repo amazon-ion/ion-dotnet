@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using IonDotnet.Internals.Binary;
 
 // ReSharper disable UnusedMember.Global
@@ -7,8 +8,6 @@ namespace IonDotnet.Bench
 {
     public class WriterBenchmark : IRunable
     {
-        private static readonly ManagedBinaryWriter Writer = new ManagedBinaryWriter(BinaryConstants.EmptySymbolTablesArray);
-
         public void Run(string[] args)
         {
             //warmup
@@ -33,29 +32,33 @@ namespace IonDotnet.Bench
 
         private static void RunOnce()
         {
-            Writer.StepIn(IonType.List);
-            for (var i = 0; i < 1000; i++)
+            using (var stream = new MemoryStream())
             {
-                Writer.StepIn(IonType.Struct);
+                using (var writer = new ManagedBinaryWriter(stream, BinaryConstants.EmptySymbolTablesArray))
+                {
+                    writer.StepIn(IonType.List);
+                    for (var i = 0; i < 1000; i++)
+                    {
+                        writer.StepIn(IonType.Struct);
 
-                Writer.SetFieldName("boolean");
-                Writer.WriteBool(true);
-                Writer.SetFieldName("string");
-                Writer.WriteString("this is a string");
-                Writer.SetFieldName("integer");
-                Writer.WriteInt(int.MaxValue);
-                Writer.SetFieldName("float");
-                Writer.WriteFloat(432.23123f);
-                Writer.SetFieldName("timestamp");
-                Writer.WriteTimestamp(new Timestamp(new DateTime(2000, 11, 11)));
+                        writer.SetFieldName("boolean");
+                        writer.WriteBool(true);
+                        writer.SetFieldName("string");
+                        writer.WriteString("this is a string");
+                        writer.SetFieldName("integer");
+                        writer.WriteInt(int.MaxValue);
+                        writer.SetFieldName("float");
+                        writer.WriteFloat(432.23123f);
+                        writer.SetFieldName("timestamp");
+                        writer.WriteTimestamp(new Timestamp(new DateTime(2000, 11, 11)));
 
-                Writer.StepOut();
+                        writer.StepOut();
+                    }
+
+                    writer.StepOut();
+                    writer.Flush();
+                }
             }
-
-            byte[] bytes = null;
-            Writer.StepOut();
-            Writer.Flush(ref bytes);
-            Writer.Finish();
         }
     }
 }
