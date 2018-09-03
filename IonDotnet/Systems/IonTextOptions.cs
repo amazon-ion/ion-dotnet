@@ -6,8 +6,6 @@ namespace IonDotnet.Systems
     {
         public static readonly IonTextOptions Default = new IonTextOptions();
 
-        private string _lineSeparator;
-
         public bool PrettyPrint { get; set; }
 
         public string LineSeparator { get; set; } = Environment.NewLine;

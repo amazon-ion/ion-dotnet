@@ -31,7 +31,7 @@ namespace IonDotnet.Tests.Internals
         public void TrivialStruct()
         {
             //empty struct {}
-            var trivial = DirStructure.ReadDataFile("text/trivial.ion");
+            var trivial = DirStructure.OwnTestFileAsBytes("text/trivial.ion");
             var text = Encoding.UTF8.GetString(trivial);
 
             var reader = new UserTextReader(text);
@@ -75,7 +75,7 @@ namespace IonDotnet.Tests.Internals
         public void OneBoolInStruct()
         {
             //simple datagram: {yolo:true}
-            var oneBool = DirStructure.ReadDataFile("text/onebool.ion");
+            var oneBool = DirStructure.OwnTestFileAsBytes("text/onebool.ion");
             var reader = new UserTextReader(new MemoryStream(oneBool));
             ReaderTestCommon.OneBoolInStruct(reader);
 
@@ -93,7 +93,7 @@ namespace IonDotnet.Tests.Internals
             //longInt:int.Max*2
             //bigInt:long.Max*10
             //double:2213.1267567f
-            var flatScalar = DirStructure.ReadDataFile("text/flat_scalar.ion");
+            var flatScalar = DirStructure.OwnTestFileAsBytes("text/flat_scalar.ion");
 
             var reader = new UserTextReader(new MemoryStream(flatScalar));
             ReaderTestCommon.FlatScalar(reader);
@@ -106,7 +106,7 @@ namespace IonDotnet.Tests.Internals
         public void FlatIntList()
         {
             //a flat list of ints [123,456,789]
-            var flatListInt = DirStructure.ReadDataFile("text/flatlist_int.ion");
+            var flatListInt = DirStructure.OwnTestFileAsBytes("text/flatlist_int.ion");
 
             var reader = new UserTextReader(new MemoryStream(flatListInt));
             ReaderTestCommon.FlatIntList(reader);
@@ -128,7 +128,7 @@ namespace IonDotnet.Tests.Internals
         {
             //struct with single symbol
             //{single_symbol:'something'}
-            var data = DirStructure.ReadDataFile("text/single_symbol.ion");
+            var data = DirStructure.OwnTestFileAsBytes("text/single_symbol.ion");
 
             var reader = new UserTextReader(new MemoryStream(data));
             ReaderTestCommon.SingleSymbol(reader);
@@ -140,7 +140,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void SingleIntList()
         {
-            var data = DirStructure.ReadDataFile("text/single_int_list.ion");
+            var data = DirStructure.OwnTestFileAsBytes("text/single_int_list.ion");
             var reader = new UserTextReader(new MemoryStream(data));
             ReaderTestCommon.SingleIntList(reader);
 
@@ -154,7 +154,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void Combined1()
         {
-            var data = DirStructure.ReadDataFile("text/combined1.ion");
+            var data = DirStructure.OwnTestFileAsBytes("text/combined1.ion");
             var reader = new UserTextReader(new MemoryStream(data));
             ReaderTestCommon.Combined1(reader);
 
@@ -165,7 +165,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void Struct_OneBlob()
         {
-            var data = DirStructure.ReadDataFile("text/struct_oneblob.ion");
+            var data = DirStructure.OwnTestFileAsBytes("text/struct_oneblob.ion");
             var reader = new UserTextReader(new MemoryStream(data));
             ReaderTestCommon.Struct_OneBlob(reader);
 

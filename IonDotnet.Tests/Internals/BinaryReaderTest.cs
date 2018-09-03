@@ -30,7 +30,7 @@ namespace IonDotnet.Tests.Internals
         public void TrivialStruct()
         {
             //empty struct {}
-            var trivial = DirStructure.ReadDataFile("binary/trivial.bindat");
+            var trivial = DirStructure.OwnTestFileAsBytes("binary/trivial.bindat");
             var reader = new UserBinaryReader(new MemoryStream(trivial));
             ReaderTestCommon.TrivialStruct(reader);
         }
@@ -60,7 +60,7 @@ namespace IonDotnet.Tests.Internals
         public void OneBoolInStruct()
         {
             //simple datagram: {yolo:true}
-            var oneBool = DirStructure.ReadDataFile("binary/onebool.bindat");
+            var oneBool = DirStructure.OwnTestFileAsBytes("binary/onebool.bindat");
             var reader = new UserBinaryReader(new MemoryStream(oneBool));
             ReaderTestCommon.OneBoolInStruct(reader);
         }
@@ -75,7 +75,7 @@ namespace IonDotnet.Tests.Internals
             //longInt:int.Max*2
             //bigInt:long.Max*10
             //double:2213.1267567f
-            var flatScalar = DirStructure.ReadDataFile("binary/flat_scalar.bindat");
+            var flatScalar = DirStructure.OwnTestFileAsBytes("binary/flat_scalar.bindat");
 
             var reader = new UserBinaryReader(new MemoryStream(flatScalar));
             ReaderTestCommon.FlatScalar(reader);
@@ -85,7 +85,7 @@ namespace IonDotnet.Tests.Internals
         public void FlatIntList()
         {
             //a flat list of ints [123,456,789]
-            var flatListInt = DirStructure.ReadDataFile("binary/flatlist_int.bindat");
+            var flatListInt = DirStructure.OwnTestFileAsBytes("binary/flatlist_int.bindat");
 
             var reader = new UserBinaryReader(new MemoryStream(flatListInt));
             ReaderTestCommon.FlatIntList(reader);
@@ -96,7 +96,7 @@ namespace IonDotnet.Tests.Internals
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.ReadDataFile("binary/annot_singlefield.bindat");
+            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
             var converter = new SaveAnnotationsReaderRoutine();
             var reader = new UserBinaryReader(new MemoryStream(annotSingleField), converter);
 
@@ -108,7 +108,7 @@ namespace IonDotnet.Tests.Internals
         {
             //struct with single symbol
             //{single_symbol:'something'}
-            var data = DirStructure.ReadDataFile("binary/single_symbol.bindat");
+            var data = DirStructure.OwnTestFileAsBytes("binary/single_symbol.bindat");
 
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.SingleSymbol(reader);
@@ -117,7 +117,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void SingleIntList()
         {
-            var data = DirStructure.ReadDataFile("binary/single_int_list.bindat");
+            var data = DirStructure.OwnTestFileAsBytes("binary/single_int_list.bindat");
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.SingleIntList(reader);
         }
@@ -128,7 +128,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void Combined1()
         {
-            var data = DirStructure.ReadDataFile("binary/combined1.bindat");
+            var data = DirStructure.OwnTestFileAsBytes("binary/combined1.bindat");
             var reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.Combined1(reader);
@@ -137,7 +137,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void Struct_OneBlob()
         {
-            var data = DirStructure.ReadDataFile("binary/struct_oneblob.bindat");
+            var data = DirStructure.OwnTestFileAsBytes("binary/struct_oneblob.bindat");
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.Struct_OneBlob(reader);
         }
@@ -150,7 +150,7 @@ namespace IonDotnet.Tests.Internals
         public void TwoLayer_TestStepout_Skip()
         {
             const string fileName = "binary/twolayer.bindat";
-            var data = DirStructure.ReadDataFile(fileName);
+            var data = DirStructure.OwnTestFileAsBytes(fileName);
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.TwoLayer_TestStepoutSkip(reader);
         }

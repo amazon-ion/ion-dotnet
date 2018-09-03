@@ -12,7 +12,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void Date_2000_11_20_8_20_15_Unknown()
         {
-            var data = DirStructure.ReadDataFile("text/ts_2000_11_20_8_20_15_unknown.ion");
+            var data = DirStructure.OwnTestFileAsBytes("text/ts_2000_11_20_8_20_15_unknown.ion");
             IIonReader reader = new UserTextReader(new MemoryStream(data));
             ReaderTimestampCommon.Date_2000_11_20_8_20_15_Unknown(reader);
         }
