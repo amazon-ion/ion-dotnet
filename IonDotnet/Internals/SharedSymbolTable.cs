@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Internals
@@ -90,7 +89,7 @@ namespace IonDotnet.Internals
         public SymbolToken Intern(string text)
         {
             var symtok = Find(text);
-            if (symtok == SymbolToken.None) throw new ReadOnlyException("Table is read-only");
+            if (symtok == SymbolToken.None) throw new InvalidOperationException("Table is read-only");
             return symtok;
         }
 

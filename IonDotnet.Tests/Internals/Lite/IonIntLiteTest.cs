@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Numerics;
 using IonDotnet.Internals.Lite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -81,9 +80,9 @@ namespace IonDotnet.Tests.Internals.Lite
         private static void AssertReadOnly(IIonInt ionInt)
         {
             Assert.IsTrue(ionInt.ReadOnly);
-            Assert.ThrowsException<ReadOnlyException>(() => ionInt.IntValue = int.MaxValue / 4);
-            Assert.ThrowsException<ReadOnlyException>(() => ionInt.LongValue = long.MaxValue / 4);
-            Assert.ThrowsException<ReadOnlyException>(() => ionInt.BigIntegerValue = new BigInteger(long.MaxValue));
+            Assert.ThrowsException<InvalidOperationException>(() => ionInt.IntValue = int.MaxValue / 4);
+            Assert.ThrowsException<InvalidOperationException>(() => ionInt.LongValue = long.MaxValue / 4);
+            Assert.ThrowsException<InvalidOperationException>(() => ionInt.BigIntegerValue = new BigInteger(long.MaxValue));
         }
     }
 }

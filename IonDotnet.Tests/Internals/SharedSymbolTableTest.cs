@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
+using System.Text;
 using IonDotnet.Internals;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -39,7 +39,7 @@ namespace IonDotnet.Tests.Internals
         public void InternKnownText_KeepEntry(string text)
         {
             var table = SharedSymbolTable.NewSharedSymbolTable("table", 1, null, new[] {text});
-            var extraText = string.Copy(text);
+            var extraText = new StringBuilder(text).ToString();
             Assert.AreNotSame(text, extraText);
 
             var symtok = table.Find(extraText);
@@ -53,7 +53,7 @@ namespace IonDotnet.Tests.Internals
         public void InternUnknownText_Throws()
         {
             var table = SharedSymbolTable.NewSharedSymbolTable("table", 1, null, new[] {"a", "b", "c"});
-            Assert.ThrowsException<ReadOnlyException>(() => table.Intern("d"));
+            Assert.ThrowsException<InvalidOperationException>(() => table.Intern("d"));
         }
 
         [TestMethod]
@@ -69,7 +69,7 @@ namespace IonDotnet.Tests.Internals
                 Assert.AreSame(symbol, token.Text);
             }
 
-            var unknown = table.Find($"{string.Join(',', symbols)}key");
+            var unknown = table.Find($"{string.Join(",", symbols)}key");
             Assert.AreEqual(SymbolToken.None, unknown);
             Assert.ThrowsException<ArgumentNullException>(() => table.Find(null));
         }

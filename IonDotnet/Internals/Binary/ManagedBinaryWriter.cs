@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -502,7 +501,7 @@ namespace IonDotnet.Internals.Binary
             {
                 var existing = Find(text);
                 if (existing != default) return existing;
-                if (IsReadOnly) throw new ReadOnlyException("Table is read-only");
+                if (IsReadOnly) throw new InvalidOperationException("Table is read-only");
 
                 return _writer.Intern(text);
             }

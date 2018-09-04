@@ -7,6 +7,9 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+#if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
+using BitConverterEx = System.BitConverter;
+#endif
 
 namespace IonDotnet.Internals.Binary
 {
@@ -228,7 +231,7 @@ namespace IonDotnet.Internals.Binary
         }
 
         //these won't be called at this level
-        Task IIonWriter.FlushAsync() => Task.CompletedTask;
+        Task IIonWriter.FlushAsync() => TaskEx.CompletedTask;
 
         void IIonWriter.Flush()
         {
@@ -456,7 +459,11 @@ namespace IonDotnet.Internals.Binary
             }
 
             //TODO is this different than java, is there a no-alloc way?
-            var buffer = value.ToByteArray(true, true);
+#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
+            var buffer = value.ToByteArray();
+#else
+            var buffer = value.ToByteArray(isUnsigned: true, isBigEndian: true);
+#endif
             WriteTypedBytes(type, buffer);
 
             FinishValue();
@@ -493,13 +500,13 @@ namespace IonDotnet.Internals.Binary
                 //TODO requires careful testing
                 _containerStack.IncreaseCurrentContainerLength(5);
                 _dataBuffer.WriteByte(TidFloatByte | 4);
-                _dataBuffer.WriteUint32(BitConverter.SingleToInt32Bits((float) value));
+                _dataBuffer.WriteUint32(BitConverterEx.SingleToInt32Bits((float) value));
             }
             else
             {
                 _containerStack.IncreaseCurrentContainerLength(9);
                 _dataBuffer.WriteByte(TidFloatByte | 8);
-                _dataBuffer.WriteUint64(BitConverter.DoubleToInt64Bits(value));
+                _dataBuffer.WriteUint64(BitConverterEx.DoubleToInt64Bits(value));
             }
 
             FinishValue();

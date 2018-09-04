@@ -5,6 +5,7 @@
     <LangVersion>7.2</LangVersion>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <Configurations>Debug;Release;Perf</Configurations>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

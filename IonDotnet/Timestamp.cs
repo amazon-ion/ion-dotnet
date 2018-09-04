@@ -134,7 +134,7 @@ namespace IonDotnet
             //TODO can this go wrong?
             const string minusZero = "-00:00";
             var endsWithMinusZero = false;
-            var offsetKnown = s.Contains('Z') || s.Contains('z') || s.Contains('+');
+            var offsetKnown = s.IndexOfAny(offsetSeparators) > 0;
             if (!offsetKnown)
             {
                 if (s.EndsWith(minusZero))
@@ -154,16 +154,18 @@ namespace IonDotnet
                 return new Timestamp(dto);
             }
 
-            var span = s.AsSpan();
+            var stringToParse = s;
             if (endsWithMinusZero)
             {
-                span = span.Slice(0, s.Length - minusZero.Length);
+                stringToParse = s.Substring(0, s.Length - minusZero.Length);
             }
 
-            var dt = DateTime.Parse(span);
+            var dt = DateTime.Parse(stringToParse, System.Globalization.CultureInfo.InvariantCulture);
             dt = DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
             return new Timestamp(dt);
         }
+
+        private static readonly char[] offsetSeparators = { 'Z', 'z', '+' };
 
         public override string ToString()
         {

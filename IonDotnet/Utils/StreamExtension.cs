@@ -12,6 +12,9 @@ namespace IonDotnet.Utils
         /// <returns>Byte array of the written data</returns>
         public static byte[] GetWrittenBuffer(this MemoryStream memStream)
         {
+#if NETSTANDARD1_3
+            return memStream.ToArray();
+#else
             try
             {
                 var buffer = memStream.GetBuffer();
@@ -28,6 +31,7 @@ namespace IonDotnet.Utils
                 //No access to the underlying buffer
                 return memStream.ToArray();
             }
+#endif
         }
     }
 }
