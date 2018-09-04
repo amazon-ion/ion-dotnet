@@ -54,9 +54,9 @@ namespace System.IO
             buf.AsSpan(0, r).CopyTo(dest);
             return r;
         }
-        public static int Write(this Stream stream, ReadOnlySpan<byte> src)
+        public static void Write(this Stream stream, ReadOnlySpan<byte> src)
         {
-            return stream.Write(src.ToArray());
+            stream.Write(src.ToArray(), 0, src.Length);
         }
         public static Threading.Tasks.Task WriteAsync(this Stream stream, Memory<byte> src)
         {
