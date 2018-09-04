@@ -68,7 +68,7 @@ namespace System.IO
 #endif
 
 #if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
-namespace System.Text
+    namespace System.Text
 {
     internal static class EncodingExtensions
     {
@@ -148,3 +148,15 @@ namespace System
     }
 }
 #endif
+
+namespace System.Threading.Tasks
+{
+    public static class TaskEx
+    {
+#if NET45
+        public static Task CompletedTask {get;} = Task.FromResult(false);
+#else
+        public static Task CompletedTask => Task.CompletedTask;
+#endif
+    }
+}

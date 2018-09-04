@@ -231,7 +231,7 @@ namespace IonDotnet.Internals.Binary
         }
 
         //these won't be called at this level
-        Task IIonWriter.FlushAsync() => Task.CompletedTask;
+        Task IIonWriter.FlushAsync() => TaskEx.CompletedTask;
 
         void IIonWriter.Flush()
         {
