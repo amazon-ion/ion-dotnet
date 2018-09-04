@@ -14,7 +14,8 @@ before_install:
 script:
   - git submodule init
   - git submodule update
-  - dotnet build
   - cd IonDotnet.Tests
-  - dotnet test
+  - dotnet test IonDotnet.Tests.csproj -f netcoreapp2.0
+  - dotnet test IonDotnet.Tests.csproj -f netcoreapp2.1
+  - dotnet test IonDotnet.Tests.csproj -f netcoreapp1.0
   - cd ..
