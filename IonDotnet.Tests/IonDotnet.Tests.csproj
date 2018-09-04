@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp2.0;netcoreapp1.0;net45;net46</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">netcoreapp2.1;netcoreapp2.0;netcoreapp1.0;net45;net46</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1;netcoreapp2.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <Configurations>Debug;Release;Perf</Configurations>
