@@ -307,8 +307,10 @@ namespace IonDotnet.Internals.Text
                         if (token == TextConstants.TokenSymbolIdentifier)
                         {
                             LoadTokenContents(token);
+                            //token has been wholy loaded
+                            _scanner.MarkTokenFinished();
+                            
                             _valueKeyword = TextConstants.GetKeyword(_valueBuffer, 0, _valueBuffer.Length);
-
                             switch (_valueKeyword)
                             {
                                 default:
@@ -336,7 +338,6 @@ namespace IonDotnet.Internals.Text
                                     _valueType = IonType.Symbol;
                                     break;
                             }
-
                             ClearValueBuffer();
                         }
                         else if (token == TextConstants.TokenDot)
