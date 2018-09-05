@@ -16,6 +16,7 @@ namespace IonDotnet.Tests.Internals
             
             var reader = new UserTextReader(str);
             reader.MoveNext();
+            Assert.AreEqual(IonType.Bool, reader.CurrentType);
             Assert.AreEqual(true, reader.BoolValue());
             var a = reader.MoveNext();
             Assert.AreEqual(false, reader.BoolValue());
