@@ -1,8 +1,11 @@
-﻿namespace IonDotnet.Internals.Text
+﻿using System;
+
+namespace IonDotnet.Internals.Text
 {
     /// <summary>
     /// A unified stream that can represent both text and Utf-8 bytes
     /// </summary>
+    /// <remarks>This stream is not an <see cref="IDisposable"/> and does not any underlying stream(s).</remarks>
     internal abstract class TextStream
     {
         /// <summary>

@@ -29,7 +29,7 @@ namespace IonDotnet.Internals.Lite
             var catalog = textWriterBuilder.Catalog;
             //make sure we're on the same catalog here
             Debug.Assert(catalog == binaryWriterBuilder.Catalog);
-            Debug.Assert(catalog == readerBuilder.Catalog);
+//            Debug.Assert(catalog == readerBuilder.Catalog);
 
             Context = new ContainerlessContext(this);
             Catalog = catalog;
