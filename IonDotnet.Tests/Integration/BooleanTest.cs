@@ -4,15 +4,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Integration
 {
     [TestClass]
-    public class BooleanTest
+    public class BooleanTest : TestBase
     {
         [TestMethod]
         [DataRow(InputStyle.MemoryStream)]
+        [DataRow(InputStyle.FileStream)]
         [DataRow(InputStyle.Text)]
         public void BooleanText(InputStyle inputStyle)
         {
             var file = DirStructure.IonTestFile("good/booleans.ion");
-            var reader = TestReader.FromFile(file, inputStyle);
+            var reader = ReaderFromFile(file, inputStyle);
 
             Assert.AreEqual(IonType.Bool, reader.MoveNext());
             Assert.AreEqual(true, reader.BoolValue());
@@ -21,11 +22,12 @@ namespace IonDotnet.Tests.Integration
         }
 
         [DataRow(InputStyle.MemoryStream)]
+        [DataRow(InputStyle.FileStream)]
         [TestMethod]
         public void NullBoolBinary(InputStyle inputStyle)
         {
             var file = DirStructure.IonTestFile("good/nullBool.10n");
-            var reader = TestReader.FromFile(file, inputStyle);
+            var reader = ReaderFromFile(file, inputStyle);
 
             Assert.AreEqual(IonType.Bool, reader.MoveNext());
             Assert.IsTrue(reader.CurrentIsNull);
