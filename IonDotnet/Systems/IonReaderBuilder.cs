@@ -59,13 +59,13 @@ namespace IonDotnet.Systems
                 }
             }
 
-            if (IsBinaryData(initialBytes.Slice(bytesRead)))
+            if (IsBinaryData(initialBytes.Slice(0, bytesRead)))
             {
                 //skipping the version marker should be fine for binary reader
                 return new UserBinaryReader(stream);
             }
 
-            return didSeek ? new UserTextReader(stream) : new UserTextReader(stream, initialBytes.Slice(bytesRead));
+            return didSeek ? new UserTextReader(stream) : new UserTextReader(stream, initialBytes.Slice(0, bytesRead));
         }
 
         private static bool IsBinaryData(Span<byte> initialByte)
