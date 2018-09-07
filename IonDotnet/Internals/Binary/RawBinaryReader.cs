@@ -106,7 +106,7 @@ namespace IonDotnet.Internals.Binary
 
         private const int BinaryVersionMarkerTid = (0xE0 & 0xff) >> 4;
 
-        private const int BinaryVersionMarkerLen = (0xE0 & 0xff) & 0xf;
+        private const int BinaryVersionMarkerLen = 0xE0 & 0xff & 0xf;
 
         private void ClearValue()
         {

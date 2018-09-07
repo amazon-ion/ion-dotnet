@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 
 namespace IonDotnet.Systems
@@ -30,17 +31,44 @@ namespace IonDotnet.Systems
         /// <returns>Ion reader</returns>
         public static IIonReader Build(Stream stream)
         {
+            if (!stream.CanRead)
+                throw new ArgumentException("Stream must not be readable", nameof(stream));
+
             /* Notes about implementation
-               The stream can contain text or binary ion. The ion reader should figure it out. Since we don't want this call to block it should
-              return a wrapper which peeks the stream and check for Bvm, and delegate the rest to the approriate reader.
+               The stream can contain text or binary ion. The ion reader should figure it out. Since we don't want this call to block 
+               in case the stream is a network stream or file stream, it can (and should )
+               return a wrapper which peeks the stream and check for Bvm, and delegate the rest to the approriate reader.
                Special case is when the stream is a memory stream which can be read directly, in which case we can do the Bvm checking right away.
                Also the Bvm might not be neccessary for the binary reader (except maybe for checking Ion version) so we might end up passing the 
                already-read stream to the binary reader. 
             */
-            throw new NotImplementedException();
+
+            //this is the dumbed down implementation
+            Span<byte> initialBytes = stackalloc byte[BinaryConstants.BinaryVersionMarkerLength];
+            var bytesRead = stream.Read(initialBytes);
+            var didSeek = stream.CanSeek;
+            if (didSeek)
+            {
+                try
+                {
+                    stream.Seek(-bytesRead, SeekOrigin.Current);
+                }
+                catch (IOException)
+                {
+                    didSeek = false;
+                }
+            }
+
+            if (IsBinaryData(initialBytes.Slice(bytesRead)))
+            {
+                //skipping the version marker should be fine for binary reader
+                return new UserBinaryReader(stream);
+            }
+
+            return didSeek ? new UserTextReader(stream) : new UserTextReader(stream, initialBytes.Slice(bytesRead));
         }
 
-        internal static bool IsBinaryData(Span<byte> initialByte)
+        private static bool IsBinaryData(Span<byte> initialByte)
         {
             //progressively check the binary version marker
             return initialByte.Length >= 4

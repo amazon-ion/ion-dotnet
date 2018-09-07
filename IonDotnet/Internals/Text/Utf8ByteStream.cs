@@ -13,12 +13,36 @@ namespace IonDotnet.Internals.Text
         public Utf8ByteStream(Stream inputStream)
         {
             if (!inputStream.CanRead)
-                throw new ArgumentException("Inputstream must be readable", nameof(inputStream));
+                throw new ArgumentException("Input stream must be readable", nameof(inputStream));
 
             _inputStream = inputStream;
             if (!inputStream.CanSeek)
             {
                 _unreadStack = new Stack<int>();
+            }
+        }
+
+        /// <summary>
+        /// Create utf8 byte stream after already reading some bytes
+        /// </summary>
+        /// <param name="inputStream">Input stream</param>
+        /// <param name="readBytes">Bytes read</param>
+        public Utf8ByteStream(Stream inputStream, Span<byte> readBytes)
+        {
+            if (!inputStream.CanRead)
+                throw new ArgumentException("Input stream must be readable", nameof(inputStream));
+
+            _inputStream = inputStream;
+            if (inputStream.CanSeek)
+            {
+                _inputStream.Seek(-readBytes.Length, SeekOrigin.Current);
+                return;
+            }
+
+            _unreadStack = new Stack<int>(readBytes.Length);
+            for (var i = readBytes.Length - 1; i >= 0; i--)
+            {
+                _unreadStack.Push(readBytes[i]);
             }
         }
 

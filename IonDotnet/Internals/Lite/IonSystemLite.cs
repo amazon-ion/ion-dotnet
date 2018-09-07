@@ -11,7 +11,6 @@ namespace IonDotnet.Internals.Lite
     {
         private readonly IonTextWriterBuilder _textWriterBuilder;
         private readonly IonBinaryWriterBuilder _binaryWriterBuilder;
-        private readonly IonReaderBuilder _readerBuilder;
         private readonly ISymbolTable _systemSymbolTable;
 
         /// <summary>
@@ -22,10 +21,8 @@ namespace IonDotnet.Internals.Lite
             Context = ctx;
         }
 
-        public IonSystemLite(IonTextWriterBuilder textWriterBuilder, PrivateIonBinaryWriterBuilder binaryWriterBuilder,
-            IonReaderBuilder readerBuilder)
+        public IonSystemLite(IonTextWriterBuilder textWriterBuilder, PrivateIonBinaryWriterBuilder binaryWriterBuilder)
         {
-            _readerBuilder = readerBuilder;
             var catalog = textWriterBuilder.Catalog;
             //make sure we're on the same catalog here
             Debug.Assert(catalog == binaryWriterBuilder.Catalog);
