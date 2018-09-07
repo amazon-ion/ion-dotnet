@@ -32,7 +32,7 @@ namespace IonDotnet.Systems
         public static IIonReader Build(Stream stream)
         {
             if (!stream.CanRead)
-                throw new ArgumentException("Stream must not be readable", nameof(stream));
+                throw new ArgumentException("Stream must be readable", nameof(stream));
 
             /* Notes about implementation
                The stream can contain text or binary ion. The ion reader should figure it out. Since we don't want this call to block 
