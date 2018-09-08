@@ -1,6 +1,6 @@
 language: csharp
 solution: IonDotnet.sln
-dotnet: 2.1,1.1
+dotnet: 2.1
 mono: none
 
 git:
