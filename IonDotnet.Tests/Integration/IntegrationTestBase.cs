@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Integration
 {
-    public abstract class TestBase
+    public abstract class IntegrationTestBase
     {
         public enum InputStyle
         {
@@ -23,6 +23,29 @@ namespace IonDotnet.Tests.Integration
         public void Cleanup()
         {
             _stream?.Dispose();
+        }
+
+        /// <summary>
+        /// Apply the same writing logic to binary and text writers and assert the accuracy 
+        /// </summary>
+        protected void AssertReaderWriter(Action<IIonReader> assertReader, Action<IIonWriter> writerFunc)
+        {
+            //bin
+            using (var s = new MemoryStream())
+            {
+                var binWriter = IonBinaryWriterBuilder.Build(s);
+                writerFunc(binWriter);
+                s.Seek(0, SeekOrigin.Begin);
+                var binReader = IonReaderBuilder.Build(s);
+                assertReader(binReader);
+            }
+
+            //text
+            var sw = new StringWriter();
+            var textWriter = IonTextWriterBuilder.Build(sw);
+            writerFunc(textWriter);
+            var textReader = IonReaderBuilder.Build(sw.ToString());
+            assertReader(textReader);
         }
 
         protected IIonReader ReaderFromFile(FileInfo file, InputStyle style)

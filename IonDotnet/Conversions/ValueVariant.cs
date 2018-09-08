@@ -59,6 +59,7 @@ namespace IonDotnet.Conversions
             internal set
             {
                 _doubleValue = value;
+                _decimalValue = Convert.ToDecimal(value);
                 AuthoritativeType = ScalarType.Double;
                 TypeSet = ScalarType.Double;
             }

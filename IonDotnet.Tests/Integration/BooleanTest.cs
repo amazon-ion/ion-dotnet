@@ -1,12 +1,10 @@
-using System.IO;
-using IonDotnet.Systems;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Integration
 {
     [TestClass]
-    public class BooleanTest : TestBase
+    public class BooleanTest : IntegrationTestBase
     {
         [TestMethod]
         [DataRow(InputStyle.MemoryStream)]
@@ -34,22 +32,7 @@ namespace IonDotnet.Tests.Integration
             var r = ReaderFromFile(file, inputStyle);
             assertReader(r);
 
-            //bin
-            using (var s = new MemoryStream())
-            {
-                var binWriter = IonBinaryWriterBuilder.Build(s);
-                writerFunc(binWriter);
-                s.Seek(0, SeekOrigin.Begin);
-                var binReader = IonReaderBuilder.Build(s);
-                assertReader(binReader);
-            }
-
-            //text
-            var sw = new StringWriter();
-            var textWriter = IonTextWriterBuilder.Build(sw);
-            writerFunc(textWriter);
-            var textReader = IonReaderBuilder.Build(sw.ToString());
-            assertReader(textReader);
+            AssertReaderWriter(assertReader, writerFunc);
         }
 
         [DataRow(InputStyle.MemoryStream)]
@@ -58,11 +41,23 @@ namespace IonDotnet.Tests.Integration
         [TestMethod]
         public void NullBoolBinary(InputStyle inputStyle)
         {
-            var file = DirStructure.IonTestFile("good/nullBool.10n");
-            var reader = ReaderFromFile(file, inputStyle);
+            void assertReader(IIonReader reader)
+            {
+                Assert.AreEqual(IonType.Bool, reader.MoveNext());
+                Assert.IsTrue(reader.CurrentIsNull);
+            }
 
-            Assert.AreEqual(IonType.Bool, reader.MoveNext());
-            Assert.IsTrue(reader.CurrentIsNull);
+            void writerFunc(IIonWriter writer)
+            {
+                writer.WriteNull(IonType.Bool);
+                writer.Finish();
+            }
+
+            var file = DirStructure.IonTestFile("good/nullBool.10n");
+            var r = ReaderFromFile(file, inputStyle);
+            assertReader(r);
+
+            AssertReaderWriter(assertReader, writerFunc);
         }
     }
 }
