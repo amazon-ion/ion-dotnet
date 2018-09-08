@@ -12,7 +12,7 @@ namespace IonDotnet.Tests.Integration
         [DataRow(InputStyle.MemoryStream)]
         [DataRow(InputStyle.FileStream)]
         [DataRow(InputStyle.Text)]
-        [DataRow(InputStyle.NoSeek)]
+        [DataRow(InputStyle.NoSeekStream)]
         public void BooleanText(InputStyle inputStyle)
         {
             void assertReader(IIonReader reader)
@@ -54,7 +54,7 @@ namespace IonDotnet.Tests.Integration
 
         [DataRow(InputStyle.MemoryStream)]
         [DataRow(InputStyle.FileStream)]
-        [DataRow(InputStyle.NoSeek)]
+        [DataRow(InputStyle.NoSeekStream)]
         [TestMethod]
         public void NullBoolBinary(InputStyle inputStyle)
         {

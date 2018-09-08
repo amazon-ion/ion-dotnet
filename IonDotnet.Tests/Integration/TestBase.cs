@@ -14,7 +14,7 @@ namespace IonDotnet.Tests.Integration
             MemoryStream,
             FileStream,
             Text,
-            NoSeek
+            NoSeekStream
         }
 
         private Stream _stream;
@@ -40,7 +40,7 @@ namespace IonDotnet.Tests.Integration
                 case InputStyle.Text:
                     var str = File.ReadAllText(file.FullName, Encoding.UTF8);
                     return IonReaderBuilder.Build(str);
-                case InputStyle.NoSeek:
+                case InputStyle.NoSeekStream:
                     var b = File.ReadAllBytes(file.FullName);
                     _stream = new NoSeekMemStream(b);
                     return IonReaderBuilder.Build(_stream);

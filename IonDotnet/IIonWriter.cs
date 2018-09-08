@@ -16,11 +16,13 @@ namespace IonDotnet
         /// Flush all the pending written data (including symbol tables) to the output stream asynchronously.
         /// </summary>
         /// <returns>The task representing flush operation.</returns>
+        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
         Task FlushAsync();
 
         /// <summary>
         /// Flush all the pending written data (including symbol tables) to the output stream (blocking).
         /// </summary>
+        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
         void Flush();
 
         /// <summary>
@@ -30,6 +32,7 @@ namespace IonDotnet
         /// This method WILL flush the data (including symbol tables) to the output stream. The writer will then be reset to
         /// the initial state.
         /// </remarks>
+        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
         void Finish();
 
         /// <summary>
@@ -39,6 +42,7 @@ namespace IonDotnet
         /// This method WILL flush the data (including symbol tables) to the output stream. The writer will then be reset to
         /// the initial state.
         /// </remarks>
+        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
         Task FinishAsync();
 
         /// <summary>

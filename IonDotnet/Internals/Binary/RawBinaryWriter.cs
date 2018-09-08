@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
 #endif
@@ -260,6 +261,11 @@ namespace IonDotnet.Internals.Binary
 
         public void Finish()
         {
+            //TODO implement writing again after finish
+        }
+
+        internal void Reset()
+        {
             //reset the states
             _dataBuffer.Reset();
             //double calls to Reset() should be fine
@@ -269,8 +275,6 @@ namespace IonDotnet.Internals.Binary
             //set the top-level container
             var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
             _dataBuffer.StartStreak(pushedContainer.Sequence);
-
-            //TODO implement writing again after finish
         }
 
         public Task FinishAsync()
@@ -801,8 +805,7 @@ namespace IonDotnet.Internals.Binary
 
         public void Dispose()
         {
-            // this class is supposed to be used a tool for another writer wrapper, which will take care of freeing the resources
-            // so nothing to do here
+            _dataBuffer.Dispose();
         }
 
         public bool IsFieldNameSet() => _currentFieldSymbolToken != default;

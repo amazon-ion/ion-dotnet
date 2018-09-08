@@ -222,15 +222,12 @@ namespace IonDotnet.Internals.Binary
         /// </summary>
         public override void Dispose()
         {
-            //first try to flush things out
-//            Flush();
-
             var lengthBuffer = _userWriter?.GetLengthBuffer();
             Debug.Assert(lengthBuffer == _symbolsWriter.GetLengthBuffer());
             lengthBuffer?.Dispose();
 
-            _userWriter?.GetDataBuffer().Dispose();
-            _symbolsWriter?.GetDataBuffer().Dispose();
+            _userWriter?.Dispose();
+            _symbolsWriter?.Dispose();
         }
 
         public override async Task FlushAsync()
@@ -250,9 +247,12 @@ namespace IonDotnet.Internals.Binary
             await _symbolsWriter.FlushAsync(_outputStream);
             await _userWriter.FlushAsync(_outputStream);
 
-            Finish();
+            AfterFlush();
         }
 
+        /// <summary>
+        /// Implementation should be such that this can be called many times
+        /// </summary>
         public override void Flush()
         {
             if (!PrepareFlush())
@@ -270,44 +270,8 @@ namespace IonDotnet.Internals.Binary
             _symbolsWriter.Flush(_outputStream);
             _userWriter.Flush(_outputStream);
 
-            Finish();
+            AfterFlush();
         }
-
-//        internal void Flush(ref byte[] bytes)
-//        {
-//            if (!PrepareFlush())
-//                return;
-//
-//            var sLength = _symbolsWriter.PrepareFlush();
-//            var uLength = _userWriter.PrepareFlush();
-//            var tLength = sLength + uLength;
-//            if (bytes == null || bytes.Length < tLength)
-//            {
-//                bytes = new byte[tLength];
-//            }
-//
-//            _symbolsWriter.Flush(bytes);
-//            _userWriter.Flush(new Memory<byte>(bytes, sLength, uLength));
-//
-//            Finish();
-//        }
-//
-//        internal int Flush(Memory<byte> buffer)
-//        {
-//            if (!PrepareFlush())
-//                return 0;
-//
-//            var sLength = _symbolsWriter.PrepareFlush();
-//            var uLength = _userWriter.PrepareFlush();
-//            var tLength = sLength + uLength;
-//            if (buffer.Length < tLength)
-//                return 0;
-//
-//            _symbolsWriter.Flush(buffer);
-//            _userWriter.Flush(buffer.Slice(sLength, uLength));
-//            Finish();
-//            return tLength;
-//        }
 
         public override void WriteIonVersionMarker()
         {
@@ -342,23 +306,41 @@ namespace IonDotnet.Internals.Binary
             return true;
         }
 
+        /// <summary>
+        /// This is called after flush() and will reset the raw writers. 
+        /// </summary>
+        private void AfterFlush()
+        {
+            _symbolsWriter.Reset();
+            _userWriter.Reset();
+        }
+
         public override void Finish()
         {
             if (_userWriter.GetDepth() != 0)
                 throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
 
-            _symbolsWriter.Finish();
-            _userWriter.Finish();
+            //try to flush, writers' states are reset
+            Flush();
 
-            //reset local symbols
+            //finish() reset local symbols, and symbolState back to SystemSymbols
             _locals.Clear();
             _localsLocked = false;
             _symbolState = SymbolState.SystemSymbols;
         }
 
-        public override Task FinishAsync()
+        public override async Task FinishAsync()
         {
-            throw new NotImplementedException();
+            if (_userWriter.GetDepth() != 0)
+                throw new IonException($"Cannot finish writing at depth {_userWriter.GetDepth()}");
+
+            //try to flush, writers' states are reset
+            await FlushAsync();
+
+            //finish() reset local symbols, and symbolState back to SystemSymbols
+            _locals.Clear();
+            _localsLocked = false;
+            _symbolState = SymbolState.SystemSymbols;
         }
 
         public override void SetFieldName(string name)

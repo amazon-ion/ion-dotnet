@@ -37,6 +37,80 @@ namespace IonDotnet.Tests.Internals
             }
         }
 
+        /// <summary>
+        /// Test that multiple calls to <see cref="IIonWriter.Flush"/> does not write any extra bits.
+        /// </summary>
+        /// <param name="count">Number of calls to flush()</param>
+        [TestMethod]
+        [DataRow(1)]
+        [DataRow(5)]
+        [DataRow(50)]
+        public void MultipleFlushes_SameOutput(int count)
+        {
+            using (var writer = new ManagedBinaryWriter(_memoryStream, Symbols.EmptySymbolTablesArray))
+            {
+                writer.StepIn(IonType.Struct);
+                writer.SetFieldName("key");
+                writer.WriteString("value");
+                writer.StepOut();
+
+                writer.Flush();
+                var size = _memoryStream.Length;
+                for (var i = 0; i < count; i++)
+                {
+                    writer.Flush();
+                    Assert.AreEqual(size, _memoryStream.Length);
+                }
+
+                writer.Finish();
+                Assert.AreEqual(size, _memoryStream.Length);
+
+                _memoryStream.Seek(0, SeekOrigin.Begin);
+                var reader = new UserBinaryReader(_memoryStream);
+                Assert.AreEqual(IonType.Struct, reader.MoveNext());
+                reader.StepIn();
+                Assert.AreEqual(IonType.String, reader.MoveNext());
+                Assert.AreEqual("key", reader.CurrentFieldName);
+                Assert.AreEqual("value", reader.StringValue());
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+                reader.StepOut();
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+            }
+        }
+
+        /// <summary>
+        /// Test that calling flush() after finish() does not write any extra bits except Bvm
+        /// </summary>
+        [TestMethod]
+        public void FlushAfterFinish()
+        {
+            using (var writer = new ManagedBinaryWriter(_memoryStream, Symbols.EmptySymbolTablesArray))
+            {
+                writer.StepIn(IonType.Struct);
+                writer.SetFieldName("key");
+                writer.WriteString("value");
+                writer.StepOut();
+
+                writer.Finish();
+                var size = _memoryStream.Length;
+
+                writer.Flush();
+                Assert.AreEqual(size + BinaryConstants.BinaryVersionMarkerLength, _memoryStream.Length);
+
+                _memoryStream.Seek(0, SeekOrigin.Begin);
+                var reader = new UserBinaryReader(_memoryStream);
+                Assert.AreEqual(IonType.Struct, reader.MoveNext());
+                reader.StepIn();
+                Assert.AreEqual(IonType.String, reader.MoveNext());
+                Assert.AreEqual("key", reader.CurrentFieldName);
+                Assert.AreEqual("value", reader.StringValue());
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+                reader.StepOut();
+                //movenext() should skip over bvm
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+            }
+        }
+
         [TestMethod]
         [DataRow(true)]
         [DataRow(false)]
