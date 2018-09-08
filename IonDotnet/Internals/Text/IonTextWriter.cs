@@ -78,7 +78,7 @@ namespace IonDotnet.Internals.Text
         {
             if (_options.SymbolAsString)
             {
-                if (_options.StringAsJson)
+                if (_options.Json)
                 {
                     _textWriter.WriteJsonString(text);
                 }
@@ -395,7 +395,7 @@ namespace IonDotnet.Internals.Text
             }
 
             //double-quoted
-            if (_options.StringAsJson)
+            if (_options.Json)
             {
                 _textWriter.WriteJsonString(value);
             }
@@ -465,6 +465,11 @@ namespace IonDotnet.Internals.Text
         public override void Finish()
         {
 //            _textWriter.Flush();
+        }
+
+        public override Task FinishAsync()
+        {
+            throw new NotImplementedException();
         }
 
         public override void StepIn(IonType type)

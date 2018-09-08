@@ -273,6 +273,11 @@ namespace IonDotnet.Internals.Binary
             //TODO implement writing again after finish
         }
 
+        public Task FinishAsync()
+        {
+            throw new NotImplementedException();
+        }
+
         public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
 
         public void SetFieldNameSymbol(SymbolToken symbol)

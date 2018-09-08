@@ -4,7 +4,7 @@ using System.Numerics;
 namespace IonDotnet.Conversions
 {
     /// <summary>
-    /// Structure that holds the loaded value from IonReader
+    /// Structure that holds the loaded scalar value from IonReader
     /// </summary>
     public struct ValueVariant
     {

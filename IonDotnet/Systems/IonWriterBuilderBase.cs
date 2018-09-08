@@ -117,35 +117,4 @@ namespace IonDotnet.Systems
             return imports;
         }
     }
-
-    public abstract class IonWriterBuilderBase<T> : IonWriterBuilderBase where T : IonWriterBuilderBase
-    {
-        public abstract T Copy();
-
-        public abstract T Immutable();
-
-        /// <summary>
-        /// Returns a mutable builder configured exactly like this one.
-        /// </summary>
-        /// <returns>This instance, if mutable; otherwise a mutable copy of this instance.</returns>
-        protected abstract T Mutable();
-
-        public T WithCatalog(ICatalog catalog)
-        {
-            var b = Mutable();
-            b.Catalog = catalog;
-            return b;
-        }
-
-        public T WithImports(params ISymbolTable[] imports)
-        {
-            var b = Mutable();
-            b.Imports = imports;
-            return b;
-        }
-
-        protected IonWriterBuilderBase(IonWriterBuilderBase that) : base(that)
-        {
-        }
-    }
 }

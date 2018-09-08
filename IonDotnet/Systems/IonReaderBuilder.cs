@@ -18,10 +18,21 @@ namespace IonDotnet.Systems
         /// Build a text reader for the string
         /// </summary>
         /// <param name="text">Ion text</param>
-        /// <returns>An Ion text reader</returns>
+        /// <returns>Ion text reader</returns>
         public static IIonReader Build(string text)
         {
             return new UserTextReader(text);
+        }
+
+        /// <summary>
+        /// Build a text reader for the string with a catalog
+        /// </summary>
+        /// <param name="text">Ion text</param>
+        /// <param name="catalog">Ion catalog</param>
+        /// <returns>Ion text reader</returns>
+        public static IIonReader Build(string text, ICatalog catalog)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -66,6 +77,17 @@ namespace IonDotnet.Systems
             }
 
             return didSeek ? new UserTextReader(stream) : new UserTextReader(stream, initialBytes.Slice(0, bytesRead));
+        }
+
+        /// <summary>
+        /// Build an Ion reader for the data stream
+        /// </summary>
+        /// <param name="stream">Ion data stream in binary of UTF8-text form</param>
+        /// <param name="catalog">Ion catalog</param>
+        /// <returns>Ion reader</returns>
+        public static IIonReader Build(Stream stream, ICatalog catalog)
+        {
+            throw new NotImplementedException();
         }
 
         private static bool IsBinaryData(Span<byte> initialByte)

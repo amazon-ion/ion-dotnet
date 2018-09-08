@@ -13,7 +13,7 @@ namespace IonDotnet.Serialization
         {
             using (var stream = new MemoryStream())
             {
-                using (var binWriter = new ManagedBinaryWriter(stream, BinaryConstants.EmptySymbolTablesArray))
+                using (var binWriter = new ManagedBinaryWriter(stream, Symbols.EmptySymbolTablesArray))
                 {
                     IonSerializationPrivate.WriteObject(binWriter, obj, scalarWriter);
                     binWriter.Flush();
@@ -30,7 +30,7 @@ namespace IonDotnet.Serialization
                 throw new ArgumentException("Stream must be writable", nameof(stream));
 
 
-            using (var binWriter = new ManagedBinaryWriter(stream, BinaryConstants.EmptySymbolTablesArray))
+            using (var binWriter = new ManagedBinaryWriter(stream, Symbols.EmptySymbolTablesArray))
             {
                 IonSerializationPrivate.WriteObject(binWriter, obj, scalarWriter);
                 await binWriter.FlushAsync();

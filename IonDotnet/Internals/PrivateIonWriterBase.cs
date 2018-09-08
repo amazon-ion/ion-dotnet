@@ -148,6 +148,7 @@ namespace IonDotnet.Internals
         public abstract ISymbolTable SymbolTable { get; }
         public abstract void Flush();
         public abstract void Finish();
+        public abstract Task FinishAsync();
         public abstract void SetFieldName(string name);
         public abstract void SetFieldNameSymbol(SymbolToken symbol);
         public abstract void StepIn(IonType type);

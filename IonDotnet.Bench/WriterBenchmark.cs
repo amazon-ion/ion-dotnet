@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using IonDotnet.Internals.Binary;
+using IonDotnet.Utils;
 
 // ReSharper disable UnusedMember.Global
 namespace IonDotnet.Bench
@@ -34,7 +35,7 @@ namespace IonDotnet.Bench
         {
             using (var stream = new MemoryStream())
             {
-                using (var writer = new ManagedBinaryWriter(stream, BinaryConstants.EmptySymbolTablesArray))
+                using (var writer = new ManagedBinaryWriter(stream, Symbols.EmptySymbolTablesArray))
                 {
                     writer.StepIn(IonType.List);
                     for (var i = 0; i < 1000; i++)

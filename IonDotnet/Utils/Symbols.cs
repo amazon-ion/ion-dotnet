@@ -2,6 +2,9 @@
 {
     public static class Symbols
     {
+        public static readonly ISymbolTable[] EmptySymbolTablesArray = new ISymbolTable[0];
+
+        
         public static readonly SymbolToken[] SystemSymbolTokens =
         {
             new SymbolToken(SystemSymbols.Ion, SystemSymbols.IonSid),

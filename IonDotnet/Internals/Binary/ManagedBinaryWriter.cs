@@ -356,6 +356,11 @@ namespace IonDotnet.Internals.Binary
             _symbolState = SymbolState.SystemSymbols;
         }
 
+        public override Task FinishAsync()
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetFieldName(string name)
         {
             if (!IsInStruct) throw new IonException("Cannot set a field name if the current container is not struct");

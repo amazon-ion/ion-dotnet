@@ -14,7 +14,7 @@ namespace IonDotnet.Bench
             //now write
             using (var stream = new MemoryStream())
             {
-                var writer = new ManagedBinaryWriter(stream, BinaryConstants.EmptySymbolTablesArray);
+                var writer = new ManagedBinaryWriter(stream, Symbols.EmptySymbolTablesArray);
                 action(obj, writer);
                 writer.Flush();
                 writer.Finish();

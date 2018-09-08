@@ -33,5 +33,11 @@ namespace IonDotnet.Utils
             }
 #endif
         }
+        
+        public static void CheckStreamCanWrite(this Stream outputStream)
+        {
+            if (!outputStream.CanWrite)
+                throw new ArgumentException("Output stream must be writable", nameof(outputStream));
+        }
     }
 }

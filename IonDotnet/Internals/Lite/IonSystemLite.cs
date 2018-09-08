@@ -9,34 +9,7 @@ namespace IonDotnet.Internals.Lite
 {
     internal sealed class IonSystemLite : ValueFactoryLite, IPrivateIonSystem
     {
-        private readonly IonTextWriterBuilder _textWriterBuilder;
-        private readonly IonBinaryWriterBuilder _binaryWriterBuilder;
-        private readonly ISymbolTable _systemSymbolTable;
-
-        /// <summary>
-        /// Mostly for testing
-        /// </summary>
-        internal IonSystemLite(ContainerlessContext ctx)
-        {
-            Context = ctx;
-        }
-
-        public IonSystemLite(IonTextWriterBuilder textWriterBuilder, PrivateIonBinaryWriterBuilder binaryWriterBuilder)
-        {
-            var catalog = textWriterBuilder.Catalog;
-            //make sure we're on the same catalog here
-            Debug.Assert(catalog == binaryWriterBuilder.Catalog);
-//            Debug.Assert(catalog == readerBuilder.Catalog);
-
-            Context = new ContainerlessContext(this);
-            Catalog = catalog;
-            _systemSymbolTable = binaryWriterBuilder.InitialSymbolTable;
-            Debug.Assert(_systemSymbolTable.IsSystem);
-            binaryWriterBuilder.SymtabValueFactory = this;
-
-            _textWriterBuilder = textWriterBuilder.Immutable();
-            _binaryWriterBuilder = binaryWriterBuilder.Immutable();
-        }
+        private readonly ISymbolTable _systemSymbolTable = null;
 
         public ISymbolTable GetSystemSymbolTable() => _systemSymbolTable;
 

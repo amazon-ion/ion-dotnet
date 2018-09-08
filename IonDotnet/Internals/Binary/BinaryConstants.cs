@@ -5,7 +5,6 @@ namespace IonDotnet.Internals.Binary
 {
     public static class BinaryConstants
     {
-        public static readonly ISymbolTable[] EmptySymbolTablesArray = new ISymbolTable[0];
         public const int BinaryVersionMarkerLength = 4;
 
         public const int Eof = -1;
