@@ -86,6 +86,7 @@ namespace IonDotnet.Internals.Text
                             SetInteger(Radix.Decimal, s);
                             break;
                         case IonType.Decimal:
+                            Console.WriteLine(s);
                             _v.DecimalValue = decimal.Parse(s, CultureInfo.InvariantCulture);
                             break;
                         case IonType.Float:
