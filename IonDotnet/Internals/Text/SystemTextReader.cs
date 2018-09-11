@@ -34,20 +34,7 @@ namespace IonDotnet.Internals.Text
 
             LoadTokenContents(_scanner.Token);
 
-            // we do this here (instead of in the case below so that we can modify
-            // the value while it's not a string, but still in the StringBuilder
-            if (_valueType == IonType.Decimal)
-            {
-                for (var i = 0; i < _valueBuffer.Length; i++)
-                {
-                    var c = _valueBuffer[i];
-                    if (c == 'd' || c == 'D')
-                    {
-                        _valueBuffer[i] = 'e';
-                    }
-                }
-            }
-            else if (_scanner.Token == TextConstants.TokenHex)
+            if (_scanner.Token == TextConstants.TokenHex)
             {
                 var negative = _valueBuffer[0] == '-';
                 var pos = negative ? 1 : 0;
@@ -71,6 +58,7 @@ namespace IonDotnet.Internals.Text
 
             //TODO is there a better way
             var s = _valueBuffer.ToString();
+            _v.AddValue(s);
             ClearValueBuffer();
 
             switch (_scanner.Token)
@@ -86,11 +74,10 @@ namespace IonDotnet.Internals.Text
                             SetInteger(Radix.Decimal, s);
                             break;
                         case IonType.Decimal:
-                            Console.WriteLine(s);
-                            _v.DecimalValue = decimal.Parse(s, CultureInfo.InvariantCulture);
+                            SetDecimalOrDouble(s);
                             break;
                         case IonType.Float:
-                            _v.DoubleValue = double.Parse(s, CultureInfo.InvariantCulture);
+                            SetFloat(s);
                             break;
                         case IonType.Timestamp:
                             _v.TimestampValue = Timestamp.Parse(s);
@@ -108,10 +95,10 @@ namespace IonDotnet.Internals.Text
                     SetInteger(Radix.Hex, s);
                     break;
                 case TextConstants.TokenDecimal:
-                    _v.DecimalValue = decimal.Parse(s, CultureInfo.InvariantCulture);
+                    SetDecimal(s);
                     break;
                 case TextConstants.TokenFloat:
-                    _v.DoubleValue = double.Parse(s, CultureInfo.InvariantCulture);
+                    SetFloat(s);
                     break;
                 case TextConstants.TokenTimestamp:
                     _v.TimestampValue = Timestamp.Parse(s);
@@ -166,6 +153,93 @@ namespace IonDotnet.Internals.Text
                     _v.StringValue = s;
                     break;
             }
+        }
+
+        /// <summary>
+        /// This function tries to set the decimal value of the text, unless it is a float (with 'd') or
+        /// the number of decimal places can't hold, then the value is set to 'float'.
+        /// </summary>
+        /// <param name="text">Number text</param>
+        private void SetDecimalOrDouble(string text)
+        {
+            foreach (var c in text)
+            {
+                switch (c)
+                {
+                    case 'e':
+                    case 'E':
+                        SetFloat(text);
+                        return;
+                    case 'd':
+                    case 'D':
+                        SetDecimal(text);
+                        return;
+                }
+            }
+
+            var dotIdx = text.IndexOf('.');
+            var decimalPlaces = dotIdx < 0 ? 0 : text.Length - dotIdx;
+            if (decimalPlaces > 28)
+            {
+                _v.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
+                _valueType = IonType.Float;
+            }
+            else
+            {
+                _v.DecimalValue = decimal.Parse(text, CultureInfo.InvariantCulture);
+                _valueType = IonType.Decimal;
+            }
+        }
+
+        private void SetFloat(string text)
+        {
+            _v.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// There is 'd' (decimal token) in the text. This method sets the decimal value or throw overflow exception if the number of decimal
+        /// places is too high.
+        /// </summary>
+        /// <param name="text">Number text</param>
+        private void SetDecimal(string text)
+        {
+            var dIdx = text.IndexOf("d", StringComparison.OrdinalIgnoreCase);
+            var dotIdx = text.IndexOf('.');
+            var span = text.AsSpan();
+            var coeffText = span.Slice(0, dIdx);
+
+            var expo = 0;
+            if (dIdx < text.Length - 1)
+            {
+#if NETCOREAPP2_1
+                expo = int.Parse(span.Slice(dIdx + 1));
+#else
+                expo = int.Parse(span.Slice(dIdx + 1).ToString());
+#endif
+            }
+
+            var decimalPlaces = dotIdx < 0 ? 0 : coeffText.Length - dotIdx;
+            decimalPlaces -= expo;
+            if (decimalPlaces > 28)
+                throw new OverflowException($"{text} has {decimalPlaces} decimal places, decimal cannot hold");
+
+#if NETCOREAPP2_1
+            var coeff = decimal.Parse(coeffText);
+#else
+            var coeff = decimal.Parse(coeffText.ToString());
+#endif
+            var neg = expo < 0;
+            if (neg)
+            {
+                expo = -expo;
+            }
+
+            for (var i = 0; i < expo; i++)
+            {
+                coeff = neg ? coeff / 10 : coeff * 10;
+            }
+
+            _v.DecimalValue = coeff;
         }
 
         private void SetInteger(Radix radix, string s)

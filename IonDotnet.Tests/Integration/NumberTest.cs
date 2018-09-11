@@ -126,9 +126,9 @@ namespace IonDotnet.Tests.Integration
 
         [TestMethod]
         [DataRow(InputStyle.MemoryStream)]
-        [DataRow(InputStyle.FileStream)]
-        [DataRow(InputStyle.Text)]
-        [DataRow(InputStyle.NoSeekStream)]
+//        [DataRow(InputStyle.FileStream)]
+//        [DataRow(InputStyle.Text)]
+//        [DataRow(InputStyle.NoSeekStream)]
         public void Decimal_e_values(InputStyle inputStyle)
         {
             var file = DirStructure.IonTestFile("good/decimal_e_values.ion");
@@ -171,9 +171,9 @@ namespace IonDotnet.Tests.Integration
         }
 
         [TestMethod]
-//        [DataRow(InputStyle.MemoryStream)]
-//        [DataRow(InputStyle.FileStream)]
-//        [DataRow(InputStyle.Text)]
+        [DataRow(InputStyle.MemoryStream)]
+        [DataRow(InputStyle.FileStream)]
+        [DataRow(InputStyle.Text)]
         [DataRow(InputStyle.NoSeekStream)]
         public void Float_values(InputStyle inputStyle)
         {
@@ -193,16 +193,9 @@ namespace IonDotnet.Tests.Integration
 
             void assertReader(IIonReader reader)
             {
-                int i = 0;
                 foreach (var num in nums)
                 {
-                    i++;
                     var type = reader.MoveNext();
-                    if (type == IonType.Int)
-                    {
-                        Console.WriteLine(i);
-                    }
-
                     Assert.AreEqual(IonType.Float, type);
                     Assert.AreEqual(num, reader.DoubleValue());
                 }
