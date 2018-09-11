@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -205,8 +206,27 @@ namespace IonDotnet.Internals.Text
 
         public void Write(long l) => _writer.Write(l);
 
-        public void Write(double d) => _writer.Write(d);
+        public void Write(double d)
+        {
+            //TODO find a better way
+            var str = d.ToString(CultureInfo.InvariantCulture);
+            _writer.Write(str);
 
-        public void Write(decimal d) => _writer.Write(d);
+            if (!str.Contains("e") && !str.Contains("E"))
+            {
+                _writer.Write("e0");
+            }
+        }
+
+        public void Write(decimal d)
+        {
+            //TODO find a better way
+            var str = d.ToString(CultureInfo.InvariantCulture);
+            _writer.Write(str);
+            if (str.IndexOf('.') < 0)
+            {
+                _writer.Write('d');
+            }
+        }
     }
 }

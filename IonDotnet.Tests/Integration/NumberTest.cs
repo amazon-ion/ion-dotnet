@@ -44,17 +44,17 @@ namespace IonDotnet.Tests.Integration
         {
             void assertReader(IIonReader reader)
             {
-                Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.AreEqual(18446744073709551615, reader.DoubleValue());
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                Assert.AreEqual(18446744073709551615m, reader.DecimalValue());
 
-                Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.AreEqual(-18446744073709551615.0, reader.DoubleValue());
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                Assert.AreEqual(-18446744073709551615.0m, reader.DecimalValue());
 
-                Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.AreEqual(18446744073709551616.0, reader.DoubleValue());
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                Assert.AreEqual(18446744073709551616.0m, reader.DecimalValue());
 
-                Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.AreEqual(-18446744073709551616.0, reader.DoubleValue());
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                Assert.AreEqual(-18446744073709551616.0m, reader.DecimalValue());
             }
 
             void writerFunc(IIonWriter writer)
@@ -63,6 +63,7 @@ namespace IonDotnet.Tests.Integration
                 writer.WriteDecimal(-18446744073709551615m);
                 writer.WriteDecimal(18446744073709551616m);
                 writer.WriteDecimal(-18446744073709551616m);
+                writer.Finish();
             }
 
             var file = DirStructure.IonTestFile("good/decimal64BitBoundary.ion");
@@ -81,13 +82,13 @@ namespace IonDotnet.Tests.Integration
         {
             void assertReader(IIonReader reader)
             {
-                Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.AreEqual(-1.28, reader.DoubleValue());
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                Assert.AreEqual(-1.28m, reader.DecimalValue());
             }
 
             void writerFunc(IIonWriter writer)
             {
-                writer.WriteFloat(-1.28);
+                writer.WriteDecimal(-1.28m);
                 writer.Finish();
             }
 
@@ -107,13 +108,13 @@ namespace IonDotnet.Tests.Integration
         {
             void assertReader(IIonReader reader)
             {
-                Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.AreEqual(1.23, reader.DoubleValue());
+                Assert.AreEqual(IonType.Decimal, reader.MoveNext());
+                Assert.AreEqual(1.23m, reader.DecimalValue());
             }
 
             void writerFunc(IIonWriter writer)
             {
-                writer.WriteFloat(1.23);
+                writer.WriteDecimal(1.23m);
                 writer.Finish();
             }
 
@@ -126,9 +127,9 @@ namespace IonDotnet.Tests.Integration
 
         [TestMethod]
         [DataRow(InputStyle.MemoryStream)]
-//        [DataRow(InputStyle.FileStream)]
-//        [DataRow(InputStyle.Text)]
-//        [DataRow(InputStyle.NoSeekStream)]
+        [DataRow(InputStyle.FileStream)]
+        [DataRow(InputStyle.Text)]
+        [DataRow(InputStyle.NoSeekStream)]
         public void Decimal_e_values(InputStyle inputStyle)
         {
             var file = DirStructure.IonTestFile("good/decimal_e_values.ion");

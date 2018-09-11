@@ -356,14 +356,7 @@ namespace IonDotnet.Internals.Text
         public override void WriteFloat(double value)
         {
             StartValue();
-            //TODO find a better way
-            var str = value.ToString(CultureInfo.InvariantCulture);
-            _textWriter.Write(str);
-            if (!str.Contains("e") && !str.Contains("E"))
-            {
-                _textWriter.Write("e0");
-            }
-
+            _textWriter.Write(value);
             CloseValue();
         }
 
