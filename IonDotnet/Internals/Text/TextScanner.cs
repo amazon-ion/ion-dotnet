@@ -1496,13 +1496,11 @@ namespace IonDotnet.Internals.Text
             if (c == '.')
             {
                 // so if it's a floating point number
-                // here we check if the decimal places >15 then mark it as decimal,
-                // otherwise float/double should be fine. 
+                // mark it as decimal by default, then continue to read the rest
                 valueBuffer.Append((char) c);
                 c = ReadChar();
-                var l1 = valueBuffer.Length;
                 c = LoadDigits(valueBuffer, c);
-                t = valueBuffer.Length - l1 > 15 ? TextConstants.TokenDecimal : TextConstants.TokenFloat;
+                t = TextConstants.TokenDecimal;
             }
             else
             {

@@ -149,7 +149,6 @@ namespace IonDotnet.Tests.Integration
             {
                 foreach (var num in nums)
                 {
-                    //decimal places >=15 should return a decimal type
                     Assert.AreEqual(IonType.Decimal, reader.MoveNext());
                     Assert.AreEqual(num, reader.DecimalValue());
                 }
@@ -171,9 +170,63 @@ namespace IonDotnet.Tests.Integration
             AssertReaderWriter(assertReader, writerFunc);
         }
 
+        [TestMethod]
+//        [DataRow(InputStyle.MemoryStream)]
+//        [DataRow(InputStyle.FileStream)]
+//        [DataRow(InputStyle.Text)]
+        [DataRow(InputStyle.NoSeekStream)]
+        public void Float_values(InputStyle inputStyle)
+        {
+            var file = DirStructure.IonTestFile("good/float_values.ion");
+            var nums = new List<double>();
+            using (var fileStream = file.OpenRead())
+            {
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    string line;
+                    while ((line = streamReader.ReadLine()) != null)
+                    {
+                        nums.Add(double.Parse(line));
+                    }
+                }
+            }
+
+            void assertReader(IIonReader reader)
+            {
+                int i = 0;
+                foreach (var num in nums)
+                {
+                    i++;
+                    var type = reader.MoveNext();
+                    if (type == IonType.Int)
+                    {
+                        Console.WriteLine(i);
+                    }
+
+                    Assert.AreEqual(IonType.Float, type);
+                    Assert.AreEqual(num, reader.DoubleValue());
+                }
+            }
+
+            void writerFunc(IIonWriter writer)
+            {
+                foreach (var num in nums)
+                {
+                    writer.WriteFloat(num);
+                }
+
+                writer.Finish();
+            }
+
+            var r = ReaderFromFile(file, inputStyle);
+            assertReader(r);
+
+            AssertReaderWriter(assertReader, writerFunc);
+        }
+
         private static decimal ParseDecimal(string s)
         {
-            var idxOfD = s.IndexOf("d", StringComparison.InvariantCultureIgnoreCase);
+            var idxOfD = s.IndexOf("d", StringComparison.OrdinalIgnoreCase);
             if (idxOfD < 0)
             {
                 return decimal.Parse(s);

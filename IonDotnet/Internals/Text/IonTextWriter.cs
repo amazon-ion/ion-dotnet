@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -355,7 +356,14 @@ namespace IonDotnet.Internals.Text
         public override void WriteFloat(double value)
         {
             StartValue();
-            _textWriter.Write(value);
+            //TODO find a better way
+            var str = value.ToString(CultureInfo.InvariantCulture);
+            _textWriter.Write(str);
+            if (!str.Contains("e") && !str.Contains("E"))
+            {
+                _textWriter.Write("e0");
+            }
+
             CloseValue();
         }
 
