@@ -588,7 +588,7 @@ namespace IonDotnet.Internals.Text
 
         public static int DecodeSid(StringBuilder sb)
         {
-            var digits = sb.ToString(1, sb.Length);
+            var digits = sb.ToString(1, sb.Length - 1);
             return int.Parse(digits, System.Globalization.CultureInfo.InvariantCulture);
         }
     }

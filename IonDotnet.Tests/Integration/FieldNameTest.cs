@@ -18,7 +18,7 @@ namespace IonDotnet.Tests.Integration
         [DataRow("fieldNameQuotedNullInt", "null.int")]
         [DataRow("fieldNameQuotedPosInf", "+inf")]
         [DataRow("fieldNameQuotedTrue", "true")]
-        public void FieldNameInStruct(string fileName, string fieldName)
+        public void GoodFieldName(string fileName, string fieldName)
         {
             void assertReader(IIonReader reader)
             {
@@ -38,9 +38,29 @@ namespace IonDotnet.Tests.Integration
                 writer.Finish();
             }
 
-            var r = ReaderFromFile(DirStructure.IonTestFile($"good/{fileName}.ion"), InputStyle.Text);
+            var r = ReaderFromFile(DirStructure.IonTestFile($"good/{fileName}.ion"), InputStyle.FileStream);
             assertReader(r);
             AssertReaderWriter(assertReader, writeFunc);
+        }
+
+        [TestMethod]
+        [DataRow("fieldNameFalse")]
+        [DataRow("fieldNameNan")]
+        [DataRow("fieldNameNull")]
+        [DataRow("fieldNameNullInt")]
+        [DataRow("fieldNameSymbolIDUnmapped")]
+        [DataRow("fieldNameTrue")]
+        public void BadFieldName(string fileName)
+        {
+            var reader = ReaderFromFile(DirStructure.IonTestFile($"bad/{fileName}.ion"), InputStyle.FileStream);
+
+            Assert.ThrowsException<IonException>(() =>
+            {
+                Assert.AreEqual(IonType.Struct, reader.MoveNext());
+                reader.StepIn();
+                //should throw here
+                reader.MoveNext();
+            });
         }
     }
 }
