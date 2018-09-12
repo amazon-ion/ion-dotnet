@@ -24,7 +24,7 @@ namespace IonDotnet.Bench
                 Result = ExperimentResult.Failure,
                 SampleData = new byte[10],
                 Budget = decimal.Parse("12345.01234567890123456789"),
-                Outputs = new[] {1, 2, 3}
+                Outputs = new[] {1.2, 2.3, 3.1}
             };
 
             [Benchmark]
@@ -59,7 +59,7 @@ namespace IonDotnet.Bench
                 Result = ExperimentResult.Failure,
                 SampleData = new byte[10],
                 Budget = decimal.Parse("12345.01234567890123456789"),
-                Outputs = new[] {1, 2, 3}
+                Outputs = new[] {1.2, 2.3, 3.1}
             };
 
             //Serialize an object to byte array

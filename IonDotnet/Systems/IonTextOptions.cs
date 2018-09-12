@@ -42,9 +42,9 @@ namespace IonDotnet.Systems
         public bool TimestampAsMillis { get; set; }
 
         /// <summary>
-        /// Maximum string length before it is wrapped. Negative values denote infinity.
+        /// Maximum string length before it is wrapped.
         /// </summary>
-        public int LongStringThreshold { get; set; } = -1;
+        public int LongStringThreshold { get; set; } = int.MaxValue;
 
         /// <summary>
         /// Do we write the Ion version marker

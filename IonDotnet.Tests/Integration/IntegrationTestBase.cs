@@ -31,14 +31,14 @@ namespace IonDotnet.Tests.Integration
         protected void AssertReaderWriter(Action<IIonReader> assertReader, Action<IIonWriter> writerFunc)
         {
             //bin
-//            using (var s = new MemoryStream())
-//            {
-//                var binWriter = IonBinaryWriterBuilder.Build(s);
-//                writerFunc(binWriter);
-//                s.Seek(0, SeekOrigin.Begin);
-//                var binReader = IonReaderBuilder.Build(s);
-//                assertReader(binReader);
-//            }
+            using (var s = new MemoryStream())
+            {
+                var binWriter = IonBinaryWriterBuilder.Build(s);
+                writerFunc(binWriter);
+                s.Seek(0, SeekOrigin.Begin);
+                var binReader = IonReaderBuilder.Build(s);
+                assertReader(binReader);
+            }
 
             //text
             var sw = new StringWriter();

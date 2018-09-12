@@ -25,6 +25,6 @@ namespace IonDotnet.Bench
         // [JsonConverter(typeof(StringEnumConverter))]
         public ExperimentResult Result { get; set; }
 
-        public int[] Outputs { get; set; }
+        public double[] Outputs { get; set; }
     }
 }

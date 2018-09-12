@@ -36,7 +36,7 @@ namespace IonDotnet.Bench
                     Result = ExperimentResult.Failure,
                     SampleData = new byte[100],
                     Budget = decimal.Parse("12345.01234567890123456789", System.Globalization.CultureInfo.InvariantCulture),
-                    Outputs = new[] {1, 2, 3}
+                    Outputs = new[] {1.2, 2.3, 3.1}
                 }
             });
 
