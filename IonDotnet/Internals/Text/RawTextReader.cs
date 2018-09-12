@@ -233,6 +233,11 @@ namespace IonDotnet.Internals.Text
 
                         LoadTokenContents(token);
                         var symtok = ParseSymbolToken(_valueBuffer, token);
+                        if (symtok.Sid >= 0 && GetSymbolTable().FindKnownSymbol(symtok.Sid) == null)
+                        {
+                            throw new UnknownSymbolException(symtok.Sid);
+                        }
+
                         SetFieldName(symtok);
                         ClearValueBuffer();
                         token = _scanner.NextToken();
@@ -309,7 +314,7 @@ namespace IonDotnet.Internals.Text
                             LoadTokenContents(token);
                             //token has been wholy loaded
                             _scanner.MarkTokenFinished();
-                            
+
                             _valueKeyword = TextConstants.GetKeyword(_valueBuffer, 0, _valueBuffer.Length);
                             switch (_valueKeyword)
                             {
@@ -338,6 +343,7 @@ namespace IonDotnet.Internals.Text
                                     _valueType = IonType.Symbol;
                                     break;
                             }
+
                             ClearValueBuffer();
                         }
                         else if (token == TextConstants.TokenDot)

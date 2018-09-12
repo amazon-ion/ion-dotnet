@@ -44,6 +44,7 @@ namespace IonDotnet.Tests.Integration
         }
 
         [TestMethod]
+        [ExpectedException(typeof(IonException), AllowDerivedTypes = true)]
         [DataRow("fieldNameFalse")]
         [DataRow("fieldNameNan")]
         [DataRow("fieldNameNull")]
@@ -54,13 +55,10 @@ namespace IonDotnet.Tests.Integration
         {
             var reader = ReaderFromFile(DirStructure.IonTestFile($"bad/{fileName}.ion"), InputStyle.FileStream);
 
-            Assert.ThrowsException<IonException>(() =>
-            {
-                Assert.AreEqual(IonType.Struct, reader.MoveNext());
-                reader.StepIn();
-                //should throw here
-                reader.MoveNext();
-            });
+            Assert.AreEqual(IonType.Struct, reader.MoveNext());
+            reader.StepIn();
+            //should throw here
+            reader.MoveNext();
         }
     }
 }

@@ -26,6 +26,7 @@ namespace IonDotnet.Tests.Integration
             void writerFunc(IIonWriter writer)
             {
                 writer.WriteInt(3);
+                writer.Finish();
             }
 
             var file = DirStructure.IonTestFile("good/hexWithTerminatingEof.ion");
