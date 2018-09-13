@@ -7,9 +7,9 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
+
 #endif
 
 namespace IonDotnet.Internals.Binary
@@ -547,8 +547,13 @@ namespace IonDotnet.Internals.Binary
             Debug.Assert(!negative || (bytes[0] & 0b1000_0000) <= 0);
             Debug.Assert(negative || (bytes[0] ^ 0b1000_0000) > 0);
 
-            //len = maxid - (last index of flag=3) + (flag byte=1)
+            //len = maxid - (last index of flag=3) + (exponent byte=1)
             var totalLength = maxIdx - 2;
+            var needExtraByte = (bytes[4] & 0b_1000_0000) > 0;
+            if (needExtraByte)
+            {
+                totalLength++;
+            }
 
             var tidByte = TidDecimalByte;
             if (totalLength <= 0x0D)
@@ -565,10 +570,17 @@ namespace IonDotnet.Internals.Binary
             }
 
             const byte isNegativeAndDone = 0b_1100_0000;
+            //byte[2] is enough to store the 28 decimal places (255>28)
             _dataBuffer.WriteByte((byte) (bytes[2] | isNegativeAndDone));
-            if (negative)
+
+            //write the 'sign' byte
+            if (needExtraByte)
             {
-                bytes[4] |= 0b1000_0000;
+                _dataBuffer.WriteByte((byte) (negative ? 0b_1000_0000 : 0b_0000_000));
+            }
+            else if (negative)
+            {
+                bytes[4] |= 0b_1000_0000;
             }
 
             _dataBuffer.WriteBytes(bytes.Slice(4, maxIdx - 3));

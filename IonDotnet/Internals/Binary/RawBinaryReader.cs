@@ -10,6 +10,7 @@ using IonDotnet.Conversions;
 using IonDotnet.Systems;
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
+
 #endif
 
 namespace IonDotnet.Internals.Binary
@@ -536,8 +537,10 @@ namespace IonDotnet.Internals.Binary
             decimal dec;
 
             //don't support big decimal this for now
-            if (exponent > 28) throw new OverflowException($"Decimal exponent scale {exponent} is not supported");
-            if (_localRemaining > sizeof(int) * 3) throw new OverflowException($"Decimal mantissa size {_localRemaining} is not supported");
+            if (exponent > 28)
+                throw new OverflowException($"Decimal exponent scale {exponent} is not supported");
+            if (_localRemaining > sizeof(int) * 3)
+                throw new OverflowException($"Decimal mantissa size {_localRemaining} is not supported");
 
             if (_localRemaining == 0)
             {
@@ -939,7 +942,7 @@ namespace IonDotnet.Internals.Binary
 
             var (parentRemaining, _) = _containerStack.Pop();
             var parentTid = _containerStack.Count == 0 ? BinaryConstants.TidDatagram : _containerStack.Peek().typeTid;
-        
+
             _eof = false;
 //            _parentTid = parentTid;
             IsInStruct = parentTid == BinaryConstants.TidStruct;
