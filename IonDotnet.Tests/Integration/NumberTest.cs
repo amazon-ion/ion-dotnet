@@ -219,6 +219,46 @@ namespace IonDotnet.Tests.Integration
             AssertReaderWriter(assertReader, writerFunc);
         }
 
+        [TestMethod]
+        public void FloatDblMin()
+        {
+            var file = DirStructure.IonTestFile("good/floatDblMin.ion");
+            var floats = new[]
+            {
+                2.2250738585072012e-308,
+                0.00022250738585072012e-304,
+                2.225073858507201200000e-308,
+                2.2250738585072012e-00308,
+                2.2250738585072012997800001e-308
+            };
+
+            void assertReader(IIonReader reader)
+            {
+                foreach (var f in floats)
+                {
+                    Assert.AreEqual(IonType.Float, reader.MoveNext());
+                    ReaderTestCommon.AssertFloatEqual(f, reader.DoubleValue());
+                }
+
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+            }
+
+            void writerFunc(IIonWriter writer)
+            {
+                foreach (var f in floats)
+                {
+                    writer.WriteFloat(f);
+                }
+
+                writer.Finish();
+            }
+
+            var r = ReaderFromFile(file, InputStyle.FileStream);
+            assertReader(r);
+
+            AssertReaderWriter(assertReader, writerFunc);
+        }
+
         private static decimal ParseDecimal(string s)
         {
             var idxOfD = s.IndexOf("d", StringComparison.OrdinalIgnoreCase);

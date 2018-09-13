@@ -306,11 +306,23 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual("int", reader.CurrentFieldName);
             //2nd skip
             reader.StepOut();
-            
+
             Assert.AreEqual(IonType.String, reader.MoveNext());
             Assert.AreEqual("this is a string", reader.StringValue());
             Assert.AreEqual(IonType.Bool, reader.MoveNext());
             Assert.AreEqual(true, reader.BoolValue());
+        }
+
+        public static void AssertFloatEqual(double expected, double actual)
+        {
+            var sub = Math.Abs(expected - actual);
+            var ok = sub <= double.Epsilon * 10;
+            if (!ok)
+            {
+                Console.WriteLine($"e:{expected} - a:{actual} = {sub}");
+            }
+
+            Assert.IsTrue(ok);
         }
     }
 }
