@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -320,6 +321,32 @@ namespace IonDotnet.Tests.Integration
                 Assert.AreEqual(IonType.Float, reader.CurrentType);
                 Assert.AreEqual(0d, reader.DoubleValue());
             }
+        }
+
+        [TestMethod]
+        [DataRow("good/intBigSize256.10n")]
+        [DataRow("good/intBigSize256.ion")]
+        public void IntBigSize256(string fileName)
+        {
+            var file = DirStructure.IonTestFile(fileName);
+            var r = ReaderFromFile(file, InputStyle.FileStream);
+            BigInteger b;
+
+            void assertReader(IIonReader reader)
+            {
+                Assert.AreEqual(IonType.Int, reader.MoveNext());
+                Assert.AreEqual(IntegerSize.BigInteger, reader.GetIntegerSize());
+                b = reader.BigIntegerValue();
+            }
+
+            void writerFunc(IIonWriter writer)
+            {
+                writer.WriteInt(b);
+                writer.Finish();
+            }
+
+            assertReader(r);
+            AssertReaderWriter(assertReader, writerFunc);
         }
 
         private static decimal ParseDecimal(string s)
