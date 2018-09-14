@@ -208,6 +208,24 @@ namespace IonDotnet.Internals.Text
 
         public void Write(double d)
         {
+            if (double.IsNaN(d))
+            {
+                _writer.Write("nan");
+                return;
+            }
+
+            if (double.IsPositiveInfinity(d))
+            {
+                _writer.Write("+inf");
+                return;
+            }
+
+            if (double.IsNegativeInfinity(d))
+            {
+                _writer.Write("-inf");
+                return;
+            }
+
             //TODO find a better way
             var str = d.ToString(CultureInfo.InvariantCulture);
             _writer.Write(str);

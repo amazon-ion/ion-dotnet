@@ -273,7 +273,7 @@ namespace IonDotnet.Tests.Integration
                 Assert.IsTrue(double.IsNaN(reader.DoubleValue()));
 
                 Assert.AreEqual(IonType.Float, reader.MoveNext());
-                Assert.IsTrue(double.IsInfinity(reader.DoubleValue()));
+                Assert.IsTrue(double.IsPositiveInfinity(reader.DoubleValue()));
 
                 Assert.AreEqual(IonType.Float, reader.MoveNext());
                 Assert.IsTrue(double.IsNegativeInfinity(reader.DoubleValue()));

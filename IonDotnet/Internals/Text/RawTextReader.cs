@@ -380,6 +380,18 @@ namespace IonDotnet.Internals.Text
                     case ActionFinishLob:
                         _state = GetStateAfterValue(_containerStack.Peek());
                         return;
+                    case ActionPlusInf:
+                        _valueType = IonType.Float;
+                        ClearValueBuffer();
+                        _v.DoubleValue = double.PositiveInfinity;
+                        _state = GetStateAfterValue(_containerStack.Peek());
+                        return;
+                    case ActionMinusInf:
+                        _valueType = IonType.Float;
+                        ClearValueBuffer();
+                        _v.DoubleValue = double.NegativeInfinity;
+                        _state = GetStateAfterValue(_containerStack.Peek());
+                        return;
                 }
             }
         }

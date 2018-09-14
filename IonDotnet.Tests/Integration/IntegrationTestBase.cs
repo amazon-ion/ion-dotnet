@@ -44,7 +44,8 @@ namespace IonDotnet.Tests.Integration
             var sw = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(sw);
             writerFunc(textWriter);
-            var textReader = IonReaderBuilder.Build(sw.ToString());
+            var str = sw.ToString();
+            var textReader = IonReaderBuilder.Build(str);
             assertReader(textReader);
         }
 
