@@ -310,6 +310,18 @@ namespace IonDotnet.Tests.Integration
             Assert.AreEqual(IonType.None, r.MoveNext());
         }
 
+        [TestMethod]
+        public void Float_zeros()
+        {
+            var file = DirStructure.IonTestFile("good/float_zeros.ion");
+            var reader = ReaderFromFile(file, InputStyle.FileStream);
+            while (reader.MoveNext() != IonType.None)
+            {
+                Assert.AreEqual(IonType.Float, reader.CurrentType);
+                Assert.AreEqual(0d, reader.DoubleValue());
+            }
+        }
+
         private static decimal ParseDecimal(string s)
         {
             var idxOfD = s.IndexOf("d", StringComparison.OrdinalIgnoreCase);

@@ -172,5 +172,16 @@ namespace IonDotnet.Tests.Internals
             reader = new UserTextReader(Encoding.UTF8.GetString(data));
             ReaderTestCommon.Struct_OneBlob(reader);
         }
+
+        [DataRow("12_34.56_78e0", 1234.5678e0)]
+        [DataRow("12_34e56", 1234e56)]
+        [DataRow("1_2_3_4.5_6_7_8E90", 1234.5678e90)]
+        [TestMethod]
+        public void Float_Underscore(string f, double val)
+        {
+            var reader = new UserTextReader(f);
+            Assert.AreEqual(IonType.Float, reader.MoveNext());
+            Assert.AreEqual(val, reader.DoubleValue());
+        }
     }
 }
