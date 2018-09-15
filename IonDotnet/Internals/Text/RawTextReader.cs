@@ -144,16 +144,16 @@ namespace IonDotnet.Internals.Text
         protected readonly StringBuilder _valueBuffer;
         protected ValueVariant _v;
         protected readonly TextScanner _scanner;
-        private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
+        protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private int _state;
-        private bool _eof;
+        protected bool _eof;
         protected int _valueKeyword;
 
         protected IonType _valueType;
         private bool _containerIsStruct; // helper bool's set on push and pop and used
         private bool _containerProhibitsCommas; // frequently during state transitions actions
-        private bool _hasNextCalled;
+        protected bool _hasNextCalled;
         private string _fieldName;
         private int _fieldNameSid = SymbolToken.UnknownSid;
 
@@ -178,7 +178,7 @@ namespace IonDotnet.Internals.Text
             _valueBuffer.Clear();
         }
 
-        private bool HasNext()
+        protected virtual bool HasNext()
         {
             if (_hasNextCalled || _eof)
                 return _eof != true;
@@ -188,7 +188,7 @@ namespace IonDotnet.Internals.Text
             ParseNext();
 
             _hasNextCalled = true;
-            return _eof != true;
+            return !_eof;
         }
 
         private void ClearValue()
@@ -344,7 +344,7 @@ namespace IonDotnet.Internals.Text
                                     break;
                             }
 
-                            ClearValueBuffer();
+                            //do not clear the buffer yet because LoadTokenContents() might be called again
                         }
                         else if (token == TextConstants.TokenDot)
                         {
@@ -506,6 +506,8 @@ namespace IonDotnet.Internals.Text
             _hasNextCalled = false;
             return _valueType;
         }
+
+        protected IonType GetContainerType() => _containerStack.Peek();
 
         protected void LoadTokenContents(int scannerToken)
         {
