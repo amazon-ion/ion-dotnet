@@ -183,5 +183,32 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(IonType.Float, reader.MoveNext());
             Assert.AreEqual(val, reader.DoubleValue());
         }
+
+        [DataRow("good/eolCommentCrLf.ion")]
+        [DataRow("good/eolCommentCr.ion")]
+        [TestMethod]
+        public void EolComment(string fileName)
+        {
+            var fileAsStream = DirStructure.IonTestFileAsStream(fileName);
+            var reader = new UserTextReader(fileAsStream);
+            Assert.AreEqual(IonType.List, reader.MoveNext());
+            reader.StepIn();
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+            reader.StepOut();
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+        }
+
+        [DataRow("good/commentMultiLineThenEof.ion")]
+        [DataRow("good/commentSingleLineThenEof.ion")]
+        [TestMethod]
+        public void CommentThenEof(string fileName)
+        {
+            var fileAsStream = DirStructure.IonTestFileAsStream(fileName);
+            var reader = new UserTextReader(fileAsStream);
+
+            Assert.AreEqual(IonType.Symbol, reader.MoveNext());
+            Assert.AreEqual("abc", reader.SymbolValue().Text);
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+        }
     }
 }
