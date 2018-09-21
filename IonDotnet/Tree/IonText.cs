@@ -18,7 +18,7 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Textual value as string.
         /// </summary>
-        public string StringValue
+        public virtual string StringValue
         {
             get => _stringVal;
             set

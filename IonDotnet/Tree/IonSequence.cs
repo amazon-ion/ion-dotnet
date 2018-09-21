@@ -41,7 +41,7 @@ namespace IonDotnet.Tree
 
         public void Insert(int index, IonValue item)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void RemoveAt(int index)
