@@ -3,7 +3,7 @@ using System;
 namespace IonDotnet.Tree
 {
     public sealed class IonDatagram : IonSequence
-    {
+    {        
         public IonDatagram(bool isNull) : base(isNull)
         {
         }

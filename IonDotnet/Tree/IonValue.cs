@@ -198,6 +198,26 @@ namespace IonDotnet.Tree
             }
         }
 
+        protected IonValue GetTopLevelValue()
+        {
+            var val = this;
+            while (val.Container != null)
+            {
+                val = val.Container;
+            }
+
+            return val;
+        }
+
+        public virtual ISymbolTable GetSymbolTable()
+        {
+            var topLevel = GetTopLevelValue();
+            if (!(topLevel is IonDatagram datagram))
+                return null;
+
+            return datagram.GetSymbolTable();
+        }
+
         /// <summary>
         /// Gets the container of this value, or null if this is not part of one.
         /// </summary>
