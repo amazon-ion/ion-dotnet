@@ -201,7 +201,7 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Gets the container of this value, or null if this is not part of one.
         /// </summary>
-        public IonValue Container { get; internal set; }
+        public virtual IonValue Container { get; internal set; }
 
         /// <summary>
         /// Get this value's user type annotations.
@@ -253,7 +253,7 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Get or set whether this value is a null value.
         /// </summary>
-        public bool IsNull
+        public virtual bool IsNull
         {
             get => NullFlagOn();
             set
