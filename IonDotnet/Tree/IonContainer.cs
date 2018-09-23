@@ -17,7 +17,7 @@ namespace IonDotnet.Tree
             }
         }
 
-        public void Add(IonValue item)
+        public virtual void Add(IonValue item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
@@ -25,6 +25,7 @@ namespace IonDotnet.Tree
             ThrowIfNull();
 
             _children.Add(item);
+            item.Container = this;
         }
 
         /// <inheritdoc />
@@ -42,16 +43,19 @@ namespace IonDotnet.Tree
             Debug.Assert(_children?.Contains(item) == true);
             _children.Remove(item);
             item.Container = null;
+            item._tableIndex = -1;
             return true;
         }
 
 
+        /// <inheritdoc />
         /// <summary>
         /// The number of children of this container.
         /// </summary>
         public int Count => _children.Count;
 
 
+        /// <inheritdoc />
         /// <summary>
         /// Clear the content of this container.
         /// </summary>
@@ -66,6 +70,11 @@ namespace IonDotnet.Tree
                 _children = new List<IonValue>();
             }
 
+            foreach (var child in _children)
+            {
+                child.Container = null;
+            }
+
             NullFlagOn(false);
             _children.Clear();
         }
@@ -78,10 +87,7 @@ namespace IonDotnet.Tree
             return item.Container == this;
         }
 
-        public void CopyTo(IonValue[] array, int arrayIndex)
-        {
-            throw new NotImplementedException();
-        }
+        public void CopyTo(IonValue[] array, int arrayIndex) => throw new NotSupportedException();
 
         public IEnumerator<IonValue> GetEnumerator()
         {

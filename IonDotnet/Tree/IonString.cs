@@ -7,7 +7,7 @@ namespace IonDotnet.Tree
     /// </summary>
     public sealed class IonString : IonText
     {
-        public IonString(bool isNull) : base(isNull)
+        public IonString(string stringValue) : base(stringValue)
         {
         }
 

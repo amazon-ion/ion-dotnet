@@ -39,9 +39,16 @@ namespace IonDotnet.Tree
             return _children.IndexOf(item);
         }
 
-        public void Insert(int index, IonValue item)
+        public virtual void Insert(int index, IonValue item)
         {
-            throw new NotImplementedException();
+            ThrowIfLocked();
+            ThrowIfNull();
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            //this will check range
+            _children.Insert(index, item);
+            item.Container = this;
         }
 
         public void RemoveAt(int index)

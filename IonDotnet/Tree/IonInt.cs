@@ -104,12 +104,12 @@ namespace IonDotnet.Tree
             }
         }
 
-        public override IonType Type { get; }
+        public override IonType Type => IonType.Int;
 
         private void SetSize(IntegerSize size)
         {
             Debug.Assert(size != IntegerSize.Unknown);
-            SetMetadata((uint) size, IntSizeMask, IntSizeShift);
+            SetMetadata((int) size, IntSizeMask, IntSizeShift);
         }
     }
 }

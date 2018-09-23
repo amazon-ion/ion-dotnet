@@ -7,7 +7,11 @@ namespace IonDotnet.Tree
     {
         private int _sid = SymbolToken.UnknownSid;
 
-        public IonSymbol(bool isNull) : base(isNull)
+        public IonSymbol(string text) : this(new SymbolToken(text, SymbolToken.UnknownSid))
+        {
+        }
+
+        public IonSymbol(SymbolToken symbolToken) : base(symbolToken.Text)
         {
         }
 

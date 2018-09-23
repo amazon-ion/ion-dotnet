@@ -7,12 +7,8 @@ namespace IonDotnet.Tree
     {
         protected string _stringVal;
 
-        protected IonText(bool isNull) : base(isNull)
+        protected IonText(string text) : base(text is null)
         {
-            if (isNull)
-            {
-                _stringVal = null;
-            }
         }
 
         /// <summary>
