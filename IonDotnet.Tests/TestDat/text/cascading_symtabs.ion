@@ -1,0 +1,15 @@
+$ion_symbol_table::
+{
+  symbols:[ "rock", "paper", "scissors" ]
+}
+
+$13
+
+// a local symbol table that adds two local symbols to the context
+$ion_symbol_table::
+{
+  imports:$ion_symbol_table,
+  symbols:[ "lizard", "spock" ]
+}
+
+$10
