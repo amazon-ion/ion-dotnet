@@ -16,7 +16,7 @@ namespace IonDotnet.Internals
         /// <inheritdoc />
         /// <summary>
         /// Default implementation of writing reader value.
-        /// Can be overriden to optimize
+        /// Can be overriden to optimize.
         /// </summary>
         public void WriteValue(IIonReader reader) => WriteValueRecursively(reader.CurrentType, reader);
 
@@ -139,6 +139,7 @@ namespace IonDotnet.Internals
         public abstract void WriteDecimal(decimal value);
         public abstract void WriteTimestamp(Timestamp value);
         public abstract void WriteSymbol(string symbol);
+        public abstract void WriteSymbolToken(SymbolToken symbolToken);
         public abstract void WriteString(string value);
         public abstract void WriteBlob(ReadOnlySpan<byte> value);
         public abstract void WriteClob(ReadOnlySpan<byte> value);

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-
 using System.Diagnostics;
 using System.Linq;
 using IonDotnet.Internals.Binary;
@@ -109,7 +108,8 @@ namespace IonDotnet.Internals
 
         private int PutSymbol(string text)
         {
-            if (IsReadOnly) throw new InvalidOperationException("Table is read-only");
+            if (IsReadOnly)
+                throw new InvalidOperationException("Table is read-only");
             var sid = _mySymbolNames.Count + _firstLocalId;
             Debug.Assert(sid == MaxId + 1);
             Debug.Assert(!_symbolMap.ContainsKey(text));

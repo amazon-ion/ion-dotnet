@@ -37,6 +37,8 @@ namespace IonDotnet
 
         void WriteSymbol(string symbol);
 
+        void WriteSymbolToken(SymbolToken symbolToken);
+
         void WriteString(string value);
 
         void WriteBlob(ReadOnlySpan<byte> value);

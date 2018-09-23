@@ -7,26 +7,12 @@ namespace IonDotnet.Tree
 {
     public abstract class IonContainer : IonValue, ICollection<IonValue>
     {
-        protected List<IonValue> _children;
-
         protected IonContainer(bool isNull) : base(isNull)
         {
-            if (!isNull)
-            {
-                _children = new List<IonValue>();
-            }
         }
 
-        public virtual void Add(IonValue item)
-        {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item));
-            ThrowIfLocked();
-            ThrowIfNull();
 
-            _children.Add(item);
-            item.Container = this;
-        }
+        public abstract void Add(IonValue item);
 
         /// <inheritdoc />
         /// <summary>
@@ -34,25 +20,14 @@ namespace IonDotnet.Tree
         /// </summary>
         /// <param name="item"></param>
         /// <returns>True if the item has been removed</returns>
-        public bool Remove(IonValue item)
-        {
-            ThrowIfLocked();
-            if (NullFlagOn() || item?.Container != this)
-                return false;
-
-            Debug.Assert(_children?.Contains(item) == true);
-            _children.Remove(item);
-            item.Container = null;
-            item._tableIndex = -1;
-            return true;
-        }
+        public abstract bool Remove(IonValue item);
 
 
         /// <inheritdoc />
         /// <summary>
         /// The number of children of this container.
         /// </summary>
-        public int Count => _children.Count;
+        public abstract int Count { get; }
 
 
         /// <inheritdoc />
@@ -62,38 +37,13 @@ namespace IonDotnet.Tree
         /// <remarks>
         /// If this container is null, it will be set to a non-null empty container.
         /// </remarks>
-        public void Clear()
-        {
-            ThrowIfLocked();
-            if (NullFlagOn())
-            {
-                _children = new List<IonValue>();
-            }
+        public abstract void Clear();
 
-            foreach (var child in _children)
-            {
-                child.Container = null;
-            }
-
-            NullFlagOn(false);
-            _children.Clear();
-        }
-
-        public bool Contains(IonValue item)
-        {
-            if (NullFlagOn() || item == null)
-                return false;
-
-            return item.Container == this;
-        }
+        public abstract bool Contains(IonValue item);
 
         public void CopyTo(IonValue[] array, int arrayIndex) => throw new NotSupportedException();
 
-        public IEnumerator<IonValue> GetEnumerator()
-        {
-            ThrowIfNull();
-            return _children.GetEnumerator();
-        }
+        public abstract IEnumerator<IonValue> GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

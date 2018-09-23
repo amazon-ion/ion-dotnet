@@ -8,8 +8,7 @@ namespace IonDotnet
     ///  Symbol tokens may be interned into a <see cref="T:IonDotnet.ISymbolTable" /> <br />
     /// </summary>
     /// <remarks>
-    /// This is implemented differently from the java implemenation using a readonly struct 
-    /// to avoid creating heap objects
+    /// A text=null or sid=-1 value might indicate that such field is unknown in the contextual symbol table.
     /// </remarks>
     public readonly struct SymbolToken : IEquatable<SymbolToken>
     {
@@ -28,7 +27,7 @@ namespace IonDotnet
         private readonly int _sid;
 
         /// <summary>
-        /// Create a new symbol token
+        /// Create a new symbol token.
         /// </summary>
         /// <param name="text">Text</param>
         /// <param name="sid">Sid</param>
@@ -55,8 +54,7 @@ namespace IonDotnet
         public int Sid => _sid - 1;
 
         //Override everything to avoid boxing allocation
-
-        public override string ToString() => $"SymbolToken::{{text:{Text},id:{Sid}}}";
+        public override string ToString() => $"SymbolToken::{{text:{Text}, id:{Sid}}}";
 
         public static bool operator ==(SymbolToken x, SymbolToken y) => x.Text == y.Text && x._sid == y._sid;
 

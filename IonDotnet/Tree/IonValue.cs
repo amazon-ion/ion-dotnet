@@ -179,7 +179,11 @@ namespace IonDotnet.Tree
         #endregion
 
         protected List<SymbolToken> _annotations;
-        public SymbolToken _fieldName;
+
+        /// <summary>
+        /// Store the field name text and sid;
+        /// </summary>
+        internal string FieldName;
 
         protected IonValue(bool isNull)
         {
@@ -254,6 +258,7 @@ namespace IonDotnet.Tree
             _annotations.Clear();
         }
 
+
         public bool HasAnnotation(string text)
         {
             if (text == null)
@@ -296,15 +301,16 @@ namespace IonDotnet.Tree
 
             if (writer.IsInStruct && !privateWriter.IsFieldNameSet())
             {
-                if (_fieldName.Text == null)
+                if (FieldName == null)
                     throw new IonException("Field name is not set");
 
-                writer.SetFieldNameSymbol(_fieldName);
+                writer.SetFieldName(FieldName);
             }
 
             privateWriter.SetTypeAnnotationSymbols(GetTypeAnnotations());
             WriteBodyTo(privateWriter);
         }
+
 
         /// <summary>
         /// Concrete class implementations should call the correct writer method.

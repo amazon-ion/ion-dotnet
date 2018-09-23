@@ -206,12 +206,21 @@ namespace IonDotnet.Internals.Binary
         }
 
         /// <summary>
-        /// This basically interns the text of the token and return the new token
+        /// Try to intern the text of this token to our symbol table. 
         /// </summary>
         private SymbolToken InternSymbol(SymbolToken token)
         {
-            if (token == default || token.Text == null) return default;
-            return Intern(token.Text);
+            if (token == default)
+                return token;
+
+            if (token.Text != null)
+                return Intern(token.Text);
+
+            //no text, check if sid is sth we know
+            if (token.Sid > SymbolTable.MaxId)
+                throw new UnknownSymbolException(token.Sid);
+
+            return token;
         }
 
         public override ISymbolTable SymbolTable => _localSymbolTableView ?? (_localSymbolTableView = new LocalSymbolTableView(this));
@@ -416,6 +425,22 @@ namespace IonDotnet.Internals.Binary
         {
             var token = Intern(symbol);
             _userWriter.WriteSymbolToken(token);
+        }
+
+        public override void WriteSymbolToken(SymbolToken symbolToken)
+        {
+            symbolToken = InternSymbol(symbolToken);
+            if (symbolToken != default
+                && symbolToken.Sid == SystemSymbols.Ion10Sid
+                && _userWriter.GetDepth() == 0
+                && _userWriter._annotations.Count == 0)
+            {
+                //this is an ivm
+                Finish();
+                return;
+            }
+
+            _userWriter.WriteSymbolToken(symbolToken);
         }
 
         public override void WriteString(string value)

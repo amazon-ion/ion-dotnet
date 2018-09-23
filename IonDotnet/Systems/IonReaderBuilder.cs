@@ -36,10 +36,11 @@ namespace IonDotnet.Systems
         }
 
         /// <summary>
-        /// Build an Ion reader for the data stream
+        /// Build an Ion reader for the data stream.
         /// </summary>
         /// <param name="stream">Ion data stream in binary of UTF8-text form</param>
         /// <returns>Ion reader</returns>
+        /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
         public static IIonReader Build(Stream stream)
         {
             if (!stream.CanRead)

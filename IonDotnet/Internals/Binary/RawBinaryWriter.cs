@@ -52,7 +52,7 @@ namespace IonDotnet.Internals.Binary
 
         private readonly IWriterBuffer _lengthBuffer;
         private readonly IWriterBuffer _dataBuffer;
-        private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
+        internal readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private SymbolToken _currentFieldSymbolToken;
         private readonly ContainerStack _containerStack;
@@ -728,7 +728,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteSymbol(string symbol)
             => throw new UnsupportedIonVersionException($"Writing text symbol is not supported at raw level");
 
-        internal void WriteSymbolToken(SymbolToken token)
+        public void WriteSymbolToken(SymbolToken token)
         {
             if (token == default)
             {

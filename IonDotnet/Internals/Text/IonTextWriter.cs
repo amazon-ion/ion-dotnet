@@ -188,9 +188,9 @@ namespace IonDotnet.Internals.Text
             return followingLongString;
         }
 
-        protected override void WriteSymbolString(string value)
+        protected override void WriteSymbolString(SymbolToken value)
         {
-            if (value == null)
+            if (value.Text == null)
             {
                 WriteNull(IonType.Symbol);
                 return;
@@ -198,7 +198,7 @@ namespace IonDotnet.Internals.Text
 
             StartValue();
             //we write all symbol values with single-quote
-            WriteSymbolText(value, SymbolVariant.Quoted);
+            WriteSymbolText(value.Text, SymbolVariant.Quoted);
             CloseValue();
         }
 

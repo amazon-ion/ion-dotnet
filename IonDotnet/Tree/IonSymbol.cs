@@ -1,18 +1,18 @@
-using System;
 using IonDotnet.Internals;
 
 namespace IonDotnet.Tree
 {
     public sealed class IonSymbol : IonText
     {
-        private int _sid = SymbolToken.UnknownSid;
+        private int _sid;
 
-        public IonSymbol(string text) : this(new SymbolToken(text, SymbolToken.UnknownSid))
+        public IonSymbol(string text, int sid = SymbolToken.UnknownSid) : this(new SymbolToken(text, sid))
         {
         }
 
         public IonSymbol(SymbolToken symbolToken) : base(symbolToken.Text)
         {
+            _sid = symbolToken.Sid;
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
@@ -38,14 +38,14 @@ namespace IonDotnet.Tree
             }
         }
 
-        public SymbolToken SymbolValue => new SymbolToken(_stringVal, ResolveSid());
-
-        private int ResolveSid()
+        public SymbolToken SymbolValue
         {
-            if (_sid > SymbolToken.UnknownSid)
-                return _sid;
-
-            throw new NotImplementedException("top-level symtab");
+            get => new SymbolToken(_stringVal, _sid);
+            set
+            {
+                StringValue = value.Text;
+                _sid = value.Sid;
+            }
         }
     }
 }
