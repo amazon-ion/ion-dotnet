@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 
 #if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
 namespace System.Collections.Generic

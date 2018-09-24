@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using IonDotnet.Utils;

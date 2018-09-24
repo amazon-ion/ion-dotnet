@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics;
-using System.Net.Http.Headers;
 using System.Numerics;
-using System.Threading.Tasks;
 using IonDotnet.Systems;
 using IonDotnet.Tree;
 

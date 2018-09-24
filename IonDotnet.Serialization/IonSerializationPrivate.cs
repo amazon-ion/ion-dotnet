@@ -2,12 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using IonDotnet.Internals;
-using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Serialization
 {

@@ -20,29 +20,69 @@ namespace IonDotnet
         void WriteNull(IonType type);
 
         /// <summary>
-        /// Write a boolean value to the stream
+        /// Write a boolean value.
         /// </summary>
-        /// <param name="value">The value to write</param>
+        /// <param name="value">Boolean value.</param>
         void WriteBool(bool value);
 
+        /// <summary>
+        /// Write an integer value.
+        /// </summary>
+        /// <param name="value">Integer value.</param>
         void WriteInt(long value);
 
+        /// <summary>
+        /// Write a big integer value.
+        /// </summary>
+        /// <param name="value">Big integer value/</param>
         void WriteInt(BigInteger value);
 
+        /// <summary>
+        /// Write a floating point value.
+        /// </summary>
+        /// <param name="value">Floating point value.</param>
         void WriteFloat(double value);
 
+        /// <summary>
+        /// Write a decimal value.
+        /// </summary>
+        /// <param name="value">Decimal value.</param>
         void WriteDecimal(decimal value);
 
+        /// <summary>
+        /// Write a timestamp value.
+        /// </summary>
+        /// <param name="value">Timestamp value.</param>
         void WriteTimestamp(Timestamp value);
 
+        /// <summary>
+        /// Write a symbol text.
+        /// </summary>
+        /// <param name="symbol">Symbol text.</param>
         void WriteSymbol(string symbol);
 
+        /// <summary>
+        /// Write a symbol token.
+        /// </summary>
+        /// <param name="symbolToken">Symbol value.</param>
         void WriteSymbolToken(SymbolToken symbolToken);
 
+        /// <summary>
+        /// Write a string value.
+        /// </summary>
+        /// <param name="value">String value.</param>
         void WriteString(string value);
 
+        /// <summary>
+        /// Write a sequence of bytes.
+        /// </summary>
+        /// <param name="value">Byte buffer.</param>
         void WriteBlob(ReadOnlySpan<byte> value);
 
+        /// <summary>
+        /// Write a clob value.
+        /// </summary>
+        /// <param name="value">Blob value.</param>
         void WriteClob(ReadOnlySpan<byte> value);
 
         /// <summary>

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Bench
 {

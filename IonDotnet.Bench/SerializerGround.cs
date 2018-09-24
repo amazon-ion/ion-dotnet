@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using System.Numerics;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using IonDotnet.Conversions;
-using IonDotnet.Internals.Binary;
-using IonDotnet.Internals.Text;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
 // ReSharper disable All

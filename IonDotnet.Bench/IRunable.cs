@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IonDotnet.Bench
+﻿namespace IonDotnet.Bench
 {
     public interface IRunable
     {

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IonDotnet.Serialization
+﻿namespace IonDotnet.Serialization
 {
     public interface IScalarWriter
     {

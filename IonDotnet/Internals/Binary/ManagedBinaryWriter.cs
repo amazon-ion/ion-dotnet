@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Binary
