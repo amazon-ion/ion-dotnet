@@ -45,13 +45,15 @@ namespace IonDotnet.Internals.Text
                             {
                                 // $ion_1_0 is read as an IVM only if it is not annotated
                                 var version = SymbolValue().Text;
-                                if (IvmRegex.IsMatch(version))
+                                if (version is null || !IvmRegex.IsMatch(version))
                                 {
-                                    if (SystemSymbols.Ion10 != version)
-                                        throw new UnsupportedIonVersionException(version);
-
-                                    _hasNextCalled = false;
+                                    break;
                                 }
+
+                                if (SystemSymbols.Ion10 != version)
+                                    throw new UnsupportedIonVersionException(version);
+
+                                _hasNextCalled = false;
                             }
 
                             break;

@@ -226,7 +226,7 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Gets the container of this value, or null if this is not part of one.
         /// </summary>
-        public virtual IonValue Container { get; internal set; }
+        public virtual IonContainer Container { get; internal set; }
 
         /// <summary>
         /// Get this value's user type annotations.

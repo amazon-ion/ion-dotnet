@@ -16,9 +16,24 @@ namespace IonDotnet.Tree
         private long _longValue;
         private BigInteger? _bigInteger;
 
-        public IonInt(bool isNull) : base(isNull)
+        public IonInt(long value) : base(false)
+        {
+            _longValue = value;
+        }
+        
+        public IonInt(BigInteger value) : base(false)
+        {
+            _bigInteger = value;
+        }
+
+        private IonInt(bool isNull) : base(isNull)
         {
         }
+
+        /// <summary>
+        /// Returns a new null.int value.
+        /// </summary>
+        public static IonInt NewNull() => new IonInt(true);
 
         internal override void WriteBodyTo(IPrivateWriter writer)
         {

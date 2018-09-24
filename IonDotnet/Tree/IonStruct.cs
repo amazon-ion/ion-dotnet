@@ -9,7 +9,11 @@ namespace IonDotnet.Tree
     {
         private Dictionary<string, IonValue> _dictionary;
 
-        public IonStruct(bool isNull) : base(isNull)
+        public IonStruct() : this(false)
+        {
+        }
+
+        private IonStruct(bool isNull) : base(isNull)
         {
             if (!isNull)
             {
@@ -17,9 +21,28 @@ namespace IonDotnet.Tree
             }
         }
 
+        /// <summary>
+        /// Returns a new null.struct value.
+        /// </summary>
+        public static IonStruct NewNull() => new IonStruct(true);
+
         internal override void WriteBodyTo(IPrivateWriter writer)
         {
-            throw new System.NotImplementedException();
+            if (NullFlagOn())
+            {
+                writer.WriteNull(IonType.Struct);
+                return;
+            }
+
+            Debug.Assert(_dictionary != null);
+            writer.StepIn(IonType.Struct);
+            foreach (var kvp in _dictionary)
+            {
+                //writeto() will attemp to write field name
+                kvp.Value.WriteTo(writer);
+            }
+
+            writer.StepOut();
         }
 
         public override IonType Type => IonType.Struct;

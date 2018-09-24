@@ -261,7 +261,7 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public override Task FlushAsync() => _textWriter.FlushAsync();
+//        public override Task FlushAsync() => _textWriter.FlushAsync();
         public override void Flush() => _textWriter.Flush();
 
         public override void WriteNull()
@@ -468,10 +468,10 @@ namespace IonDotnet.Internals.Text
 //            _textWriter.Flush();
         }
 
-        public override Task FinishAsync()
-        {
-            throw new NotImplementedException();
-        }
+//        public override Task FinishAsync()
+//        {
+//            throw new NotImplementedException();
+//        }
 
         public override void StepIn(IonType type)
         {

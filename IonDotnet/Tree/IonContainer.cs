@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using IonDotnet.Internals;
 
 namespace IonDotnet.Tree
 {

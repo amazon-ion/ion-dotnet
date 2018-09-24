@@ -7,8 +7,9 @@ namespace IonDotnet.Tree
     {
         protected string _stringVal;
 
-        protected IonText(string text) : base(text is null)
+        protected IonText(string text, bool isNull) : base(isNull)
         {
+            _stringVal = text;
         }
 
         /// <summary>

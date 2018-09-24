@@ -24,7 +24,7 @@ namespace IonDotnet.Serialization
             }
         }
 
-        public async Task Serialize<T>(T obj, Stream stream, IScalarWriter scalarWriter = null)
+        public void Serialize<T>(T obj, Stream stream, IScalarWriter scalarWriter = null)
         {
             if (!stream.CanWrite)
                 throw new ArgumentException("Stream must be writable", nameof(stream));
@@ -33,7 +33,7 @@ namespace IonDotnet.Serialization
             using (var binWriter = new ManagedBinaryWriter(stream, Symbols.EmptySymbolTablesArray))
             {
                 IonSerializationPrivate.WriteObject(binWriter, obj, scalarWriter);
-                await binWriter.FlushAsync();
+                binWriter.Flush();
             }
         }
 

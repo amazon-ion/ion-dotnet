@@ -17,7 +17,7 @@ namespace IonDotnet.Tree
 
         public override IonType Type => IonType.Datagram;
 
-        public override IonValue Container
+        public override IonContainer Container
         {
             get => null;
             internal set => throw new InvalidOperationException("Cannot set the container of an Ion Datagram");

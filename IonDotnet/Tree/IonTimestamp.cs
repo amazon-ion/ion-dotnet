@@ -6,10 +6,19 @@ namespace IonDotnet.Tree
     {
         private Timestamp _timestamp;
 
-        public IonTimestamp(Timestamp val, bool isNull) : base(isNull)
+        public IonTimestamp(Timestamp val) : base(false)
         {
             _timestamp = val;
         }
+
+        private IonTimestamp(bool isNull) : base(isNull)
+        {
+        }
+
+        /// <summary>
+        /// Returns a new null.timestamp value.
+        /// </summary>
+        public static IonTimestamp NewNull() => new IonTimestamp(true);
 
         internal override void WriteBodyTo(IPrivateWriter writer)
         {

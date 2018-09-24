@@ -7,7 +7,7 @@ namespace IonDotnet.Tree
     /// </summary>
     public sealed class IonBool : IonValue
     {
-        public IonBool(bool value, bool isNull = false) : base(isNull)
+        public IonBool(bool value) : base(false)
         {
             BoolTrueFlagOn(value);
         }
@@ -39,6 +39,15 @@ namespace IonDotnet.Tree
                 IsNull = false;
                 BoolTrueFlagOn(value);
             }
+        }
+
+        /// <summary>
+        /// Returns a new null.bool value.
+        /// </summary>
+        public static IonBool NewNull()
+        {
+            var v = new IonBool(false) {IsNull = true};
+            return v;
         }
     }
 }
