@@ -105,7 +105,8 @@ namespace IonDotnet.Internals.Binary
         /// </summary>
         public IonType MoveNext()
         {
-            if (!HasNext()) return IonType.None;
+            if (!HasNext())
+                return IonType.None;
             var newState = _currentState;
             switch (_currentState)
             {

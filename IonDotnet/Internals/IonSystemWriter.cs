@@ -90,25 +90,35 @@ namespace IonDotnet.Internals
                 return;
             }
 
-            WriteSymbolString(new SymbolToken(symbol, SymbolToken.UnknownSid));
+            WriteSymbolAsText(symbol);
         }
 
         public override void WriteSymbolToken(SymbolToken symbolToken)
         {
+            if (symbolToken == default)
+            {
+                WriteNull(IonType.Symbol);
+                return;
+            }
+
             if (SystemSymbols.Ion10 == symbolToken.Text && GetDepth() == 0 && _annotations.Count == 0)
             {
                 WriteIonVersionMarker();
                 return;
             }
 
-            //validate sid
-            if (symbolToken.Sid > SymbolTable.MaxId)
-                throw new UnknownSymbolException(symbolToken.Sid);
+            if (symbolToken.Text is null)
+            {
+                WriteSymbolAsInt(symbolToken.Sid);
+                return;
+            }
 
-            WriteSymbolString(symbolToken);
+            WriteSymbolAsText(symbolToken.Text);
         }
 
-        protected abstract void WriteSymbolString(SymbolToken value);
+        protected abstract void WriteSymbolAsText(string text);
+
+        protected abstract void WriteSymbolAsInt(int id);
 
         protected abstract void WriteIonVersionMarker(ISymbolTable systemSymtab);
 

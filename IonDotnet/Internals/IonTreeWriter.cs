@@ -185,10 +185,14 @@ namespace IonDotnet.Internals
             return count;
         }
 
-        protected override void WriteSymbolString(SymbolToken value)
+        protected override void WriteSymbolAsText(string text)
         {
-            var symbol = new IonSymbol(value);
-            AppendValue(symbol);
+            AppendValue(new IonSymbol(text));
+        }
+
+        protected override void WriteSymbolAsInt(int id)
+        {
+            AppendValue(new IonSymbol(null, id));
         }
 
         protected override void WriteIonVersionMarker(ISymbolTable systemSymtab)

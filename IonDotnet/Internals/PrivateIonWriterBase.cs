@@ -77,7 +77,7 @@ namespace IonDotnet.Internals
                     WriteTimestamp(reader.TimestampValue());
                     break;
                 case IonType.Symbol:
-                    WriteSymbol(reader.SymbolValue().Text);
+                    WriteSymbolToken(reader.SymbolValue());
                     break;
                 case IonType.String:
                     WriteString(reader.StringValue());

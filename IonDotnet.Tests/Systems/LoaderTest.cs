@@ -33,7 +33,7 @@ namespace IonDotnet.Tests.Systems
 
             //3rd value $10 should be unknown text
             Assert.AreEqual(IonType.Symbol, datagram[0].Type);
-            token = ((IonSymbol) datagram[0]).SymbolValue;
+            token = ((IonSymbol) datagram[2]).SymbolValue;
             Assert.AreEqual(10, token.Sid);
             Assert.IsNull(token.Text);
         }

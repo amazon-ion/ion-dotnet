@@ -406,6 +406,16 @@ namespace IonDotnet.Internals.Text
                 throw new InvalidOperationException($"Current value is of type {_valueType}");
 
             PrepareValue();
+            if (_v.TypeSet.HasFlag(ScalarType.Int) && !_v.TypeSet.HasFlag(ScalarType.String))
+            {
+                //lookup symbol string from sid
+                _v.StringValue = GetSymbolTable().FindKnownSymbol(_v.IntValue);
+            }
+            else if (_v.StringValue != null && !_v.TypeSet.HasFlag(ScalarType.Int))
+            {
+                _v.IntValue = GetSymbolTable().FindSymbol(_v.StringValue);
+            }
+
             return new SymbolToken(_v.StringValue, _v.IntValue);
         }
 

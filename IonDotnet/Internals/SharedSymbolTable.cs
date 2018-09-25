@@ -101,7 +101,8 @@ namespace IonDotnet.Internals
             if (string.IsNullOrEmpty(text))
                 throw new ArgumentNullException(text);
 
-            if (!_symbolsMap.TryGetValue(text, out var sid)) return SymbolToken.None;
+            if (!_symbolsMap.TryGetValue(text, out var sid)) 
+                return SymbolToken.None;
 
             var internedText = _symbolNames[sid - 1];
             return new SymbolToken(internedText, sid);

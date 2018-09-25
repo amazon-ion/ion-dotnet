@@ -10,7 +10,7 @@ namespace IonDotnet.Tree
         {
         }
 
-        public IonSymbol(SymbolToken symbolToken) : base(symbolToken.Text, false)
+        public IonSymbol(SymbolToken symbolToken) : base(symbolToken.Text, symbolToken == default)
         {
             _sid = symbolToken.Sid;
         }

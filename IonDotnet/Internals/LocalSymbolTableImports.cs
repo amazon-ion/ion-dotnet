@@ -16,22 +16,20 @@ namespace IonDotnet.Internals
 
         public LocalSymbolTableImports(ISymbolTable systemTable, IList<ISymbolTable> imports)
         {
-            if (!systemTable.IsSystem) 
+            if (!systemTable.IsSystem)
                 throw new ArgumentException("Not a system table", nameof(systemTable));
 
             var importCounts = imports?.Count ?? 0;
             _imports = new ISymbolTable[importCounts + 1];
             _imports[0] = systemTable;
-            var startIdx = imports?[0]?.IsSystem == true ? 1 : 0;
-
 
             if (imports != null)
             {
                 var ii = 1;
-                for (var i = startIdx; i < importCounts; i++, ii++)
+                for (var i = 0; i < importCounts; i++, ii++)
                 {
                     var symtab = imports[i];
-                    if (symtab.IsSystem) 
+                    if (symtab.IsSystem)
                         throw new IonException("System table cannot be imported");
 
                     if (symtab is LocalSymbolTable localSymtab)
@@ -96,7 +94,7 @@ namespace IonDotnet.Internals
             for (var i = 0; i < _imports.Length; i++)
             {
                 var token = _imports[i].Find(text);
-                if (token == default) 
+                if (token == default)
                     continue;
 
                 return new SymbolToken(text, token.Sid + _baseIds[i]);
@@ -109,14 +107,14 @@ namespace IonDotnet.Internals
 
         public string FindKnownSymbol(int sid)
         {
-            if (sid > MaxId) 
+            if (sid > MaxId)
                 return null;
 
             int i, prevBaseSid = 0;
             for (i = 0; i < _imports.Length; i++)
             {
                 var baseSid = _baseIds[i];
-                if (sid <= baseSid) 
+                if (sid <= baseSid)
                     break;
                 prevBaseSid = baseSid;
             }
