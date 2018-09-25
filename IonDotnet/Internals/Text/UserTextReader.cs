@@ -4,23 +4,36 @@ using System.Text.RegularExpressions;
 
 namespace IonDotnet.Internals.Text
 {
+    /// <summary>
+    /// The user-level text reader is resposible for recoginizing symbols and process symbol tables.
+    /// </summary>
     internal class UserTextReader : SystemTextReader
     {
         private static readonly Regex IvmRegex = new Regex("^\\$ion_[0-9]+_[0-9]+$", RegexOptions.Compiled);
 
-        public UserTextReader(string textForm, IonType parentType = IonType.None)
-            : base(new CharSequenceStream(textForm), parentType)
+        private ISymbolTable _currentSymtab;
+        private readonly ICatalog _catalog;
+
+        public UserTextReader(string textForm, ICatalog catalog = null, IonType parentType = IonType.None)
+            : this(new CharSequenceStream(textForm), catalog, parentType)
         {
         }
 
-        public UserTextReader(Stream utf8Stream, IonType parentType = IonType.None)
-            : base(new Utf8ByteStream(utf8Stream), parentType)
+        public UserTextReader(Stream utf8Stream, ICatalog catalog = null, IonType parentType = IonType.None)
+            : this(new Utf8ByteStream(utf8Stream), catalog, parentType)
         {
         }
 
-        public UserTextReader(Stream utf8Stream, Span<byte> bytesRead, IonType parentType = IonType.None)
-            : base(new Utf8ByteStream(utf8Stream, bytesRead), parentType)
+        public UserTextReader(Stream utf8Stream, Span<byte> bytesRead, ICatalog catalog = null, IonType parentType = IonType.None)
+            : this(new Utf8ByteStream(utf8Stream, bytesRead), catalog, parentType)
         {
+        }
+
+        private UserTextReader(TextStream textStream, ICatalog catalog, IonType parentType)
+            : base(textStream, parentType)
+        {
+            _catalog = catalog;
+            _currentSymtab = _systemSymbols;
         }
 
         protected override bool HasNext()
@@ -36,7 +49,8 @@ namespace IonDotnet.Internals.Text
                         case IonType.Struct:
                             if (_annotations.Count > 0 && _annotations[0].Text == SystemSymbols.IonSymbolTable)
                             {
-                                //TODO push new symbol local table
+                                _currentSymtab = LocalSymbolTable.Read(this, _catalog, true);
+                                _hasNextCalled = false;
                             }
 
                             break;
@@ -53,6 +67,7 @@ namespace IonDotnet.Internals.Text
                                 if (SystemSymbols.Ion10 != version)
                                     throw new UnsupportedIonVersionException(version);
 
+                                //
                                 _hasNextCalled = false;
                             }
 
@@ -62,6 +77,11 @@ namespace IonDotnet.Internals.Text
             }
 
             return !_eof;
+        }
+
+        public override ISymbolTable GetSymbolTable()
+        {
+            return _currentSymtab;
         }
     }
 }

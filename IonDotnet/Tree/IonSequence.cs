@@ -79,7 +79,6 @@ namespace IonDotnet.Tree
             Debug.Assert(_children?.Contains(item) == true);
             _children.Remove(item);
             item.Container = null;
-            item._tableIndex = -1;
             return true;
         }
 

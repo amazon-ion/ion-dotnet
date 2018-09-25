@@ -171,11 +171,6 @@ namespace IonDotnet.Tree
         /// </summary>
         private byte _flags;
 
-        /// <summary>
-        /// Index to the the local symbol table in the datagram. Can point to up to 2^15 symtabs. 
-        /// </summary>
-        internal short _tableIndex = -1;
-
         #endregion
 
         protected List<SymbolToken> _annotations;
@@ -191,36 +186,6 @@ namespace IonDotnet.Tree
             {
                 NullFlagOn(true);
             }
-        }
-
-        /// <summary>
-        /// Get the 'top level' ancestor of this value in the value tree.
-        /// The top level value is either parent-less or its parent is a <see cref="IonDatagram"/>.
-        /// </summary>
-        /// <returns>Top-level Ion value in the value tree.</returns>
-        /// <remarks>This value is null for a <see cref="IonDatagram"/>.</remarks>
-        protected IonValue GetTopLevelValue()
-        {
-            var val = this;
-            while (!(val.Container is null) && !(val.Container is IonDatagram))
-            {
-                val = val.Container;
-            }
-
-            return val;
-        }
-
-        /// <summary>
-        /// Any <see cref="IonValue"/> has a current symbol table which is the table used to decode this value. 
-        /// </summary>
-        /// <returns>The current symbol table of this value.</returns>
-        public virtual ISymbolTable GetSymbolTable()
-        {
-            var topLevel = GetTopLevelValue();
-            if (!(topLevel.Container is IonDatagram datagram))
-                return null;
-
-            return datagram.GetSymbolTableForChild(topLevel);
         }
 
         /// <summary>

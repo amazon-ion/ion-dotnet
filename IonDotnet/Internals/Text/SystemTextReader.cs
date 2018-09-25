@@ -8,7 +8,7 @@ namespace IonDotnet.Internals.Text
 {
     internal class SystemTextReader : RawTextReader
     {
-        private readonly ISymbolTable _systemSymbols;
+        protected readonly ISymbolTable _systemSymbols;
 
         protected SystemTextReader(TextStream input, IonType parent) : base(input, parent)
         {
