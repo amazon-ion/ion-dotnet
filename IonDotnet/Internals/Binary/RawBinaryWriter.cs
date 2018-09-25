@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -52,7 +51,7 @@ namespace IonDotnet.Internals.Binary
 
         private readonly IWriterBuffer _lengthBuffer;
         private readonly IWriterBuffer _dataBuffer;
-        private readonly List<SymbolToken> _annotations = new List<SymbolToken>();
+        internal readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
         private SymbolToken _currentFieldSymbolToken;
         private readonly ContainerStack _containerStack;
@@ -232,7 +231,7 @@ namespace IonDotnet.Internals.Binary
         }
 
         //these won't be called at this level
-        Task IIonWriter.FlushAsync() => TaskEx.CompletedTask;
+//        Task IIonWriter.FlushAsync() => TaskEx.CompletedTask;
 
         void IIonWriter.Flush()
         {
@@ -728,7 +727,7 @@ namespace IonDotnet.Internals.Binary
         public void WriteSymbol(string symbol)
             => throw new UnsupportedIonVersionException($"Writing text symbol is not supported at raw level");
 
-        internal void WriteSymbolToken(SymbolToken token)
+        public void WriteSymbolToken(SymbolToken token)
         {
             if (token == default)
             {

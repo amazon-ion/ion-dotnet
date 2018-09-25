@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

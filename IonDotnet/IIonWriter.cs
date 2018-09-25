@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace IonDotnet
 {
@@ -12,12 +11,12 @@ namespace IonDotnet
     {
         ISymbolTable SymbolTable { get; }
 
-        /// <summary>
-        /// Flush all the pending written data (including symbol tables) to the output stream asynchronously.
-        /// </summary>
-        /// <returns>The task representing flush operation.</returns>
-        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
-        Task FlushAsync();
+//        /// <summary>
+//        /// Flush all the pending written data (including symbol tables) to the output stream asynchronously.
+//        /// </summary>
+//        /// <returns>The task representing flush operation.</returns>
+//        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
+//        Task FlushAsync();
 
         /// <summary>
         /// Flush all the pending written data (including symbol tables) to the output stream (blocking).
@@ -35,15 +34,15 @@ namespace IonDotnet
         /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
         void Finish();
 
-        /// <summary>
-        /// Mark the end of a datagram, all written values will be flushed (asynchronously). 
-        /// </summary>
-        /// <remarks>
-        /// This method WILL flush the data (including symbol tables) to the output stream. The writer will then be reset to
-        /// the initial state.
-        /// </remarks>
-        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
-        Task FinishAsync();
+//        /// <summary>
+//        /// Mark the end of a datagram, all written values will be flushed (asynchronously). 
+//        /// </summary>
+//        /// <remarks>
+//        /// This method WILL flush the data (including symbol tables) to the output stream. The writer will then be reset to
+//        /// the initial state.
+//        /// </remarks>
+//        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
+//        Task FinishAsync();
 
         /// <summary>
         /// Set the field name, must be called when in a Struct

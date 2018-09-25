@@ -61,10 +61,13 @@ namespace IonDotnet
         IntegerSize GetIntegerSize();
 
         /// <value>
-        ///     Return the field name of the current value. Or null if there is no valid current value
+        /// Return the field name of the current value. Or null if there is no valid current value
         /// </value>
         string CurrentFieldName { get; }
 
+        /// <summary>
+        /// Get the field name of the current value as a <see cref="SymbolToken"/>.
+        /// </summary>
         SymbolToken GetFieldNameSymbol();
 
         /// <value>True if the current value is a null</value>

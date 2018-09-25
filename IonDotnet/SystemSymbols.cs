@@ -53,5 +53,43 @@
         public const int IonSharedSymbolTableSid = 9;
 
         public const int Ion10MaxId = 9;
+
+        /// <summary>
+        /// Resolve the symbol table field sid.
+        /// </summary>
+        /// <param name="fieldName">Symbol table field name.</param>
+        /// <returns>Symbol ID.</returns>
+        public static int ResolveSidForSymbolTableField(string fieldName)
+        {
+            const int shortestName = 4; //'name'
+            if (fieldName is null || fieldName.Length < shortestName)
+                return SymbolToken.UnknownSid;
+
+            switch (fieldName[0])
+            {
+                case 'v':
+                    if (Version.Equals(fieldName))
+                        return VersionSid;
+                    break;
+                case 'n':
+                    if (Name.Equals(fieldName))
+                        return NameSid;
+                    break;
+                case 's':
+                    if (Symbols.Equals(fieldName))
+                        return SymbolsSid;
+                    break;
+                case 'i':
+                    if (Imports.Equals(fieldName))
+                        return ImportsSid;
+                    break;
+                case 'm':
+                    if (MaxId.Equals(fieldName))
+                        return MaxIdSid;
+                    break;
+            }
+
+            return SymbolToken.UnknownSid;
+        }
     }
 }

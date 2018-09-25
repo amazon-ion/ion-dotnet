@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace IonDotnet.Internals
 {
@@ -16,7 +15,7 @@ namespace IonDotnet.Internals
         /// <inheritdoc />
         /// <summary>
         /// Default implementation of writing reader value.
-        /// Can be overriden to optimize
+        /// Can be overriden to optimize.
         /// </summary>
         public void WriteValue(IIonReader reader) => WriteValueRecursively(reader.CurrentType, reader);
 
@@ -101,7 +100,7 @@ namespace IonDotnet.Internals
 
             StepIn(type);
             reader.StepIn();
-            while ((type = reader.MoveNext()) != IonType.Null)
+            while ((type = reader.MoveNext()) != IonType.None)
             {
                 WriteValueRecursively(type, reader);
             }
@@ -139,6 +138,7 @@ namespace IonDotnet.Internals
         public abstract void WriteDecimal(decimal value);
         public abstract void WriteTimestamp(Timestamp value);
         public abstract void WriteSymbol(string symbol);
+        public abstract void WriteSymbolToken(SymbolToken symbolToken);
         public abstract void WriteString(string value);
         public abstract void WriteBlob(ReadOnlySpan<byte> value);
         public abstract void WriteClob(ReadOnlySpan<byte> value);
@@ -148,7 +148,6 @@ namespace IonDotnet.Internals
         public abstract ISymbolTable SymbolTable { get; }
         public abstract void Flush();
         public abstract void Finish();
-        public abstract Task FinishAsync();
         public abstract void SetFieldName(string name);
         public abstract void SetFieldNameSymbol(SymbolToken symbol);
         public abstract void StepIn(IonType type);
@@ -158,6 +157,5 @@ namespace IonDotnet.Internals
         public abstract bool IsFieldNameSet();
         public abstract int GetDepth();
         public abstract void WriteIonVersionMarker();
-        public abstract Task FlushAsync();
     }
 }

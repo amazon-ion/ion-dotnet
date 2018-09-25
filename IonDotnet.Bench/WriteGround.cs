@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using IonDotnet.Serialization;
 using IonDotnet.Systems;
 using Newtonsoft.Json;
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-
 using System.Diagnostics;
 using System.Linq;
 using IonDotnet.Internals.Binary;
@@ -109,7 +108,8 @@ namespace IonDotnet.Internals
 
         private int PutSymbol(string text)
         {
-            if (IsReadOnly) throw new InvalidOperationException("Table is read-only");
+            if (IsReadOnly)
+                throw new InvalidOperationException("Table is read-only");
             var sid = _mySymbolNames.Count + _firstLocalId;
             Debug.Assert(sid == MaxId + 1);
             Debug.Assert(!_symbolMap.ContainsKey(text));
@@ -120,13 +120,16 @@ namespace IonDotnet.Internals
 
         public SymbolToken Find(string text)
         {
-            if (string.IsNullOrEmpty(text)) throw new ArgumentNullException(nameof(text));
+            if (string.IsNullOrEmpty(text))
+                throw new ArgumentNullException(nameof(text));
 
             var token = _imports.Find(text);
-            if (token != SymbolToken.None) return token;
+            if (token != SymbolToken.None)
+                return token;
 
             var found = _symbolMap.TryGetValue(text, out var sid);
-            if (!found) return default;
+            if (!found)
+                return default;
 
             Debug.Assert(text == _mySymbolNames[sid - _firstLocalId]);
             return new SymbolToken(text, sid);
@@ -145,9 +148,11 @@ namespace IonDotnet.Internals
 
         public string FindKnownSymbol(int sid)
         {
-            if (sid < 0) throw new ArgumentOutOfRangeException(nameof(sid), $"{nameof(sid)} must be >=0");
+            if (sid < 0)
+                throw new ArgumentOutOfRangeException(nameof(sid), $"{nameof(sid)} must be >=0");
 
-            if (sid < _firstLocalId) return _imports.FindKnownSymbol(sid);
+            if (sid < _firstLocalId)
+                return _imports.FindKnownSymbol(sid);
 
             IList<string> names;
             //avoid locking if possible
@@ -172,7 +177,7 @@ namespace IonDotnet.Internals
 
         public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_mySymbolNames);
 
-        private static LocalSymbolTableImports ReadLocalSymbolTableImports(IIonReader reader, bool isOnStruct, out IList<string> symbolList)
+        private static LocalSymbolTableImports ReadLocalSymbolTableImports(IIonReader reader, ICatalog catalog, bool isOnStruct, out IList<string> symbolList)
         {
             IList<ISymbolTable> importList = null;
             symbolList = new List<string>();
@@ -185,32 +190,48 @@ namespace IonDotnet.Internals
 
             // assume that we're standing before a struct
             reader.StepIn();
-            var foundImport = false;
+            bool foundImport = false, foundLocals = false;
             IonType fieldType;
             while ((fieldType = reader.MoveNext()) != IonType.None)
             {
-                if (reader.CurrentIsNull) continue;
+                if (reader.CurrentIsNull)
+                    continue;
 
-                var symtok = reader.GetFieldNameSymbol();
-                if (symtok.Sid == SymbolToken.UnknownSid)
+                var sid = reader.GetFieldNameSymbol().Sid;
+                if (sid == SymbolToken.UnknownSid)
                 {
-                    throw new NotImplementedException();
+                    //user-level symtab
+                    sid = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
                 }
 
-                switch (symtok.Sid)
+                switch (sid)
                 {
                     case SystemSymbols.ImportsSid:
-                        if (importList == null)
+                        if (foundImport)
+                            throw new IonException("Multiple imports field");
+                        foundImport = true;
+                        importList = new List<ISymbolTable>();
+                        if (fieldType == IonType.List)
                         {
-                            importList = new List<ISymbolTable>();
+                            //list of symbol tables to imports
+                            ReadImportList(reader, catalog, importList);
+                        }
+                        else if (fieldType == IonType.Symbol
+                                 && SystemSymbols.IonSymbolTable.Equals(reader.StringValue())
+                                 && reader.GetSymbolTable().IsLocal)
+                        {
+                            //reader has a prev local symtab && current field is imports:$ion_symbol_table
+                            //import the prev table
+                            importList.Add(reader.GetSymbolTable());
                         }
 
-                        //TODO what's next?
                         break;
                     case SystemSymbols.SymbolsSid:
-                        if (foundImport) throw new IonException("Multiple symbols field");
-                        foundImport = true;
-                        if (fieldType != IonType.List) break;
+                        if (foundLocals)
+                            throw new IonException("Multiple symbols field");
+                        foundLocals = true;
+                        if (fieldType != IonType.List)
+                            break;
 
                         ReadSymbolList(reader, symbolList);
                         break;
@@ -229,10 +250,8 @@ namespace IonDotnet.Internals
             while ((type = reader.MoveNext()) != IonType.None)
             {
                 var text = type == IonType.String ? reader.StringValue() : null;
-                if (text == null)
-                {
-                    Console.WriteLine(type);
-                }
+                if (text is null)
+                    throw new IonException("Symbol must be a valid text");
 
                 symbolList.Add(text);
             }
@@ -241,14 +260,125 @@ namespace IonDotnet.Internals
         }
 
         /// <summary>
-        /// Try to read the symbols used in this datagram
+        /// Collect the symbol tables in the reader from the catalog to the import list.
         /// </summary>
-        /// <param name="reader">Datagram reader</param>
-        /// <param name="isOnStruct">Reader is before the $ion_symbol_table struct</param>
-        /// <returns>Local symbol table</returns>
-        public static LocalSymbolTable Read(IIonReader reader, bool isOnStruct)
+        private static void ReadImportList(IIonReader reader, ICatalog catalog, IList<ISymbolTable> importList)
         {
-            var imports = ReadLocalSymbolTableImports(reader, isOnStruct, out var symbolList);
+            /*try to read sth like this
+            imports:[
+                { name:"table1", version:1 },
+                { name:"table2", version:12 }
+            ]
+            */
+            reader.StepIn();
+
+            IonType t;
+            while ((t = reader.MoveNext()) != IonType.None)
+            {
+                if (reader.CurrentIsNull || t != IonType.Struct)
+                    continue;
+                var imported = FindImportedTable(reader, catalog);
+                if (imported is null)
+                    continue;
+                importList.Add(imported);
+            }
+
+            reader.StepOut();
+        }
+
+        /// <summary>
+        /// Read the table name and version and try to find it in the catalog.
+        /// </summary>
+        /// <returns>Null if no such table is found.</returns>
+        private static ISymbolTable FindImportedTable(IIonReader reader, ICatalog catalog)
+        {
+            reader.StepIn();
+
+            IonType t;
+            string name = null;
+            var version = -1;
+            var maxId = -1;
+            while ((t = reader.MoveNext()) != IonType.None)
+            {
+                if (reader.CurrentIsNull)
+                    continue;
+
+                var fieldId = reader.GetFieldNameSymbol().Sid;
+                if (fieldId == SymbolToken.UnknownSid)
+                {
+                    fieldId = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
+                }
+
+
+                switch (fieldId)
+                {
+                    case SystemSymbols.NameSid:
+                        if (t == IonType.String)
+                        {
+                            name = reader.StringValue();
+                        }
+
+                        break;
+                    case SystemSymbols.VersionSid:
+                        if (t == IonType.Int)
+                        {
+                            version = reader.IntValue();
+                        }
+
+                        break;
+                    case SystemSymbols.MaxIdSid:
+                        if (t == IonType.Int)
+                        {
+                            maxId = reader.IntValue();
+                        }
+
+                        break;
+                }
+            }
+
+            reader.StepOut();
+
+            if (string.IsNullOrWhiteSpace(name) || SystemSymbols.Ion.Equals(name))
+                return null;
+
+            if (version < 1)
+            {
+                version = 1;
+            }
+
+            var table = catalog?.GetTable(name, version);
+            if (maxId < 0)
+            {
+                if (table == null || table.Version != version)
+                    throw new IonException($@"Import of shared table {name}/{version} lacks a max_id field, but an exact match is 
+                                                not found in the catalog");
+                maxId = table.MaxId;
+            }
+
+            if (table == null)
+            {
+                throw new NotImplementedException("Substitute symbol table");
+            }
+
+            if (table.Version != version || table.MaxId != maxId)
+            {
+                throw new NotImplementedException("Substitute symbol table");
+            }
+
+            return table;
+        }
+
+        /// <summary>
+        /// Try to read the symbols used in this datagram. The reader is in front of the $ion_symbol_table value.
+        /// <para/> If the new symbol table inherits from the previous one, this new symtab should include all previous symbols.
+        /// </summary>
+        /// <param name="reader">Ion reader.</param>
+        /// <param name="catalog">The catalog used to refer to tables that might be in the reader.</param>
+        /// <param name="isOnStruct">Reader is before the $ion_symbol_table struct.</param>
+        /// <returns>The Local symbol table.</returns>
+        public static LocalSymbolTable Read(IIonReader reader, ICatalog catalog, bool isOnStruct)
+        {
+            var imports = ReadLocalSymbolTableImports(reader, catalog, isOnStruct, out var symbolList);
             return new LocalSymbolTable(imports, symbolList, true);
         }
 

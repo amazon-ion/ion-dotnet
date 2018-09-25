@@ -16,12 +16,13 @@ namespace IonDotnet.Internals
 
         public LocalSymbolTableImports(ISymbolTable systemTable, IList<ISymbolTable> imports)
         {
-            if (!systemTable.IsSystem) throw new ArgumentException("Not a system table", nameof(systemTable));
+            if (!systemTable.IsSystem) 
+                throw new ArgumentException("Not a system table", nameof(systemTable));
 
             var importCounts = imports?.Count ?? 0;
             _imports = new ISymbolTable[importCounts + 1];
             _imports[0] = systemTable;
-            var startIdx = _imports?[0]?.IsSystem == true ? 1 : 0;
+            var startIdx = imports?[0]?.IsSystem == true ? 1 : 0;
 
 
             if (imports != null)
@@ -30,7 +31,8 @@ namespace IonDotnet.Internals
                 for (var i = startIdx; i < importCounts; i++, ii++)
                 {
                     var symtab = imports[i];
-                    if (symtab.IsSystem) throw new IonException("System table cannot be imported");
+                    if (symtab.IsSystem) 
+                        throw new IonException("System table cannot be imported");
 
                     if (symtab is LocalSymbolTable localSymtab)
                     {
@@ -94,7 +96,8 @@ namespace IonDotnet.Internals
             for (var i = 0; i < _imports.Length; i++)
             {
                 var token = _imports[i].Find(text);
-                if (token == default) continue;
+                if (token == default) 
+                    continue;
 
                 return new SymbolToken(text, token.Sid + _baseIds[i]);
             }
@@ -106,13 +109,15 @@ namespace IonDotnet.Internals
 
         public string FindKnownSymbol(int sid)
         {
-            if (sid > MaxId) return null;
+            if (sid > MaxId) 
+                return null;
 
             int i, prevBaseSid = 0;
             for (i = 0; i < _imports.Length; i++)
             {
                 var baseSid = _baseIds[i];
-                if (sid <= baseSid) break;
+                if (sid <= baseSid) 
+                    break;
                 prevBaseSid = baseSid;
             }
 

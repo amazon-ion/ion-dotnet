@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
 using FastExpressionCompiler;
-using IonDotnet.Internals.Binary;
 
 namespace IonDotnet.Bench
 {

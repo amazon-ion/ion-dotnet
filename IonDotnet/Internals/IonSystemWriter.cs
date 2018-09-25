@@ -90,18 +90,33 @@ namespace IonDotnet.Internals
                 return;
             }
 
-            WriteSymbolString(symbol);
+            WriteSymbolString(new SymbolToken(symbol, SymbolToken.UnknownSid));
         }
 
-        protected abstract void WriteSymbolString(string value);
+        public override void WriteSymbolToken(SymbolToken symbolToken)
+        {
+            if (SystemSymbols.Ion10 == symbolToken.Text && GetDepth() == 0 && _annotations.Count == 0)
+            {
+                WriteIonVersionMarker();
+                return;
+            }
+
+            //validate sid
+            if (symbolToken.Sid > SymbolTable.MaxId)
+                throw new UnknownSymbolException(symbolToken.Sid);
+
+            WriteSymbolString(symbolToken);
+        }
+
+        protected abstract void WriteSymbolString(SymbolToken value);
 
         protected abstract void WriteIonVersionMarker(ISymbolTable systemSymtab);
 
         /// <summary>
-        /// Assume that we have a field name text or sid set
+        /// Assume that we have a field name text or sid set.
         /// </summary>
         /// <returns>Field name as <see cref="SymbolToken"/></returns>
-        /// <exception cref="InvalidOperationException">When no field name is set</exception>
+        /// <exception cref="InvalidOperationException">When field name is not set.</exception>
         protected SymbolToken AssumeFieldNameSymbol()
         {
             if (_fieldName == null && _fieldNameSid < 0)

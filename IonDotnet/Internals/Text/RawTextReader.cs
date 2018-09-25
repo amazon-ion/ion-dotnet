@@ -168,6 +168,7 @@ namespace IonDotnet.Internals.Text
             _valueBuffer = new StringBuilder();
             _scanner = new TextScanner(input);
             _eof = false;
+            _valueType = IonType.None;
             _hasNextCalled = false;
             _containerStack = new ContainerStack(this, 6);
             _containerStack.PushContainer(IonType.Datagram);
@@ -259,6 +260,7 @@ namespace IonDotnet.Internals.Text
                         var sym = ParseSymbolToken(_valueBuffer, token);
                         _annotations.Add(sym);
                         ClearValueBuffer();
+                        _scanner.MarkTokenFinished();
                         // Consumed the annotation, move on.
                         // note: that peekDoubleColon() consumed the two colons
                         // so nextToken won't see them

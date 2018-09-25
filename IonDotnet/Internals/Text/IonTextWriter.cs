@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using IonDotnet.Systems;
 using IonDotnet.Utils;
 
@@ -188,9 +185,9 @@ namespace IonDotnet.Internals.Text
             return followingLongString;
         }
 
-        protected override void WriteSymbolString(string value)
+        protected override void WriteSymbolString(SymbolToken value)
         {
-            if (value == null)
+            if (value.Text == null)
             {
                 WriteNull(IonType.Symbol);
                 return;
@@ -198,7 +195,7 @@ namespace IonDotnet.Internals.Text
 
             StartValue();
             //we write all symbol values with single-quote
-            WriteSymbolText(value, SymbolVariant.Quoted);
+            WriteSymbolText(value.Text, SymbolVariant.Quoted);
             CloseValue();
         }
 
@@ -261,7 +258,7 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public override Task FlushAsync() => _textWriter.FlushAsync();
+//        public override Task FlushAsync() => _textWriter.FlushAsync();
         public override void Flush() => _textWriter.Flush();
 
         public override void WriteNull()
@@ -468,10 +465,10 @@ namespace IonDotnet.Internals.Text
 //            _textWriter.Flush();
         }
 
-        public override Task FinishAsync()
-        {
-            throw new NotImplementedException();
-        }
+//        public override Task FinishAsync()
+//        {
+//            throw new NotImplementedException();
+//        }
 
         public override void StepIn(IonType type)
         {

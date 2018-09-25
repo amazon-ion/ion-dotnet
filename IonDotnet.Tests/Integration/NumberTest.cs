@@ -324,7 +324,7 @@ namespace IonDotnet.Tests.Integration
         }
 
         [TestMethod]
-//        [DataRow("good/intBigSize256.10n")]
+        [DataRow("good/intBigSize256.10n")]
         [DataRow("good/intBigSize256.ion")]
         public void IntBigSize256(string fileName)
         {

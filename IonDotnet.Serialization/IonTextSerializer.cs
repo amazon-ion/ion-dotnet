@@ -14,10 +14,12 @@ namespace IonDotnet.Serialization
 
         public string Serialize<T>(T obj, IonTextOptions options, IScalarWriter scalarWriter = null)
         {
-            var sw = new StringWriter();
-            var writer = new IonTextWriter(sw, options);
-            IonSerializationPrivate.WriteObject(writer, obj, scalarWriter);
-            return sw.ToString();
+            using (var sw = new StringWriter())
+            {
+                var writer = new IonTextWriter(sw, options);
+                IonSerializationPrivate.WriteObject(writer, obj, scalarWriter);
+                return sw.ToString();
+            }
         }
 
         public Task SerializeAsync<T>(T obj, Stream stream, IonTextOptions options)
