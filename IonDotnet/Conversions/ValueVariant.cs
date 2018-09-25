@@ -155,48 +155,18 @@ namespace IonDotnet.Conversions
             TypeSet = ScalarType.Null | AuthoritativeType;
         }
 
-        internal void AddValue<T>(T value)
+        internal void AddString(string value)
         {
-            switch (value)
-            {
-                default:
-                    throw new ArgumentOutOfRangeException($"Cannot set type {value.GetType()}");
-                case bool boolValue:
-                    _boolValue = boolValue;
-                    TypeSet |= ScalarType.Bool;
-                    break;
-                case int intValue:
-                    _intValue = intValue;
-                    _longValue = intValue;
-                    _bigIntegerValue = intValue;
-                    TypeSet |= ScalarType.Int;
-                    break;
-                case long longVal:
-                    _longValue = longVal;
-                    _bigIntegerValue = longVal;
-                    TypeSet |= ScalarType.Long;
-                    break;
-                case BigInteger bigInt:
-                    _bigIntegerValue = bigInt;
-                    TypeSet |= ScalarType.BigInteger;
-                    break;
-                case decimal decimalValue:
-                    _decimalValue = decimalValue;
-                    TypeSet |= ScalarType.Decimal;
-                    break;
-                case double doubleVal:
-                    _doubleValue = doubleVal;
-                    TypeSet |= ScalarType.Double;
-                    break;
-                case string stringVal:
-                    _stringValue = stringVal;
-                    TypeSet |= ScalarType.String;
-                    break;
-                case Timestamp timestamp:
-                    _timestampValue = timestamp;
-                    TypeSet |= ScalarType.Timestamp;
-                    break;
-            }
+            _stringValue = value;
+            TypeSet |= ScalarType.String;
+        }
+
+        internal void AddInt(int value)
+        {
+            _intValue = value;
+            _longValue = value;
+            _bigIntegerValue = value;
+            TypeSet |= ScalarType.Int;
         }
 
         public IntegerSize IntegerSize

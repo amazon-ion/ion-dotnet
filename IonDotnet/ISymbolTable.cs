@@ -2,6 +2,7 @@
 
 namespace IonDotnet
 {
+    //TODO do we need thread safety?
     /// <summary>
     /// A symbol table maps symbols between their textual form and an integer ID used in the binary encoding.
     /// </summary>
@@ -102,15 +103,15 @@ namespace IonDotnet
         /// Finds a symbol already interned by this table
         /// </summary>
         /// <param name="text">The symbol text to find.</param>
-        /// <returns>The interned symbol, with both text and SID defined; null if not interned</returns>
+        /// <returns>The interned symbol, with both text and SID defined; or the (null,-1) token if not interned</returns>
         SymbolToken Find(string text);
 
         /// <summary>
         /// Gets the symbol ID associated with a given symbol name
         /// </summary>
         /// <param name="text">Symbol name</param>
-        /// <returns>the id of the requested symbol or <see cref="SymbolToken.UnknownSid"/> if not defined</returns>
-        int FindSymbol(string text);
+        /// <returns>The id of the requested symbol or <see cref="SymbolToken.UnknownSid"/> if not defined.</returns>
+        int FindSymbolId(string text);
 
         /// <summary>
         /// Gets the interned text for a symbol ID

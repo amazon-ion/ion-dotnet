@@ -185,21 +185,26 @@ namespace IonDotnet.Internals.Text
             return followingLongString;
         }
 
-        protected override void WriteSymbolAsText(string text)
+        protected override void WriteSymbolAsIs(SymbolToken symbolToken)
         {
-            if (text is null)
+            if (symbolToken == default)
             {
                 WriteNull(IonType.Symbol);
                 return;
             }
 
             StartValue();
-            //we write all symbol values with single-quote
-            WriteSymbolText(text, SymbolVariant.Quoted);
+            if (symbolToken.Text is null)
+            {
+                WriteSidLiteral(symbolToken.Sid);
+            }
+            else
+            {
+                //we write all symbol values with single-quote
+                WriteSymbolText(symbolToken.Text, SymbolVariant.Quoted);
+            }
             CloseValue();
         }
-
-        protected override void WriteSymbolAsInt(int id) => WriteSidLiteral(id);
 
         protected override void WriteIonVersionMarker(ISymbolTable systemSymtab)
         {

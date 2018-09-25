@@ -90,7 +90,7 @@ namespace IonDotnet.Internals
                 return;
             }
 
-            WriteSymbolAsText(symbol);
+            WriteSymbolAsIs(new SymbolToken(symbol, SymbolToken.UnknownSid));
         }
 
         public override void WriteSymbolToken(SymbolToken symbolToken)
@@ -107,18 +107,10 @@ namespace IonDotnet.Internals
                 return;
             }
 
-            if (symbolToken.Text is null)
-            {
-                WriteSymbolAsInt(symbolToken.Sid);
-                return;
-            }
-
-            WriteSymbolAsText(symbolToken.Text);
+            WriteSymbolAsIs(symbolToken);
         }
 
-        protected abstract void WriteSymbolAsText(string text);
-
-        protected abstract void WriteSymbolAsInt(int id);
+        protected abstract void WriteSymbolAsIs(SymbolToken symbolToken);
 
         protected abstract void WriteIonVersionMarker(ISymbolTable systemSymtab);
 

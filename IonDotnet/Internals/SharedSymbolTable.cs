@@ -91,7 +91,7 @@ namespace IonDotnet.Internals
         public SymbolToken Intern(string text)
         {
             var symtok = Find(text);
-            if (symtok == SymbolToken.None)
+            if (symtok == default)
                 throw new InvalidOperationException("Table is read-only");
             return symtok;
         }
@@ -101,20 +101,20 @@ namespace IonDotnet.Internals
             if (string.IsNullOrEmpty(text))
                 throw new ArgumentNullException(text);
 
-            if (!_symbolsMap.TryGetValue(text, out var sid)) 
-                return SymbolToken.None;
+            if (!_symbolsMap.TryGetValue(text, out var sid))
+                return default;
 
             var internedText = _symbolNames[sid - 1];
             return new SymbolToken(internedText, sid);
         }
 
-        public int FindSymbol(string name)
+        public int FindSymbolId(string name)
             => _symbolsMap.TryGetValue(name, out var sid) ? sid : SymbolToken.UnknownSid;
 
         public string FindKnownSymbol(int sid)
         {
             if (sid < 0)
-                throw new ArgumentException($"Value must be >= 0", nameof(sid));
+                return null;
             var offset = sid - 1;
             return sid != 0 && offset < _symbolNames.Length ? _symbolNames[offset] : null;
         }

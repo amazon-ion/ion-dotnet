@@ -20,7 +20,7 @@ namespace IonDotnet.Tests.Common
             if (duplicate)
                 return;
 
-            Assert.AreEqual(sid, symbolTable.FindSymbol(text));
+            Assert.AreEqual(sid, symbolTable.FindSymbolId(text));
             var token = symbolTable.Find(text);
             Assert.AreEqual(sid, token.Sid);
             Assert.AreEqual(text, token.Text);

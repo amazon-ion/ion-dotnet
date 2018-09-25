@@ -49,7 +49,7 @@ namespace IonDotnet.Internals.Text
                         case IonType.Struct:
                             if (_annotations.Count > 0 && _annotations[0].Text == SystemSymbols.IonSymbolTable)
                             {
-                                _currentSymtab = LocalSymbolTable.Read(this, _catalog, true);
+                                _currentSymtab = ReaderLocalTable.ImportReaderTable(this, _catalog, true);
                                 _hasNextCalled = false;
                             }
 
@@ -64,10 +64,12 @@ namespace IonDotnet.Internals.Text
                                     break;
                                 }
 
+                                //new Ivm found, reset all symbol tables
                                 if (SystemSymbols.Ion10 != version)
                                     throw new UnsupportedIonVersionException(version);
 
-                                //
+                                MoveNext();
+                                _currentSymtab = _systemSymbols;
                                 _hasNextCalled = false;
                             }
 

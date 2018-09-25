@@ -29,7 +29,7 @@ namespace IonDotnet.Internals.Binary
         public abstract SymbolToken Intern(string text);
         public abstract SymbolToken Find(string text);
 
-        public int FindSymbol(string text)
+        public int FindSymbolId(string text)
         {
             var token = Find(text);
             return token == default ? SymbolToken.UnknownSid : token.Sid;

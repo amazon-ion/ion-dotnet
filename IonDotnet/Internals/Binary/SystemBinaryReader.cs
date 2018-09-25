@@ -152,7 +152,7 @@ namespace IonDotnet.Internals.Binary
             var text = _symbolTable.FindKnownSymbol(_v.IntValue);
             if (text == null)
                 throw new UnknownSymbolException(_v.IntValue);
-            _v.AddValue(text);
+            _v.AddString(text);
         }
 
         public override BigInteger BigIntegerValue()
@@ -200,7 +200,8 @@ namespace IonDotnet.Internals.Binary
 
         protected override void OnAnnotation(int annotId)
         {
-            if (_readerRoutine == null) return;
+            if (_readerRoutine == null) 
+                return;
 
             var text = _symbolTable.FindKnownSymbol(annotId);
             if (text == null)
@@ -215,7 +216,8 @@ namespace IonDotnet.Internals.Binary
         {
             get
             {
-                if (_valueFieldId == SymbolToken.UnknownSid) return null;
+                if (_valueFieldId == SymbolToken.UnknownSid) 
+                    return null;
 
                 var name = _symbolTable.FindKnownSymbol(_valueFieldId);
                 if (name == null)
@@ -263,7 +265,8 @@ namespace IonDotnet.Internals.Binary
         {
             if (!_valueType.IsText())
                 throw new InvalidOperationException($"Current value is not text, type {_valueType}");
-            if (_valueIsNull) return null;
+            if (_valueIsNull) 
+                return null;
             PrepareValue();
 
             if (_valueType == IonType.Symbol)
@@ -278,7 +281,8 @@ namespace IonDotnet.Internals.Binary
         {
             if (_valueType != IonType.Symbol)
                 throw new InvalidOperationException($"Current value is of type {_valueType}");
-            if (_valueIsNull) return SymbolToken.None;
+            if (_valueIsNull) 
+                return SymbolToken.None;
 
             LoadSymbolValue();
             return new SymbolToken(_v.StringValue, _v.IntValue);
