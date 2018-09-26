@@ -20,7 +20,7 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonTimestamp NewNull() => new IonTimestamp(true);
 
-        public override bool Equals(IonValue other)
+        public override bool EqualsTo(IonValue other)
         {
             throw new System.NotImplementedException();
         }

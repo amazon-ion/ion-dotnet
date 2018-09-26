@@ -24,7 +24,7 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonSymbol NewNull() => new IonSymbol(true);
 
-        public override bool Equals(IonValue other)
+        public override bool EqualsTo(IonValue other)
         {
             throw new System.NotImplementedException();
         }
@@ -54,7 +54,7 @@ namespace IonDotnet.Tree
 
         public SymbolToken SymbolValue
         {
-            get => new SymbolToken(_stringVal, _sid);
+            get => new SymbolToken(StringVal, _sid);
             set
             {
                 StringValue = value.Text;

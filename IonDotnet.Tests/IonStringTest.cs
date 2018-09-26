@@ -61,17 +61,17 @@ namespace IonDotnet.Tests
             var n = new IonString(null);
             var ionInt = new IonInt(3);
 
-            Assert.IsTrue(v.Equals(v2));
+            Assert.IsTrue(v.EqualsTo(v2));
             if (value is null)
             {
-                Assert.IsTrue(v.Equals(n));
+                Assert.IsTrue(v.EqualsTo(n));
             }
             else
             {
-                Assert.IsFalse(v.Equals(n));
+                Assert.IsFalse(v.EqualsTo(n));
             }
 
-            Assert.IsFalse(v.Equals(ionInt));
+            Assert.IsFalse(v.EqualsTo(ionInt));
         }
     }
 }

@@ -9,12 +9,11 @@ using IonDotnet.Utils;
 
 namespace IonDotnet.Tree
 {
-    /// <inheritdoc />
     /// <summary>
     /// Represents a tree view into Ion data. Each <see cref="T:IonDotnet.Tree.IonValue" /> is a node in the tree. These values are
     /// mutable and strictly hierarchical. 
     /// </summary>
-    public abstract class IonValue : IEquatable<IonValue>
+    public abstract class IonValue
     {
         #region Flags
 
@@ -179,7 +178,7 @@ namespace IonDotnet.Tree
 
         #endregion
 
-        protected List<string> _annotations;
+        private List<string> _annotations;
 
         /// <summary>
         /// Store the field name text and sid.
@@ -245,20 +244,22 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Get or set whether this value is a null value.
         /// </summary>
-        public virtual bool IsNull => NullFlagOn();
+        public bool IsNull => NullFlagOn();
 
+        /// <summary>
+        /// Make this value become a null.
+        /// </summary>
         public virtual void MakeNull()
         {
             ThrowIfLocked();
             NullFlagOn(true);
         }
 
-        /// <inheritdoc />
         /// <summary>
         /// Returns true if this value is equal to the other.
         /// </summary>
         /// <param name="other">The other value.</param>
-        public abstract bool Equals(IonValue other);
+        public abstract bool EqualsTo(IonValue other);
 
         public void WriteTo(IIonWriter writer)
         {

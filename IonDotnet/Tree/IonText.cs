@@ -6,11 +6,11 @@ namespace IonDotnet.Tree
     /// </summary>
     public abstract class IonText : IonValue
     {
-        protected string _stringVal;
+        protected string StringVal;
 
         protected IonText(string text, bool isNull) : base(isNull)
         {
-            _stringVal = text;
+            StringVal = text;
         }
 
         /// <summary>
@@ -18,19 +18,19 @@ namespace IonDotnet.Tree
         /// </summary>
         public virtual string StringValue
         {
-            get => _stringVal;
+            get => StringVal;
             set
             {
                 ThrowIfLocked();
                 NullFlagOn(value is null);
-                _stringVal = value;
+                StringVal = value;
             }
         }
 
         public override void MakeNull()
         {
             base.MakeNull();
-            _stringVal = null;
+            StringVal = null;
         }
     }
 }

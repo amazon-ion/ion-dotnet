@@ -12,14 +12,14 @@ namespace IonDotnet.Tree
         {
         }
 
-        public override bool Equals(IonValue other)
+        public override bool EqualsTo(IonValue other)
         {
             if (!(other is IonString otherString))
                 return false;
-            return _stringVal == otherString._stringVal;
+            return StringVal == otherString.StringVal;
         }
 
-        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(_stringVal);
+        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(StringVal);
 
         public override IonType Type => IonType.String;
     }

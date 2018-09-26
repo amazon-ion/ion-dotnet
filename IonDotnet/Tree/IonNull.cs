@@ -11,7 +11,7 @@ namespace IonDotnet.Tree
         {
         }
 
-        public override bool Equals(IonValue other) => other is IonNull;
+        public override bool EqualsTo(IonValue other) => other is IonNull;
 
         internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteNull();
 

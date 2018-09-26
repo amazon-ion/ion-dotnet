@@ -25,7 +25,7 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonFloat NewNull() => new IonFloat(true);
 
-        public override bool Equals(IonValue other)
+        public override bool EqualsTo(IonValue other)
         {
             if (!(other is IonFloat oFloat))
                 return false;

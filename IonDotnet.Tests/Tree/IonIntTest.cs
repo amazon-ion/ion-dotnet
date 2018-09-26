@@ -112,10 +112,10 @@ namespace IonDotnet.Tests.Tree
 
             void AssertEquals()
             {
-                Assert.IsTrue(v.Equals(vb));
-                Assert.IsTrue(v.Equals(v2));
-                Assert.IsFalse(v.Equals(n));
-                Assert.IsFalse(v.Equals(vd));
+                Assert.IsTrue(v.EqualsTo(vb));
+                Assert.IsTrue(v.EqualsTo(v2));
+                Assert.IsFalse(v.EqualsTo(n));
+                Assert.IsFalse(v.EqualsTo(vd));
             }
 
             AssertEquals();

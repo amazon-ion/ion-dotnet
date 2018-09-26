@@ -26,7 +26,7 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonStruct NewNull() => new IonStruct(true);
 
-        public override bool Equals(IonValue other)
+        public override bool EqualsTo(IonValue other)
         {
             throw new NotImplementedException();
         }
@@ -104,9 +104,25 @@ namespace IonDotnet.Tree
                 return false;
 
             Debug.Assert(item.FieldName != null && _dictionary != null);
-            _dictionary.Remove(item.FieldName);
-            item.Container = null;
-            item.FieldName = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Remove a field from this struct.
+        /// </summary>
+        /// <param name="fieldName">Field name.</param>
+        /// <returns>True if the field was removed, false otherwise.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="fieldName"/> is empty.</exception>
+        public bool RemoveField(string fieldName)
+        {
+            ThrowIfNull();
+            ThrowIfLocked();
+            if (string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentNullException(nameof(fieldName));
+
+            if (!_dictionary.TryGetValue(fieldName, out var item))
+                return false;
+            RemoveUnsafe(fieldName, item);
             return true;
         }
 
@@ -118,15 +134,24 @@ namespace IonDotnet.Tree
         {
             get
             {
+                if (string.IsNullOrWhiteSpace(fieldName))
+                    throw new ArgumentNullException(nameof(fieldName));
                 ThrowIfNull();
                 return _dictionary[fieldName];
             }
             set
             {
+                if (string.IsNullOrWhiteSpace(fieldName))
+                    throw new ArgumentNullException(nameof(fieldName));
                 ThrowIfLocked();
                 ThrowIfNull();
                 if (value.Container != null)
                     throw new ContainedValueException();
+
+                if (_dictionary.TryGetValue(fieldName, out var item))
+                {
+                    RemoveUnsafe(fieldName, item);
+                }
 
                 value.FieldName = fieldName;
                 _dictionary[fieldName] = value;
@@ -135,5 +160,12 @@ namespace IonDotnet.Tree
         }
 
         public override int Count => _dictionary?.Count ?? 0;
+
+        private void RemoveUnsafe(string fieldName, IonValue item)
+        {
+            _dictionary.Remove(fieldName);
+            item.Container = null;
+            item.FieldName = null;
+        }
     }
 }

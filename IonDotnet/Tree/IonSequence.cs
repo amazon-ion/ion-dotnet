@@ -7,13 +7,13 @@ namespace IonDotnet.Tree
 {
     public abstract class IonSequence : IonContainer, IList<IonValue>
     {
-        protected List<IonValue> _children;
+        protected List<IonValue> Children;
 
         protected IonSequence(bool isNull) : base(isNull)
         {
             if (!isNull)
             {
-                _children = new List<IonValue>();
+                Children = new List<IonValue>();
             }
         }
 
@@ -25,10 +25,10 @@ namespace IonDotnet.Tree
                 return;
             }
 
-            Debug.Assert(_children != null);
+            Debug.Assert(Children != null);
 
             writer.StepIn(Type);
-            foreach (var val in _children)
+            foreach (var val in Children)
             {
                 val.WriteTo(writer);
             }
@@ -40,15 +40,15 @@ namespace IonDotnet.Tree
         /// <summary>
         /// The number of children of this container.
         /// </summary>
-        public override int Count => _children?.Count ?? 0;
+        public override int Count => Children?.Count ?? 0;
 
         public int IndexOf(IonValue item)
         {
             if (NullFlagOn())
                 return -1;
 
-            Debug.Assert(_children != null);
-            return _children.IndexOf(item);
+            Debug.Assert(Children != null);
+            return Children.IndexOf(item);
         }
 
         public override void Add(IonValue item)
@@ -58,9 +58,9 @@ namespace IonDotnet.Tree
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
             if (item.Container != null)
-                throw new ContainedValueException();
+                throw new ContainedValueException(item);
 
-            _children.Add(item);
+            Children.Add(item);
             item.Container = this;
         }
 
@@ -76,8 +76,8 @@ namespace IonDotnet.Tree
             if (NullFlagOn() || item?.Container != this)
                 return false;
 
-            Debug.Assert(_children?.Contains(item) == true);
-            _children.Remove(item);
+            Debug.Assert(Children?.Contains(item) == true);
+            Children.Remove(item);
             item.Container = null;
             return true;
         }
@@ -89,21 +89,21 @@ namespace IonDotnet.Tree
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
             if (item.Container != null)
-                throw new ContainedValueException();
+                throw new ContainedValueException(item);
 
             //this will check range
-            _children.Insert(index, item);
+            Children.Insert(index, item);
             item.Container = this;
         }
 
         public void RemoveAt(int index)
         {
             ThrowIfNull();
-            if (index >= _children.Count)
-                throw new IndexOutOfRangeException($"Container has only {_children.Count} children");
+            if (index >= Children.Count)
+                throw new IndexOutOfRangeException($"Container has only {Children.Count} children");
 
             //this will check for lock
-            Remove(_children[index]);
+            Remove(Children[index]);
         }
 
         /// <inheritdoc />
@@ -116,18 +116,18 @@ namespace IonDotnet.Tree
         public override void Clear()
         {
             ThrowIfLocked();
-            if (NullFlagOn() && _children == null)
+            if (NullFlagOn() && Children == null)
             {
-                _children = new List<IonValue>();
+                Children = new List<IonValue>();
             }
 
-            foreach (var child in _children)
+            foreach (var child in Children)
             {
                 child.Container = null;
             }
 
             NullFlagOn(false);
-            _children.Clear();
+            Children.Clear();
         }
 
         public override bool Contains(IonValue item)
@@ -143,20 +143,20 @@ namespace IonDotnet.Tree
             get
             {
                 ThrowIfNull();
-                return _children[index];
+                return Children[index];
             }
             set
             {
                 ThrowIfLocked();
                 ThrowIfNull();
-                _children[index] = value;
+                Children[index] = value;
             }
         }
 
         public override IEnumerator<IonValue> GetEnumerator()
         {
             ThrowIfNull();
-            return _children.GetEnumerator();
+            return Children.GetEnumerator();
         }
     }
 }
