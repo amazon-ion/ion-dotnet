@@ -73,6 +73,7 @@ namespace IonDotnet.Tree
         public override bool Remove(IonValue item)
         {
             ThrowIfLocked();
+            ThrowIfNull();
             if (NullFlagOn() || item?.Container != this)
                 return false;
 

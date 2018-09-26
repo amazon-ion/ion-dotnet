@@ -104,6 +104,7 @@ namespace IonDotnet.Tree
                 return false;
 
             Debug.Assert(item.FieldName != null && _dictionary != null);
+            RemoveUnsafe(item.FieldName, item);
             return true;
         }
 
