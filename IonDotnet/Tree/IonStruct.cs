@@ -26,6 +26,11 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonStruct NewNull() => new IonStruct(true);
 
+        public override bool Equals(IonValue other)
+        {
+            throw new NotImplementedException();
+        }
+
         internal override void WriteBodyTo(IPrivateWriter writer)
         {
             if (NullFlagOn())

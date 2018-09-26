@@ -453,19 +453,22 @@ namespace IonDotnet.Internals.Binary
 
         public override void SetTypeAnnotation(string annotation)
         {
-            if (annotation == default) throw new ArgumentNullException(nameof(annotation));
+            if (annotation == default)
+                throw new ArgumentNullException(nameof(annotation));
 
             _userWriter.ClearAnnotations();
             var token = Intern(annotation);
             _userWriter.AddTypeAnnotationSymbol(token);
         }
 
-        public override void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
+        public override void SetTypeAnnotations(IEnumerable<string> annotations)
         {
-            if (annotations == null) throw new ArgumentNullException(nameof(annotations));
+            if (annotations == null)
+                throw new ArgumentNullException(nameof(annotations));
+            _userWriter.ClearAnnotations();
             foreach (var annotation in annotations)
             {
-                var token = InternSymbol(annotation);
+                var token = Intern(annotation);
                 _userWriter.AddTypeAnnotationSymbol(token);
             }
         }

@@ -13,6 +13,12 @@ namespace IonDotnet.Tree
         {
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Use strict reference equality for datagram.
+        /// </summary>
+        public override bool Equals(IonValue other) => other == this;
+
         public override IonType Type => IonType.Datagram;
 
         public override IonContainer Container

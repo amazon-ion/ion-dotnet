@@ -15,6 +15,11 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonList NewNull() => new IonList(true);
 
+        public override bool Equals(IonValue other)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public override IonType Type => IonType.List;
     }
 }

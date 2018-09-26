@@ -90,6 +90,6 @@ namespace IonDotnet
         /// Set the annotations of the current value
         /// </summary>
         /// <param name="annotations">Set of annotations</param>
-        void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations);
+        void SetTypeAnnotations(IEnumerable<string> annotations);
     }
 }

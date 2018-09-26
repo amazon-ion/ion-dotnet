@@ -153,7 +153,7 @@ namespace IonDotnet.Internals
         public abstract void StepIn(IonType type);
         public abstract void StepOut();
         public abstract bool IsInStruct { get; }
-        public abstract void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations);
+        public abstract void SetTypeAnnotations(IEnumerable<string> annotations);
         public abstract bool IsFieldNameSet();
         public abstract int GetDepth();
         public abstract void WriteIonVersionMarker();

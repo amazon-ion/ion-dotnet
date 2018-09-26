@@ -12,6 +12,17 @@ namespace IonDotnet.Tree
             BoolTrueFlagOn(value);
         }
 
+        public override bool Equals(IonValue other)
+        {
+            if (!(other is IonBool otherBool))
+                return false;
+
+            if (NullFlagOn())
+                return otherBool.IsNull;
+
+            return !otherBool.IsNull && otherBool.Value == Value;
+        }
+
         internal override void WriteBodyTo(IPrivateWriter writer)
         {
             if (NullFlagOn())
@@ -35,8 +46,8 @@ namespace IonDotnet.Tree
             }
             set
             {
-                //this will do the read-only check
-                IsNull = false;
+                ThrowIfLocked();
+                NullFlagOn(false);
                 BoolTrueFlagOn(value);
             }
         }
@@ -46,7 +57,8 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonBool NewNull()
         {
-            var v = new IonBool(false) {IsNull = true};
+            var v = new IonBool(false);
+            v.MakeNull();
             return v;
         }
     }

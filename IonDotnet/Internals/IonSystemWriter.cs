@@ -51,12 +51,12 @@ namespace IonDotnet.Internals
             _annotations.Add(symtok);
         }
 
-        public override void SetTypeAnnotationSymbols(IEnumerable<SymbolToken> annotations)
+        public override void SetTypeAnnotations(IEnumerable<string> annotations)
         {
             _annotations.Clear();
             foreach (var annotation in annotations)
             {
-                var a = Symbols.Localize(_symbolTable, annotation);
+                var a = Symbols.Localize(_symbolTable, new SymbolToken(annotation, SymbolToken.UnknownSid));
 
                 _annotations.Add(a);
             }

@@ -23,6 +23,11 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonFloat NewNull() => new IonFloat(true);
 
+        public override bool Equals(IonValue other)
+        {
+            throw new System.NotImplementedException();
+        }
+
         internal override void WriteBodyTo(IPrivateWriter writer)
         {
             if (NullFlagOn())

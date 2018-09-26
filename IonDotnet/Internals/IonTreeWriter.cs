@@ -205,7 +205,7 @@ namespace IonDotnet.Internals
                 value.ClearAnnotations();
                 foreach (var annotation in _annotations)
                 {
-                    value.AddTypeAnnotation(annotation);
+                    value.AddTypeAnnotation(annotation.Text);
                 }
 
                 _annotations.Clear();

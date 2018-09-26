@@ -40,17 +40,10 @@ namespace IonDotnet.Tree
             NullFlagOn(false);
         }
 
-        public override bool IsNull
+        public override void MakeNull()
         {
-            get => base.IsNull;
-            set
-            {
-                base.IsNull = value;
-                if (value)
-                {
-                    _bytes = null;
-                }
-            }
+            base.MakeNull();
+            _bytes = null;
         }
     }
 }
