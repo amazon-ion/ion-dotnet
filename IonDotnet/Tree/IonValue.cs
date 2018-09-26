@@ -284,14 +284,14 @@ namespace IonDotnet.Tree
         /// </summary>
         internal abstract void WriteBodyTo(IPrivateWriter writer);
 
-        /// <summary>
-        /// Create a new instance of this Ion value with the same value but does not share the container context.
-        /// </summary>
-        /// <returns>A clone of this Ion value instance.</returns>
-        public IonValue Clone()
-        {
-            throw new NotImplementedException();
-        }
+//        /// <summary>
+//        /// Create a new instance of this Ion value with the same value but does not share the container context.
+//        /// </summary>
+//        /// <returns>A clone of this Ion value instance.</returns>
+//        public IonValue Clone()
+//        {
+//            throw new NotImplementedException();
+//        }
 
         public bool IsReadOnly => LockedFlagOn();
 

@@ -18,12 +18,12 @@ namespace IonDotnet.Tree
 
         public IonInt(long value) : base(false)
         {
-            _longValue = value;
+            LongValue = value;
         }
-        
+
         public IonInt(BigInteger value) : base(false)
         {
-            _bigInteger = value;
+            BigIntegerValue = value;
         }
 
         private IonInt(bool isNull) : base(isNull)
@@ -37,7 +37,25 @@ namespace IonDotnet.Tree
 
         public override bool Equals(IonValue other)
         {
-            throw new NotImplementedException();
+            if (!(other is IonInt oInt))
+                return false;
+            if (NullFlagOn())
+                return oInt.IsNull;
+            if (oInt.IsNull)
+                return false;
+            if (oInt.IntegerSize != IntegerSize)
+                return false;
+            switch (IntegerSize)
+            {
+                case IntegerSize.Int:
+                    return IntValue == oInt.IntValue;
+                case IntegerSize.Long:
+                    return LongValue == oInt.LongValue;
+                case IntegerSize.BigInteger:
+                    return BigIntegerValue == oInt.BigIntegerValue;
+                default:
+                    return false;
+            }
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
@@ -62,8 +80,8 @@ namespace IonDotnet.Tree
             get
             {
                 ThrowIfNull();
-                if (IntSize != IntegerSize.Int)
-                    throw new OverflowException($"Size of this {nameof(IonInt)} is {IntSize}");
+                if (IntegerSize != IntegerSize.Int)
+                    throw new OverflowException($"Size of this {nameof(IonInt)} is {IntegerSize}");
                 return (int) _longValue;
             }
             set => LongValue = value;
@@ -75,7 +93,7 @@ namespace IonDotnet.Tree
             {
                 ThrowIfNull();
                 if (_bigInteger != null)
-                    throw new OverflowException($"Size of this {nameof(IonInt)} is {IntSize}");
+                    throw new OverflowException($"Size of this {nameof(IonInt)} is {IntegerSize}");
 
                 return _longValue;
             }
@@ -100,7 +118,7 @@ namespace IonDotnet.Tree
             {
                 ThrowIfLocked();
                 NullFlagOn(false);
-                if (value >= long.MinValue || value <= long.MaxValue)
+                if (value >= long.MinValue && value <= long.MaxValue)
                 {
                     LongValue = (long) value;
                     return;
@@ -112,7 +130,7 @@ namespace IonDotnet.Tree
             }
         }
 
-        public IntegerSize IntSize
+        public IntegerSize IntegerSize
         {
             get
             {
