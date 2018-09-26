@@ -256,10 +256,14 @@ namespace IonDotnet.Tree
         }
 
         /// <summary>
-        /// Returns true if this value is equal to the other.
+        /// Returns true if this value is equivalent to the other, false otherwise.
         /// </summary>
         /// <param name="other">The other value.</param>
-        public abstract bool EqualsTo(IonValue other);
+        /// <remarks>
+        /// Equivalency is determined by whether the <see cref="IonValue"/> objects hold equal values, or 
+        /// in the case of container, they contain equivalent sets of children.
+        /// </remarks>
+        public abstract bool IsEquivalentTo(IonValue other);
 
         public void WriteTo(IIonWriter writer)
         {

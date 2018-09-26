@@ -35,7 +35,7 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonInt NewNull() => new IonInt(true);
 
-        public override bool EqualsTo(IonValue other)
+        public override bool IsEquivalentTo(IonValue other)
         {
             if (!(other is IonInt oInt))
                 return false;

@@ -4,7 +4,7 @@ namespace IonDotnet.Tree
 {
     public sealed class IonBlob : IonLob
     {
-        public override bool EqualsTo(IonValue other)
+        public override bool IsEquivalentTo(IonValue other)
         {
             throw new System.NotImplementedException();
         }

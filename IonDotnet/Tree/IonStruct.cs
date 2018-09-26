@@ -26,9 +26,24 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonStruct NewNull() => new IonStruct(true);
 
-        public override bool EqualsTo(IonValue other)
+        public override bool IsEquivalentTo(IonValue other)
         {
-            throw new NotImplementedException();
+            if (!(other is IonStruct otherStruct))
+                return false;
+            if (NullFlagOn())
+                return other.IsNull;
+            if (other.IsNull || otherStruct.Count != Count)
+                return false;
+
+            foreach (var thisKvp in _dictionary)
+            {
+                if (!otherStruct._dictionary.TryGetValue(thisKvp.Key, out var otherValue))
+                    return false;
+                if (!otherValue.IsEquivalentTo(thisKvp.Value))
+                    return false;
+            }
+
+            return true;
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
@@ -72,13 +87,11 @@ namespace IonDotnet.Tree
 
         public override bool Contains(IonValue item)
         {
-            if (item == null)
-                throw new ArgumentNullException(nameof(item));
+            if (NullFlagOn() || item is null)
+                return false;
 
-            ThrowIfNull();
             Debug.Assert(_dictionary != null);
-
-            return _dictionary.ContainsValue(item);
+            return item.Container == this;
         }
 
         public override IEnumerator<IonValue> GetEnumerator()

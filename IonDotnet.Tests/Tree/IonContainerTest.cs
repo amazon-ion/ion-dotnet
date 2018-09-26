@@ -25,6 +25,7 @@ namespace IonDotnet.Tests.Tree
             var n = MakeNullValue();
             Assert.AreEqual(v.Type, n.Type);
             Assert.IsTrue(n.IsNull);
+            Assert.AreEqual(0, n.Count);
             Assert.IsFalse(v.IsNull);
             Assert.ThrowsException<NullValueException>(() => DoAdd(n, v));
             if (n is IonSequence s)
@@ -46,6 +47,7 @@ namespace IonDotnet.Tests.Tree
             v.MakeReadOnly();
             Assert.IsTrue(v.IsReadOnly);
             Assert.ThrowsException<InvalidOperationException>(() => DoAdd(v, MakeNullValue()));
+            Assert.ThrowsException<InvalidOperationException>(() => v.Remove(MakeNullValue()));
         }
 
         [DataRow(0)]
@@ -74,6 +76,32 @@ namespace IonDotnet.Tests.Tree
 
             //clear
             v.Clear();
+            foreach (var c in list)
+            {
+                Assert.IsFalse(v.Contains(c));
+                Assert.IsNull(c.Container);
+            }
+        }
+
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(10)]
+        [DataRow(100)]
+        [TestMethod]
+        public void MakeNull_ClearChildren(int count)
+        {
+            var v = (IonContainer) MakeMutableValue();
+            var list = new List<IonValue>();
+            Assert.AreEqual(0, v.Count);
+            for (var i = 0; i < count; i++)
+            {
+                var c = MakeMutableValue();
+                list.Add(c);
+                DoAdd(v, c);
+            }
+
+            v.MakeNull();
+            Assert.IsTrue(v.IsNull);
             foreach (var c in list)
             {
                 Assert.IsFalse(v.Contains(c));

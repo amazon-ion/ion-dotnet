@@ -65,12 +65,12 @@ namespace IonDotnet.Tests.Tree
             var n2 = IonFloat.NewNull();
             var intVal = new IonInt(3);
 
-            Assert.IsFalse(v.EqualsTo(n));
-            Assert.IsFalse(n.EqualsTo(v));
-            Assert.IsTrue(v.EqualsTo(v2));
-            Assert.IsFalse(v.EqualsTo(vd));
-            Assert.IsFalse(v.EqualsTo(intVal));
-            Assert.IsTrue(n.EqualsTo(n2));
+            Assert.IsFalse(v.IsEquivalentTo(n));
+            Assert.IsFalse(n.IsEquivalentTo(v));
+            Assert.IsTrue(v.IsEquivalentTo(v2));
+            Assert.IsFalse(v.IsEquivalentTo(vd));
+            Assert.IsFalse(v.IsEquivalentTo(intVal));
+            Assert.IsTrue(n.IsEquivalentTo(n2));
         }
     }
 }

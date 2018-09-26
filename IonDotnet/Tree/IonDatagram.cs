@@ -17,7 +17,7 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Use strict reference equality for datagram.
         /// </summary>
-        public override bool EqualsTo(IonValue other) => other == this;
+        public override bool IsEquivalentTo(IonValue other) => other == this;
 
         public override IonType Type => IonType.Datagram;
 

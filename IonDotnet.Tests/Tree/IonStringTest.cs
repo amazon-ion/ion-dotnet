@@ -1,9 +1,8 @@
 using System;
-using IonDotnet.Tests.Tree;
 using IonDotnet.Tree;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests
+namespace IonDotnet.Tests.Tree
 {
     [TestClass]
     public class IonStringTest : TreeTestBase
@@ -61,17 +60,17 @@ namespace IonDotnet.Tests
             var n = new IonString(null);
             var ionInt = new IonInt(3);
 
-            Assert.IsTrue(v.EqualsTo(v2));
+            Assert.IsTrue(v.IsEquivalentTo(v2));
             if (value is null)
             {
-                Assert.IsTrue(v.EqualsTo(n));
+                Assert.IsTrue(v.IsEquivalentTo(n));
             }
             else
             {
-                Assert.IsFalse(v.EqualsTo(n));
+                Assert.IsFalse(v.IsEquivalentTo(n));
             }
 
-            Assert.IsFalse(v.EqualsTo(ionInt));
+            Assert.IsFalse(v.IsEquivalentTo(ionInt));
         }
     }
 }

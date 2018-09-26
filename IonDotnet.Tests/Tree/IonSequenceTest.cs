@@ -73,5 +73,42 @@ namespace IonDotnet.Tests.Tree
             Assert.AreEqual(count - 1, v.Count);
             Assert.IsNull(r.Container);
         }
+
+        [TestMethod]
+        public void SequenceEquality_True()
+        {
+            var s1 = BuildFlatSequence(1, 10);
+            var s2 = BuildFlatSequence(1, 10);
+            Assert.IsTrue(s1.IsEquivalentTo(s2));
+
+            var n1 = MakeNullValue();
+            var n2 = MakeNullValue();
+            Assert.IsTrue(n1.IsEquivalentTo(n2));
+        }
+
+        [TestMethod]
+        public void SequenceEquality_False()
+        {
+            var s1 = BuildFlatSequence(1, 10);
+            var s2 = BuildFlatSequence(1, 9);
+            Assert.IsFalse(s1.IsEquivalentTo(s2));
+            s2.Add(new IonBool(true));
+            Assert.IsFalse(s1.IsEquivalentTo(s2));
+
+            var n = MakeNullValue();
+            Assert.IsFalse(s1.IsEquivalentTo(n));
+            Assert.IsFalse(n.IsEquivalentTo(s1));
+        }
+
+        private IonSequence BuildFlatSequence(int start, int count)
+        {
+            var s = (IonSequence) MakeMutableValue();
+            for (var i = 0; i < count; i++)
+            {
+                s.Add(new IonInt(start + i));
+            }
+
+            return s;
+        }
     }
 }

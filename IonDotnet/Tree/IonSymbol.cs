@@ -24,7 +24,7 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonSymbol NewNull() => new IonSymbol(true);
 
-        public override bool EqualsTo(IonValue other)
+        public override bool IsEquivalentTo(IonValue other)
         {
             throw new System.NotImplementedException();
         }

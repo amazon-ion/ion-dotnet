@@ -61,6 +61,12 @@ namespace IonDotnet.Tree
         /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         public void CopyTo(IonValue[] array, int arrayIndex) => throw new NotSupportedException();
 
+        public override void MakeNull()
+        {
+            Clear();
+            base.MakeNull();
+        }
+
         public abstract IEnumerator<IonValue> GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

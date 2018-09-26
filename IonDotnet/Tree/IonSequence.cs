@@ -55,7 +55,7 @@ namespace IonDotnet.Tree
         {
             ThrowIfLocked();
             ThrowIfNull();
-            if (item == null)
+            if (item is null)
                 throw new ArgumentNullException(nameof(item));
             if (item.Container != null)
                 throw new ContainedValueException(item);
@@ -105,6 +105,26 @@ namespace IonDotnet.Tree
 
             //this will check for lock
             Remove(Children[index]);
+        }
+
+        public override bool IsEquivalentTo(IonValue other)
+        {
+            if (other.Type != Type)
+                return false;
+
+            var otherSeq = (IonSequence) other;
+            if (NullFlagOn())
+                return otherSeq.IsNull;
+            if (otherSeq.IsNull || otherSeq.Count != Count)
+                return false;
+
+            for (int i = 0, l = Count; i < l; i++)
+            {
+                if (!Children[i].IsEquivalentTo(otherSeq.Children[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
