@@ -3,7 +3,11 @@ using System.Diagnostics;
 
 namespace IonDotnet
 {
-    public readonly struct Timestamp
+    /// <inheritdoc cref="IEquatable{T}" />
+    /// <summary>
+    /// This structure represents a timestamp value.
+    /// </summary>
+    public readonly struct Timestamp : IEquatable<Timestamp>
     {
         private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
@@ -133,7 +137,7 @@ namespace IonDotnet
             //TODO can this go wrong?
             const string minusZero = "-00:00";
             var endsWithMinusZero = false;
-            var offsetKnown = s.IndexOfAny(offsetSeparators) > 0;
+            var offsetKnown = s.IndexOfAny(OffsetSeparators) > 0;
             if (!offsetKnown)
             {
                 if (s.EndsWith(minusZero))
@@ -164,13 +168,38 @@ namespace IonDotnet
             return new Timestamp(dt);
         }
 
-        private static readonly char[] offsetSeparators = { 'Z', 'z', '+' };
+        private static readonly char[] OffsetSeparators = {'Z', 'z', '+'};
 
         public override string ToString()
         {
             return DateTimeValue.Kind == DateTimeKind.Unspecified
                 ? DateTimeValue.ToString("O")
                 : AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        //override stuffs
+
+        public static bool operator ==(Timestamp x, Timestamp y) => x.DateTimeValue.Equals(y.DateTimeValue) && x.LocalOffset == y.LocalOffset;
+
+        public static bool operator !=(Timestamp x, Timestamp y) => !(x == y);
+
+        public bool Equals(Timestamp other)
+        {
+            return this == other;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is Timestamp other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (DateTimeValue.GetHashCode() * 397) ^ LocalOffset;
+            }
         }
     }
 }
