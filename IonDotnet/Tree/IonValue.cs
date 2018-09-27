@@ -10,7 +10,7 @@ using IonDotnet.Utils;
 namespace IonDotnet.Tree
 {
     /// <summary>
-    /// Represents a tree view into Ion data. Each <see cref="T:IonDotnet.Tree.IonValue" /> is a node in the tree. These values are
+    /// Represents a tree view into Ion data. Each <see cref="IonValue" /> is a node in the tree. These values are
     /// mutable and strictly hierarchical. 
     /// </summary>
     public abstract class IonValue
@@ -210,6 +210,10 @@ namespace IonDotnet.Tree
             return _annotations;
         }
 
+        /// <summary>
+        /// Add an annotation to this value.
+        /// </summary>
+        /// <param name="annotation">Annotation text.</param>
         public void AddTypeAnnotation(string annotation)
         {
             ThrowIfLocked();
@@ -222,6 +226,9 @@ namespace IonDotnet.Tree
             _annotations.Add(annotation);
         }
 
+        /// <summary>
+        /// Clear all annotations of this value.
+        /// </summary>
         public void ClearAnnotations()
         {
             ThrowIfLocked();
