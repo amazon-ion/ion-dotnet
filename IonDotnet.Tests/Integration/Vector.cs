@@ -58,7 +58,7 @@ namespace IonDotnet.Tests.Integration
         public static string TestCaseName(MethodInfo methodInfo, object[] data)
         {
             var fileFullName = ((FileInfo) data[0]).FullName;
-            var testDirIdx = fileFullName.IndexOf(IonTestDir.FullName, StringComparison.InvariantCulture);
+            var testDirIdx = fileFullName.IndexOf(IonTestDir.FullName, StringComparison.OrdinalIgnoreCase);
             return fileFullName.Substring(testDirIdx + IonTestDir.FullName.Length);
         }
 
