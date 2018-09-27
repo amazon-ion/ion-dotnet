@@ -7,7 +7,7 @@ namespace IonDotnet.Tree
 {
     /// <inheritdoc cref="IonContainer" />
     /// <summary>
-    /// Base class for List and Sexp values.
+    /// A container that is a sequence of values.
     /// </summary>
     public abstract class IonSequence : IonContainer, IList<IonValue>
     {

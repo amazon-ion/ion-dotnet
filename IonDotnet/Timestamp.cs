@@ -176,7 +176,7 @@ namespace IonDotnet
                 ? DateTimeValue.ToString("O")
                 : AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
         }
-
+        
         //override stuffs
 
         public static bool operator ==(Timestamp x, Timestamp y) => x.DateTimeValue.Equals(y.DateTimeValue) && x.LocalOffset == y.LocalOffset;

@@ -4,6 +4,7 @@ using System.Diagnostics;
 
 namespace IonDotnet.Tree
 {
+    /// <inheritdoc />
     /// <summary>
     /// An ion datagram is a special kind of value which represents a stream of Ion values.
     /// </summary>
