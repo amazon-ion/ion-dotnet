@@ -1,5 +1,9 @@
 namespace IonDotnet.Tree
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// A Ion List value.
+    /// </summary>
     public sealed class IonList : IonSequence
     {
         public IonList() : this(false)

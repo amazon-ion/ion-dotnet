@@ -110,7 +110,7 @@ namespace IonDotnet.Tests.Tree
             s2.RemoveField("field10");
             s2["field10"] = new IonInt(10);
             Assert.IsTrue(s1.IsEquivalentTo(s2));
-            
+                
             //different field name
             s2.RemoveField("field10");
             s2["another"] = new IonInt(10);

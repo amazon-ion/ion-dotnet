@@ -3,15 +3,19 @@ using System.Diagnostics;
 
 namespace IonDotnet.Tree
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// A value that holds a blob of byte data.
+    /// </summary>
     public abstract class IonLob : IonValue
     {
-        private byte[] _bytes;
+        protected byte[] ByteBuffer;
 
         protected IonLob() : base(true)
         {
         }
 
-        protected IonLob(Span<byte> bytes) : base(false)
+        protected IonLob(ReadOnlySpan<byte> bytes) : base(false)
         {
             SetBytes(bytes);
         }
@@ -24,26 +28,27 @@ namespace IonDotnet.Tree
         public ReadOnlySpan<byte> Bytes()
         {
             ThrowIfNull();
-            Debug.Assert(_bytes != null);
-            return _bytes.AsSpan();
+            Debug.Assert(ByteBuffer != null);
+            return ByteBuffer.AsSpan();
         }
 
         /// <summary>
         /// Copy the bytes from the buffer to this lob.
         /// </summary>
         /// <param name="buffer">Byte buffer</param>
-        public void SetBytes(Span<byte> buffer)
+        public void SetBytes(ReadOnlySpan<byte> buffer)
         {
+            ThrowIfLocked();
             //this is bad but this operation is pretty non-common.
-            Array.Resize(ref _bytes, buffer.Length);
-            buffer.CopyTo(_bytes);
+            Array.Resize(ref ByteBuffer, buffer.Length);
+            buffer.CopyTo(ByteBuffer);
             NullFlagOn(false);
         }
 
         public override void MakeNull()
         {
             base.MakeNull();
-            _bytes = null;
+            ByteBuffer = null;
         }
     }
 }
