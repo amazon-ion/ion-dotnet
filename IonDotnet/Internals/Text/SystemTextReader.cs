@@ -49,8 +49,8 @@ namespace IonDotnet.Internals.Text
             {
                 var negative = _valueBuffer[0] == '-';
                 var pos = negative ? 1 : 0;
-                Debug.Assert(_valueBuffer[1] == '0');
-                Debug.Assert(char.ToLower(_valueBuffer[2]) == 'b');
+                Debug.Assert(_valueBuffer[negative ? 1 : 0] == '0');
+                Debug.Assert(char.ToLower(_valueBuffer[negative ? 2 : 1]) == 'b');
                 //delete '0b'
                 //TODO is there a better way?
                 _valueBuffer.Remove(pos, 2);

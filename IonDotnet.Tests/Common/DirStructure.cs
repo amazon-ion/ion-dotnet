@@ -24,7 +24,7 @@ namespace IonDotnet.Tests.Common
         }
 
         // ion-tests/iontestdata/
-        private static DirectoryInfo IonTestDir()
+        public static DirectoryInfo IonTestDir()
         {
             var root = GetRootDir();
             return new DirectoryInfo(Path.Combine(

@@ -9,7 +9,7 @@ namespace IonDotnet.Systems
     public class IonLoader
     {
         /// <summary>
-        /// Get the default loader.
+        /// The default Ion loader without any catalog.
         /// </summary>
         public static readonly IonLoader Default = new IonLoader();
 
@@ -66,13 +66,9 @@ namespace IonDotnet.Systems
                     var datagram = Load(stream);
                     return datagram;
                 }
-                catch (IOException ioException)
+                catch (Exception e)
                 {
-                    exception = ioException;
-                }
-                catch (IonException ionException)
-                {
-                    exception = ionException;
+                    exception = e;
                 }
             }
 
