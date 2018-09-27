@@ -58,23 +58,11 @@ namespace IonDotnet.Systems
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(FileInfo ionFile)
         {
-            Exception exception;
             using (var stream = ionFile.OpenRead())
             {
-                try
-                {
-                    var datagram = Load(stream);
-                    return datagram;
-                }
-                catch (Exception e)
-                {
-                    exception = e;
-                }
+                var datagram = Load(stream);
+                return datagram;
             }
-
-            throw exception is IonException ionEx
-                ? ionEx
-                : new IonException(exception);
         }
 
         private static IonDatagram WriteDatagram(IIonReader reader)
