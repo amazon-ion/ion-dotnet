@@ -419,7 +419,7 @@ namespace IonDotnet.Internals.Text
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
                 case TextConstants.TokenStringTripleQuote:
-                    SkipTripleQuotedString();
+                    SkipTripleQuotedString(CommentStrategy.Ignore);
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
 
@@ -504,9 +504,42 @@ namespace IonDotnet.Internals.Text
 
         public void SkipOverSexp() => SkipOverContainer(')');
 
-        private void SkipTripleQuotedString()
+        private void SkipTripleQuotedString(CommentStrategy commentStrategy)
         {
-            throw new NotImplementedException();
+            while (true)
+            {
+                var c = ReadChar();
+                switch (c)
+                {
+                    case -1:
+                        throw new UnexpectedEofException();
+                    case '\\':
+                        ReadChar();
+                        break;
+                    case '\'':
+                        c = ReadChar();
+                        if (c == '\'') // the 2nd '
+                        {
+                            c = ReadChar();
+                            if (c == ReadChar()) //the 3rd
+                            {
+                                c = SkipOverWhiteSpace(commentStrategy);
+                                if (c == '\'' && Is2SingleQuotes())
+                                {
+                                    //the next segment is triple quoted, continue to skip
+                                    break;
+                                }
+
+                                //otherwise unread that char and return
+                                MarkTokenFinished();
+                                UnreadChar(c);
+                                return;
+                            }
+                        }
+
+                        break;
+                }
+            }
         }
 
         public void SkipOverList() => SkipOverContainer(']');
@@ -535,7 +568,7 @@ namespace IonDotnet.Internals.Text
                     case '\'':
                         if (Is2SingleQuotes())
                         {
-                            SkipTripleQuotedString();
+                            SkipTripleQuotedString(CommentStrategy.Ignore);
                         }
                         else
                         {
@@ -605,7 +638,7 @@ namespace IonDotnet.Internals.Text
                     SkipClobClosePunctuation();
                     break;
                 case TextConstants.TokenStringTripleQuote:
-                    SkipTripleQuotedString();
+                    SkipTripleQuotedString(CommentStrategy.Error);
                     SkipClobClosePunctuation();
                     break;
                 case TextConstants.TokenOpenDoubleBrace:
@@ -1039,7 +1072,7 @@ namespace IonDotnet.Internals.Text
                         continue;
                     case -1:
                     case '\'':
-                        UnreadChar(c);
+                        MarkTokenFinished();
                         return c;
                     case CharacterSequence.CharSeqNewlineSequence1:
                     case CharacterSequence.CharSeqNewlineSequence2:

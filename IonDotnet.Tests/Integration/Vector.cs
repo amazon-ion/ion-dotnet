@@ -78,6 +78,12 @@ namespace IonDotnet.Tests.Integration
         [DynamicData(nameof(GoodNonEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadGood_Successful(FileInfo fi)
         {
+            //this is for debugging the interested file
+            if (fi.Name == "annotationQuotedFalse.ion")
+            {
+                Console.Write("");
+            }
+
             IonLoader.Default.Load(fi);
         }
 

@@ -151,7 +151,8 @@ namespace IonDotnet.Internals
                     c = new IonList();
                     break;
                 case IonType.Sexp:
-                    throw new NotImplementedException();
+                    c = new IonSexp();
+                    break;
                 case IonType.Struct:
                     c = new IonStruct();
                     break;
