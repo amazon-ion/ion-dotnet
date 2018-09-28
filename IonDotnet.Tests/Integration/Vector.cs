@@ -20,6 +20,11 @@ namespace IonDotnet.Tests.Integration
     [TestClass]
     public class Vector
     {
+        private static readonly HashSet<string> Excludes = new HashSet<string>
+        {
+            "subfieldVarInt.ion"
+        };
+
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
         private static readonly DirectoryInfo GoodDir = IonTestDir.GetDirectories("good").First();
         private static readonly DirectoryInfo GoodTimestampDir = IonTestDir.GetDirectories("good/timestamp").First();
@@ -27,12 +32,12 @@ namespace IonDotnet.Tests.Integration
         private static readonly DirectoryInfo GoodNonEquivDir = IonTestDir.GetDirectories("good/non-equivs").First();
 
         private static IEnumerable<FileInfo> GetIonFiles(DirectoryInfo dirInfo)
-            => dirInfo.GetFiles().Where(f => f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n"));
+            => dirInfo.GetFiles().Where(f => !Excludes.Contains(f.Name) && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
         {
             return GetIonFiles(GoodDir)
-//                .Skip(60)
+//                .Skip(119)
 //                .Take(1)
                 .Select(f => new[] {f});
         }

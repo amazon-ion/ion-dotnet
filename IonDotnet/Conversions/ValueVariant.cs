@@ -124,8 +124,6 @@ namespace IonDotnet.Conversions
         {
             switch (ionType)
             {
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(ionType));
                 case IonType.Int:
                     AuthoritativeType = ScalarType.Int;
                     break;

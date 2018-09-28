@@ -41,7 +41,8 @@ namespace IonDotnet.Internals
                     v = IonFloat.NewNull();
                     break;
                 case IonType.Decimal:
-                    throw new NotImplementedException();
+                    v = IonDecimal.NewNull();
+                    break;
                 case IonType.Timestamp:
                     v = IonTimestamp.NewNull();
                     break;
@@ -52,14 +53,17 @@ namespace IonDotnet.Internals
                     v = new IonString(null);
                     break;
                 case IonType.Clob:
-                    throw new NotImplementedException();
+                    v = IonClob.NewNull();
+                    break;
                 case IonType.Blob:
-                    throw new NotImplementedException();
+                    v = IonBlob.NewNull();
+                    break;
                 case IonType.List:
                     v = IonList.NewNull();
                     break;
                 case IonType.Sexp:
-                    throw new NotImplementedException();
+                    v = IonSexp.NewNull();
+                    break;
                 case IonType.Struct:
                     v = IonStruct.NewNull();
                     break;
@@ -96,12 +100,14 @@ namespace IonDotnet.Internals
 
         public override void WriteDecimal(decimal value)
         {
-            throw new NotImplementedException();
+            var v = new IonDecimal(value);
+            AppendValue(v);
         }
 
         public override void WriteTimestamp(Timestamp value)
         {
-            throw new NotImplementedException();
+            var v = new IonTimestamp(value);
+            AppendValue(v);
         }
 
         public override void WriteString(string value)
@@ -112,12 +118,12 @@ namespace IonDotnet.Internals
 
         public override void WriteBlob(ReadOnlySpan<byte> value)
         {
-            throw new NotImplementedException();
+            AppendValue(new IonBlob(value));
         }
 
         public override void WriteClob(ReadOnlySpan<byte> value)
         {
-            throw new NotImplementedException();
+            AppendValue(new IonClob(value));
         }
 
         public override void Dispose()
