@@ -349,6 +349,31 @@ namespace IonDotnet.Tests.Integration
             AssertReaderWriter(assertReader, writerFunc);
         }
 
+        [DataRow("good/intBigSize512.ion")]
+        [TestMethod]
+        public void IntBigSize512(string fileName)
+        {
+            var file = DirStructure.IonTestFile(fileName);
+            var r = ReaderFromFile(file, InputStyle.FileStream);
+            BigInteger b;
+
+            void assertReader(IIonReader reader)
+            {
+                Assert.AreEqual(IonType.Int, reader.MoveNext());
+                Assert.AreEqual(IntegerSize.BigInteger, reader.GetIntegerSize());
+                b = reader.BigIntegerValue();
+            }
+
+            void writerFunc(IIonWriter writer)
+            {
+                writer.WriteInt(b);
+                writer.Finish();
+            }
+
+            assertReader(r);
+            AssertReaderWriter(assertReader, writerFunc);
+        }
+
         private static decimal ParseDecimal(string s)
         {
             var idxOfD = s.IndexOf("d", StringComparison.OrdinalIgnoreCase);

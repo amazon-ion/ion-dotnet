@@ -33,27 +33,25 @@ namespace IonDotnet.Internals.Text
                 return;
 
             LoadTokenContents(_scanner.Token);
-
+            var negative = false;
             if (_scanner.Token == TextConstants.TokenHex)
             {
-                var negative = _valueBuffer[0] == '-';
-                var pos = negative ? 1 : 0;
-                Debug.Assert(_valueBuffer[pos] == '0');
-                Debug.Assert(char.ToLower(_valueBuffer[pos + 1]) == 'x');
+                negative = _valueBuffer[0] == '-';
+                Debug.Assert(_valueBuffer[negative ? 1 : 0] == '0');
+                Debug.Assert(char.ToLower(_valueBuffer[negative ? 2 : 1]) == 'x');
 
                 //delete '0x'
                 //TODO is there a better way?
-                _valueBuffer.Remove(pos, 2);
+                _valueBuffer.Remove(0, negative ? 3 : 2);
             }
             else if (_scanner.Token == TextConstants.TokenBinary)
             {
-                var negative = _valueBuffer[0] == '-';
-                var pos = negative ? 1 : 0;
+                negative = _valueBuffer[0] == '-';
                 Debug.Assert(_valueBuffer[negative ? 1 : 0] == '0');
                 Debug.Assert(char.ToLower(_valueBuffer[negative ? 2 : 1]) == 'b');
                 //delete '0b'
                 //TODO is there a better way?
-                _valueBuffer.Remove(pos, 2);
+                _valueBuffer.Remove(0, negative ? 3 : 2);
             }
 
             //TODO is there a better way
@@ -71,7 +69,7 @@ namespace IonDotnet.Internals.Text
                         default:
                             throw new IonException($"Expected value type to be numeric, but is {_valueType}");
                         case IonType.Int:
-                            SetInteger(Radix.Decimal, s);
+                            SetInteger(Radix.Decimal, s, negative);
                             break;
                         case IonType.Decimal:
                             SetDecimalOrDouble(s);
@@ -86,13 +84,13 @@ namespace IonDotnet.Internals.Text
 
                     break;
                 case TextConstants.TokenInt:
-                    SetInteger(Radix.Decimal, s);
+                    SetInteger(Radix.Decimal, s, negative);
                     break;
                 case TextConstants.TokenBinary:
-                    SetInteger(Radix.Binary, s);
+                    SetInteger(Radix.Binary, s, negative);
                     break;
                 case TextConstants.TokenHex:
-                    SetInteger(Radix.Hex, s);
+                    SetInteger(Radix.Hex, s, negative);
                     break;
                 case TextConstants.TokenDecimal:
                     SetDecimal(s);
@@ -241,39 +239,44 @@ namespace IonDotnet.Internals.Text
             _v.DecimalValue = coeff;
         }
 
-        private void SetInteger(Radix radix, string s)
+        private void SetInteger(Radix radix, string s, bool negative)
         {
             var intBase = radix == Radix.Binary ? 2 : (radix == Radix.Decimal ? 10 : 16);
+
             if (radix.IsInt(s.AsSpan()))
             {
-                _v.IntValue = Convert.ToInt32(s, intBase);
+                _v.IntValue = negative ? -Convert.ToInt32(s, intBase) : Convert.ToInt32(s, intBase);
                 return;
             }
 
             if (radix.IsLong(s.AsSpan()))
             {
-                _v.LongValue = Convert.ToInt64(s, intBase);
+                _v.LongValue = negative ? -Convert.ToInt64(s, intBase) : Convert.ToInt64(s, intBase);
                 return;
             }
 
             //bigint
             if (intBase == 10)
             {
-                _v.BigIntegerValue = BigInteger.Parse(s, CultureInfo.InvariantCulture);
+                _v.BigIntegerValue = negative
+                    ? -BigInteger.Parse(s, CultureInfo.InvariantCulture)
+                    : BigInteger.Parse(s, CultureInfo.InvariantCulture);
                 return;
             }
 
             if (intBase == 16)
             {
-                _v.BigIntegerValue = BigInteger.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                _v.BigIntegerValue = negative
+                    ? -BigInteger.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture)
+                    : BigInteger.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                 return;
             }
 
             //does anyone really do this?
-            SetBigIntegerFromBinaryString(s);
+            SetBigIntegerFromBinaryString(s, negative);
         }
 
-        private void SetBigIntegerFromBinaryString(string s)
+        private void SetBigIntegerFromBinaryString(string s, bool negative)
         {
             var b = BigInteger.Zero;
             var start = 0;
@@ -291,7 +294,7 @@ namespace IonDotnet.Internals.Text
                 b += 1;
             }
 
-            _v.BigIntegerValue = b;
+            _v.BigIntegerValue = negative ? -b : b;
         }
 
         private void LoadLobContent()
