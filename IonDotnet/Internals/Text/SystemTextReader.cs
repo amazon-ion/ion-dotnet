@@ -283,6 +283,24 @@ namespace IonDotnet.Internals.Text
             SetBigIntegerFromBinaryString(s, negative);
         }
 
+        public override string CurrentFieldName
+        {
+            get
+            {
+                //TODO embedded document?
+                var text = _fieldName;
+                if (text == null && _fieldNameSid != SymbolToken.UnknownSid)
+                {
+                    if (_fieldNameSid != 0 && (text = GetSymbolTable().FindKnownSymbol(_fieldNameSid)) == null)
+                        throw new UnknownSymbolException(_fieldNameSid);
+                }
+
+                return text;
+            }
+        }
+
+        public override SymbolToken GetFieldNameSymbol() => new SymbolToken(CurrentFieldName, _fieldNameSid);
+
         private void SetBigIntegerFromBinaryString(string s, bool negative)
         {
             var b = BigInteger.Zero;

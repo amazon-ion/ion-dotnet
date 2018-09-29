@@ -667,7 +667,18 @@ namespace IonDotnet.Internals.Text
 
         private int SkipOverSymbolOperator()
         {
-            throw new NotImplementedException();
+            var c = ReadChar();
+            if (PeekInf(c))
+            {
+                return ReadChar();
+            }
+
+            while (TextConstants.IsValidExtendedSymbolCharacter(c))
+            {
+                c = ReadChar();
+            }
+
+            return c;
         }
 
         private int SkipOverSymbolIdentifier()
@@ -1382,11 +1393,6 @@ namespace IonDotnet.Internals.Text
                 c = EatNewLineSequence(c);
             }
 
-            if (c == '\'')
-            {
-                Console.WriteLine(_input.UnitSize);
-            }
-
             return c;
         }
 
@@ -1571,7 +1577,8 @@ namespace IonDotnet.Internals.Text
                     while (len > 4)
                     {
                         c = ReadChar();
-                        if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                        if (!char.IsDigit((char) c))
+                            throw new InvalidTokenException(c);
                         sb.Append((char) c);
                         len--;
                     }
@@ -1580,19 +1587,22 @@ namespace IonDotnet.Internals.Text
                     goto case 4;
                 case 4:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                    if (!char.IsDigit((char) c))
+                        throw new InvalidTokenException(c);
                     sb.Append((char) c);
                     // fall through
                     goto case 3;
                 case 3:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                    if (!char.IsDigit((char) c))
+                        throw new InvalidTokenException(c);
                     sb.Append((char) c);
                     // fall through
                     goto case 2;
                 case 2:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c)) throw new InvalidTokenException(c);
+                    if (!char.IsDigit((char) c))
+                        throw new InvalidTokenException(c);
                     sb.Append((char) c);
                     // fall through
                     goto case 1;
@@ -1657,7 +1667,8 @@ namespace IonDotnet.Internals.Text
             sb.Append((char) c);
             LoadFixedDigits(sb, 1); // we already read the first digit
             c = ReadChar();
-            if (c != ':') throw new InvalidTokenException(c);
+            if (c != ':')
+                throw new InvalidTokenException(c);
 
             // minutes
             sb.Append((char) c);
@@ -1841,7 +1852,22 @@ namespace IonDotnet.Internals.Text
 
         public void LoadSymbolOperator(StringBuilder sb)
         {
-            throw new NotImplementedException();
+            var c = ReadChar();
+            // lookahead for +inf and -inf, this will consume the inf if it succeeds
+            if ((c == '+' || c == '-') && PeekInf(c))
+            {
+                sb.Append((char) c);
+                sb.Append("inf");
+                return;
+            }
+
+            while (TextConstants.IsValidExtendedSymbolCharacter(c))
+            {
+                sb.Append((char) c);
+                c = ReadChar();
+            }
+
+            UnreadChar(c);
         }
 
         private int ReadTripleQuotedChar(bool isClob)

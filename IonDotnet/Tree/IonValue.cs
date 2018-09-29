@@ -183,7 +183,7 @@ namespace IonDotnet.Tree
         /// <summary>
         /// Store the field name text and sid.
         /// </summary>
-        internal string FieldName;
+        public SymbolToken FieldNameSymbol { get; internal set; }
 
         protected IonValue(bool isNull)
         {
@@ -279,10 +279,10 @@ namespace IonDotnet.Tree
 
             if (writer.IsInStruct && !privateWriter.IsFieldNameSet())
             {
-                if (FieldName == null)
+                if (FieldNameSymbol == default)
                     throw new IonException("Field name is not set");
 
-                writer.SetFieldName(FieldName);
+                writer.SetFieldNameSymbol(FieldNameSymbol);
             }
 
             var annotations = GetTypeAnnotations();

@@ -22,7 +22,8 @@ namespace IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "subfieldVarInt.ion"
+            "subfieldVarInt.ion",
+            "whitespace.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
@@ -79,7 +80,7 @@ namespace IonDotnet.Tests.Integration
         public void LoadGood_Successful(FileInfo fi)
         {
             //this is for debugging the interested file
-            if (fi.Name == "annotationQuotedFalse.ion")
+            if (fi.Name == "systemSymbols.ion")
             {
                 Console.Write("");
             }

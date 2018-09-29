@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using IonDotnet.Internals;
 
 namespace IonDotnet.Tree
 {
     public sealed class IonStruct : IonContainer
     {
-        private Dictionary<string, IonValue> _dictionary;
+        private List<IonValue> _values;
 
         public IonStruct() : this(false)
         {
@@ -17,7 +18,7 @@ namespace IonDotnet.Tree
         {
             if (!isNull)
             {
-                _dictionary = new Dictionary<string, IonValue>();
+                _values = new List<IonValue>();
             }
         }
 
@@ -35,12 +36,13 @@ namespace IonDotnet.Tree
             if (other.IsNull || otherStruct.Count != Count)
                 return false;
 
-            foreach (var thisKvp in _dictionary)
+            foreach (var thisKvp in _values)
             {
-                if (!otherStruct._dictionary.TryGetValue(thisKvp.Key, out var otherValue))
-                    return false;
-                if (!otherValue.IsEquivalentTo(thisKvp.Value))
-                    return false;
+                throw new NotImplementedException();
+//                if (!otherStruct._dictionary.TryGetValue(thisKvp.Key, out var otherValue))
+//                    return false;
+//                if (!otherValue.IsEquivalentTo(thisKvp.Value))
+//                    return false;
             }
 
             return true;
@@ -54,12 +56,12 @@ namespace IonDotnet.Tree
                 return;
             }
 
-            Debug.Assert(_dictionary != null);
+            Debug.Assert(_values != null);
             writer.StepIn(IonType.Struct);
-            foreach (var kvp in _dictionary)
+            foreach (var v in _values)
             {
                 //writeto() will attemp to write field name
-                kvp.Value.WriteTo(writer);
+                v.WriteTo(writer);
             }
 
             writer.StepOut();
@@ -73,16 +75,16 @@ namespace IonDotnet.Tree
         public override void Clear()
         {
             ThrowIfLocked();
-            if (NullFlagOn() && _dictionary == null)
-                _dictionary = new Dictionary<string, IonValue>();
+            if (NullFlagOn() && _values == null)
+                _values = new List<IonValue>();
 
             NullFlagOn(false);
-            foreach (var kvp in _dictionary)
+            foreach (var v in _values)
             {
-                kvp.Value.Container = null;
+                v.Container = null;
             }
 
-            _dictionary.Clear();
+            _values.Clear();
         }
 
         public override bool Contains(IonValue item)
@@ -90,7 +92,7 @@ namespace IonDotnet.Tree
             if (NullFlagOn() || item is null)
                 return false;
 
-            Debug.Assert(_dictionary != null);
+            Debug.Assert(_values != null);
             return item.Container == this;
         }
 
@@ -99,10 +101,9 @@ namespace IonDotnet.Tree
             if (NullFlagOn())
                 yield break;
 
-            Debug.Assert(_dictionary != null);
-            foreach (var kvp in _dictionary)
+            foreach (var v in _values)
             {
-                yield return kvp.Value;
+                yield return v;
             }
         }
 
@@ -116,8 +117,10 @@ namespace IonDotnet.Tree
             if (item.Container != this)
                 return false;
 
-            Debug.Assert(item.FieldName != null && _dictionary != null);
-            RemoveUnsafe(item.FieldName, item);
+            Debug.Assert(item.FieldNameSymbol != default && _values != null);
+            _values.Remove(item);
+            item.Container = null;
+            item.FieldNameSymbol = default;
             return true;
         }
 
@@ -134,52 +137,63 @@ namespace IonDotnet.Tree
             if (string.IsNullOrWhiteSpace(fieldName))
                 throw new ArgumentNullException(nameof(fieldName));
 
-            if (!_dictionary.TryGetValue(fieldName, out var item))
-                return false;
-            RemoveUnsafe(fieldName, item);
-            return true;
+
+            return RemoveUnsafe(fieldName) > 0;
         }
 
         /// <returns>True if the struct contains such field name.</returns>
         public bool ContainsField(string fieldName)
-            => _dictionary != null && _dictionary.ContainsKey(fieldName);
+            => _values != null && _values.Any(v => v.FieldNameSymbol.Text == fieldName);
 
+        /// <summary>
+        /// Get or set the value with the field name. The getter will return the first value with a matched field name.
+        /// The setter will replace all values with that field name with the new value.
+        /// </summary>
+        /// <param name="fieldName">Field name.</param>
+        /// <exception cref="ArgumentNullException">When field name is null.</exception>
+        /// <exception cref="ContainedValueException">If the value being set is already contained in another container.</exception>
         public IonValue this[string fieldName]
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(fieldName))
+                if (fieldName is null)
                     throw new ArgumentNullException(nameof(fieldName));
                 ThrowIfNull();
-                return _dictionary[fieldName];
+                return _values.FirstOrDefault(v => v.FieldNameSymbol.Text == fieldName);
             }
             set
             {
-                if (string.IsNullOrWhiteSpace(fieldName))
+                if (fieldName is null)
                     throw new ArgumentNullException(nameof(fieldName));
                 ThrowIfLocked();
                 ThrowIfNull();
                 if (value.Container != null)
                     throw new ContainedValueException();
 
-                if (_dictionary.TryGetValue(fieldName, out var item))
-                {
-                    RemoveUnsafe(fieldName, item);
-                }
+                RemoveUnsafe(fieldName);
 
-                value.FieldName = fieldName;
-                _dictionary[fieldName] = value;
+                value.FieldNameSymbol = new SymbolToken(fieldName, SymbolToken.UnknownSid);
                 value.Container = this;
+                _values.Add(value);
             }
         }
 
-        public override int Count => _dictionary?.Count ?? 0;
+        public override int Count => _values?.Count ?? 0;
 
-        private void RemoveUnsafe(string fieldName, IonValue item)
+        private int RemoveUnsafe(string fieldName)
         {
-            _dictionary.Remove(fieldName);
-            item.Container = null;
-            item.FieldName = null;
+            var ret = _values.RemoveAll(v =>
+            {
+                var match = v.FieldNameSymbol.Text == fieldName;
+                if (match)
+                {
+                    v.Container = null;
+                    v.FieldNameSymbol = default;
+                }
+
+                return match;
+            });
+            return ret;
         }
     }
 }

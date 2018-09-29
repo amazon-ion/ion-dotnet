@@ -154,8 +154,8 @@ namespace IonDotnet.Internals.Text
         private bool _containerIsStruct; // helper bool's set on push and pop and used
         private bool _containerProhibitsCommas; // frequently during state transitions actions
         protected bool _hasNextCalled;
-        private string _fieldName;
-        private int _fieldNameSid = SymbolToken.UnknownSid;
+        protected internal string _fieldName;
+        protected internal int _fieldNameSid = SymbolToken.UnknownSid;
 
         private readonly ContainerStack _containerStack;
         protected int _lobToken;
@@ -234,7 +234,7 @@ namespace IonDotnet.Internals.Text
 
                         LoadTokenContents(token);
                         var symtok = ParseSymbolToken(_valueBuffer, token);
-                        if (symtok.Sid >= 0 && GetSymbolTable().FindKnownSymbol(symtok.Sid) == null)
+                        if (symtok.Sid > 0 && GetSymbolTable().FindKnownSymbol(symtok.Sid) == null)
                         {
                             throw new UnknownSymbolException(symtok.Sid);
                         }
@@ -648,23 +648,9 @@ namespace IonDotnet.Internals.Text
 
         public abstract IntegerSize GetIntegerSize();
 
-        public string CurrentFieldName
-        {
-            get
-            {
-                if (CurrentDepth == 0 && IsInStruct)
-                    return null;
-                if (_fieldName == null && _fieldNameSid > 0)
-                    throw new UnknownSymbolException(_fieldNameSid);
-                return _fieldName;
-            }
-        }
+        public abstract string CurrentFieldName { get; }
 
-        public SymbolToken GetFieldNameSymbol()
-        {
-            //TODO in_struct_internal?
-            return new SymbolToken(_fieldName, _fieldNameSid);
-        }
+        public abstract SymbolToken GetFieldNameSymbol();
 
         public abstract bool CurrentIsNull { get; }
         public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek() == IonType.Struct;
