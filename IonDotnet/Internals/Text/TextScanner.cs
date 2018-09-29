@@ -422,7 +422,6 @@ namespace IonDotnet.Internals.Text
                     SkipTripleQuotedString(CommentStrategy.Ignore);
                     c = SkipOverWhiteSpace(CommentStrategy.Ignore);
                     break;
-
                 case TextConstants.TokenOpenDoubleBrace:
                     // works just like a pair of nested structs
                     // since "skip_over" doesn't care about formal
@@ -1383,6 +1382,11 @@ namespace IonDotnet.Internals.Text
                 c = EatNewLineSequence(c);
             }
 
+            if (c == '\'')
+            {
+                Console.WriteLine(_input.UnitSize);
+            }
+
             return c;
         }
 
@@ -1835,7 +1839,7 @@ namespace IonDotnet.Internals.Text
             UnreadChar(c);
         }
 
-        public void LoadSymbolOperator(object sb)
+        public void LoadSymbolOperator(StringBuilder sb)
         {
             throw new NotImplementedException();
         }
@@ -1892,15 +1896,14 @@ namespace IonDotnet.Internals.Text
 
         public int LoadTripleQuotedString(StringBuilder sb, bool isClob)
         {
-            int c;
-
-            for (;;)
+            while (true)
             {
-                c = ReadTripleQuotedChar(isClob);
+                var c = ReadTripleQuotedChar(isClob);
                 switch (c)
                 {
                     case CharacterSequence.CharSeqStringTerminator:
-                    case CharacterSequence.CharSeqEof: // was EOF
+                    case CharacterSequence.CharSeqEof: // was 
+                        FinishNextToken(TextConstants.TokenStringTripleQuote, false);
                         return c;
                     // new line normalization and counting is handled in read_char
                     case CharacterSequence.CharSeqNewlineSequence1:
