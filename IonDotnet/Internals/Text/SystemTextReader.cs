@@ -190,7 +190,14 @@ namespace IonDotnet.Internals.Text
 
         private void SetFloat(string text)
         {
-            _v.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
+            try
+            {
+                _v.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
+            }
+            catch (OverflowException)
+            {
+                _v.DoubleValue = text[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
+            }
         }
 
         /// <summary>
