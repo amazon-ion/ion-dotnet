@@ -33,7 +33,8 @@ namespace IonDotnet.Tests.Integration
         private static readonly DirectoryInfo GoodNonEquivDir = IonTestDir.GetDirectories("good/non-equivs").First();
 
         private static IEnumerable<FileInfo> GetIonFiles(DirectoryInfo dirInfo)
-            => dirInfo.GetFiles().Where(f => !Excludes.Contains(f.Name) && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
+            => dirInfo.GetFiles()
+                .Where(f => !Excludes.Contains(f.Name) && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
         {
@@ -80,7 +81,7 @@ namespace IonDotnet.Tests.Integration
         public void LoadGood_Successful(FileInfo fi)
         {
             //this is for debugging the interested file
-            if (fi.Name == "systemSymbols.ion")
+            if (fi.Name == "item1.10n")
             {
                 Console.Write("");
             }

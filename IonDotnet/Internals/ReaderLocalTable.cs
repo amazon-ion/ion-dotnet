@@ -310,12 +310,14 @@ namespace IonDotnet.Internals
 
             if (table == null)
             {
-                throw new NotImplementedException("Substitute symbol table");
+                //cannot find table with that name, create an empty substitute symtab
+                table = new SubstituteSymbolTable(name, version, maxId);
             }
 
             if (table.Version != version || table.MaxId != maxId)
             {
-                throw new NotImplementedException("Substitute symbol table");
+                //a table with the name is found but version doesn't match
+                table = new SubstituteSymbolTable(table, version, maxId);
             }
 
             return table;

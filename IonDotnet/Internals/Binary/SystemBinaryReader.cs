@@ -147,11 +147,10 @@ namespace IonDotnet.Internals.Binary
             Debug.Assert(_v.TypeSet.HasFlag(ScalarType.Int));
             Debug.Assert(_v.AuthoritativeType == ScalarType.Int, $"AuthType is ${_v.AuthoritativeType}");
 
-            if (_v.TypeSet.HasFlag(ScalarType.String)) return;
+            if (_v.TypeSet.HasFlag(ScalarType.String))
+                return;
 
             var text = _symbolTable.FindKnownSymbol(_v.IntValue);
-            if (text == null)
-                throw new UnknownSymbolException(_v.IntValue);
             _v.AddString(text);
         }
 
@@ -200,7 +199,7 @@ namespace IonDotnet.Internals.Binary
 
         protected override void OnAnnotation(int annotId)
         {
-            if (_readerRoutine == null) 
+            if (_readerRoutine == null)
                 return;
 
             var text = _symbolTable.FindKnownSymbol(annotId);
@@ -216,7 +215,7 @@ namespace IonDotnet.Internals.Binary
         {
             get
             {
-                if (_valueFieldId == SymbolToken.UnknownSid) 
+                if (_valueFieldId == SymbolToken.UnknownSid)
                     return null;
 
                 var name = _symbolTable.FindKnownSymbol(_valueFieldId);
@@ -229,10 +228,11 @@ namespace IonDotnet.Internals.Binary
 
         public override SymbolToken GetFieldNameSymbol()
         {
-            if (_valueFieldId == SymbolToken.UnknownSid) return SymbolToken.None;
+            if (_valueFieldId == SymbolToken.UnknownSid)
+                return default;
             var text = _symbolTable.FindKnownSymbol(_valueFieldId);
 
-            return text == null ? SymbolToken.None : new SymbolToken(text, _valueFieldId);
+            return new SymbolToken(text, _valueFieldId);
         }
 
         public override IntegerSize GetIntegerSize()
@@ -265,7 +265,7 @@ namespace IonDotnet.Internals.Binary
         {
             if (!_valueType.IsText())
                 throw new InvalidOperationException($"Current value is not text, type {_valueType}");
-            if (_valueIsNull) 
+            if (_valueIsNull)
                 return null;
             PrepareValue();
 
@@ -281,7 +281,7 @@ namespace IonDotnet.Internals.Binary
         {
             if (_valueType != IonType.Symbol)
                 throw new InvalidOperationException($"Current value is of type {_valueType}");
-            if (_valueIsNull) 
+            if (_valueIsNull)
                 return SymbolToken.None;
 
             LoadSymbolValue();

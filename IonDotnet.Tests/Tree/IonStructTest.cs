@@ -1,3 +1,4 @@
+using System.Linq;
 using IonDotnet.Tree;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -54,6 +55,45 @@ namespace IonDotnet.Tests.Tree
         }
 
         [TestMethod]
+        public void SameFieldName()
+        {
+            const string fieldName = "field";
+
+            IonStruct create()
+            {
+                var ionStruct = (IonStruct) MakeMutableValue();
+                ionStruct.Add(fieldName, new IonInt(1));
+                ionStruct.Add(fieldName + "2", new IonBool(true));
+                ionStruct.Add(fieldName, new IonInt(2));
+                return ionStruct;
+            }
+
+            var v = create();
+
+            //get first occurence
+            var ionInt = (IonInt) v[fieldName];
+            Assert.AreEqual(1, ionInt.IntValue);
+
+            //check number of occurences
+            var count = v.Count(val => val.FieldNameSymbol.Text == fieldName);
+            Assert.AreEqual(2, count);
+
+            //test remove fields
+            v.RemoveField(fieldName);
+            count = v.Count(val => val.FieldNameSymbol.Text == fieldName);
+            Assert.AreEqual(0, count);
+            Assert.AreEqual(1, v.Count);
+
+            //test set field
+            v = create();
+            v[fieldName] = new IonBool(false);
+            Assert.AreEqual(2, v.Count);
+            Assert.AreEqual(1, v.Count(val => val.FieldNameSymbol.Text == fieldName));
+            var ionBool = (IonBool) v[fieldName];
+            Assert.IsFalse(ionBool.Value);
+        }
+
+        [TestMethod]
         public void RemoveField()
         {
             const string field = "field";
@@ -89,6 +129,13 @@ namespace IonDotnet.Tests.Tree
             var s2 = BuildFlatStruct(1, 10);
             Assert.IsTrue(s1.IsEquivalentTo(s2));
 
+            //add fields with the same name
+            s1.Add("new_field", new IonBool(true));
+            s1.Add("new_field", new IonBool(true));
+            s2.Add("new_field", new IonBool(true));
+            s2.Add("new_field", new IonBool(true));
+            Assert.IsTrue(s1.IsEquivalentTo(s2));
+
             var n1 = IonStruct.NewNull();
             var n2 = IonStruct.NewNull();
             Assert.IsTrue(n1.IsEquivalentTo(n2));
@@ -110,10 +157,20 @@ namespace IonDotnet.Tests.Tree
             s2.RemoveField("field10");
             s2["field10"] = new IonInt(10);
             Assert.IsTrue(s1.IsEquivalentTo(s2));
-                
+
             //different field name
             s2.RemoveField("field10");
             s2["another"] = new IonInt(10);
+            Assert.IsFalse(s1.IsEquivalentTo(s2));
+        }
+
+        [TestMethod]
+        public void StructEquivalence_False_SameFieldName()
+        {
+            var s1 = BuildFlatStruct(1, 10);
+            var s2 = BuildFlatStruct(1, 10);
+            s1.Add("new_field", new IonBool(true));
+            s2.Add("new_field", new IonBool(false));
             Assert.IsFalse(s1.IsEquivalentTo(s2));
         }
 

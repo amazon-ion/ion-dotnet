@@ -27,6 +27,10 @@ namespace IonDotnet.Tree
         /// </summary>
         public static IonStruct NewNull() => new IonStruct(true);
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// Struct equivalence is an expensive operation.
+        /// </remarks>
         public override bool IsEquivalentTo(IonValue other)
         {
             if (!(other is IonStruct otherStruct))
@@ -36,13 +40,16 @@ namespace IonDotnet.Tree
             if (other.IsNull || otherStruct.Count != Count)
                 return false;
 
-            foreach (var thisKvp in _values)
+            if (_values.Count != otherStruct._values.Count)
+                return false;
+
+            var multiset = ToMultiset();
+            foreach (var v2 in otherStruct._values)
             {
-                throw new NotImplementedException();
-//                if (!otherStruct._dictionary.TryGetValue(thisKvp.Key, out var otherValue))
-//                    return false;
-//                if (!otherValue.IsEquivalentTo(thisKvp.Value))
-//                    return false;
+                var field = new MultisetField(v2.FieldNameSymbol.Text, v2);
+                if (!multiset.TryGetValue(field, out var mapped) || mapped.Count == 0)
+                    return false;
+                mapped.Count--;
             }
 
             return true;
@@ -71,6 +78,47 @@ namespace IonDotnet.Tree
 
         public override void Add(IonValue item)
             => throw new NotSupportedException("Cannot add a value to a struct without field name");
+
+        /// <summary>
+        /// Add a new value to this struct.
+        /// </summary>
+        /// <param name="fieldName">Field name</param>
+        /// <param name="value">Ion value to add.</param>
+        /// <exception cref="ArgumentNullException">When field name is null.</exception>
+        /// <exception cref="ContainedValueException">If the value is already child of a container.</exception>
+        public void Add(string fieldName, IonValue value)
+        {
+            if (fieldName is null)
+                throw new ArgumentNullException(nameof(fieldName));
+            ThrowIfLocked();
+            ThrowIfNull();
+            if (value.Container != null)
+                throw new ContainedValueException(value);
+
+            value.FieldNameSymbol = new SymbolToken(fieldName, SymbolToken.UnknownSid);
+            value.Container = this;
+            _values.Add(value);
+        }
+
+        public void Add(SymbolToken symbol, IonValue value)
+        {
+            if (symbol.Text != null)
+            {
+                Add(symbol.Text, value);
+                return;
+            }
+
+            if (symbol.Sid < 0)
+                throw new ArgumentException("symbol has no text or sid", nameof(symbol));
+            ThrowIfLocked();
+            ThrowIfNull();
+            if (value.Container != null)
+                throw new ContainedValueException(value);
+
+            value.FieldNameSymbol = symbol;
+            value.Container = this;
+            _values.Add(value);
+        }
 
         public override void Clear()
         {
@@ -194,6 +242,62 @@ namespace IonDotnet.Tree
                 return match;
             });
             return ret;
+        }
+
+        private IDictionary<MultisetField, MultisetField> ToMultiset()
+        {
+            Debug.Assert(_values != null);
+            var dict = new Dictionary<MultisetField, MultisetField>();
+            foreach (var v in _values)
+            {
+                var field = new MultisetField(v.FieldNameSymbol.Text, v)
+                {
+                    Count = 1
+                };
+                //we will assume that for most cases, the field name is unique.
+                if (dict.TryGetValue(field, out var existing))
+                {
+                    existing.Count += 1;
+                }
+                else
+                {
+                    dict.Add(field, field);
+                }
+            }
+
+            return dict;
+        }
+
+        /// <summary>
+        /// This class holds a reference to an Ion value and a counter to the number of values
+        /// equal to that value in the struct.
+        /// </summary>
+        private class MultisetField
+        {
+            private readonly string _name;
+            private readonly IonValue _value;
+            public int Count;
+
+            public MultisetField(string name, IonValue value)
+            {
+                Debug.Assert(name != null);
+                _name = name;
+                _value = value;
+                Count = 0;
+            }
+
+            public override int GetHashCode()
+            {
+                Debug.Assert(_name != null);
+                return _name.GetHashCode();
+            }
+
+            public override bool Equals(object obj)
+            {
+                var other = (MultisetField) obj;
+                Debug.Assert(other != null);
+                return _name == other._name && other._value.IsEquivalentTo(_value);
+            }
         }
     }
 }

@@ -221,12 +221,12 @@ namespace IonDotnet.Internals
             if (IsInStruct)
             {
                 var field = AssumeFieldNameSymbol();
-                if (field.Text is null)
+                if (field == default)
                     throw new InvalidOperationException("Field name is missing");
 
                 var structContainer = _currentContainer as IonStruct;
                 Debug.Assert(structContainer != null);
-                structContainer[field.Text] = value;
+                structContainer.Add(field, value);
             }
             else
             {
