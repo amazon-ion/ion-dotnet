@@ -26,7 +26,13 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
-            throw new System.NotImplementedException();
+            if (!(other is IonSymbol oSymbol))
+                return false;
+
+            if (NullFlagOn())
+                return oSymbol.IsNull;
+
+            return !oSymbol.IsNull && oSymbol.StringVal == StringValue;
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)

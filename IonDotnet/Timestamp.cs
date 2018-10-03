@@ -40,7 +40,7 @@ namespace IonDotnet
         {
             //offset known
             if (frac >= 1)
-                throw new ArgumentException("Fraction must be < 1", nameof(frac));
+                throw new ArgumentException($"Fraction must be < 1: {frac}", nameof(frac));
 
             var ticks = (int) (frac * TimeSpan.TicksPerSecond);
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local)
@@ -135,37 +135,213 @@ namespace IonDotnet
         public static Timestamp Parse(string s)
         {
             //TODO can this go wrong?
-            const string minusZero = "-00:00";
-            var endsWithMinusZero = false;
-            var offsetKnown = s.IndexOfAny(OffsetSeparators) > 0;
-            if (!offsetKnown)
+            if (s.Length < 5)
+                throw new FormatException();
+
+            if (!IntTryParseSubString(s, 0, 4, true, out var year))
             {
-                if (s.EndsWith(minusZero))
+                throw new FormatException(s);
+            }
+
+            if (s[4] == 'T')
+            {
+                var retDt = new DateTime(year, 1, 1);
+                return new Timestamp(DateTime.SpecifyKind(retDt, DateTimeKind.Unspecified));
+            }
+
+            if (s[4] != '-' || s.Length < 8)
+            {
+                throw new FormatException(s);
+            }
+
+            if (!IntTryParseSubString(s, 5, 2, true, out var month))
+            {
+                throw new FormatException(s);
+            }
+
+            if (s[7] == 'T')
+            {
+                var retDt = new DateTime(year, month, 1);
+                return new Timestamp(DateTime.SpecifyKind(retDt, DateTimeKind.Unspecified));
+            }
+
+            if (s[7] != '-' || s.Length < 10)
+            {
+                throw new FormatException(s);
+            }
+
+            if (!IntTryParseSubString(s, 8, 2, true, out var day))
+            {
+                throw new FormatException(s);
+            }
+
+            if (s.Length >= 11 && s[10] != 'T')
+            {
+                throw new FormatException(s);
+            }
+
+            if (s.Length <= 11)
+            {
+                var retDt = new DateTime(year, month, day);
+                return new Timestamp(DateTime.SpecifyKind(retDt, DateTimeKind.Unspecified));
+            }
+
+            //must have hour and minute now
+            if (s.Length < 17 || s[13] != ':')
+            {
+                throw new FormatException(s);
+            }
+
+            if (!IntTryParseSubString(s, 11, 2, false, out var hour) || !IntTryParseSubString(s, 14, 2, false, out var minute))
+            {
+                throw new FormatException(s);
+            }
+
+            if (s.Length == 17)
+            {
+                if (s[16] != 'Z')
                 {
-                    endsWithMinusZero = true;
+                    throw new FormatException(s);
                 }
-                else
+
+                return new Timestamp(new DateTime(year, month, day, hour, minute, 0, DateTimeKind.Utc));
+            }
+
+            int offset;
+            switch (s[16])
+            {
+                case '+':
+                    offset = GetOffsetMinutes(s, 17);
+                    return new Timestamp(year, month, day, hour, minute, 0, offset);
+                case '-':
+                    offset = GetOffsetMinutes(s, 17);
+                    if (offset == 0)
+                    {
+                        //unknown
+                        return new Timestamp(year, month, day, hour, minute, 0);
+                    }
+
+                    return new Timestamp(year, month, day, hour, minute, 0, -offset);
+            }
+
+            if (s[16] != ':')
+            {
+                throw new FormatException(s);
+            }
+
+            if (s.Length < 19 || !IntTryParseSubString(s, 17, 2, false, out var second))
+            {
+                throw new FormatException(s);
+            }
+
+            if (s.Length == 19)
+            {
+                return new Timestamp(year, month, day, hour, minute, second);
+            }
+
+            switch (s[19])
+            {
+                case 'Z':
+                    return new Timestamp(year, month, day, hour, minute, second, 0);
+                case '+':
+                    offset = GetOffsetMinutes(s, 20);
+                    return new Timestamp(year, month, day, hour, minute, second, offset);
+                case '-':
+                    offset = GetOffsetMinutes(s, 20);
+                    if (offset == 0)
+                    {
+                        //unknown offset
+                        return new Timestamp(year, month, day, hour, minute, second);
+                    }
+
+                    return new Timestamp(year, month, day, hour, minute, second, -offset);
+                case '.':
+                    break;
+                default:
+                    throw new FormatException(s);
+            }
+
+            var fracLength = 0;
+            for (var i = 20; i < s.Length; i++)
+            {
+                if (s[i] == 'Z' || s[i] == '-' || s[i] == '+')
                 {
-                    offsetKnown = s.Length >= 6 && s[s.Length - 3] == ':' && s[s.Length - 3] == '-';
+                    break;
                 }
+
+                fracLength++;
             }
 
-            if (offsetKnown)
+            if (fracLength == 0 || !IntTryParseSubString(s, 20, fracLength, false, out var fracInt))
             {
-                //offset present
-                var dto = DateTimeOffset.Parse(s);
-                return new Timestamp(dto);
+                //this cover the case where s.Length<21
+                throw new FormatException(s);
             }
 
-            var stringToParse = s;
-            if (endsWithMinusZero)
+            decimal frac = fracInt;
+            for (var i = 0; i < fracLength; i++)
             {
-                stringToParse = s.Substring(0, s.Length - minusZero.Length);
+                frac /= 10;
             }
 
-            var dt = DateTime.Parse(stringToParse, System.Globalization.CultureInfo.InvariantCulture);
-            dt = DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
-            return new Timestamp(dt);
+            var idxNext = 20 + fracLength;
+            if (idxNext >= s.Length)
+            {
+                return new Timestamp(year, month, day, hour, minute, second, frac);
+            }
+
+            switch (s[idxNext])
+            {
+                default:
+                    throw new FormatException(s);
+                case 'Z':
+                    return new Timestamp(year, month, day, hour, minute, second, 0, frac);
+                case '+':
+                    offset = GetOffsetMinutes(s, idxNext + 1);
+                    return new Timestamp(year, month, day, hour, minute, second, offset, frac);
+                case '-':
+                    offset = GetOffsetMinutes(s, idxNext + 1);
+                    if (offset == 0)
+                    {
+                        //unknown offset
+                        return new Timestamp(year, month, day, hour, minute, second, frac);
+                    }
+
+                    return new Timestamp(year, month, day, hour, minute, second, -offset, frac);
+            }
+        }
+
+        private static int GetOffsetMinutes(string s, int startIdx)
+        {
+            if (startIdx + 5 > s.Length || s[startIdx + 2] != ':')
+            {
+                throw new FormatException();
+            }
+
+            if (!IntTryParseSubString(s, startIdx, 2, false, out var hour) || !IntTryParseSubString(s, startIdx + 3, 2, false, out var minute))
+            {
+                throw new FormatException(s);
+            }
+
+            return hour * 60 + minute;
+        }
+
+        private static bool IntTryParseSubString(string s, int offset, int length, bool largerThanZero, out int output)
+        {
+#if NETCOREAPP2_1
+            return int.TryParse(s.AsSpan().Slice(offset, length), out output) && (!largerThanZero || output > 0);
+#else
+            output = 0;
+            for (var i = 0; i < length; i++)
+            {
+                if (!char.IsDigit(s[offset]))
+                    return false;
+                output = output * 10 + s[offset] - '0';
+                offset++;
+            }
+
+            return !largerThanZero || output > 0;
+#endif
         }
 
         private static readonly char[] OffsetSeparators = {'Z', 'z', '+'};
@@ -176,10 +352,12 @@ namespace IonDotnet
                 ? DateTimeValue.ToString("O")
                 : AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
         }
-        
+
+        public bool OffsetKnown => DateTimeValue.Kind != DateTimeKind.Unspecified;
+
         //override stuffs
 
-        public static bool operator ==(Timestamp x, Timestamp y) => x.DateTimeValue.Equals(y.DateTimeValue) && x.LocalOffset == y.LocalOffset;
+        public static bool operator ==(Timestamp x, Timestamp y) => x.DateTimeValue == y.DateTimeValue && x.LocalOffset == y.LocalOffset;
 
         public static bool operator !=(Timestamp x, Timestamp y) => !(x == y);
 

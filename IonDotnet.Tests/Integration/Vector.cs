@@ -81,7 +81,7 @@ namespace IonDotnet.Tests.Integration
         public void LoadGood_Successful(FileInfo fi)
         {
             //this is for debugging the interested file
-            if (fi.Name == "item1.10n")
+            if (fi.Name == "timestamps.ion")
             {
                 Console.Write("");
             }

@@ -11,6 +11,7 @@ namespace IonDotnet.Tests.Common
             var timeStamp = reader.TimestampValue();
             var datetime = new DateTime(2000, 11, 20, 8, 20, 15, DateTimeKind.Unspecified);
             Assert.AreEqual(datetime, timeStamp.DateTimeValue);
+            Assert.IsFalse(timeStamp.OffsetKnown);
         }
     }
 }

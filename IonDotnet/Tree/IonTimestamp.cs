@@ -22,7 +22,12 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
-            throw new System.NotImplementedException();
+            if (!(other is IonTimestamp oTimestamp))
+                return false;
+            if (NullFlagOn())
+                return other.IsNull;
+
+            return !other.IsNull && _timestamp == oTimestamp._timestamp;
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
