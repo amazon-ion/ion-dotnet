@@ -272,16 +272,10 @@ namespace IonDotnet
                 fracLength++;
             }
 
-            if (fracLength == 0 || !IntTryParseSubString(s, 20, fracLength, false, out var fracInt))
+            if (fracLength == 0 || !DecimalTryParseSubString(s, 19, fracLength + 1, out var frac))
             {
                 //this cover the case where s.Length<21
                 throw new FormatException(s);
-            }
-
-            decimal frac = fracInt;
-            for (var i = 0; i < fracLength; i++)
-            {
-                frac /= 10;
             }
 
             var idxNext = 20 + fracLength;
@@ -326,8 +320,27 @@ namespace IonDotnet
             return hour * 60 + minute;
         }
 
+        private static bool DecimalTryParseSubString(string s, int offset, int length, out decimal output)
+        {
+            if (offset + length > s.Length)
+            {
+                output = 0;
+                return false;
+            }
+#if NETCOREAPP2_1
+            return decimal.TryParse(s.AsSpan().Slice(offset, length), out output);
+#else
+            return decimal.TryParse(s.Substring(offset, length), out output);
+#endif
+        }
+
         private static bool IntTryParseSubString(string s, int offset, int length, bool largerThanZero, out int output)
         {
+            if (offset + length > s.Length)
+            {
+                output = 0;
+                return false;
+            }
 #if NETCOREAPP2_1
             return int.TryParse(s.AsSpan().Slice(offset, length), out output) && (!largerThanZero || output > 0);
 #else

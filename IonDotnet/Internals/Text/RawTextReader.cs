@@ -151,11 +151,12 @@ namespace IonDotnet.Internals.Text
         protected int _valueKeyword;
 
         protected IonType _valueType;
+        private bool _tokenContentLoaded;
         private bool _containerIsStruct; // helper bool's set on push and pop and used
         private bool _containerProhibitsCommas; // frequently during state transitions actions
         protected bool _hasNextCalled;
-        protected internal string _fieldName;
-        protected internal int _fieldNameSid = SymbolToken.UnknownSid;
+        protected string _fieldName;
+        protected int _fieldNameSid = SymbolToken.UnknownSid;
 
         private readonly ContainerStack _containerStack;
         protected int _lobToken;
@@ -176,6 +177,7 @@ namespace IonDotnet.Internals.Text
 
         protected void ClearValueBuffer()
         {
+            _tokenContentLoaded = false;
             _valueBuffer.Clear();
         }
 
@@ -513,7 +515,7 @@ namespace IonDotnet.Internals.Text
 
         protected void LoadTokenContents(int scannerToken)
         {
-            if (_valueBuffer.Length > 0)
+            if (_tokenContentLoaded)
                 return;
 
             int c;
@@ -564,6 +566,8 @@ namespace IonDotnet.Internals.Text
                     _valueType = IonType.String;
                     break;
             }
+
+            _tokenContentLoaded = true;
         }
 
         public void StepIn()

@@ -34,7 +34,10 @@ namespace IonDotnet.Tests.Integration
 
         private static IEnumerable<FileInfo> GetIonFiles(DirectoryInfo dirInfo)
             => dirInfo.GetFiles()
-                .Where(f => !Excludes.Contains(f.Name) && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
+                .Where(f => !Excludes.Contains(f.Name)
+                            //this is for debugging the interested file
+                            //&& f.Name == "timestampsLargeFractionalPrecision.ion"
+                            && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
         {
@@ -80,12 +83,6 @@ namespace IonDotnet.Tests.Integration
         [DynamicData(nameof(GoodNonEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadGood_Successful(FileInfo fi)
         {
-            //this is for debugging the interested file
-            if (fi.Name == "timestamps.ion")
-            {
-                Console.Write("");
-            }
-
             IonLoader.Default.Load(fi);
         }
 
