@@ -59,8 +59,8 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        [DataRow(200)]
-        [DataRow(-200)]
+        [DataRow(BigDecimal.MaxPrecision + 1)]
+        [DataRow(-BigDecimal.MaxPrecision - 1)]
         [ExpectedException(typeof(ArgumentException))]
         public void MaximumScale(int scale)
         {
