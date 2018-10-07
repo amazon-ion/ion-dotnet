@@ -19,7 +19,6 @@ namespace IonDotnet
             {
                 throw new ArgumentException($"Maximum scale is {MaxPrecision}", nameof(scale));
             }
-
             IntVal = intVal;
             Scale = scale;
             IsNegativeZero = false;
@@ -77,10 +76,7 @@ namespace IonDotnet
             return obj is BigDecimal other && Equals(other);
         }
 
-        public override int GetHashCode()
-        {
-            throw new NotImplementedException();
-        }
+        public override int GetHashCode() => (int) ((Scale + 31 * (long) IntVal.GetHashCode()) % 2147483647);
 
         public static bool CheckNegativeZero(decimal dec)
         {
