@@ -509,9 +509,9 @@ namespace IonDotnet.Internals
         private const long VarInt2OctetMinValue = VarUintShift1UnitMinValue >> 1;
 
         /// <summary>
-        /// Write the number in the form of var-int, meaning that 
+        /// Write the number in the form of var-int, meaning that the last byte contains the sign bit.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Number of bytes written.</returns>
         public int WriteVarInt(long value)
         {
             Debug.Assert(value != long.MinValue);

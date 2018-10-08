@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
 
@@ -23,7 +24,8 @@ namespace IonDotnet.Internals.Binary
             Datagram,
 
             //to be used in the case where a value is treated as a container
-            Value
+            Timestamp,
+            BigDecimal
         }
 
         private const int IntZeroByte = 0x20;
@@ -152,8 +154,11 @@ namespace IonDotnet.Internals.Binary
                 case ContainerType.Annotation:
                     tidByte = TidTypeDeclByte;
                     break;
-                case ContainerType.Value:
+                case ContainerType.Timestamp:
                     tidByte = TidTimestampByte;
+                    break;
+                case ContainerType.BigDecimal:
+                    tidByte = TidDecimalByte;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -276,10 +281,10 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
-        public Task FinishAsync()
-        {
-            throw new NotImplementedException();
-        }
+//        public Task FinishAsync()
+//        {
+//            throw new NotImplementedException();
+//        }
 
         public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
 
@@ -465,8 +470,9 @@ namespace IonDotnet.Internals.Binary
             //TODO is this different than java, is there a no-alloc way?
 #if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
             var buffer = value.ToByteArray();
+            Array.Reverse(buffer);
 #else
-            var buffer = value.ToByteArray(isUnsigned: true, isBigEndian: true);
+            var buffer = value.ToByteArray(isBigEndian: true);
 #endif
             WriteTypedBytes(type, buffer);
 
@@ -530,6 +536,53 @@ namespace IonDotnet.Internals.Binary
                 WriteDecimalNumber(value);
             }
 
+            FinishValue();
+        }
+
+        public void WriteDecimal(BigDecimal value)
+        {
+            PrepareValue();
+
+            //wrapup first
+            //add all written segments to the sequence
+            _dataBuffer.Wrapup();
+
+            //set a new container
+            var newContainer = _containerStack.PushContainer(ContainerType.BigDecimal);
+
+            _dataBuffer.StartStreak(newContainer.Sequence);
+            var totalLength = _dataBuffer.WriteVarInt(-value.Scale);
+            var negative = value.IntVal < 0;
+            var mag = BigInteger.Abs(value.IntVal);
+
+#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
+            var bytes = mag.ToByteArray();
+            Array.Reverse(bytes);
+#else
+            var bytes = mag.ToByteArray(isBigEndian: true);
+#endif
+
+            if (negative)
+            {
+                if ((bytes[0] & 0b1000_0000) == 0)
+                {
+                    //bytes[0] can store the sign bit
+                    bytes[0] &= 0b1000_0000;
+                }
+                else
+                {
+                    //use an extra sign byte
+                    totalLength++;
+                    _dataBuffer.WriteUint8(0b1000_0000);
+                }
+            }
+
+            totalLength += bytes.Length;
+            _dataBuffer.WriteBytes(bytes);
+            _containerStack.IncreaseCurrentContainerLength(totalLength);
+
+            //finish up
+            PopContainer();
             FinishValue();
         }
 
@@ -661,7 +714,7 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.Wrapup();
 
             //set a new container
-            var newContainer = _containerStack.PushContainer(ContainerType.Value);
+            var newContainer = _containerStack.PushContainer(ContainerType.Timestamp);
             var totalLength = 0;
             _dataBuffer.StartStreak(newContainer.Sequence);
             if (value.DateTimeValue.Kind == DateTimeKind.Unspecified || value.DateTimeValue.Kind == DateTimeKind.Local)

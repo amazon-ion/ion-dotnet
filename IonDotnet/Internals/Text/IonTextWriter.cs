@@ -203,6 +203,7 @@ namespace IonDotnet.Internals.Text
                 //we write all symbol values with single-quote
                 WriteSymbolText(symbolToken.Text, SymbolVariant.Quoted);
             }
+
             CloseValue();
         }
 
@@ -364,7 +365,9 @@ namespace IonDotnet.Internals.Text
             CloseValue();
         }
 
-        public override void WriteDecimal(decimal value)
+        public override void WriteDecimal(decimal value) => WriteDecimal(new BigDecimal(value));
+
+        public override void WriteDecimal(BigDecimal value)
         {
             StartValue();
             _textWriter.Write(value);

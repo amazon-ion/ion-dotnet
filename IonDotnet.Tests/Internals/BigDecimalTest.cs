@@ -86,7 +86,6 @@ namespace IonDotnet.Tests.Internals
 
         [TestMethod]
         [DataRow(BigDecimal.MaxPrecision + 1)]
-        [DataRow(-BigDecimal.MaxPrecision - 1)]
         [ExpectedException(typeof(ArgumentException))]
         public void MaximumScale(int scale)
         {
@@ -137,6 +136,63 @@ namespace IonDotnet.Tests.Internals
             var bd1 = new BigDecimal(d1);
             var bd2 = new BigDecimal(d2);
             Assert.IsTrue(bd1.Equals(bd2));
+        }
+
+        [TestMethod]
+        [DataRow("42.", 42, 0)]
+        [DataRow("42d0", 42, 0)]
+        [DataRow("42d-0", 42, 0)]
+        [DataRow("4.2d1", 42, 0)]
+        [DataRow("0.42d2", 42, 0)]
+        [DataRow("0.420d2", 420, 1)]
+        [DataRow("0d5", 0, -5)]
+        [DataRow("-123.456d+42", -123456, -42 + 3)]
+        [DataRow("-123.456d-42", -123456, 42 + 3)]
+        [DataRow("77777.7d+00700", 777777, -700 + 1)]
+        [DataRow("77777.7d-00700", 777777, 700 + 1)]
+        public void Parse_Valid(string text, int expectedMag, int expectedScale)
+        {
+            var parsed = BigDecimal.Parse(text);
+            Assert.IsTrue(BigDecimal.TryParse(text, out var tryParsed));
+            Assert.AreEqual(parsed, tryParsed);
+            Assert.AreEqual(expectedMag, parsed.IntVal);
+            Assert.AreEqual(expectedScale, parsed.Scale);
+        }
+
+        [TestMethod]
+        [DataRow("0", false)]
+        [DataRow("0.", false)]
+        [DataRow("0d0", false)]
+        [DataRow("0d-0", false)]
+        [DataRow("0.0d1", false)]
+        [DataRow("-0", true)]
+        [DataRow("-0.", true)]
+        [DataRow("-0d0", true)]
+        [DataRow("-0d-0", true)]
+        [DataRow("-0.0d1", true)]
+        public void Parse_Zeros(string text, bool isNegativeZero)
+        {
+            var parsed = BigDecimal.Parse(text);
+            Assert.IsTrue(BigDecimal.Zero.Equals(parsed));
+            Assert.AreEqual(isNegativeZero, parsed.IsNegativeZero);
+        }
+
+        [TestMethod]
+        [DataRow("123d-3", "1.23d-1")]
+        [DataRow("-123d-3", "-1.23d-1")]
+        [DataRow("123d-10", "1.23d-8")]
+        [DataRow("-123d-10", "-1.23d-8")]
+        [DataRow("123456d10", "123456d10")]
+        [DataRow("123.456d10", "123456d7")]
+        [DataRow("-0", "-0d0")]
+        [DataRow("0.12345d2", "12.345")]
+        [DataRow("0.12345d5", "12345.0")]
+        [DataRow("0.12345d4", "1234.5")]
+        [DataRow("12345d-5", "1.2345d-1")]
+        public void ToString_Simple(string text, string expected)
+        {
+            var parsed = BigDecimal.Parse(text);
+            Assert.AreEqual(expected, parsed.ToString());
         }
 
         [TestMethod]

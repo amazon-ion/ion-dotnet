@@ -415,6 +415,11 @@ namespace IonDotnet.Internals.Binary
             _userWriter.WriteDecimal(value);
         }
 
+        public override void WriteDecimal(BigDecimal value)
+        {
+            _userWriter.WriteDecimal(value);
+        }
+
         public override void WriteTimestamp(Timestamp value)
         {
             _userWriter.WriteTimestamp(value);

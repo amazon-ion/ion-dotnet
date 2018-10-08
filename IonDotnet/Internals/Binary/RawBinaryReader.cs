@@ -568,6 +568,7 @@ namespace IonDotnet.Internals.Binary
                     offset -= rl;
                     mid = ReadBigEndian(mantissaBytes.Slice(offset, rl));
                 }
+                var d = new BigInteger(new byte[0]);
 
                 if (offset > 0)
                 {

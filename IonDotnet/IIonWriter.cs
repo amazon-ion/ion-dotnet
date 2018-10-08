@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 
+// ReSharper disable UnusedMemberInSuper.Global
+
 namespace IonDotnet
 {
     /// <inheritdoc cref="IValueWriter" />
     /// <summary>
-    /// Contains all functions to write an Ion stream
+    /// Contains all functions to write to an Ion stream.
     /// </summary>
     public interface IIonWriter : IValueWriter, IDisposable
     {
+        /// <summary>
+        /// Get the current symbol table being used by the writer.
+        /// </summary>
         ISymbolTable SymbolTable { get; }
 
 //        /// <summary>
@@ -57,13 +62,13 @@ namespace IonDotnet
         void SetFieldNameSymbol(SymbolToken symbol);
 
         /// <summary>
-        /// Step in a container
+        /// Step in a container.
         /// </summary>
         /// <param name="type">Container type</param>
         void StepIn(IonType type);
 
         /// <summary>
-        /// Step out of the current container
+        /// Step out of the current container.
         /// </summary>
         void StepOut();
 
@@ -73,7 +78,7 @@ namespace IonDotnet
         bool IsInStruct { get; }
 
         /// <summary>
-        /// Write the current value from the reader
+        /// Write the current value from the reader.
         /// </summary>
         /// <param name="reader">Ion reader</param>
         void WriteValue(IIonReader reader);
@@ -87,9 +92,9 @@ namespace IonDotnet
         void WriteValues(IIonReader reader);
 
         /// <summary>
-        /// Set the annotations of the current value
+        /// Set the annotations of the current value.
         /// </summary>
-        /// <param name="annotations">Set of annotations</param>
+        /// <param name="annotations">Set of annotations.</param>
         void SetTypeAnnotations(IEnumerable<string> annotations);
     }
 }

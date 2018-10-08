@@ -1,13 +1,22 @@
 using System;
+using System.Globalization;
 using System.Numerics;
+using System.Text;
+
+// ReSharper disable ImpureMethodCallOnReadonlyValueField
 
 namespace IonDotnet
 {
+    /// <inheritdoc cref="IComparable" />
+    /// <summary>
+    /// Represent a decimal-type number. This type extends <see cref="T:System.Decimal" /> to allow for larger number range and 
+    /// decimal places up to <see cref="F:IonDotnet.BigDecimal.MaxPrecision" />.
+    /// </summary>
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
         public static readonly BigDecimal NegativeZero = new BigDecimal(-1.0m * 0);
         public static readonly BigDecimal Zero = new BigDecimal(0, 0);
-        public const int MaxPrecision = 100;
+        public const int MaxPrecision = 1000;
 
         internal readonly BigInteger IntVal;
         internal readonly int Scale;
@@ -15,7 +24,7 @@ namespace IonDotnet
 
         public BigDecimal(BigInteger intVal, int scale)
         {
-            if (Math.Abs(scale) > MaxPrecision)
+            if (scale > MaxPrecision)
             {
                 throw new ArgumentException($"Maximum scale is {MaxPrecision}", nameof(scale));
             }
@@ -199,6 +208,224 @@ namespace IonDotnet
         public static BigDecimal operator -(BigDecimal a)
         {
             return new BigDecimal(BigInteger.Negate(a.IntVal), a.Scale);
+        }
+
+
+        /// <summary>
+        /// Try to parse a text representation.
+        /// </summary>
+        /// <param name="text">Text form.</param>
+        /// <param name="result">The output as a big decimal object.</param>
+        /// <returns>True if parsing is successful, false otherwise.</returns>
+        public static bool TryParse(string text, out BigDecimal result) => TryParse(text.AsSpan(), out result);
+
+        /// <summary>
+        /// Try to parse a text representation.
+        /// </summary>
+        /// <param name="text">Text form.</param>
+        /// <param name="result">The output as a big decimal object.</param>
+        /// <returns>True if parsing is successful, false otherwise.</returns>
+        public static bool TryParse(ReadOnlySpan<char> text, out BigDecimal result)
+        {
+            try
+            {
+                result = Parse(text);
+                return true;
+            }
+            catch (FormatException)
+            {
+                result = default;
+                return false;
+            }
+            catch (OverflowException)
+            {
+                result = default;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Parse a text representation.
+        /// </summary>
+        /// <param name="text">Text form.</param>
+        /// <returns>A big decimal object.</returns>
+        /// <exception cref="FormatException">If the text is in an invalid format.</exception>
+        /// <exception cref="OverflowException">If the text value is too large.</exception>
+        public static BigDecimal Parse(string text) => Parse(text.AsSpan());
+
+        /// <summary>
+        /// Parse a text representation.
+        /// </summary>
+        /// <param name="text">Text form.</param>
+        /// <returns>A big decimal object.</returns>
+        /// <exception cref="FormatException">If the text is in an invalid format.</exception>
+        /// <exception cref="OverflowException">If the text value is too large.</exception>
+        public static BigDecimal Parse(ReadOnlySpan<char> text)
+        {
+            FormatException newFormatException(ReadOnlySpan<char> t) => new FormatException($"Invalid decimal: {t.ToString()}");
+            const short sValStart = 0, sValInt = 1, sValDecimal = 2, sExpStart = 3, sExp = 4;
+
+            var valNegative = false;
+            var expNegative = false;
+            var started = false;
+            var state = sValStart;
+            BigInteger intVal = 0;
+            var scale = 0;
+            var exponent = 0;
+            foreach (var c in text)
+            {
+                switch (state)
+                {
+                    default:
+                        //should never happen
+                        throw new Exception();
+                    case sValStart:
+                        if (c == '-')
+                        {
+                            if (started)
+                            {
+                                throw newFormatException(text);
+                            }
+
+                            started = true;
+                            valNegative = true;
+                            break;
+                        }
+                        else if (c == '+')
+                        {
+                            if (started)
+                            {
+                                throw newFormatException(text);
+                            }
+
+                            started = true;
+                            break;
+                        }
+
+                        state = sValInt;
+                        goto case sValInt;
+                    case sValInt:
+                        if (c == '.')
+                        {
+                            state = sValDecimal;
+                            break;
+                        }
+
+                        if (c == 'd')
+                        {
+                            started = false;
+                            state = sExpStart;
+                            break;
+                        }
+
+                        if (!char.IsDigit(c))
+                        {
+                            throw newFormatException(text);
+                        }
+
+                        intVal = intVal * 10 + (valNegative ? '0' - c : c - '0');
+                        break;
+                    case sValDecimal:
+                        if (c == 'd')
+                        {
+                            started = false;
+                            state = sExpStart;
+                            break;
+                        }
+
+                        if (!char.IsDigit(c))
+                        {
+                            throw newFormatException(text);
+                        }
+
+                        intVal = intVal * 10 + (valNegative ? '0' - c : c - '0');
+                        scale++;
+                        break;
+                    case sExpStart:
+                        if (c == '-')
+                        {
+                            if (started)
+                            {
+                                throw newFormatException(text);
+                            }
+
+                            started = true;
+
+                            expNegative = true;
+                            break;
+                        }
+                        else if (c == '+')
+                        {
+                            if (started)
+                            {
+                                throw newFormatException(text);
+                            }
+
+                            started = true;
+                            break;
+                        }
+
+                        state = sExp;
+                        goto case sExp;
+                    case sExp:
+                        if (!char.IsDigit(c))
+                        {
+                            throw newFormatException(text);
+                        }
+
+                        exponent = exponent * 10 + (expNegative ? '0' - c : c - '0');
+                        break;
+                }
+            }
+
+            if (state == sValStart || state == sExpStart)
+            {
+                throw newFormatException(text);
+            }
+
+            if (intVal == 0 && valNegative)
+            {
+                return NegativeZero;
+            }
+
+            return new BigDecimal(intVal, scale - exponent);
+        }
+
+        public override string ToString()
+        {
+            if (IsNegativeZero)
+            {
+                return "-0d0";
+            }
+
+            var sb = new StringBuilder(IntVal.ToString(CultureInfo.InvariantCulture));
+            if (Scale == 0)
+            {
+                sb.Append(".0");
+            }
+            else if (Scale < 0)
+            {
+                //write the string as {mag}d{-scale}
+                sb.Append('d');
+                sb.Append(-Scale);
+            }
+            else
+            {
+                var smallestDotIdx = sb[0] == '-' ? 2 : 1;
+                if (sb.Length - Scale >= smallestDotIdx)
+                {
+                    sb.Insert(sb.Length - Scale, '.');
+                }
+                else
+                {
+                    var d = Scale - (sb.Length - smallestDotIdx);
+                    sb.Insert(smallestDotIdx, '.');
+                    sb.Append('d');
+                    sb.Append(-d);
+                }
+            }
+
+            return sb.ToString();
         }
     }
 }
