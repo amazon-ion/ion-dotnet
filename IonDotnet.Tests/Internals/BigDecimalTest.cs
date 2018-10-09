@@ -71,9 +71,9 @@ namespace IonDotnet.Tests.Internals
         public void NegativeZero()
         {
             Assert.IsTrue(BigDecimal.NegativeZero.IsNegativeZero);
+            Assert.IsTrue(BigDecimal.NegativeZero.Equals(new BigDecimal(-1.0000000m * 0)));
             Assert.AreEqual(0m, BigDecimal.NegativeZero.ToDecimal());
             Assert.AreEqual(0, BigDecimal.NegativeZero.IntVal);
-            Assert.AreEqual(0, BigDecimal.NegativeZero.Scale);
         }
 
         [TestMethod]

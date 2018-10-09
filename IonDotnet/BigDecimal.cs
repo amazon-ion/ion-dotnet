@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using IonDotnet.Utils;
 
 // ReSharper disable ImpureMethodCallOnReadonlyValueField
 
@@ -14,7 +15,7 @@ namespace IonDotnet
     /// </summary>
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
-        public static readonly BigDecimal NegativeZero = new BigDecimal(-1.0m * 0);
+        public static readonly BigDecimal NegativeZero = new BigDecimal(-1m * 0);
         public static readonly BigDecimal Zero = new BigDecimal(0, 0);
         public const int MaxPrecision = 1000;
 
@@ -36,19 +37,20 @@ namespace IonDotnet
 
         public BigDecimal(decimal dec)
         {
-            //TODO this is slow
-            var integer = new BigInteger(dec);
-            Scale = 0;
-            var scaleFactor = 1m;
-            while ((decimal) integer != dec * scaleFactor)
+            Span<byte> dBytes = stackalloc byte[sizeof(decimal)];
+            var maxId = DecimalHelper.CopyDecimalBigEndian(dBytes, dec);
+            Scale = dBytes[2];
+
+            var bi = BigInteger.Zero;
+            for (var idx = 4; idx <= maxId; idx++)
             {
-                Scale += 1;
-                scaleFactor *= 10;
-                integer = (BigInteger) (dec * scaleFactor);
+                bi <<= 8;
+                bi += dBytes[idx];
             }
 
-            IntVal = integer;
-            IsNegativeZero = dec == 0 && CheckNegativeZero(dec);
+            var negative = (dBytes[3] & 0x80) > 0;
+            IntVal = negative ? BigInteger.Negate(bi) : bi;
+            IsNegativeZero = negative && IntVal == 0;
         }
 
         public int CompareTo(BigDecimal other)

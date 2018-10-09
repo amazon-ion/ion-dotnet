@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using IonDotnet.Utils;
 
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
@@ -589,7 +590,7 @@ namespace IonDotnet.Internals.Binary
         private void WriteDecimalNumber(decimal value)
         {
             Span<byte> bytes = stackalloc byte[sizeof(decimal)];
-            var maxIdx = CopyDecimalBigEndian(bytes, value);
+            var maxIdx = DecimalHelper.CopyDecimalBigEndian(bytes, value);
 
             var negative = value < 0;
             Debug.Assert(!negative || (bytes[0] & 0b1000_0000) <= 0);
@@ -636,69 +637,6 @@ namespace IonDotnet.Internals.Binary
             _containerStack.IncreaseCurrentContainerLength(totalLength);
         }
 
-        private static unsafe int CopyDecimalBigEndian(Span<byte> bytes, decimal value)
-        {
-            var p = (byte*) &value;
-
-            //keep the flag the same
-            bytes[0] = p[0];
-            bytes[1] = p[1];
-            bytes[2] = p[2];
-            bytes[3] = p[3];
-
-            //high
-            var i = 7;
-            while (i > 3 && p[i] == 0)
-            {
-                i--;
-            }
-
-            var hasHigh = i > 3;
-            var j = 3;
-            while (i > 3)
-            {
-                bytes[++j] = p[i--];
-            }
-
-            //mid
-            i = 15;
-            bool hasMid;
-            if (!hasHigh)
-            {
-                while (i > 11 && p[i] == 0)
-                {
-                    i--;
-                }
-
-                hasMid = i > 11;
-            }
-            else
-            {
-                hasMid = true;
-            }
-
-            while (i > 11)
-            {
-                bytes[++j] = p[i--];
-            }
-
-            //lo
-            i = 11;
-            if (!hasMid)
-            {
-                while (i > 7 && p[i] == 0)
-                {
-                    i--;
-                }
-            }
-
-            while (i > 7)
-            {
-                bytes[++j] = p[i--];
-            }
-
-            return j;
-        }
 
         public void WriteTimestamp(Timestamp value)
         {
