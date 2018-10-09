@@ -15,7 +15,7 @@ namespace IonDotnet
     /// </summary>
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
-        public static readonly BigDecimal NegativeZero = new BigDecimal(-1m * 0);
+        public static readonly BigDecimal NegativeZero = new BigDecimal(-1.0m * 0);
         public static readonly BigDecimal Zero = new BigDecimal(0, 0);
         public const int MaxPrecision = 1000;
 

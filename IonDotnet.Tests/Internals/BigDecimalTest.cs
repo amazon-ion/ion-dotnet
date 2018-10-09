@@ -160,6 +160,23 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        [DataRow("0d0-3")]
+        [DataRow("3.4a")]
+        [DataRow("3.4+43.4+43.4+43.4+4")]
+        [DataRow("3.4d3-3")]
+        [DataRow("0d-3-4")]
+        [DataRow("0.3.4")]
+        [DataRow("0d.3")]
+        [DataRow("3.4.4-3")]
+        [DataRow("3.4d4.3")]
+        [DataRow("123._456")]
+        public void Parse_Invalid(string text)
+        {
+            Assert.ThrowsException<FormatException>(() => BigDecimal.Parse(text));
+            Assert.IsFalse(BigDecimal.TryParse(text, out BigDecimal _));
+        }
+
+        [TestMethod]
         [DataRow("0", false)]
         [DataRow("0.", false)]
         [DataRow("0d0", false)]
