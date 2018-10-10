@@ -320,6 +320,9 @@ namespace IonDotnet
             return hour * 60 + minute;
         }
 
+        /// <summary>
+        /// Parse a substring to decimal
+        /// </summary>
         private static bool DecimalTryParseSubString(string s, int offset, int length, out decimal output)
         {
             if (offset + length > s.Length)
@@ -334,6 +337,9 @@ namespace IonDotnet
 #endif
         }
 
+        /// <summary>
+        /// Parse a substring to integer
+        /// </summary>
         private static bool IntTryParseSubString(string s, int offset, int length, bool largerThanZero, out int output)
         {
             if (offset + length > s.Length)

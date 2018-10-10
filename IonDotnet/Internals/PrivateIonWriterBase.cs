@@ -136,6 +136,7 @@ namespace IonDotnet.Internals
         public abstract void WriteInt(BigInteger value);
         public abstract void WriteFloat(double value);
         public abstract void WriteDecimal(decimal value);
+        public abstract void WriteDecimal(BigDecimal value);
         public abstract void WriteTimestamp(Timestamp value);
         public abstract void WriteSymbol(string symbol);
         public abstract void WriteSymbolToken(SymbolToken symbolToken);

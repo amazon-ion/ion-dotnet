@@ -115,7 +115,7 @@ namespace IonDotnet.Internals.Binary
                     _v.IntValue = (int) sid;
                     break;
                 case IonType.Decimal:
-                    _v.DecimalValue = ReadDecimal(_valueLength);
+                    _v.DecimalValue = ReadBigDecimal(_valueLength);
                     break;
                 case IonType.Timestamp:
                     if (_valueLength == 0)
@@ -179,7 +179,7 @@ namespace IonDotnet.Internals.Binary
             return _v.TimestampValue;
         }
 
-        public override decimal DecimalValue()
+        public override BigDecimal DecimalValue()
         {
             if (_valueIsNull)
                 throw new NullValueException();

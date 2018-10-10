@@ -5,16 +5,19 @@ namespace IonDotnet.Tree
 {
     public sealed class IonDecimal : IonValue
     {
-        private decimal _decimal;
+        private BigDecimal _val;
 
-        public IonDecimal(decimal value) : base(false)
+        public IonDecimal(double doubleValue) : this(Convert.ToDecimal(doubleValue))
         {
-            _decimal = value;
         }
 
-        public IonDecimal(double doubleValue) : base(false)
+        public IonDecimal(decimal value) : this(new BigDecimal(value))
         {
-            _decimal = Convert.ToDecimal(doubleValue);
+        }
+
+        public IonDecimal(BigDecimal bigDecimal) : base(false)
+        {
+            _val = bigDecimal;
         }
 
         private IonDecimal(bool isNull) : base(isNull)
@@ -48,12 +51,26 @@ namespace IonDotnet.Tree
             get
             {
                 ThrowIfNull();
-                return _decimal;
+                return _val.ToDecimal();
             }
             set
             {
                 ThrowIfLocked();
-                _decimal = value;
+                _val = new BigDecimal(value);
+            }
+        }
+
+        public BigDecimal BigDecimalValue
+        {
+            get
+            {
+                ThrowIfNull();
+                return _val;
+            }
+            set
+            {
+                ThrowIfLocked();
+                _val = value;
             }
         }
 

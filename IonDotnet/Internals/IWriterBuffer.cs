@@ -79,11 +79,17 @@ namespace IonDotnet.Internals
         void WriteBytes(ReadOnlySpan<byte> bytes);
 
         /// <summary>
-        /// Write self-delimited int value to the buffer
+        /// Write self-delimited int value to the buffer.
         /// </summary>
         /// <param name="value">Value to write</param>
         /// <returns>Number of bytes written</returns>
         int WriteVarUint(long value);
+
+        /// <summary>
+        /// Write the number in the form of var-int, meaning that the last byte contains the sign bit.
+        /// </summary>
+        /// <returns>Number of bytes written.</returns>
+        int WriteVarInt(long value);
 
         /// <summary>
         /// Write all annotations to the buffer, and prefix them with the length

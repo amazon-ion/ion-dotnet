@@ -47,16 +47,16 @@ namespace IonDotnet.Tests.Integration
             void assertReader(IIonReader reader)
             {
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                Assert.AreEqual(18446744073709551615m, reader.DecimalValue());
+                Assert.AreEqual(18446744073709551615m, reader.DecimalValue().ToDecimal());
 
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                Assert.AreEqual(-18446744073709551615.0m, reader.DecimalValue());
+                Assert.AreEqual(-18446744073709551615.0m, reader.DecimalValue().ToDecimal());
 
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                Assert.AreEqual(18446744073709551616.0m, reader.DecimalValue());
+                Assert.AreEqual(18446744073709551616.0m, reader.DecimalValue().ToDecimal());
 
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                Assert.AreEqual(-18446744073709551616.0m, reader.DecimalValue());
+                Assert.AreEqual(-18446744073709551616.0m, reader.DecimalValue().ToDecimal());
             }
 
             void writerFunc(IIonWriter writer)
@@ -85,7 +85,7 @@ namespace IonDotnet.Tests.Integration
             void assertReader(IIonReader reader)
             {
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                Assert.AreEqual(-1.28m, reader.DecimalValue());
+                Assert.AreEqual(-1.28m, reader.DecimalValue().ToDecimal());
             }
 
             void writerFunc(IIonWriter writer)
@@ -111,7 +111,7 @@ namespace IonDotnet.Tests.Integration
             void assertReader(IIonReader reader)
             {
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                Assert.AreEqual(1.23m, reader.DecimalValue());
+                Assert.AreEqual(1.23m, reader.DecimalValue().ToDecimal());
             }
 
             void writerFunc(IIonWriter writer)
@@ -153,7 +153,7 @@ namespace IonDotnet.Tests.Integration
                 foreach (var num in nums)
                 {
                     Assert.AreEqual(IonType.Decimal, reader.MoveNext());
-                    Assert.AreEqual(num, reader.DecimalValue());
+                    Assert.AreEqual(num, reader.DecimalValue().ToDecimal());
                 }
             }
 

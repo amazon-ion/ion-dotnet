@@ -140,7 +140,7 @@ namespace IonDotnet.Tests.Internals
                 writer.WriteDecimal(val);
                 writer.Flush();
                 var bytes = _memoryStream.GetWrittenBuffer();
-                Assert.AreEqual(val, ReadUtils.Binary.ReadSingleDecimal(bytes));
+                Assert.AreEqual(val, ReadUtils.Binary.ReadSingleDecimal(bytes).ToDecimal());
             }
         }
 

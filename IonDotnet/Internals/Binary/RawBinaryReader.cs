@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using IonDotnet.Conversions;
 using IonDotnet.Systems;
+
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
 
@@ -522,15 +523,64 @@ namespace IonDotnet.Internals.Binary
             return ret;
         }
 
-        protected decimal ReadDecimal(int length)
+        protected BigDecimal ReadBigDecimal(int length)
         {
-            if (length == 0) return 0m;
+            if (length == 0)
+                return new BigDecimal(0m);
 
             var saveLimit = _localRemaining - length;
             _localRemaining = length;
 
             ReadVarInt(out var exponent);
-            if (exponent > 0) throw new IonException($"Exponent should be <= 0: {exponent}");
+            //we care about the scale here
+            exponent = -exponent;
+
+            BigInteger mag;
+            var negative = false;
+            if (_localRemaining == 0)
+            {
+                mag = BigInteger.Zero;
+            }
+            else
+            {
+                var bytes = new byte[_localRemaining];
+                ReadAll(bytes, _localRemaining);
+
+                if ((bytes[0] & 0b_1000_0000) > 0)
+                {
+                    //value is negative
+                    bytes[0] &= 0x7F;
+                    negative = true;
+                }
+
+                Array.Reverse(bytes);
+                mag = new BigInteger(bytes);
+                if (negative)
+                {
+                    mag = BigInteger.Negate(mag);
+                }
+            }
+
+            _localRemaining = saveLimit;
+            if (negative && mag == 0)
+            {
+                return BigDecimal.NegativeZero(exponent);
+            }
+
+            return new BigDecimal(mag, exponent);
+        }
+
+        protected decimal ReadDecimal(int length)
+        {
+            if (length == 0)
+                return 0m;
+
+            var saveLimit = _localRemaining - length;
+            _localRemaining = length;
+
+            ReadVarInt(out var exponent);
+            if (exponent > 0)
+                throw new IonException($"Exponent should be <= 0: {exponent}");
             //we care about the scale here
             exponent = -exponent;
 
@@ -658,7 +708,7 @@ namespace IonDotnet.Internals.Binary
                 return BigInteger.Zero;
 
             var bytes = new byte[length];
-            ReadAll(new ArraySegment<byte>(bytes, 0, length), length);
+            ReadAll(bytes, length);
             Array.Reverse(bytes);
             var bigInt = new BigInteger(bytes);
             return isNegative ? BigInteger.Negate(bigInt) : bigInt;
@@ -766,27 +816,6 @@ namespace IonDotnet.Internals.Binary
             var strValue = Encoding.UTF8.GetString(alloc, 0, length);
             ArrayPool<byte>.Shared.Return(alloc);
             return strValue;
-        }
-
-        /// <summary>
-        /// Reads <paramref name="length"/> bytes to the buffer, blocking till done
-        /// </summary>
-        /// <param name="buffer">Buffer to read data in</param>
-        /// <param name="length">Number of bytes to read</param>
-        /// <exception cref="UnexpectedEofException">If EOF occurs before all bytes are read</exception>
-        private void ReadAll(ArraySegment<byte> buffer, int length)
-        {
-            Debug.Assert(length <= buffer.Count);
-            var offset = buffer.Offset;
-            while (length > 0)
-            {
-                var amount = _input.Read(buffer.Array, offset, length);
-                if (amount <= 0) throw new UnexpectedEofException();
-
-                _localRemaining -= amount;
-                length -= amount;
-                offset += amount;
-            }
         }
 
         /// <summary>
@@ -984,7 +1013,7 @@ namespace IonDotnet.Internals.Binary
         public abstract BigInteger BigIntegerValue();
         public abstract bool BoolValue();
         public abstract Timestamp TimestampValue();
-        public abstract decimal DecimalValue();
+        public abstract BigDecimal DecimalValue();
         public abstract double DoubleValue();
 
         protected abstract void OnValueStart();

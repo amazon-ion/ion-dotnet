@@ -236,15 +236,9 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public void Write(decimal d)
+        public void Write(in BigDecimal bd)
         {
-            //TODO find a better way
-            var str = d.ToString(CultureInfo.InvariantCulture);
-            _writer.Write(str);
-            if (str.IndexOf('.') < 0)
-            {
-                _writer.Write('d');
-            }
+            _writer.Write(bd.ToString());
         }
     }
 }

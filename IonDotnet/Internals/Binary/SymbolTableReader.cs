@@ -509,7 +509,7 @@ namespace IonDotnet.Internals.Binary
 
         public double DoubleValue() => throw new InvalidOperationException("only valid if the value is a double");
 
-        public decimal DecimalValue() => throw new InvalidOperationException("only valid if the value is a decimal");
+        public BigDecimal DecimalValue() => throw new InvalidOperationException("only valid if the value is a decimal");
 
         public Timestamp TimestampValue() => throw new InvalidOperationException("only valid if the value is a DateTime");
 

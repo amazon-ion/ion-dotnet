@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Numerics;
 
+// ReSharper disable UnusedMemberInSuper.Global
+
 namespace IonDotnet
 {
     /// <summary>
-    /// Represents an interface that can write value to an Ion stream
+    /// Represents an interface that can write value to an Ion stream.
     /// </summary>
     public interface IValueWriter
     {
@@ -48,6 +50,12 @@ namespace IonDotnet
         /// </summary>
         /// <param name="value">Decimal value.</param>
         void WriteDecimal(decimal value);
+
+        /// <summary>
+        /// Write a <see cref="BigDecimal"/> value.
+        /// </summary>
+        /// <param name="value">Big decimal value.</param>
+        void WriteDecimal(BigDecimal value);
 
         /// <summary>
         /// Write a timestamp value.

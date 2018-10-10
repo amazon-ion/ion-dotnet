@@ -669,7 +669,7 @@ namespace IonDotnet.Internals.Text
 
         public abstract double DoubleValue();
 
-        public abstract decimal DecimalValue();
+        public abstract BigDecimal DecimalValue();
 
         public abstract Timestamp TimestampValue();
 
