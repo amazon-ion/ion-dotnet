@@ -84,7 +84,7 @@ namespace IonDotnet.Tests.Common
 
                     return doubleVal;
                 case IonType.Decimal:
-                    return reader.DecimalValue();
+                    return reader.DecimalValue().ToDecimal();
                 case IonType.String:
                     return reader.StringValue();
                 case IonType.Timestamp:
@@ -107,7 +107,7 @@ namespace IonDotnet.Tests.Common
                 return reader.MoveNext() == IonType.None;
             }
 
-            public static decimal ReadSingleDecimal(byte[] data)
+            public static BigDecimal ReadSingleDecimal(byte[] data)
             {
                 var reader = new UserBinaryReader(new MemoryStream(data));
                 Assert.AreEqual(IonType.Decimal, reader.MoveNext());

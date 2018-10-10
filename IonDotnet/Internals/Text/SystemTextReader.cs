@@ -183,7 +183,7 @@ namespace IonDotnet.Internals.Text
             }
             else
             {
-                _v.DecimalValue = decimal.Parse(text, CultureInfo.InvariantCulture);
+                _v.DecimalValue = BigDecimal.Parse(text);
                 _valueType = IonType.Decimal;
             }
         }
@@ -201,49 +201,12 @@ namespace IonDotnet.Internals.Text
         }
 
         /// <summary>
-        /// There is 'd' (decimal token) in the text. This method sets the decimal value or throw overflow exception if the number of decimal
-        /// places is too high.
+        /// There is 'd' (decimal token) in the text. This method sets the decimal value.
         /// </summary>
         /// <param name="text">Number text</param>
         private void SetDecimal(string text)
         {
-            var dIdx = text.IndexOf("d", StringComparison.OrdinalIgnoreCase);
-            var dotIdx = text.IndexOf('.');
-            var span = text.AsSpan();
-            var coeffText = span.Slice(0, dIdx);
-
-            var expo = 0;
-            if (dIdx < text.Length - 1)
-            {
-#if NETCOREAPP2_1
-                expo = int.Parse(span.Slice(dIdx + 1));
-#else
-                expo = int.Parse(span.Slice(dIdx + 1).ToString());
-#endif
-            }
-
-            var decimalPlaces = dotIdx < 0 ? 0 : coeffText.Length - dotIdx;
-            decimalPlaces -= expo;
-            if (decimalPlaces > 28)
-                throw new OverflowException($"{text} has {decimalPlaces} decimal places, decimal cannot hold");
-
-#if NETCOREAPP2_1
-            var coeff = decimal.Parse(coeffText);
-#else
-            var coeff = decimal.Parse(coeffText.ToString());
-#endif
-            var neg = expo < 0;
-            if (neg)
-            {
-                expo = -expo;
-            }
-
-            for (var i = 0; i < expo; i++)
-            {
-                coeff = neg ? coeff / 10 : coeff * 10;
-            }
-
-            _v.DecimalValue = coeff;
+            _v.DecimalValue = BigDecimal.Parse(text);
         }
 
         private void SetInteger(Radix radix, string s, bool negative)
@@ -400,7 +363,7 @@ namespace IonDotnet.Internals.Text
             return _v.DoubleValue;
         }
 
-        public override decimal DecimalValue()
+        public override BigDecimal DecimalValue()
         {
             if (CurrentIsNull)
                 throw new NullValueException();

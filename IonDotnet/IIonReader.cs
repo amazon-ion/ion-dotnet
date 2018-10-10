@@ -92,7 +92,7 @@ namespace IonDotnet
         double DoubleValue();
 
         /// <returns>Current decimal value</returns>
-        decimal DecimalValue();
+        BigDecimal DecimalValue();
 
         /// <returns>Current timestamp value</returns>
         Timestamp TimestampValue();

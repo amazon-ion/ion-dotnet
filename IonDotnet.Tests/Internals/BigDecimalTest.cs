@@ -70,18 +70,18 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void NegativeZero()
         {
-            Assert.IsTrue(BigDecimal.NegativeZero.IsNegativeZero);
-            Assert.IsTrue(BigDecimal.NegativeZero.Equals(new BigDecimal(-1.0000000m * 0)));
-            Assert.AreEqual(0m, BigDecimal.NegativeZero.ToDecimal());
-            Assert.AreEqual(0, BigDecimal.NegativeZero.IntVal);
+            Assert.IsTrue(BigDecimal.NegativeZero().IsNegativeZero);
+            Assert.IsTrue(BigDecimal.NegativeZero().Equals(new BigDecimal(-1.0000000m * 0)));
+            Assert.AreEqual(0m, BigDecimal.NegativeZero().ToDecimal());
+            Assert.AreEqual(0, BigDecimal.NegativeZero().IntVal);
         }
 
         [TestMethod]
         public void DecimalZero()
         {
-            Assert.IsFalse(BigDecimal.Zero.IsNegativeZero);
-            Assert.AreEqual(0, BigDecimal.Zero.IntVal);
-            Assert.AreEqual(0m, BigDecimal.Zero.ToDecimal());
+            Assert.IsFalse(BigDecimal.Zero().IsNegativeZero);
+            Assert.AreEqual(0, BigDecimal.Zero().IntVal);
+            Assert.AreEqual(0m, BigDecimal.Zero().ToDecimal());
         }
 
         [TestMethod]
@@ -190,7 +190,7 @@ namespace IonDotnet.Tests.Internals
         public void Parse_Zeros(string text, bool isNegativeZero)
         {
             var parsed = BigDecimal.Parse(text);
-            Assert.IsTrue(BigDecimal.Zero.Equals(parsed));
+            Assert.IsTrue(BigDecimal.Zero().Equals(parsed));
             Assert.AreEqual(isNegativeZero, parsed.IsNegativeZero);
         }
 

@@ -15,24 +15,22 @@ namespace IonDotnet
     /// </summary>
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
     {
-        public static readonly BigDecimal NegativeZero = new BigDecimal(-1.0m * 0);
-        public static readonly BigDecimal Zero = new BigDecimal(0, 0);
         public const int MaxPrecision = 1000;
 
         internal readonly BigInteger IntVal;
         internal readonly int Scale;
         public readonly bool IsNegativeZero;
 
-        public BigDecimal(BigInteger intVal, int scale)
+        public BigDecimal(BigInteger intVal, int scale, bool negate = false)
         {
             if (scale > MaxPrecision)
             {
                 throw new ArgumentException($"Maximum scale is {MaxPrecision}", nameof(scale));
             }
 
-            IntVal = intVal;
+            IntVal = negate ? BigInteger.Negate(intVal) : intVal;
             Scale = scale;
-            IsNegativeZero = false;
+            IsNegativeZero = negate && intVal == 0;
         }
 
         public BigDecimal(decimal dec)
@@ -110,7 +108,10 @@ namespace IonDotnet
         public static bool CheckNegativeZero(decimal dec)
         {
             if (dec != 0)
+            {
                 return false;
+            }
+
             unsafe
             {
                 var p = (byte*) &dec;
@@ -313,7 +314,7 @@ namespace IonDotnet
                             break;
                         }
 
-                        if (c == 'd')
+                        if (c == 'd' || c == 'D')
                         {
                             started = false;
                             state = sExpStart;
@@ -328,7 +329,7 @@ namespace IonDotnet
                         intVal = intVal * 10 + (valNegative ? '0' - c : c - '0');
                         break;
                     case sValDecimal:
-                        if (c == 'd')
+                        if (c == 'd' || c == 'D')
                         {
                             started = false;
                             state = sExpStart;
@@ -387,7 +388,7 @@ namespace IonDotnet
 
             if (intVal == 0 && valNegative)
             {
-                return NegativeZero;
+                return NegativeZero(scale);
             }
 
             return new BigDecimal(intVal, scale - exponent);
@@ -429,5 +430,9 @@ namespace IonDotnet
 
             return sb.ToString();
         }
+
+        public static BigDecimal NegativeZero(int scale = 0) => new BigDecimal(0, scale, true);
+
+        public static BigDecimal Zero(int scale = 0) => new BigDecimal(0, scale);
     }
 }

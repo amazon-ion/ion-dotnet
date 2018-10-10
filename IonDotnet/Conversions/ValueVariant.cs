@@ -13,7 +13,7 @@ namespace IonDotnet.Conversions
         private double _doubleValue;
         private string _stringValue;
         private BigInteger _bigIntegerValue;
-        private decimal _decimalValue;
+        private BigDecimal _decimalValue;
         private Timestamp _timestampValue;
         private bool _boolValue;
 
@@ -86,13 +86,13 @@ namespace IonDotnet.Conversions
             }
         }
 
-        public decimal DecimalValue
+        public BigDecimal DecimalValue
         {
             get => _decimalValue;
             internal set
             {
                 _decimalValue = value;
-                _doubleValue = Convert.ToDouble(value);
+//                _doubleValue = Convert.ToDouble(value);
                 AuthoritativeType = ScalarType.Decimal;
                 TypeSet = ScalarType.Decimal;
             }

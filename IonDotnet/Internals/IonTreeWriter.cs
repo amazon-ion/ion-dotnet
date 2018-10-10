@@ -106,7 +106,8 @@ namespace IonDotnet.Internals
 
         public override void WriteDecimal(BigDecimal value)
         {
-            throw new NotImplementedException();
+            var v = new IonDecimal(value);
+            AppendValue(v);
         }
 
         public override void WriteTimestamp(Timestamp value)
