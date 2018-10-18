@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
 using IonDotnet.Tree;
@@ -30,7 +31,7 @@ namespace IonDotnet.Systems
         }
 
         /// <summary>
-        /// Load Ion data from a byte buffer. Detecting whether it's binary or UTF8 text Ion.
+        /// Load Ion data from a byte buffer. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
         /// <param name="data">Byte buffer.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
@@ -39,12 +40,6 @@ namespace IonDotnet.Systems
             throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Load Ion data from a stream. Detecting whether it's binary or UTF8 text Ion.
-        /// </summary>
-        /// <param name="stream">Byte stream</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
         public IonDatagram Load(Stream stream)
         {
             var reader = IonReaderBuilder.Build(stream);
@@ -52,15 +47,38 @@ namespace IonDotnet.Systems
         }
 
         /// <summary>
-        /// Load Ion data from a file. Detecting whether it's binary or UTF8 text Ion.
+        /// Load Ion data from a stream. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
-        /// <param name="ionFile">Ion file.</param>
+        /// <param name="stream">Byte stream</param>
+        /// <param name="encoding">Type of text encoding used.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+        /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
+        public IonDatagram Load(Stream stream, Encoding encoding)
+        {
+            var reader = IonReaderBuilder.Build(stream, encoding);
+            return WriteDatagram(reader);
+        }
+
         public IonDatagram Load(FileInfo ionFile)
         {
             using (var stream = ionFile.OpenRead())
             {
                 var datagram = Load(stream);
+                return datagram;
+            }
+        }
+
+        /// <summary>
+        /// Load Ion data from a file. Detecting whether it's binary or Unicode text Ion.
+        /// </summary>
+        /// <param name="ionFile">Ion file.</param>
+        /// <param name="encoding">The type of text encoding used.</param>
+        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+        public IonDatagram Load(FileInfo ionFile, Encoding encoding)
+        {
+            using (var stream = ionFile.OpenRead())
+            {
+                var datagram = Load(stream, encoding);
                 return datagram;
             }
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 
@@ -32,16 +33,22 @@ namespace IonDotnet.Systems
         /// <returns>Ion text reader</returns>
         public static IIonReader Build(string text, ICatalog catalog)
         {
-            throw new NotImplementedException();
+            return new UserTextReader(text, catalog);
+        }
+
+        public static IIonReader Build(Stream stream)
+        {
+            return Build(stream, Encoding.UTF8);
         }
 
         /// <summary>
         /// Build an Ion reader for the data stream.
         /// </summary>
-        /// <param name="stream">Ion data stream in binary of UTF8-text form</param>
+        /// <param name="stream">Ion data stream in binary of unicode-text.</param>
+        /// <param name="encoding">The type of encoding used.</param>
         /// <returns>Ion reader</returns>
         /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
-        public static IIonReader Build(Stream stream)
+        public static IIonReader Build(Stream stream, Encoding encoding)
         {
             if (!stream.CanRead)
                 throw new ArgumentException("Stream must be readable", nameof(stream));
@@ -77,7 +84,9 @@ namespace IonDotnet.Systems
                 return new UserBinaryReader(stream);
             }
 
-            return didSeek ? new UserTextReader(stream) : new UserTextReader(stream, initialBytes.Slice(0, bytesRead));
+            return didSeek
+                ? new UserTextReader(stream, encoding)
+                : new UserTextReader(stream, encoding, initialBytes.Slice(0, bytesRead));
         }
 
         /// <summary>

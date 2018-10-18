@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using IonDotnet.Systems;
 using IonDotnet.Tests.Common;
 using IonDotnet.Tree;
@@ -36,7 +37,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                           // && f.Name == "allNulls.ion"
+//                            && f.Name == "utf16.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -82,7 +83,7 @@ namespace IonDotnet.Tests.Integration
         [DynamicData(nameof(GoodNonEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadGood_Successful(FileInfo fi)
         {
-            IonLoader.Default.Load(fi);
+            LoadFile(fi);
         }
 
         /// <summary>
@@ -92,7 +93,7 @@ namespace IonDotnet.Tests.Integration
         [DynamicData(nameof(GoodEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void Good_Equivalence(FileInfo fi)
         {
-            var datagram = IonLoader.Default.Load(fi);
+            var datagram = LoadFile(fi);
             foreach (var topLevelValue in datagram)
             {
                 Assert.IsTrue(topLevelValue is IonSequence);
@@ -105,6 +106,21 @@ namespace IonDotnet.Tests.Integration
                     }
                 }
             }
+        }
+
+        private static IonDatagram LoadFile(FileInfo fi)
+        {
+            if (fi.Name == "utf16.ion")
+            {
+                return IonLoader.Default.Load(fi, new UnicodeEncoding(true, true));
+            }
+
+            if (fi.Name == "utf32.ion")
+            {
+                return IonLoader.Default.Load(fi, new UTF32Encoding(true, true));
+            }
+
+            return IonLoader.Default.Load(fi);
         }
     }
 }

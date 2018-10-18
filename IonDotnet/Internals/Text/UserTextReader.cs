@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IonDotnet.Internals.Text
@@ -19,13 +20,23 @@ namespace IonDotnet.Internals.Text
         {
         }
 
-        public UserTextReader(Stream utf8Stream, ICatalog catalog = null)
-            : this(new UnicodeStream(utf8Stream), catalog)
+        public UserTextReader(Stream stream, ICatalog catalog = null)
+            : this(new UnicodeStream(stream, Encoding.UTF8), catalog)
         {
         }
 
-        public UserTextReader(Stream utf8Stream, Span<byte> bytesRead, ICatalog catalog = null)
-            : this(new UnicodeStream(utf8Stream, bytesRead), catalog)
+        public UserTextReader(Stream stream, Encoding encoding, ICatalog catalog = null)
+            : this(new UnicodeStream(stream, encoding), catalog)
+        {
+        }
+
+        public UserTextReader(Stream stream, Encoding encoding, Span<byte> bytesRead, ICatalog catalog = null)
+            : this(new UnicodeStream(stream, encoding, bytesRead), catalog)
+        {
+        }
+
+        public UserTextReader(Stream stream, Span<byte> bytesRead, ICatalog catalog = null)
+            : this(new UnicodeStream(stream, bytesRead), catalog)
         {
         }
 
