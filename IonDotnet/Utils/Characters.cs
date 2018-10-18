@@ -48,7 +48,7 @@ namespace IonDotnet.Utils
             return isControl && !isWhiteSpace && !isNewLine;
         }
 
-        // these help convert from Java UTF-16 to Unicode Scalars (aka unicode code
+        // these help convert from UTF-16 to Unicode Scalars (aka unicode code
         // points (aka characters)) which are "32" bit values (really just 21 bits)
         // the DON'T check validity of their input, they expect that to have happened
         // already.  This is a perf issue since normally this check has been done

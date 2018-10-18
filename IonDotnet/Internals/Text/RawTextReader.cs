@@ -163,9 +163,9 @@ namespace IonDotnet.Internals.Text
         protected int _lobValuePosition;
         protected byte[] _lobBuffer;
 
-        protected RawTextReader(TextStream input, IonType parent = IonType.Datagram)
+        protected RawTextReader(TextStream input)
         {
-            _state = GetStateAtContainerStart(parent);
+            _state = GetStateAtContainerStart(IonType.Datagram);
             _valueBuffer = new StringBuilder();
             _scanner = new TextScanner(input);
             _eof = false;

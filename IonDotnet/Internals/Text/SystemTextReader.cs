@@ -10,7 +10,7 @@ namespace IonDotnet.Internals.Text
     {
         protected readonly ISymbolTable _systemSymbols;
 
-        protected SystemTextReader(TextStream input, IonType parent) : base(input, parent)
+        protected SystemTextReader(TextStream input) : base(input)
         {
             _systemSymbols = SharedSymbolTable.GetSystem(1);
         }

@@ -941,23 +941,22 @@ namespace IonDotnet.Internals.Text
         /// </summary>
         /// <param name="c1"></param>
         /// <returns></returns>
-        private int ReadLargeCharSequence(int c1)
-        {
-            if (_input.IsByteStream)
-                return ReadUtf8Sequence(c1);
-
-            if (char.IsHighSurrogate((char) c1))
-            {
-                var c2 = ReadChar();
-                if (char.IsLowSurrogate((char) c2))
-                {
-                    c1 = Characters.MakeUnicodeScalar(c1, c2);
-                }
-            }
-
-            return c1;
-        }
-
+//        private int ReadLargeCharSequence(int c1)
+//        {
+//            if (_input.IsByteStream)
+//                return ReadUtf8Sequence(c1);
+//
+//            if (char.IsHighSurrogate((char) c1))
+//            {
+//                var c2 = ReadChar();
+//                if (char.IsLowSurrogate((char) c2))
+//                {
+//                    c1 = Characters.MakeUnicodeScalar(c1, c2);
+//                }
+//            }
+//
+//            return c1;
+//        }
         private int ReadUtf8Sequence(int c1)
         {
             var len = Characters.GetUtf8LengthFromFirstByte(c1);
@@ -1010,19 +1009,23 @@ namespace IonDotnet.Internals.Text
                     case '\\':
                         c = ReadEscapedChar(c, isClob);
                         break;
-                    default:
-                        if (!isClob && !Characters.Is7BitChar(c))
-                        {
-                            c = ReadLargeCharSequence(c);
-                        }
-
-                        break;
+//                    default:
+//                        if (!isClob && !Characters.Is7BitChar(c))
+//                        {
+//                            c = ReadLargeCharSequence(c);
+//                        }
+//
+//                        break;
                 }
 
-                if (!isClob && Characters.NeedsSurrogateEncoding(c))
+                if (!isClob && char.IsHighSurrogate((char) c))
                 {
-                    sb.Append(Characters.GetHighSurrogate(c));
-                    c = Characters.GetLowSurrogate(c);
+                    sb.Append((char) c);
+                    c = ReadChar();
+                    if (!char.IsLowSurrogate((char) c))
+                    {
+                        throw new IonException($"Invalid character format {(char) c}");
+                    }
                 }
 
                 sb.Append((char) c);
@@ -1092,21 +1095,25 @@ namespace IonDotnet.Internals.Text
                         c = ReadChar();
                         c = ReadEscapedCharContent(c, clobCharsOnly);
                         break;
-                    default:
-                        if (!clobCharsOnly && !Characters.Is7BitChar(c))
-                        {
-                            c = ReadLargeCharSequence(c);
-                        }
-
-                        break;
+//                    default:
+//                        if (!clobCharsOnly && !Characters.Is7BitChar(c))
+//                        {
+//                            c = ReadLargeCharSequence(c);
+//                        }
+//
+//                        break;
                 }
 
                 if (!clobCharsOnly)
                 {
-                    if (Characters.NeedsSurrogateEncoding(c))
+                    if (char.IsHighSurrogate((char) c))
                     {
-                        valueBuffer.Append(Characters.GetHighSurrogate(c));
-                        c = Characters.GetLowSurrogate(c);
+                        valueBuffer.Append((char) c);
+                        c = ReadChar();
+                        if (!char.IsLowSurrogate((char) c))
+                        {
+                            throw new IonException($"Invalid character format {(char) c}");
+                        }
                     }
                 }
                 else if (Characters.Is8BitChar(c))
@@ -1223,13 +1230,13 @@ namespace IonDotnet.Internals.Text
                         if (c == TextConstants.EscapeNotDefined)
                             throw new InvalidTokenException(c);
                         break;
-                    default:
-                        if (!clob && Characters.Is7BitChar(c))
-                        {
-                            c = ReadLargeCharSequence(c);
-                        }
-
-                        break;
+//                    default:
+//                        if (!clob && Characters.Is7BitChar(c))
+//                        {
+//                            c = ReadLargeCharSequence(c);
+//                        }
+//
+//                        break;
                 }
 
                 // at this point we have a post-escaped character to return to the caller
@@ -1304,7 +1311,7 @@ namespace IonDotnet.Internals.Text
             }
 
             if (len > 0)
-                throw new IonException($"Hex digit len exceeded maximum");
+                throw new IonException("Hex digit len exceeded maximum");
 
             return hexchar;
         }
@@ -1908,13 +1915,13 @@ namespace IonDotnet.Internals.Text
                     break;
                 case -1:
                     break;
-                default:
-                    if (!isClob && !Characters.Is7BitChar(c))
-                    {
-                        c = ReadLargeCharSequence(c);
-                    }
-
-                    break;
+//                default:
+//                    if (!isClob && !Characters.Is7BitChar(c))
+//                    {
+//                        c = ReadLargeCharSequence(c);
+//                    }
+//
+//                    break;
             }
 
             return c;
@@ -1952,11 +1959,23 @@ namespace IonDotnet.Internals.Text
                 // handle surrogate encoding (otherwise we don't care)
                 if (!isClob)
                 {
-                    if (Characters.NeedsSurrogateEncoding(c))
+                    if (char.IsHighSurrogate((char) c))
                     {
-                        sb.Append(Characters.GetHighSurrogate(c));
-                        c = Characters.GetLowSurrogate(c);
+                        sb.Append((char) c);
+                        c = ReadChar();
+                        if (!char.IsLowSurrogate((char) c))
+                        {
+                            throw new IonException($"Invalid character format {(char) c}");
+                        }
                     }
+
+//                    sb.Append(c);
+//
+//                    if (Characters.NeedsSurrogateEncoding(c))
+//                    {
+//                        sb.Append(Characters.GetHighSurrogate(c));
+//                        c = Characters.GetLowSurrogate(c);
+//                    }
                 }
 
                 sb.Append((char) c);

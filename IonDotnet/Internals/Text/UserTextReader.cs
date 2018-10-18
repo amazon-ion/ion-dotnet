@@ -14,23 +14,23 @@ namespace IonDotnet.Internals.Text
         private ISymbolTable _currentSymtab;
         private readonly ICatalog _catalog;
 
-        public UserTextReader(string textForm, ICatalog catalog = null, IonType parentType = IonType.None)
-            : this(new CharSequenceStream(textForm), catalog, parentType)
+        public UserTextReader(string textForm, ICatalog catalog = null)
+            : this(new CharSequenceStream(textForm), catalog)
         {
         }
 
-        public UserTextReader(Stream utf8Stream, ICatalog catalog = null, IonType parentType = IonType.None)
-            : this(new Utf8ByteStream(utf8Stream), catalog, parentType)
+        public UserTextReader(Stream utf8Stream, ICatalog catalog = null)
+            : this(new UnicodeStream(utf8Stream), catalog)
         {
         }
 
-        public UserTextReader(Stream utf8Stream, Span<byte> bytesRead, ICatalog catalog = null, IonType parentType = IonType.None)
-            : this(new Utf8ByteStream(utf8Stream, bytesRead), catalog, parentType)
+        public UserTextReader(Stream utf8Stream, Span<byte> bytesRead, ICatalog catalog = null)
+            : this(new UnicodeStream(utf8Stream, bytesRead), catalog)
         {
         }
 
-        private UserTextReader(TextStream textStream, ICatalog catalog, IonType parentType)
-            : base(textStream, parentType)
+        private UserTextReader(TextStream textStream, ICatalog catalog)
+            : base(textStream)
         {
             _catalog = catalog;
             _currentSymtab = _systemSymbols;

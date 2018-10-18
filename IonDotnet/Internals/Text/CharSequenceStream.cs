@@ -18,10 +18,6 @@ namespace IonDotnet.Internals.Text
             _chars = chars;
         }
 
-        public override bool IsByteStream => false;
-
-        public override int UnitSize => sizeof(char);
-
         public override int Read() => _idx == _chars.Length ? -1 : _chars.Span[_idx++];
 
         public override void Unread(int c)

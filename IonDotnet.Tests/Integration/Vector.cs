@@ -36,7 +36,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                            //&& f.Name == "timestampsLargeFractionalPrecision.ion"
+                           // && f.Name == "allNulls.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -75,7 +75,6 @@ namespace IonDotnet.Tests.Integration
         /// <summary>
         /// Just make sure this doesn't cause exception
         /// </summary>
-        /// <param name="fi"></param>
         [TestMethod]
         [DynamicData(nameof(GoodFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         [DynamicData(nameof(GoodTimestampFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]

@@ -9,11 +9,6 @@ namespace IonDotnet.Internals.Text
     internal abstract class TextStream
     {
         /// <summary>
-        /// True if this is a byte stream
-        /// </summary>
-        public abstract bool IsByteStream { get; }
-
-        /// <summary>
         /// Read an 'unit', which, depending on the kind of stream, might be a 2-byte <see cref="char"/> 
         /// or a <see cref="byte"/>
         /// </summary>
@@ -25,8 +20,5 @@ namespace IonDotnet.Internals.Text
         /// </summary>
         /// <param name="c">Has to be most-recently read unit</param>
         public abstract void Unread(int c);
-
-        /// <value>The size of read-unit</value>
-        public abstract int UnitSize { get; }
     }
 }
