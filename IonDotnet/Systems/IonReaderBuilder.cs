@@ -16,22 +16,12 @@ namespace IonDotnet.Systems
     public static class IonReaderBuilder
     {
         /// <summary>
-        /// Build a text reader for the string
-        /// </summary>
-        /// <param name="text">Ion text</param>
-        /// <returns>Ion text reader</returns>
-        public static IIonReader Build(string text)
-        {
-            return new UserTextReader(text);
-        }
-
-        /// <summary>
         /// Build a text reader for the string with a catalog
         /// </summary>
         /// <param name="text">Ion text</param>
         /// <param name="catalog">Ion catalog</param>
         /// <returns>Ion text reader</returns>
-        public static IIonReader Build(string text, ICatalog catalog)
+        public static IIonReader Build(string text, ICatalog catalog = null)
         {
             return new UserTextReader(text, catalog);
         }
@@ -41,14 +31,16 @@ namespace IonDotnet.Systems
             return Build(stream, Encoding.UTF8);
         }
 
+
         /// <summary>
         /// Build an Ion reader for the data stream.
         /// </summary>
         /// <param name="stream">Ion data stream in binary of unicode-text.</param>
         /// <param name="encoding">The type of encoding used.</param>
+        /// <param name="catalog"></param>
         /// <returns>Ion reader</returns>
         /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
-        public static IIonReader Build(Stream stream, Encoding encoding)
+        public static IIonReader Build(Stream stream, Encoding encoding, ICatalog catalog = null)
         {
             if (!stream.CanRead)
                 throw new ArgumentException("Stream must be readable", nameof(stream));
@@ -85,8 +77,8 @@ namespace IonDotnet.Systems
             }
 
             return didSeek
-                ? new UserTextReader(stream, encoding)
-                : new UserTextReader(stream, encoding, initialBytes.Slice(0, bytesRead));
+                ? new UserTextReader(stream, encoding, catalog)
+                : new UserTextReader(stream, encoding, initialBytes.Slice(0, bytesRead), catalog);
         }
 
         /// <summary>

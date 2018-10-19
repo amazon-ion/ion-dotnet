@@ -683,6 +683,19 @@ namespace IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
+        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        {
+            if (_annotations == null)
+            {
+                yield break;
+            }
+
+            foreach (var a in _annotations)
+            {
+                yield return a;
+            }
+        }
+
         public abstract bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
 
         private static int GetStateAtContainerStart(IonType container)

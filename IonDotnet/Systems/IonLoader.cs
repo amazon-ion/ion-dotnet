@@ -12,11 +12,18 @@ namespace IonDotnet.Systems
         /// <summary>
         /// The default Ion loader without any catalog.
         /// </summary>
-        public static readonly IonLoader Default = new IonLoader();
+        public static readonly IonLoader Default = new IonLoader(null);
+
+        private readonly ICatalog _catalog;
 
         public static IonLoader FromCatalog(ICatalog catalog)
         {
-            throw new NotImplementedException();
+            return new IonLoader(catalog);
+        }
+
+        private IonLoader(ICatalog catalog)
+        {
+            _catalog = catalog;
         }
 
         /// <summary>
@@ -26,23 +33,23 @@ namespace IonDotnet.Systems
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(string ionText)
         {
-            var reader = new UserTextReader(ionText);
+            var reader = new UserTextReader(ionText, _catalog);
             return WriteDatagram(reader);
         }
 
-        /// <summary>
-        /// Load Ion data from a byte buffer. Detecting whether it's binary or Unicode text Ion.
-        /// </summary>
-        /// <param name="data">Byte buffer.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(Span<byte> data)
-        {
-            throw new NotImplementedException();
-        }
+//        /// <summary>
+//        /// Load Ion data from a byte buffer. Detecting whether it's binary or Unicode text Ion.
+//        /// </summary>
+//        /// <param name="data">Byte buffer.</param>
+//        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+//        public IonDatagram Load(Span<byte> data)
+//        {
+//            throw new NotImplementedException();
+//        }
 
         public IonDatagram Load(Stream stream)
         {
-            var reader = IonReaderBuilder.Build(stream);
+            var reader = IonReaderBuilder.Build(stream, _catalog);
             return WriteDatagram(reader);
         }
 
@@ -55,7 +62,7 @@ namespace IonDotnet.Systems
         /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
         public IonDatagram Load(Stream stream, Encoding encoding)
         {
-            var reader = IonReaderBuilder.Build(stream, encoding);
+            var reader = IonReaderBuilder.Build(stream, encoding, _catalog);
             return WriteDatagram(reader);
         }
 

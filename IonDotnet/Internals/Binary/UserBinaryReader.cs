@@ -54,7 +54,7 @@ namespace IonDotnet.Internals.Binary
                 // trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
                 // we already count the number of annotations
-                if (_annotationCount != 0)
+                if (Annotations.Count != 0)
                     return;
 
                 LoadOnce();

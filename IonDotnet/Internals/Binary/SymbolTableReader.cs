@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -523,6 +524,11 @@ namespace IonDotnet.Internals.Binary
 
         public int GetBytes(Span<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
+
+        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        {
+            yield break;
+        }
 
         public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result) => throw new IonException($"Not supported in symbol talbe");
 

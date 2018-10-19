@@ -232,6 +232,11 @@ namespace IonDotnet.Tree
         public void ClearAnnotations()
         {
             ThrowIfLocked();
+            if (_annotations == null)
+            {
+                _annotations = new List<string>();
+            }
+
             _annotations.Clear();
         }
 

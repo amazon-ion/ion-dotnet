@@ -37,7 +37,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-//                            && f.Name == "utf16.ion"
+//                            && f.Name == "annotatedIvms.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -97,6 +97,11 @@ namespace IonDotnet.Tests.Integration
             foreach (var topLevelValue in datagram)
             {
                 Assert.IsTrue(topLevelValue is IonSequence);
+                if (topLevelValue.HasAnnotation("embedded_documents"))
+                {
+                    continue;
+                }
+
                 var sequence = (IonSequence) topLevelValue;
                 foreach (var seqChild in sequence)
                 {
@@ -110,6 +115,10 @@ namespace IonDotnet.Tests.Integration
 
         private static IonDatagram LoadFile(FileInfo fi)
         {
+            var file = "/some/file.ion";
+            var datagram = IonLoader.Default.Load(new FileInfo(file));
+            
+
             if (fi.Name == "utf16.ion")
             {
                 return IonLoader.Default.Load(fi, new UnicodeEncoding(true, true));

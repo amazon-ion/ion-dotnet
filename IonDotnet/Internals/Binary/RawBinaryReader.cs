@@ -62,14 +62,13 @@ namespace IonDotnet.Internals.Binary
         private int _valueLobRemaining;
         protected bool _hasSymbolTableAnnotation;
 
-        // top of the container stack
-        protected int _annotationCount;
-
         /// <summary>
         /// A container stacks records 3 values: type id of container, position in the buffer, and localRemaining
         /// position is stored in the first 'long' of the stack item
         /// </summary>
         private readonly Stack<(int localRemaining, int typeTid)> _containerStack;
+
+        protected readonly List<int> Annotations = new List<int>(2);
 
         protected RawBinaryReader(Stream input)
         {
@@ -117,7 +116,6 @@ namespace IonDotnet.Internals.Binary
             _valueIsNull = false;
             _v.Clear();
             _valueFieldId = SymbolToken.UnknownSid;
-            _annotationCount = 0;
             _hasSymbolTableAnnotation = false;
         }
 
@@ -741,7 +739,7 @@ namespace IonDotnet.Internals.Binary
                 throw new InvalidOperationException("Value is not ready");
 
             //reset the annotation list
-            _annotationCount = 0;
+            Annotations.Clear();
 
             int l;
             while (annotLength > 0 && (l = ReadVarUintOrEof(out var a)) != BinaryConstants.Eof)
@@ -752,8 +750,7 @@ namespace IonDotnet.Internals.Binary
                     _hasSymbolTableAnnotation = true;
                 }
 
-                _annotationCount++;
-                OnAnnotation(a);
+                Annotations.Add(a);
             }
         }
 
@@ -768,7 +765,7 @@ namespace IonDotnet.Internals.Binary
             //This is invoked when we get a typedecl tid, which means there are potentially annotations
             //Depending on the options we might load them or not, the default should be not to load them
             //In which case we'll just go through to the wrapped value
-            //Unlike the java impl, there is no save point here, so this either loads the annotations, or it doesnt
+            //There is no save point here, so this either loads the annotations, or it doesnt
             var annotLength = ReadVarUint();
             LoadAnnotations(annotLength);
 
@@ -889,6 +886,18 @@ namespace IonDotnet.Internals.Binary
             }
 
             return readBytes;
+        }
+
+        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        {
+            foreach (var aid in Annotations)
+            {
+                var text = GetSymbolTable().FindKnownSymbol(aid);
+                if (text is null)
+                    throw new UnknownSymbolException(aid);
+
+                yield return new SymbolToken(text, aid);
+            }
         }
 
         public abstract bool TryConvertTo(Type targeType, IScalarConverter scalarConverter, out object result);

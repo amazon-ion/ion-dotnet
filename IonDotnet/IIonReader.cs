@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using IonDotnet.Conversions;
 
@@ -18,7 +19,7 @@ namespace IonDotnet
         /// <summary>
         /// Positions the reader just before the contents of the current value, which must be a container (list, sexp, or struct).
         /// </summary>
-        /// <exception cref="InvalidOperationException">When the current value is not an <see cref="IIonContainer"/></exception>
+        /// <exception cref="InvalidOperationException">When the current value is not an <see cref="IonDotnet.Tree.IonContainer"/></exception>
         /// <remarks>
         /// There's no current value immediately after stepping in, so the next thing you'll want to do is call <see cref="MoveNext"/>
         /// to move onto the first child value (or learn that there's not one).
@@ -121,6 +122,8 @@ namespace IonDotnet
         /// <param name="buffer">Buffer</param>
         /// <returns>Number of bytes copied</returns>
         int GetBytes(Span<byte> buffer);
+
+        IEnumerable<SymbolToken> GetTypeAnnotations();
 
         bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
     }
