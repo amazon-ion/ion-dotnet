@@ -89,7 +89,7 @@ namespace IonDotnet.Systems
         /// <returns>Ion reader</returns>
         public static IIonReader Build(Stream stream, ICatalog catalog)
         {
-            throw new NotImplementedException();
+            return Build(stream, Encoding.UTF8, catalog);
         }
 
         private static bool IsBinaryData(Span<byte> initialByte)

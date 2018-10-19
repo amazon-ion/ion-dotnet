@@ -97,12 +97,13 @@ namespace IonDotnet.Tests.Integration
             foreach (var topLevelValue in datagram)
             {
                 Assert.IsTrue(topLevelValue is IonSequence);
-                if (topLevelValue.HasAnnotation("embedded_documents"))
+                var sequence = (IonSequence) topLevelValue;
+                if (sequence.HasAnnotation("embedded_documents"))
                 {
+                    AssertEmbeddedDocument(sequence);
                     continue;
                 }
 
-                var sequence = (IonSequence) topLevelValue;
                 foreach (var seqChild in sequence)
                 {
                     foreach (var seqChild2 in sequence)
@@ -113,12 +114,27 @@ namespace IonDotnet.Tests.Integration
             }
         }
 
+        private static void AssertEmbeddedDocument(IonSequence sequence)
+        {
+            foreach (var doc1 in sequence)
+            {
+                Assert.IsTrue(doc1 is IonString);
+                var dg1 = IonLoader.Default.Load(((IonString) doc1).StringValue);
+                foreach (var doc2 in sequence)
+                {
+                    var dg2 = IonLoader.Default.Load(((IonString) doc2).StringValue);
+                    AssertDatagramEquivalent(dg1, dg2);
+                }
+            }
+        }
+
+        private static void AssertDatagramEquivalent(IonDatagram d1, IonDatagram d2)
+        {
+            Assert.IsTrue(d1.SequenceEqual(d2, IonValueComparer));
+        }
+
         private static IonDatagram LoadFile(FileInfo fi)
         {
-            var file = "/some/file.ion";
-            var datagram = IonLoader.Default.Load(new FileInfo(file));
-            
-
             if (fi.Name == "utf16.ion")
             {
                 return IonLoader.Default.Load(fi, new UnicodeEncoding(true, true));
@@ -131,5 +147,20 @@ namespace IonDotnet.Tests.Integration
 
             return IonLoader.Default.Load(fi);
         }
+
+        private class ValueComparer : IEqualityComparer<IonValue>
+        {
+            public bool Equals(IonValue x, IonValue y)
+            {
+                return x.IsEquivalentTo(y);
+            }
+
+            public int GetHashCode(IonValue obj)
+            {
+                return obj.GetHashCode();
+            }
+        }
+
+        private static readonly ValueComparer IonValueComparer = new ValueComparer();
     }
 }

@@ -893,8 +893,6 @@ namespace IonDotnet.Internals.Binary
             foreach (var aid in Annotations)
             {
                 var text = GetSymbolTable().FindKnownSymbol(aid);
-                if (text is null)
-                    throw new UnknownSymbolException(aid);
 
                 yield return new SymbolToken(text, aid);
             }
