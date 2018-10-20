@@ -210,7 +210,7 @@ namespace IonDotnet.Serialization
             if (type == typeof(decimal))
             {
                 if (reader.CurrentType != IonType.Decimal) goto NoMatch;
-                result = reader.DecimalValue();
+                result = reader.DecimalValue().ToDecimal();
                 return true;
             }
 
