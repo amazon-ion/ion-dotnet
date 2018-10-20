@@ -16,7 +16,7 @@ namespace IonDotnet.Systems
     public static class IonReaderBuilder
     {
         /// <summary>
-        /// Build a text reader for the string with a catalog
+        /// Build a text reader for the string with a catalog.
         /// </summary>
         /// <param name="text">Ion text</param>
         /// <param name="catalog">Ion catalog</param>
@@ -82,7 +82,7 @@ namespace IonDotnet.Systems
         }
 
         /// <summary>
-        /// Build an Ion reader for the data stream
+        /// Build an Ion reader for the data stream.
         /// </summary>
         /// <param name="stream">Ion data stream in binary of UTF8-text form</param>
         /// <param name="catalog">Ion catalog</param>

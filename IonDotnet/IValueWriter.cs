@@ -105,5 +105,12 @@ namespace IonDotnet
         /// </summary>
         /// <param name="annotation">The value annotation to add.</param>
         void AddTypeAnnotation(string annotation);
+
+        /// <summary>
+        /// Add a type annotation in the form of a symbol. If the text is known, it will be added as is to the current value's annotations.
+        /// If the text is unknown (null), the sid will be added to the writer.
+        /// </summary>
+        /// <param name="symbolToken"></param>
+        void AddTypeAnnotationSymbol(SymbolToken annotation);
     }
 }

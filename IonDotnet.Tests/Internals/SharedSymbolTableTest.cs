@@ -24,7 +24,6 @@ namespace IonDotnet.Tests.Internals
 
         [TestMethod]
         [DataRow(null)]
-        [DataRow("")]
         public void InternNull_ThrowsException(string nullString)
         {
             const string name = "tableName";

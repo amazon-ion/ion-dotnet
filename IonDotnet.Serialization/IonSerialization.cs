@@ -39,7 +39,7 @@ namespace IonDotnet.Serialization
             {
                 var reader = new UserTextReader(stream);
                 reader.MoveNext();
-                return (T) IonSerializationPrivate.Deserialize(reader, typeof(T), null);
+                return (T) IonSerializationPrivate.Deserialize(reader, typeof(T));
             }
         }
     }

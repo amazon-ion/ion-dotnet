@@ -16,7 +16,7 @@ namespace IonDotnet.Bench
     // ReSharper disable once ClassNeverInstantiated.Global
     public class SerializerGround : IRunable
     {
-        private class TimeSpanConverter : IScalarWriter, IScalarConverter
+        private class TimeSpanConverter : IScalarWriter
         {
             public bool TryWriteValue<T>(IValueWriter valueWriter, T value)
             {

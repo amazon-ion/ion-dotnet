@@ -123,23 +123,9 @@ namespace IonDotnet.Internals
         private void TryWriteAnnotations(IIonReader reader)
         {
             var annots = reader.GetTypeAnnotations();
-            // At present, we must always call this, even when the list is empty,
-            // because local symtab diversion leaves the $ion_symbol_table
-            // dangling on the system writer! TODO fix that, it's broken.
             foreach (var a in annots)
             {
-                var text = a.Text;
-                if (text is null)
-                {
-                    //try to look up the sid
-                    text = SymbolTable.FindKnownSymbol(a.Sid);
-                    if (text is null)
-                    {
-                        throw new UnknownSymbolException(a.Sid);
-                    }
-                }
-
-                AddTypeAnnotation(text);
+                AddTypeAnnotationSymbol(a);
             }
         }
 
@@ -159,6 +145,7 @@ namespace IonDotnet.Internals
         public abstract void WriteClob(ReadOnlySpan<byte> value);
         public abstract void SetTypeAnnotation(string annotation);
         public abstract void AddTypeAnnotation(string annotation);
+        public abstract void AddTypeAnnotationSymbol(SymbolToken symbolToken);
         public abstract void Dispose();
         public abstract ISymbolTable SymbolTable { get; }
         public abstract void Flush();

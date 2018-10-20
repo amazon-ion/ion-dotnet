@@ -696,8 +696,6 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public abstract bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
-
         private static int GetStateAtContainerStart(IonType container)
         {
             if (container == IonType.None)

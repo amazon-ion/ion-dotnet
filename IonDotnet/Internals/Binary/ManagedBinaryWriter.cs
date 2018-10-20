@@ -224,6 +224,12 @@ namespace IonDotnet.Internals.Binary
 
         public override ISymbolTable SymbolTable => _localSymbolTableView ?? (_localSymbolTableView = new LocalSymbolTableView(this));
 
+        public override void AddTypeAnnotationSymbol(SymbolToken annotation)
+        {
+            var token = InternSymbol(annotation);
+            _userWriter.AddTypeAnnotationSymbol(token);
+        }
+
         /// <inheritdoc />
         /// <summary>
         /// This is supposed to close the writer and release all their resources

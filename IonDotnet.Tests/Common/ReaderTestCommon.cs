@@ -155,7 +155,7 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual(0, reader.CurrentDepth);
         }
 
-        public static void ReadAnnotations_SingleField(IIonReader reader, SaveAnnotationsReaderRoutine converter)
+        public static void ReadAnnotations_SingleField(IIonReader reader)
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
@@ -167,11 +167,10 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual(IonType.Int, reader.CurrentType);
             Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
-            Assert.IsTrue(symbols.SequenceEqual(converter.Symbols));
 
             foreach (var s in symbols)
             {
-                Assert.IsTrue(converter.Symbols.Contains(s));
+                Assert.IsTrue(reader.GetTypeAnnotations().Any(a => a.Text == s));
             }
         }
 

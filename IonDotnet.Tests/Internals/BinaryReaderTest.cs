@@ -97,10 +97,9 @@ namespace IonDotnet.Tests.Internals
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
             var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
-            var converter = new SaveAnnotationsReaderRoutine();
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField), converter);
+            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
 
-            ReaderTestCommon.ReadAnnotations_SingleField(reader, converter);
+            ReaderTestCommon.ReadAnnotations_SingleField(reader);
         }
 
         [TestMethod]

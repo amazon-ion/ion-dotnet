@@ -785,7 +785,7 @@ namespace IonDotnet.Internals.Binary
         public void SetTypeAnnotation(string annotation)
             => throw new NotSupportedException("raw writer does not support setting annotations as text");
 
-        internal void AddTypeAnnotationSymbol(SymbolToken annotation) => _annotations.Add(annotation);
+        public void AddTypeAnnotationSymbol(SymbolToken annotation) => _annotations.Add(annotation);
 
         internal void ClearAnnotations() => _annotations.Clear();
 

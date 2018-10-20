@@ -159,7 +159,7 @@ namespace IonDotnet.Internals
                             ReadImportList(reader, catalog, importList);
                         }
                         else if (fieldType == IonType.Symbol
-                                 && SystemSymbols.IonSymbolTable.Equals(reader.StringValue())
+                                 && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid)
                                  && reader.GetSymbolTable().IsLocal)
                         {
                             //reader has a prev local symtab && current field is imports:$ion_symbol_table
@@ -203,8 +203,6 @@ namespace IonDotnet.Internals
             while ((type = reader.MoveNext()) != IonType.None)
             {
                 var text = type == IonType.String ? reader.StringValue() : null;
-                if (text is null)
-                    throw new IonException("Symbol must be a valid text");
 
                 symbolList.Add(text);
             }

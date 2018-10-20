@@ -111,6 +111,7 @@ namespace IonDotnet.Internals.Binary
 
         private void ClearValue()
         {
+            Annotations.Clear();
             _valueType = IonType.None;
             _valueTid = -1;
             _valueIsNull = false;
@@ -168,14 +169,12 @@ namespace IonDotnet.Internals.Binary
                             }
                             else
                             {
-                                OnValueStart();
                                 // if it's not a bvm then it's an ordinary annotated value
                                 _valueType = LoadAnnotationsGotoValueType();
                             }
                         }
                         else
                         {
-                            OnValueStart();
                             _valueType = GetIonTypeFromCode(_valueTid);
                         }
 
@@ -898,8 +897,6 @@ namespace IonDotnet.Internals.Binary
             }
         }
 
-        public abstract bool TryConvertTo(Type targeType, IScalarConverter scalarConverter, out object result);
-
         public IonType CurrentType => _valueType;
 
         public bool IsInStruct { get; private set; }
@@ -1022,9 +1019,5 @@ namespace IonDotnet.Internals.Binary
         public abstract Timestamp TimestampValue();
         public abstract BigDecimal DecimalValue();
         public abstract double DoubleValue();
-
-        protected abstract void OnValueStart();
-        protected abstract void OnAnnotation(int annotationId);
-        protected abstract void OnValueEnd();
     }
 }

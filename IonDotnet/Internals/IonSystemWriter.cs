@@ -42,13 +42,37 @@ namespace IonDotnet.Internals
 
         public override void AddTypeAnnotation(string annotation)
         {
-            var symtok = _symbolTable.Find(annotation);
-            if (symtok == default)
+            if (annotation is null)
             {
-                symtok = new SymbolToken(annotation, SymbolToken.UnknownSid);
+                //treat this as the $0 symbol
+                AddTypeAnnotationSymbol(new SymbolToken(null, 0));
+                return;
             }
 
-            _annotations.Add(symtok);
+            AddTypeAnnotationSymbol(new SymbolToken(annotation, SymbolToken.UnknownSid));
+        }
+
+        public override void AddTypeAnnotationSymbol(SymbolToken annotation)
+        {
+            if (annotation.Text != null)
+            {
+                _annotations.Add(annotation);
+                return;
+            }
+
+            //no text, check if sid is sth we know            
+            if (annotation.Sid > _symbolTable.MaxId)
+            {
+                throw new UnknownSymbolException(annotation.Sid);
+            }
+
+            if (annotation.Sid > 0)
+            {
+                var knownText = _symbolTable.FindKnownSymbol(annotation.Sid);
+                annotation = new SymbolToken(knownText, SymbolToken.UnknownSid);
+            }
+
+            _annotations.Add(annotation);
         }
 
         public override void SetTypeAnnotations(IEnumerable<string> annotations)

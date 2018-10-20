@@ -15,17 +15,15 @@ namespace IonDotnet.Internals.Binary
         private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long) 1 << 62, 2);
 
         protected ISymbolTable _symbolTable;
-        private readonly IReaderRoutine _readerRoutine;
 
-        internal SystemBinaryReader(Stream input, IReaderRoutine readerRoutine)
-            : this(input, SharedSymbolTable.GetSystem(1), readerRoutine)
+        internal SystemBinaryReader(Stream input)
+            : this(input, SharedSymbolTable.GetSystem(1))
         {
         }
 
-        private SystemBinaryReader(Stream input, ISymbolTable symboltable, IReaderRoutine readerRoutine) : base(input)
+        private SystemBinaryReader(Stream input, ISymbolTable symboltable) : base(input)
         {
             _symbolTable = symboltable;
-            _readerRoutine = readerRoutine;
         }
 
         private void PrepareValue()
@@ -133,7 +131,6 @@ namespace IonDotnet.Internals.Binary
             }
 
             _state = State.AfterValue;
-            OnValueEnd();
         }
 
         /// <summary>
@@ -194,22 +191,6 @@ namespace IonDotnet.Internals.Binary
             PrepareValue();
             return _v.DoubleValue;
         }
-
-        protected override void OnValueStart() => _readerRoutine?.OnValueStart();
-
-        protected override void OnAnnotation(int annotId)
-        {
-            if (_readerRoutine == null)
-                return;
-
-            var text = _symbolTable.FindKnownSymbol(annotId);
-            if (text == null)
-                throw new UnknownSymbolException(annotId);
-            var token = new SymbolToken(text, annotId);
-            _readerRoutine.OnAnnotation(token);
-        }
-
-        protected override void OnValueEnd() => _readerRoutine?.OnValueEnd();
 
         public override string CurrentFieldName
         {
@@ -286,12 +267,6 @@ namespace IonDotnet.Internals.Binary
 
             LoadSymbolValue();
             return new SymbolToken(_v.StringValue, _v.IntValue);
-        }
-
-        public override bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
-        {
-            PrepareValue();
-            return scalarConverter.TryConvertTo(targetType, _v, out result);
         }
     }
 }

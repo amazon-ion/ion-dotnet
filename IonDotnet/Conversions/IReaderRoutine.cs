@@ -19,18 +19,4 @@ namespace IonDotnet.Conversions
         String = 1 << 7,
         Timestamp = 1 << 8
     }
-
-    public interface IReaderRoutine
-    {
-        void OnValueStart();
-
-        void OnValueEnd();
-
-        void OnAnnotation(in SymbolToken symbolToken);
-    }
-
-    public interface IScalarConverter : IReaderRoutine
-    {
-        bool TryConvertTo(Type targetType, in ValueVariant valueVariant, out object result);
-    }
 }

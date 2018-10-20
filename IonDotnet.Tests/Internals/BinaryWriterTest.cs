@@ -243,16 +243,16 @@ namespace IonDotnet.Tests.Internals
                 writer.Flush();
             }
 
-            var annotReader = new SaveAnnotationsReaderRoutine();
-            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()), annotReader);
+            var reader = new UserBinaryReader(new MemoryStream(_memoryStream.GetWrittenBuffer()));
             reader.MoveNext();
             reader.StepIn();
             reader.MoveNext();
             //load the value
             reader.StringValue();
+            var annotations = reader.GetTypeAnnotations().ToList();
             for (var i = 0; i < annotationCount; i++)
             {
-                Assert.IsTrue(annotReader.Symbols.Contains($"annot_{i}"));
+                Assert.IsTrue(annotations.Any(s => s.Text == $"annot_{i}"));
             }
         }
 

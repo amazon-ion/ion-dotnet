@@ -530,8 +530,6 @@ namespace IonDotnet.Internals.Binary
             yield break;
         }
 
-        public bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result) => throw new IonException($"Not supported in symbol talbe");
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFlag(int flagBit, bool on)
         {

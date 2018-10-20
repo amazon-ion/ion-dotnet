@@ -148,6 +148,15 @@ namespace IonDotnet.Internals
             //nothing to do here
         }
 
+        /// <summary>
+        /// If this method is called the read has already validated annotation. So we can just add it straight to the list.
+        /// </summary>
+        /// <param name="annotation"></param>
+        public override void AddTypeAnnotationSymbol(SymbolToken annotation)
+        {
+            _annotations.Add(annotation);
+        }
+
         public override void StepIn(IonType type)
         {
             IonContainer c;

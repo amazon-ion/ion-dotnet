@@ -12,12 +12,12 @@ namespace IonDotnet.Serialization
     /// </summary>
     internal static partial class IonSerializationPrivate
     {
-        internal static object Deserialize(IIonReader reader, Type type, IScalarConverter scalarConverter)
+        internal static object Deserialize(IIonReader reader, Type type)
         {
             object t = null;
 
-            if (TryDeserializeScalar(reader, type, scalarConverter, ref t)) return t;
-            if (TryDeserializeCollection(reader, type, scalarConverter, ref t)) return t;
+            if (TryDeserializeScalar(reader, type, ref t)) return t;
+            if (TryDeserializeCollection(reader, type, ref t)) return t;
 
             //object
             t = Activator.CreateInstance(type);
@@ -30,7 +30,7 @@ namespace IonDotnet.Serialization
                 if (prop == null) continue;
                 if (!prop.CanWrite) throw new IonException($"Property {type.Name}.{prop.Name} cannot be set");
 
-                var propValue = Deserialize(reader, prop.PropertyType, scalarConverter);
+                var propValue = Deserialize(reader, prop.PropertyType);
                 prop.SetValue(t, propValue);
             }
 
@@ -38,12 +38,12 @@ namespace IonDotnet.Serialization
             return t;
         }
 
-        private static bool TryDeserializeCollection(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
+        private static bool TryDeserializeCollection(IIonReader reader, Type type, ref object result)
         {
             if (!typeof(IEnumerable).IsAssignableFrom(type)) return false;
 
             //special case of byte array
-            if (TryDeserializeByteArray(reader, type, scalarConverter, ref result)) return true;
+            if (TryDeserializeByteArray(reader, type, ref result)) return true;
 
             if (reader.CurrentType != IonType.List) return false;
 
@@ -68,7 +68,7 @@ namespace IonDotnet.Serialization
 
             while (reader.MoveNext() != IonType.None)
             {
-                var element = Deserialize(reader, elementType, scalarConverter);
+                var element = Deserialize(reader, elementType);
                 arrayList.Add(element);
             }
 
@@ -97,7 +97,7 @@ namespace IonDotnet.Serialization
             return true;
         }
 
-        private static bool TryDeserializeByteArray(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
+        private static bool TryDeserializeByteArray(IIonReader reader, Type type, ref object result)
         {
             if (!type.IsAssignableFrom(typeof(byte[]))) return false;
             if (reader.CurrentType != IonType.Blob && reader.CurrentType != IonType.Clob) return false;
@@ -108,7 +108,7 @@ namespace IonDotnet.Serialization
             return true;
         }
 
-        private static bool TryDeserializeScalar(IIonReader reader, Type type, IScalarConverter scalarConverter, ref object result)
+        private static bool TryDeserializeScalar(IIonReader reader, Type type, ref object result)
         {
             if (type == typeof(string))
             {
@@ -228,10 +228,8 @@ namespace IonDotnet.Serialization
                 return true;
             }
 
-
             NoMatch:
-            //here means we don't know , try the scalar converter
-            return scalarConverter != null && reader.TryConvertTo(type, scalarConverter, out result);
+            return false;
         }
     }
 }

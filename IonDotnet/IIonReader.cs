@@ -124,7 +124,5 @@ namespace IonDotnet
         int GetBytes(Span<byte> buffer);
 
         IEnumerable<SymbolToken> GetTypeAnnotations();
-
-        bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result);
     }
 }

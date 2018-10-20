@@ -424,12 +424,6 @@ namespace IonDotnet.Internals.Text
             return bytes;
         }
 
-        public override bool TryConvertTo(Type targetType, IScalarConverter scalarConverter, out object result)
-        {
-            PrepareValue();
-            return scalarConverter.TryConvertTo(targetType, _v, out result);
-        }
-
         public override byte[] NewByteArray()
         {
             LoadLobContent();

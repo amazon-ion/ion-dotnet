@@ -90,6 +90,9 @@ namespace IonDotnet.Internals
 
         public SymbolToken Intern(string text)
         {
+            if(text==null)
+                throw new ArgumentNullException(nameof(text));
+            
             var symtok = Find(text);
             if (symtok == default)
                 throw new InvalidOperationException("Table is read-only");
@@ -98,8 +101,8 @@ namespace IonDotnet.Internals
 
         public SymbolToken Find(string text)
         {
-            if (string.IsNullOrEmpty(text))
-                throw new ArgumentNullException(text);
+            if (text is null)
+                throw new ArgumentNullException(nameof(text));
 
             if (!_symbolsMap.TryGetValue(text, out var sid))
                 return default;

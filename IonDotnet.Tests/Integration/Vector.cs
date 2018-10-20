@@ -37,7 +37,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-//                            && f.Name == "annotatedIvms.ion"
+                            //&& f.Name == "localSymbolTableNullSlots.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -120,9 +120,16 @@ namespace IonDotnet.Tests.Integration
             {
                 Assert.IsTrue(doc1 is IonString);
                 var dg1 = IonLoader.Default.Load(((IonString) doc1).StringValue);
+                int i = 0;
                 foreach (var doc2 in sequence)
                 {
+                    if (i++ < 4)
+                    {
+                        continue;
+                    }
+
                     var dg2 = IonLoader.Default.Load(((IonString) doc2).StringValue);
+
                     AssertDatagramEquivalent(dg1, dg2);
                 }
             }

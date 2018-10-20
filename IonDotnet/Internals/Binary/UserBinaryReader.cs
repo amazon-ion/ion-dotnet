@@ -13,8 +13,8 @@ namespace IonDotnet.Internals.Binary
     {
         private readonly ICatalog _catalog;
 
-        internal UserBinaryReader(Stream input, IReaderRoutine readerRoutine = null, ICatalog catalog = null)
-            : base(input, readerRoutine)
+        internal UserBinaryReader(Stream input, ICatalog catalog = null)
+            : base(input)
         {
             _catalog = catalog;
         }
