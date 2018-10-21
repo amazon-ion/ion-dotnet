@@ -88,23 +88,6 @@ namespace IonDotnet.Bench
             deserialized = IonSerialization.Text.Deserialize<Experiment>(text);
 
             Console.WriteLine(text);
-            /* Output
-            {
-              Id: 233,
-              Name: "Boxing Perftest",
-              Description: "Measure performance impact of boxing",
-              StartDate: 2018-07-21T11:11:11.0000000+00:00,
-              IsActive: true,
-              SampleData: {{ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA== }},
-              Budget: 12345.01234567890123456789,
-              Result: 'Failure',
-              Outputs: [
-                1,
-                2,
-                3
-              ]
-            }
-            */
         }
     }
 }

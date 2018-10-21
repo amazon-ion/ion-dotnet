@@ -37,6 +37,9 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
+            if (!base.IsEquivalentTo(other))
+                return false;
+            
             if (!(other is IonInt oInt))
                 return false;
             if (NullFlagOn())

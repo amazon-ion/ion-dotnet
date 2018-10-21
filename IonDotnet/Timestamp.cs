@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace IonDotnet
@@ -9,6 +10,15 @@ namespace IonDotnet
     /// </summary>
     public readonly struct Timestamp : IEquatable<Timestamp>
     {
+        public enum Precision : byte
+        {
+            Year = 1,
+            Month = 2,
+            Day = 3,
+            Minute = 4,
+            Second = 5
+        }
+
         private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
         /// <summary>
@@ -17,15 +27,23 @@ namespace IonDotnet
         public readonly DateTime DateTimeValue;
 
         /// <summary>
-        /// Local offset from UTC in minutes
+        /// Local offset from UTC in minutes.
         /// </summary>
         public readonly int LocalOffset;
 
         /// <summary>
+        /// The precision of this value.
+        /// </summary>
+        public readonly Precision TimestampPrecision;
+
+        /// <summary>
         /// Initialize a new Timestamp structure
         /// </summary>
-        public Timestamp(int year, int month, int day, int hour, int minute, int second, in decimal frac)
+        public Timestamp(int year, int month, int day, int hour, int minute, int second,
+            in decimal frac, Precision precision = Precision.Second)
         {
+            TimestampPrecision = precision;
+
             //offset unknown
             if (frac >= 1)
                 throw new ArgumentException("Fraction must be < 1", nameof(frac));
@@ -36,8 +54,11 @@ namespace IonDotnet
             LocalOffset = 0;
         }
 
-        public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac)
+        public Timestamp(int year, int month, int day, int hour, int minute, int second,
+            int offset, in decimal frac, Precision precision = Precision.Second)
         {
+            TimestampPrecision = precision;
+
             //offset known
             if (frac >= 1)
                 throw new ArgumentException($"Fraction must be < 1: {frac}", nameof(frac));
@@ -45,19 +66,25 @@ namespace IonDotnet
             var ticks = (int) (frac * TimeSpan.TicksPerSecond);
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local)
                 .Add(TimeSpan.FromTicks(ticks));
-            LocalOffset = offset;
+            LocalOffset = precision > Precision.Minute ? offset : 0;
         }
 
-        public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset)
+        public Timestamp(int year, int month, int day, int hour, int minute, int second,
+            int offset, Precision precision = Precision.Second)
         {
+            TimestampPrecision = precision;
+
             //no frag, no perf lost
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second,
                 offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
-            LocalOffset = offset;
+            LocalOffset = precision > Precision.Minute ? offset : 0;
         }
 
-        public Timestamp(int year, int month, int day, int hour, int minute, int second)
+        public Timestamp(int year, int month, int day, int hour, int minute, int second,
+            Precision precision = Precision.Second)
         {
+            TimestampPrecision = precision;
+
             //no frag, no perf lost
             //offset known
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
@@ -89,6 +116,8 @@ namespace IonDotnet
         /// <param name="dateTimeValue">Local datetime value</param>
         public Timestamp(DateTime dateTimeValue)
         {
+            TimestampPrecision = Precision.Second;
+
             DateTimeValue = DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified);
             //we have no idea about the local offset except when it's 0, so no change here
             LocalOffset = 0;
@@ -100,6 +129,7 @@ namespace IonDotnet
         /// <param name="dateTimeOffset"></param>
         public Timestamp(DateTimeOffset dateTimeOffset)
         {
+            TimestampPrecision = Precision.Second;
             LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
             DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0
                 ? DateTimeKind.Utc
@@ -363,8 +393,6 @@ namespace IonDotnet
 #endif
         }
 
-        private static readonly char[] OffsetSeparators = {'Z', 'z', '+'};
-
         public override string ToString()
         {
             return DateTimeValue.Kind == DateTimeKind.Unspecified
@@ -376,13 +404,18 @@ namespace IonDotnet
 
         //override stuffs
 
-        public static bool operator ==(Timestamp x, Timestamp y) => x.DateTimeValue == y.DateTimeValue && x.LocalOffset == y.LocalOffset;
+        public static bool operator ==(Timestamp x, Timestamp y)
+        {
+            return x.Equals(y);
+        }
 
         public static bool operator !=(Timestamp x, Timestamp y) => !(x == y);
 
         public bool Equals(Timestamp other)
         {
-            return this == other;
+            return DateTimeValue == other.DateTimeValue
+                   && LocalOffset == other.LocalOffset
+                   && TimestampPrecision == other.TimestampPrecision;
         }
 
         public override bool Equals(object obj)

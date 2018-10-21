@@ -272,10 +272,29 @@ namespace IonDotnet.Tree
         /// </summary>
         /// <param name="other">The other value.</param>
         /// <remarks>
-        /// Equivalency is determined by whether the <see cref="IonValue"/> objects hold equal values, or 
-        /// in the case of container, they contain equivalent sets of children.
+        /// Equivalency is determined by whether the <see cref="IonValue"/> objects has the same annotations,
+        /// hold equal values, or in the case of container, they contain equivalent sets of children.
         /// </remarks>
-        public abstract bool IsEquivalentTo(IonValue other);
+        public virtual bool IsEquivalentTo(IonValue other)
+        {
+            if (other == null || Type != other.Type)
+                return false;
+
+            var otherAnnotations = other._annotations;
+            if (_annotations == null)
+                return otherAnnotations == null || otherAnnotations.Count == 0;
+
+            if (otherAnnotations == null || otherAnnotations.Count != _annotations.Count)
+                return false;
+
+            for (int i = 0, l = _annotations.Count; i < l; i++)
+            {
+                if (_annotations[i] != otherAnnotations[i])
+                    return false;
+            }
+
+            return true;
+        }
 
         public void WriteTo(IIonWriter writer)
         {

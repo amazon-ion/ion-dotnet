@@ -28,11 +28,28 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
-            if (!(other is IonDecimal otherDec))
+            if (!base.IsEquivalentTo(other))
                 return false;
+
+            var otherDec = (IonDecimal) other;
+
             if (NullFlagOn())
                 return otherDec.IsNull;
-            return !otherDec.IsNull && otherDec.DecimalValue == DecimalValue;
+            if (other.IsNull)
+                return false;
+
+            if (BigDecimalValue.IsNegativeZero ^ otherDec.BigDecimalValue.IsNegativeZero)
+                return false;
+
+            if (otherDec.BigDecimalValue.Scale > 0 || BigDecimalValue.Scale > 0)
+            {
+                //precision matters, make sure that this has the same precision
+                return BigDecimalValue.Scale == otherDec.BigDecimalValue.Scale
+                       && BigDecimalValue.IntVal == otherDec.BigDecimalValue.IntVal;
+            }
+
+            //this only compares values
+            return BigDecimalValue == otherDec.BigDecimalValue;
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
@@ -43,7 +60,7 @@ namespace IonDotnet.Tree
                 return;
             }
 
-            writer.WriteDecimal(DecimalValue);
+            writer.WriteDecimal(BigDecimalValue);
         }
 
         public decimal DecimalValue

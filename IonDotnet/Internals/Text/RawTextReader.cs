@@ -692,7 +692,21 @@ namespace IonDotnet.Internals.Text
 
             foreach (var a in _annotations)
             {
-                yield return a;
+                if (a.Text is null && a.Sid != 0)
+                {
+                    var symtab = GetSymbolTable();
+                    if (a.Sid < -1 || a.Sid > symtab.MaxId)
+                    {
+                        throw new UnknownSymbolException(a.Sid);
+                    }
+
+                    var text = symtab.FindKnownSymbol(a.Sid);
+                    yield return new SymbolToken(text, a.Sid);
+                }
+                else
+                {
+                    yield return a;
+                }
             }
         }
 

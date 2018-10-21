@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using System.Text;
 using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals.Text
@@ -40,9 +42,20 @@ namespace IonDotnet.Internals.Text
                 Debug.Assert(_valueBuffer[negative ? 1 : 0] == '0');
                 Debug.Assert(char.ToLower(_valueBuffer[negative ? 2 : 1]) == 'x');
 
-                //delete '0x'
-                //TODO is there a better way?
-                _valueBuffer.Remove(0, negative ? 3 : 2);
+                //we need to delete 0x but we also want '0' at the beginning of the hex string
+                //so that the .net parsing will work correctly, so we only delete 'x' here (and the leading '+'/'-' if any)
+                const int delStart = 1;
+                if (_valueBuffer[0] == '0')
+                {
+                    //no leading sign
+                    _valueBuffer.Remove(delStart, 1);
+                }
+                else
+                {
+                    //leading sign
+                    _valueBuffer[0] = '0';
+                    _valueBuffer.Remove(delStart, 2);
+                }
             }
             else if (_scanner.Token == TextConstants.TokenBinary)
             {
@@ -51,7 +64,7 @@ namespace IonDotnet.Internals.Text
                 Debug.Assert(char.ToLower(_valueBuffer[negative ? 2 : 1]) == 'b');
                 //delete '0b'
                 //TODO is there a better way?
-                _valueBuffer.Remove(0, negative ? 3 : 2);
+                _valueBuffer.Remove(0, _valueBuffer[0] != '0' ? 3 : 2);
             }
 
             //TODO is there a better way
@@ -275,7 +288,7 @@ namespace IonDotnet.Internals.Text
 
             for (var i = s.Length - 1; i >= start; i--)
             {
-                b = BigInteger.Multiply(b, 2);
+                b <<= 1;
                 if (s[i] == '0')
                     continue;
 
@@ -287,21 +300,42 @@ namespace IonDotnet.Internals.Text
 
         private void LoadLobContent()
         {
+            Debug.Assert(_valueType.IsLob());
+
             //check if we already loaded
             if (_lobBuffer != null)
                 return;
 
-            //TODO handle other types of lob content
+            ClearValueBuffer();
             switch (_lobToken)
             {
+                default:
+                    throw new InvalidTokenException($"Invalid lob format for {_valueType}");
                 case TextConstants.TokenOpenDoubleBrace:
-                    ClearValueBuffer();
                     _scanner.LoadBlob(_valueBuffer);
+                    break;
+                case TextConstants.TokenStringDoubleQuote:
+                    _scanner.LoadDoubleQuotedString(_valueBuffer, true);
+                    break;
+                case TextConstants.TokenStringTripleQuote:
+                    _scanner.LoadTripleQuotedString(_valueBuffer, true);
                     break;
             }
 
             //TODO this is horrible but does it matter?
-            _lobBuffer = Convert.FromBase64String(_valueBuffer.ToString());
+            if (_valueType == IonType.Blob)
+            {
+                _lobBuffer = Convert.FromBase64String(_valueBuffer.ToString());
+            }
+            else
+            {
+                Array.Resize(ref _lobBuffer, _valueBuffer.Length);
+                for (int i = 0, l = _valueBuffer.Length; i < l; i++)
+                {
+                    _lobBuffer[i] = (byte) _valueBuffer[i];
+                }
+            }
+
             ClearValueBuffer();
         }
 
@@ -411,6 +445,9 @@ namespace IonDotnet.Internals.Text
 
         public override int GetBytes(Span<byte> buffer)
         {
+            if (!_valueType.IsLob())
+                throw new InvalidOperationException($"Value type {_valueType} is not a lob");
+
             LoadLobContent();
             if (_lobValuePosition == _lobBuffer.Length)
                 return 0;
@@ -426,6 +463,9 @@ namespace IonDotnet.Internals.Text
 
         public override byte[] NewByteArray()
         {
+            if (!_valueType.IsLob())
+                throw new InvalidOperationException($"Value type {_valueType} is not a lob");
+
             LoadLobContent();
             var newArray = new byte[_lobBuffer.Length];
             Buffer.BlockCopy(_lobBuffer, 0, newArray, 0, newArray.Length);
@@ -434,6 +474,9 @@ namespace IonDotnet.Internals.Text
 
         public override int GetLobByteSize()
         {
+            if (!_valueType.IsLob())
+                throw new InvalidOperationException($"Value type {_valueType} is not a lob");
+
             LoadLobContent();
             return _lobBuffer.Length;
         }

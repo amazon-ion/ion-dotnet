@@ -2,6 +2,7 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tree
 {
+    /// <inheritdoc />
     /// <summary>
     /// Represent a null.null value.
     /// </summary>
@@ -10,8 +11,6 @@ namespace IonDotnet.Tree
         public IonNull() : base(true)
         {
         }
-
-        public override bool IsEquivalentTo(IonValue other) => other is IonNull;
 
         internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteNull();
 

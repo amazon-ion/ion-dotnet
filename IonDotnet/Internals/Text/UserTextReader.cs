@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals.Text
 {
@@ -66,9 +67,9 @@ namespace IonDotnet.Internals.Text
 
                             break;
                         case IonType.Symbol:
+                            // $ion_1_0 is read as an IVM only if it is not annotated
                             if (_annotations.Count == 0)
                             {
-                                // $ion_1_0 is read as an IVM only if it is not annotated
                                 var version = SymbolValue().Text;
                                 if (version is null || !IvmRegex.IsMatch(version))
                                 {
@@ -80,7 +81,16 @@ namespace IonDotnet.Internals.Text
                                     throw new UnsupportedIonVersionException(version);
 
                                 MoveNext();
-                                _currentSymtab = _systemSymbols;
+
+
+                                // from specs: only unquoted $ion_1_0 text can be interpreted as ivm semantics and 
+                                // cause the symbol tables to be reset.
+                                if (_v.AuthoritativeType == ScalarType.String && _scanner.Token != TextConstants.TokenSymbolQuoted)
+                                {
+                                    _currentSymtab = _systemSymbols;
+                                }
+
+                                //even if that's not the case we still skip the ivm
                                 _hasNextCalled = false;
                             }
 

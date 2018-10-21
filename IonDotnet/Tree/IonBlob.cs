@@ -24,8 +24,11 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
-            if (!(other is IonBlob otherBlob))
+            if (!base.IsEquivalentTo(other))
                 return false;
+
+            var otherBlob = (IonBlob) other;
+
             if (NullFlagOn())
                 return otherBlob.IsNull;
             return !otherBlob.IsNull && otherBlob.Bytes().SequenceEqual(Bytes());

@@ -653,22 +653,26 @@ namespace IonDotnet.Internals.Binary
             _localRemaining = length; // > 0
 
             var offsetKnown = ReadVarInt(out var offset);
+            var precision = Timestamp.Precision.Year;
             var year = ReadVarUint();
             if (_localRemaining > 0)
             {
                 month = ReadVarUint();
+                precision = Timestamp.Precision.Month;
                 if (_localRemaining > 0)
                 {
                     day = ReadVarUint();
-
+                    precision = Timestamp.Precision.Day;
                     // now we look for hours and minutes
                     if (_localRemaining > 0)
                     {
                         hour = ReadVarUint();
                         minute = ReadVarUint();
+                        precision = Timestamp.Precision.Minute;
                         if (_localRemaining > 0)
                         {
                             second = ReadVarUint();
+                            precision = Timestamp.Precision.Second;
                             if (_localRemaining > 0)
                             {
                                 // now we read in our actual "milliseconds since the epoch"
@@ -683,13 +687,13 @@ namespace IonDotnet.Internals.Binary
             if (frac > 0)
             {
                 return offsetKnown
-                    ? new Timestamp(year, month, day, hour, minute, second, offset, frac)
-                    : new Timestamp(year, month, day, hour, minute, second, frac);
+                    ? new Timestamp(year, month, day, hour, minute, second, offset, frac, precision)
+                    : new Timestamp(year, month, day, hour, minute, second, frac, precision);
             }
 
             return offsetKnown
-                ? new Timestamp(year, month, day, hour, minute, second, offset)
-                : new Timestamp(year, month, day, hour, minute, second);
+                ? new Timestamp(year, month, day, hour, minute, second, offset, precision)
+                : new Timestamp(year, month, day, hour, minute, second, precision);
         }
 
         /// <summary>

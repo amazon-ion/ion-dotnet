@@ -86,6 +86,14 @@ namespace IonDotnet
 
             //this will check for overflowing if |intVal|>DecimalMaxValue
             var dec = (decimal) intVal;
+
+            //this will account for the case where scale<0
+            if (scale < 0)
+            {
+                dec *= (decimal) Math.Pow(10, -scale);
+                scale = 0;
+            }
+
             while (scale > 0)
             {
                 var step = scale > 28 ? 28 : scale;

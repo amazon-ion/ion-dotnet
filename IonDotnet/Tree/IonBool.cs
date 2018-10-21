@@ -14,8 +14,10 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
-            if (!(other is IonBool otherBool))
+            if (!base.IsEquivalentTo(other))
                 return false;
+
+            var otherBool = (IonBool) other;
 
             if (NullFlagOn())
                 return otherBool.IsNull;

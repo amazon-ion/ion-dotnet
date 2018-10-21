@@ -857,7 +857,7 @@ namespace IonDotnet.Internals.Text
         }
 
         /// <summary>
-        /// Must be called right after "//"
+        /// Must be called right after "//".
         /// </summary>
         private void SkipSingleLineComment()
         {
@@ -882,13 +882,13 @@ namespace IonDotnet.Internals.Text
         }
 
         /// <summary>
-        /// Skip the whitespace and comments to the next token
+        /// Skip the whitespace and comments to the next token.
         /// </summary>
         /// <returns>True if any whitespace is skipped</returns>
         public bool SkipWhiteSpace() => SkipWhiteSpaceWithCommentStrategy(CommentStrategy.Ignore);
 
         /// <summary>
-        /// Skip whitespace
+        /// Skip whitespace.
         /// </summary>
         /// <param name="commentStrategy">Comment strategy to apply</param>
         /// <returns>Next char(token) in the stream</returns>
@@ -1000,7 +1000,7 @@ namespace IonDotnet.Internals.Text
                         continue;
                     case -1:
                     case '"':
-                        FinishNextToken(TextConstants.TokenStringDoubleQuote, false);
+                        FinishNextToken(isClob ? Token : TextConstants.TokenStringDoubleQuote, isClob);
                         return c;
                     case CharacterSequence.CharSeqNewlineSequence1:
                     case CharacterSequence.CharSeqNewlineSequence2:
@@ -1455,7 +1455,8 @@ namespace IonDotnet.Internals.Text
         /// </summary>
         public void FinishToken()
         {
-            if (!UnfinishedToken) return;
+            if (!UnfinishedToken)
+                return;
 
             var c = SkipToEnd();
             UnreadChar(c);
@@ -1936,7 +1937,7 @@ namespace IonDotnet.Internals.Text
                 {
                     case CharacterSequence.CharSeqStringTerminator:
                     case CharacterSequence.CharSeqEof: // was 
-                        FinishNextToken(TextConstants.TokenStringTripleQuote, false);
+                        FinishNextToken(isClob ? Token : TextConstants.TokenStringTripleQuote, isClob);
                         return c;
                     // new line normalization and counting is handled in read_char
                     case CharacterSequence.CharSeqNewlineSequence1:

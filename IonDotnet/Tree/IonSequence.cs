@@ -113,8 +113,9 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
-            if (other.Type != Type)
+            if (!base.IsEquivalentTo(other))
                 return false;
+           
 
             var otherSeq = (IonSequence) other;
             if (NullFlagOn())

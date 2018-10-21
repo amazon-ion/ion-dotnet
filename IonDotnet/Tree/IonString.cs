@@ -14,6 +14,9 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
+            if (!base.IsEquivalentTo(other))
+                return false;
+            
             if (!(other is IonString otherString))
                 return false;
             return StringVal == otherString.StringVal;

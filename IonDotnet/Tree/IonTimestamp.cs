@@ -22,6 +22,9 @@ namespace IonDotnet.Tree
 
         public override bool IsEquivalentTo(IonValue other)
         {
+            if (!base.IsEquivalentTo(other))
+                return false;
+            
             if (!(other is IonTimestamp oTimestamp))
                 return false;
             if (NullFlagOn())

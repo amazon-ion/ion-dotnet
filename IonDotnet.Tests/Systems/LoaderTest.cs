@@ -1,3 +1,4 @@
+using System.Linq;
 using IonDotnet.Systems;
 using IonDotnet.Tests.Common;
 using IonDotnet.Tree;
@@ -36,6 +37,27 @@ namespace IonDotnet.Tests.Systems
             token = ((IonSymbol) datagram[2]).SymbolValue;
             Assert.AreEqual(10, token.Sid);
             Assert.IsNull(token.Text);
+        }
+
+        [TestMethod]
+        public void TextLoader_SymbolAnnotation()
+        {
+            const string doc = "$3::123";
+            var datagram = IonLoader.Default.Load(doc);
+
+            var child = (IonInt) datagram[0];
+            var annots = child.GetTypeAnnotations();
+            Assert.AreEqual(1, annots.Count);
+            Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First());
+        }
+
+        [TestMethod]
+        public void TextLoader_TripleQuotedClob()
+        {
+            const string doc = "{{'''hello'''}}";
+            var datagram = IonLoader.Default.Load(doc);
+            var child = (IonClob) datagram[0];
+            Assert.AreEqual("hello".Length, child.Bytes().Length);
         }
     }
 }
