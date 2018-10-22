@@ -347,6 +347,7 @@ namespace IonDotnet
                 throw new FormatException(s);
             }
 
+            Console.WriteLine(hour * 60 + minute);
             return hour * 60 + minute;
         }
 
@@ -413,9 +414,22 @@ namespace IonDotnet
 
         public bool Equals(Timestamp other)
         {
-            return DateTimeValue == other.DateTimeValue
-                   && LocalOffset == other.LocalOffset
-                   && TimestampPrecision == other.TimestampPrecision;
+            if (TimestampPrecision != other.TimestampPrecision)
+                return false;
+            if (DateTimeValue.Kind == DateTimeKind.Unspecified)
+            {
+                //unknown offset
+                return other.DateTimeValue.Kind == DateTimeKind.Unspecified && other.DateTimeValue == DateTimeValue;
+            }
+
+            if (other.DateTimeValue.Kind == DateTimeKind.Unspecified)
+                return false;
+
+            var thisOffset = AsDateTimeOffset();
+            var otherOffset = other.AsDateTimeOffset();
+            thisOffset -= thisOffset.Offset;
+            otherOffset -= otherOffset.Offset;
+            return thisOffset.Ticks == otherOffset.Ticks;
         }
 
         public override bool Equals(object obj)

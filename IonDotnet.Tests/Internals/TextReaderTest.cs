@@ -210,5 +210,13 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual("abc", reader.SymbolValue().Text);
             Assert.AreEqual(IonType.None, reader.MoveNext());
         }
+
+        [TestMethod]
+        public void EmptyBlob()
+        {
+            const string text = "{{}}";
+            var reader = new UserTextReader(text);
+            Assert.AreEqual(IonType.Blob, reader.MoveNext());
+        }
     }
 }

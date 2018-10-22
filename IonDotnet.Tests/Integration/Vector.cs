@@ -37,36 +37,36 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                            //&& f.Name == "decimals.ion"
+                            //&& f.Name == "timestamps.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
         {
             return GetIonFiles(GoodDir)
-                .Select(f => new[] { f });
+                .Select(f => new[] {f});
         }
 
         public static IEnumerable<object[]> GoodTimestampFiles()
         {
             return GetIonFiles(GoodTimestampDir)
-                .Select(f => new[] { f });
+                .Select(f => new[] {f});
         }
 
         public static IEnumerable<object[]> GoodEquivFiles()
         {
             return GetIonFiles(GoodEquivDir)
-                .Select(f => new[] { f });
+                .Select(f => new[] {f});
         }
 
         public static IEnumerable<object[]> GoodNonEquivFiles()
         {
             return GetIonFiles(GoodNonEquivDir)
-                .Select(f => new[] { f });
+                .Select(f => new[] {f});
         }
 
         public static string TestCaseName(MethodInfo methodInfo, object[] data)
         {
-            var fileFullName = ((FileInfo)data[0]).FullName;
+            var fileFullName = ((FileInfo) data[0]).FullName;
             var testDirIdx = fileFullName.IndexOf(IonTestDir.FullName, StringComparison.OrdinalIgnoreCase);
             return fileFullName.Substring(testDirIdx + IonTestDir.FullName.Length);
         }
@@ -97,7 +97,7 @@ namespace IonDotnet.Tests.Integration
             {
                 i++;
                 Assert.IsTrue(topLevelValue is IonSequence);
-                var sequence = (IonSequence)topLevelValue;
+                var sequence = (IonSequence) topLevelValue;
                 if (sequence.HasAnnotation("embedded_documents"))
                 {
                     EmbeddedDocumentEquiv(sequence, true);
@@ -121,6 +121,7 @@ namespace IonDotnet.Tests.Integration
                             Console.WriteLine(seqChild2.ToPrettyString());
                             Console.WriteLine(i);
                         }
+
                         Assert.IsTrue(equiv);
                     }
                 }
@@ -137,7 +138,7 @@ namespace IonDotnet.Tests.Integration
             {
                 i++;
                 Assert.IsTrue(topLevelValue is IonSequence);
-                var sequence = (IonSequence)topLevelValue;
+                var sequence = (IonSequence) topLevelValue;
 
                 if (sequence.HasAnnotation("embedded_documents"))
                 {
@@ -157,10 +158,10 @@ namespace IonDotnet.Tests.Integration
                         var equiv = seqChild.IsEquivalentTo(seqChild2);
                         if (equiv)
                         {
-                            equiv = seqChild.IsEquivalentTo(seqChild2);
-                            Console.WriteLine(seqChild.ToPrettyString());
-                            Console.WriteLine(seqChild2.ToPrettyString());
+                            Console.WriteLine(seqChild.Type + seqChild.ToPrettyString());
+                            Console.WriteLine(seqChild2.Type + seqChild2.ToPrettyString());
                             Console.WriteLine(i);
+                            equiv = seqChild.IsEquivalentTo(seqChild2);
                         }
 
                         Assert.IsFalse(equiv);
@@ -174,7 +175,7 @@ namespace IonDotnet.Tests.Integration
             foreach (var doc1 in sequence)
             {
                 Assert.IsTrue(doc1 is IonString);
-                var dg1 = IonLoader.Default.Load(((IonString)doc1).StringValue);
+                var dg1 = IonLoader.Default.Load(((IonString) doc1).StringValue);
                 foreach (var doc2 in sequence)
                 {
                     if (doc1 == doc2)
@@ -182,7 +183,7 @@ namespace IonDotnet.Tests.Integration
                         continue;
                     }
 
-                    var dg2 = IonLoader.Default.Load(((IonString)doc2).StringValue);
+                    var dg2 = IonLoader.Default.Load(((IonString) doc2).StringValue);
                     var eq = AssertDatagramEquivalent(dg1, dg2);
                     Assert.AreEqual(expected, eq);
                 }

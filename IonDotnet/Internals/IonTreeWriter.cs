@@ -236,6 +236,7 @@ namespace IonDotnet.Internals
             if (IsInStruct)
             {
                 var field = AssumeFieldNameSymbol();
+                ClearFieldName();
                 if (field == default)
                     throw new InvalidOperationException("Field name is missing");
 

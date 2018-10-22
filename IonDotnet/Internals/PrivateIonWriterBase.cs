@@ -83,8 +83,10 @@ namespace IonDotnet.Internals
                     WriteString(reader.StringValue());
                     break;
                 case IonType.Clob:
-                case IonType.Blob:
                     WriteClob(reader.NewByteArray());
+                    break;
+                case IonType.Blob:
+                    WriteBlob(reader.NewByteArray());
                     break;
                 case IonType.List:
                 case IonType.Sexp:
@@ -111,7 +113,8 @@ namespace IonDotnet.Internals
 
         private void TryWriteFieldName(IIonReader reader)
         {
-            if (!IsInStruct || IsFieldNameSet()) return;
+            if (!IsInStruct || IsFieldNameSet())
+                return;
 
             var tok = reader.GetFieldNameSymbol();
             if (tok == default)
