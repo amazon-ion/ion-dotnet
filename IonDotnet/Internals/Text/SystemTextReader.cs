@@ -197,6 +197,8 @@ namespace IonDotnet.Internals.Text
             else
             {
                 _v.DecimalValue = BigDecimal.Parse(text);
+                var intVal = _v.DecimalValue.IntVal;
+                var scale = _v.DecimalValue.Scale;
                 _valueType = IonType.Decimal;
             }
         }
@@ -205,7 +207,16 @@ namespace IonDotnet.Internals.Text
         {
             try
             {
-                _v.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
+                var parsed = double.Parse(text, CultureInfo.InvariantCulture);
+                //check for negative zero
+                if (parsed == 0 && text[0] == '-')
+                {
+                    _v.DoubleValue = -1.0f * 0;
+                }
+                else
+                {
+                    _v.DoubleValue = parsed;
+                }
             }
             catch (OverflowException)
             {
@@ -220,6 +231,8 @@ namespace IonDotnet.Internals.Text
         private void SetDecimal(string text)
         {
             _v.DecimalValue = BigDecimal.Parse(text);
+            var intVal = _v.DecimalValue.IntVal;
+            var scale = _v.DecimalValue.Scale;
         }
 
         private void SetInteger(Radix radix, string s, bool negative)
@@ -332,7 +345,7 @@ namespace IonDotnet.Internals.Text
                 Array.Resize(ref _lobBuffer, _valueBuffer.Length);
                 for (int i = 0, l = _valueBuffer.Length; i < l; i++)
                 {
-                    _lobBuffer[i] = (byte) _valueBuffer[i];
+                    _lobBuffer[i] = (byte)_valueBuffer[i];
                 }
             }
 

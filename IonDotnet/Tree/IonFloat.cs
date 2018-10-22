@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using IonDotnet.Internals;
+using IonDotnet.Utils;
 
 namespace IonDotnet.Tree
 {
@@ -29,14 +31,18 @@ namespace IonDotnet.Tree
         {
             if (!base.IsEquivalentTo(other))
                 return false;
-            
-            if (!(other is IonFloat oFloat))
-                return false;
+
+            var oFloat = (IonFloat)other;
 
             if (NullFlagOn())
                 return oFloat.IsNull;
+            if (oFloat.IsNull)
+                return false;
 
-            return !oFloat.IsNull && EqualityComparer<double>.Default.Equals(oFloat.Value, Value);
+            if (PrivateHelper.IsNegativeZero(_d) ^ PrivateHelper.IsNegativeZero(oFloat._d))
+                return false;
+
+            return EqualityComparer<double>.Default.Equals(oFloat.Value, Value);
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)

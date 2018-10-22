@@ -31,7 +31,7 @@ namespace IonDotnet.Tree
             if (!base.IsEquivalentTo(other))
                 return false;
 
-            var otherDec = (IonDecimal) other;
+            var otherDec = (IonDecimal)other;
 
             if (NullFlagOn())
                 return otherDec.IsNull;

@@ -85,19 +85,19 @@ namespace IonDotnet
             }
 
             //this will check for overflowing if |intVal|>DecimalMaxValue
-            var dec = (decimal) intVal;
+            var dec = (decimal)intVal;
 
             //this will account for the case where scale<0
             if (scale < 0)
             {
-                dec *= (decimal) Math.Pow(10, -scale);
+                dec *= (decimal)Math.Pow(10, -scale);
                 scale = 0;
             }
 
             while (scale > 0)
             {
                 var step = scale > 28 ? 28 : scale;
-                dec /= (decimal) Math.Pow(10, step);
+                dec /= (decimal)Math.Pow(10, step);
                 scale -= step;
             }
 
@@ -111,7 +111,7 @@ namespace IonDotnet
             return obj is BigDecimal other && Equals(other);
         }
 
-        public override int GetHashCode() => (int) ((Scale + 31 * (long) IntVal.GetHashCode()) % 2147483647);
+        public override int GetHashCode() => (int)((Scale + 31 * (long)IntVal.GetHashCode()) % 2147483647);
 
         public static bool CheckNegativeZero(decimal dec)
         {
@@ -122,7 +122,7 @@ namespace IonDotnet
 
             unsafe
             {
-                var p = (byte*) &dec;
+                var p = (byte*)&dec;
                 return (p[3] & 0b_1000_0000) > 0;
             }
         }
@@ -383,7 +383,6 @@ namespace IonDotnet
                         {
                             throw newFormatException(text);
                         }
-
                         exponent = exponent * 10 + (expNegative ? '0' - c : c - '0');
                         break;
                 }
@@ -396,9 +395,8 @@ namespace IonDotnet
 
             if (intVal == 0 && valNegative)
             {
-                return NegativeZero(scale);
+                return NegativeZero(scale - exponent);
             }
-
             return new BigDecimal(intVal, scale - exponent);
         }
 
