@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using IonDotnet.Internals.Binary;
+using IonDotnet.Systems;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -39,8 +40,8 @@ namespace IonDotnet.Tests.Internals
         /// Test for single-value bool 
         /// </summary>
         [TestMethod]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x11}, true)]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x10}, false)]
+        [DataRow(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x11 }, true)]
+        [DataRow(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x10 }, false)]
         public void SingleBool(byte[] data, bool value)
         {
             var reader = new UserBinaryReader(new MemoryStream(data));
@@ -48,8 +49,8 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x24, 0x49, 0x96, 0x02, 0xD2}, 1234567890)]
-        [DataRow(new byte[] {0xE0, 0x01, 0x00, 0xEA, 0x28, 0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, long.MaxValue / 2)]
+        [DataRow(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x24, 0x49, 0x96, 0x02, 0xD2 }, 1234567890)]
+        [DataRow(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x28, 0x3F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, long.MaxValue / 2)]
         public void SingleNumber(byte[] data, long value)
         {
             IIonReader reader = new UserBinaryReader(new MemoryStream(data));
@@ -152,6 +153,28 @@ namespace IonDotnet.Tests.Internals
             var data = DirStructure.OwnTestFileAsBytes(fileName);
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.TwoLayer_TestStepoutSkip(reader);
+        }
+
+        [TestMethod]
+        [DataRow(0, 0)]
+        [DataRow(100, 24)]
+        public void Blob_PartialRead(int size, int step)
+        {
+            var blob = new byte[size];
+            for (var i = 0; i < size; i++)
+            {
+                blob[i] = (byte)i;
+            }
+
+            var memStream = new MemoryStream();
+            using (var writer = IonBinaryWriterBuilder.Build(memStream))
+            {
+                writer.WriteBlob(blob);
+                writer.Finish();
+            }
+            var output = memStream.ToArray();
+            var reader = IonReaderBuilder.Build(new MemoryStream(output));
+            ReaderTestCommon.Blob_PartialRead(size, step, reader);
         }
     }
 }

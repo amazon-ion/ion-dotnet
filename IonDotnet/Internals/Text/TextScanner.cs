@@ -34,7 +34,6 @@ namespace IonDotnet.Internals.Text
         }
 
         private readonly TextStream _input;
-        private int _base64PrefetchCount;
         public int Token { get; private set; } = -1;
 
         public bool UnfinishedToken { get; private set; }
@@ -148,7 +147,7 @@ namespace IonDotnet.Internals.Text
                     //TODO peek()
                     c2 = ReadChar();
                     UnreadChar(c2);
-                    if (char.IsDigit((char) c2))
+                    if (char.IsDigit((char)c2))
                     {
                         token = ScanForNegativeNumbericType(c);
                         UnreadChar(c);
@@ -203,7 +202,7 @@ namespace IonDotnet.Internals.Text
             var t = TextConstants.TokenUnknownNumeric;
             Span<int> readChars = stackalloc int[6];
             var readCharCount = 0;
-            Debug.Assert(char.IsDigit((char) c1));
+            Debug.Assert(char.IsDigit((char)c1));
 
             var c = ReadChar();
             readChars[readCharCount++] = c;
@@ -240,19 +239,19 @@ namespace IonDotnet.Internals.Text
 
             if (t == TextConstants.TokenUnknownNumeric)
             {
-                if (char.IsDigit((char) c))
+                if (char.IsDigit((char)c))
                 {
                     //2nd digit
                     // it might be a timestamp if we have 4 digits, a dash,
                     // and a digit
                     c = ReadChar();
                     readChars[readCharCount++] = c;
-                    if (char.IsDigit((char) c))
+                    if (char.IsDigit((char)c))
                     {
                         //digit 3
                         c = ReadChar();
                         readChars[readCharCount++] = c;
-                        if (char.IsDigit((char) c))
+                        if (char.IsDigit((char)c))
                         {
                             //digit 4, year
                             c = ReadChar();
@@ -485,7 +484,7 @@ namespace IonDotnet.Internals.Text
                     throw new UnexpectedEofException();
                 if (c == '}')
                     break;
-                sb.Append((char) c);
+                sb.Append((char)c);
                 c = SkipOverWhiteSpace(CommentStrategy.Break);
             }
 
@@ -715,7 +714,7 @@ namespace IonDotnet.Internals.Text
             Debug.Assert(radix.IsPrefix(c));
 
             //TODO is this ok?
-//            c = ReadNumeric(NULL_APPENDABLE, radix);
+            //            c = ReadNumeric(NULL_APPENDABLE, radix);
             SkipOverNumber();
 
             if (!IsTerminatingCharacter(c))
@@ -780,7 +779,7 @@ namespace IonDotnet.Internals.Text
 
         private int SkipOverDigits(int c)
         {
-            while (char.IsDigit((char) c))
+            while (char.IsDigit((char)c))
             {
                 c = ReadChar();
             }
@@ -931,7 +930,7 @@ namespace IonDotnet.Internals.Text
                 }
             }
 
-            Done:
+        Done:
             UnreadChar(c);
             return anyWhitespace;
         }
@@ -941,22 +940,22 @@ namespace IonDotnet.Internals.Text
         /// </summary>
         /// <param name="c1"></param>
         /// <returns></returns>
-//        private int ReadLargeCharSequence(int c1)
-//        {
-//            if (_input.IsByteStream)
-//                return ReadUtf8Sequence(c1);
-//
-//            if (char.IsHighSurrogate((char) c1))
-//            {
-//                var c2 = ReadChar();
-//                if (char.IsLowSurrogate((char) c2))
-//                {
-//                    c1 = Characters.MakeUnicodeScalar(c1, c2);
-//                }
-//            }
-//
-//            return c1;
-//        }
+        //        private int ReadLargeCharSequence(int c1)
+        //        {
+        //            if (_input.IsByteStream)
+        //                return ReadUtf8Sequence(c1);
+        //
+        //            if (char.IsHighSurrogate((char) c1))
+        //            {
+        //                var c2 = ReadChar();
+        //                if (char.IsLowSurrogate((char) c2))
+        //                {
+        //                    c1 = Characters.MakeUnicodeScalar(c1, c2);
+        //                }
+        //            }
+        //
+        //            return c1;
+        //        }
         private int ReadUtf8Sequence(int c1)
         {
             var len = Characters.GetUtf8LengthFromFirstByte(c1);
@@ -1009,26 +1008,26 @@ namespace IonDotnet.Internals.Text
                     case '\\':
                         c = ReadEscapedChar(c, isClob);
                         break;
-//                    default:
-//                        if (!isClob && !Characters.Is7BitChar(c))
-//                        {
-//                            c = ReadLargeCharSequence(c);
-//                        }
-//
-//                        break;
+                        //                    default:
+                        //                        if (!isClob && !Characters.Is7BitChar(c))
+                        //                        {
+                        //                            c = ReadLargeCharSequence(c);
+                        //                        }
+                        //
+                        //                        break;
                 }
 
-                if (!isClob && char.IsHighSurrogate((char) c))
+                if (!isClob && char.IsHighSurrogate((char)c))
                 {
-                    sb.Append((char) c);
+                    sb.Append((char)c);
                     c = ReadChar();
-                    if (!char.IsLowSurrogate((char) c))
+                    if (!char.IsLowSurrogate((char)c))
                     {
-                        throw new IonException($"Invalid character format {(char) c}");
+                        throw new IonException($"Invalid character format {(char)c}");
                     }
                 }
 
-                sb.Append((char) c);
+                sb.Append((char)c);
             }
         }
 
@@ -1095,24 +1094,24 @@ namespace IonDotnet.Internals.Text
                         c = ReadChar();
                         c = ReadEscapedCharContent(c, clobCharsOnly);
                         break;
-//                    default:
-//                        if (!clobCharsOnly && !Characters.Is7BitChar(c))
-//                        {
-//                            c = ReadLargeCharSequence(c);
-//                        }
-//
-//                        break;
+                        //                    default:
+                        //                        if (!clobCharsOnly && !Characters.Is7BitChar(c))
+                        //                        {
+                        //                            c = ReadLargeCharSequence(c);
+                        //                        }
+                        //
+                        //                        break;
                 }
 
                 if (!clobCharsOnly)
                 {
-                    if (char.IsHighSurrogate((char) c))
+                    if (char.IsHighSurrogate((char)c))
                     {
-                        valueBuffer.Append((char) c);
+                        valueBuffer.Append((char)c);
                         c = ReadChar();
-                        if (!char.IsLowSurrogate((char) c))
+                        if (!char.IsLowSurrogate((char)c))
                         {
-                            throw new IonException($"Invalid character format {(char) c}");
+                            throw new IonException($"Invalid character format {(char)c}");
                         }
                     }
                 }
@@ -1121,7 +1120,7 @@ namespace IonDotnet.Internals.Text
                     throw new InvalidTokenException(c);
                 }
 
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
             }
         }
 
@@ -1230,13 +1229,13 @@ namespace IonDotnet.Internals.Text
                         if (c == TextConstants.EscapeNotDefined)
                             throw new InvalidTokenException(c);
                         break;
-//                    default:
-//                        if (!clob && Characters.Is7BitChar(c))
-//                        {
-//                            c = ReadLargeCharSequence(c);
-//                        }
-//
-//                        break;
+                        //                    default:
+                        //                        if (!clob && Characters.Is7BitChar(c))
+                        //                        {
+                        //                            c = ReadLargeCharSequence(c);
+                        //                        }
+                        //
+                        //                        break;
                 }
 
                 // at this point we have a post-escaped character to return to the caller
@@ -1325,7 +1324,7 @@ namespace IonDotnet.Internals.Text
         {
             var c = _input.Read();
             if (Characters.IsProhibited(c, prohibitionContext))
-                throw new IonException($"Invalid character {(char) c}");
+                throw new IonException($"Invalid character {(char)c}");
 
             if (c == '\\' || c == '\n' || c == '\r')
             {
@@ -1346,7 +1345,7 @@ namespace IonDotnet.Internals.Text
             switch (c)
             {
                 default:
-                    throw new InvalidOperationException($"Nothing to absorb after {(char) c}");
+                    throw new InvalidOperationException($"Nothing to absorb after {(char)c}");
                 case '\\':
                     c2 = _input.Read();
                     switch (c2)
@@ -1467,7 +1466,6 @@ namespace IonDotnet.Internals.Text
         public void MarkTokenFinished()
         {
             UnfinishedToken = false;
-            _base64PrefetchCount = 0;
         }
 
         public IonType LoadNumber(StringBuilder valueBuffer)
@@ -1478,11 +1476,11 @@ namespace IonDotnet.Internals.Text
             {
                 // if there is a sign character, we just consume it
                 // here and get whatever is next in line
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
                 c = ReadChar();
             }
 
-            if (!char.IsDigit((char) c))
+            if (!char.IsDigit((char)c))
             {
                 // if it's not a digit, this isn't a number the only non-digit it could have been was a
                 // sign character, and we'll have read past that by now
@@ -1495,14 +1493,14 @@ namespace IonDotnet.Internals.Text
                 var c2 = ReadChar();
                 if (Radix.Hex.IsPrefix(c2))
                 {
-                    valueBuffer.Append((char) c);
+                    valueBuffer.Append((char)c);
                     c = LoadRadixValue(valueBuffer, c2, Radix.Hex);
                     return FinishLoadNumber(valueBuffer, c, TextConstants.TokenHex);
                 }
 
                 if (Radix.Binary.IsPrefix(c2))
                 {
-                    valueBuffer.Append((char) c);
+                    valueBuffer.Append((char)c);
                     c = LoadRadixValue(valueBuffer, c2, Radix.Hex);
                     return FinishLoadNumber(valueBuffer, c, TextConstants.TokenHex);
                 }
@@ -1517,13 +1515,13 @@ namespace IonDotnet.Internals.Text
                 // year followed by a dash and no leading sign
                 if (hasSign)
                 {
-                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char) c}");
+                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char)c}");
                 }
 
                 var len = valueBuffer.Length;
                 if (len != 4)
                 {
-                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char) c}");
+                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char)c}");
                 }
 
                 return LoadTimestamp(valueBuffer, c);
@@ -1548,7 +1546,7 @@ namespace IonDotnet.Internals.Text
             {
                 // so if it's a floating point number
                 // mark it as decimal by default, then continue to read the rest
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
                 c = ReadChar();
                 c = LoadDigits(valueBuffer, c);
                 t = TextConstants.TokenDecimal;
@@ -1562,13 +1560,13 @@ namespace IonDotnet.Internals.Text
             if (c == 'e' || c == 'E')
             {
                 t = TextConstants.TokenFloat;
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
                 c = LoadExponent(valueBuffer); // the unused lookahead char
             }
             else if (c == 'd' || c == 'D')
             {
                 t = TextConstants.TokenDecimal;
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
                 c = LoadExponent(valueBuffer);
             }
 
@@ -1585,9 +1583,9 @@ namespace IonDotnet.Internals.Text
                     while (len > 4)
                     {
                         c = ReadChar();
-                        if (!char.IsDigit((char) c))
+                        if (!char.IsDigit((char)c))
                             throw new InvalidTokenException(c);
-                        sb.Append((char) c);
+                        sb.Append((char)c);
                         len--;
                     }
 
@@ -1595,30 +1593,30 @@ namespace IonDotnet.Internals.Text
                     goto case 4;
                 case 4:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c))
+                    if (!char.IsDigit((char)c))
                         throw new InvalidTokenException(c);
-                    sb.Append((char) c);
+                    sb.Append((char)c);
                     // fall through
                     goto case 3;
                 case 3:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c))
+                    if (!char.IsDigit((char)c))
                         throw new InvalidTokenException(c);
-                    sb.Append((char) c);
+                    sb.Append((char)c);
                     // fall through
                     goto case 2;
                 case 2:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c))
+                    if (!char.IsDigit((char)c))
                         throw new InvalidTokenException(c);
-                    sb.Append((char) c);
+                    sb.Append((char)c);
                     // fall through
                     goto case 1;
                 case 1:
                     c = ReadChar();
-                    if (!char.IsDigit((char) c))
+                    if (!char.IsDigit((char)c))
                         throw new InvalidTokenException(c);
-                    sb.Append((char) c);
+                    sb.Append((char)c);
                     break;
             }
         }
@@ -1629,7 +1627,7 @@ namespace IonDotnet.Internals.Text
             // here is we read 4 digits and then a dash or a 'T'
             Debug.Assert(c == '-' || c == 'T');
 
-            sb.Append((char) c);
+            sb.Append((char)c);
 
             // if it's 'T' we done: yyyyT
             if (c == 'T')
@@ -1644,7 +1642,7 @@ namespace IonDotnet.Internals.Text
             c = ReadChar();
             if (c == 'T')
             {
-                sb.Append((char) c);
+                sb.Append((char)c);
                 c = ReadChar(); // because we'll unread it before we return
                 return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
             }
@@ -1653,7 +1651,7 @@ namespace IonDotnet.Internals.Text
                 throw new InvalidTokenException(c);
 
             // read day
-            sb.Append((char) c);
+            sb.Append((char)c);
             LoadFixedDigits(sb, 2);
 
             // look for the 'T', otherwise we're done (and happy about it)
@@ -1665,37 +1663,37 @@ namespace IonDotnet.Internals.Text
 
             // so either we're done or we must at least hours and minutes
             // hour
-            sb.Append((char) c);
+            sb.Append((char)c);
             c = ReadChar();
-            if (!char.IsDigit((char) c))
+            if (!char.IsDigit((char)c))
             {
                 return FinishLoadNumber(sb, c, TextConstants.TokenTimestamp);
             }
 
-            sb.Append((char) c);
+            sb.Append((char)c);
             LoadFixedDigits(sb, 1); // we already read the first digit
             c = ReadChar();
             if (c != ':')
                 throw new InvalidTokenException(c);
 
             // minutes
-            sb.Append((char) c);
+            sb.Append((char)c);
             LoadFixedDigits(sb, 2);
             c = ReadChar();
             if (c == ':')
             {
                 // seconds are optional
                 // and first we'll have the whole seconds
-                sb.Append((char) c);
+                sb.Append((char)c);
                 LoadFixedDigits(sb, 2);
                 c = ReadChar();
                 if (c == '.')
                 {
-                    sb.Append((char) c);
+                    sb.Append((char)c);
                     c = ReadChar();
                     // Per spec and W3C Note http://www.w3.org/TR/NOTE-datetime
                     // We require at least one digit after the decimal point.
-                    if (!char.IsDigit((char) c))
+                    if (!char.IsDigit((char)c))
                         throw new InvalidTokenException(c);
 
                     c = LoadDigits(sb, c);
@@ -1706,14 +1704,14 @@ namespace IonDotnet.Internals.Text
             // the timezone offset starts with a '+' '-' 'Z' or 'z'
             if (c == 'z' || c == 'Z')
             {
-                sb.Append((char) c);
+                sb.Append((char)c);
                 // read ahead since we'll check for a valid ending in a bit
                 c = ReadChar();
             }
             else if (c == '+' || c == '-')
             {
                 // then ... hours of time offset
-                sb.Append((char) c);
+                sb.Append((char)c);
                 LoadFixedDigits(sb, 2);
                 c = ReadChar();
                 if (c != ':')
@@ -1724,7 +1722,7 @@ namespace IonDotnet.Internals.Text
                 }
 
                 // and finally the *not* optional minutes of time offset
-                sb.Append((char) c);
+                sb.Append((char)c);
                 LoadFixedDigits(sb, 2);
                 c = ReadChar();
             }
@@ -1743,7 +1741,7 @@ namespace IonDotnet.Internals.Text
             var c = ReadChar();
             if (c == '-' || c == '+')
             {
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
                 c = ReadChar();
             }
 
@@ -1751,7 +1749,7 @@ namespace IonDotnet.Internals.Text
 
             if (c != '.') return c;
 
-            valueBuffer.Append((char) c);
+            valueBuffer.Append((char)c);
             c = ReadChar();
             c = LoadDigits(valueBuffer, c);
 
@@ -1760,10 +1758,10 @@ namespace IonDotnet.Internals.Text
 
         private int LoadDigits(StringBuilder sb, int c)
         {
-            if (!char.IsDigit((char) c))
+            if (!char.IsDigit((char)c))
                 return c;
 
-            sb.Append((char) c);
+            sb.Append((char)c);
 
             return ReadNumeric(sb, Radix.Decimal, NumericState.Digit);
         }
@@ -1776,7 +1774,7 @@ namespace IonDotnet.Internals.Text
         {
             // all forms of numeric need to stop someplace rational
             if (!IsTerminatingCharacter(c))
-                throw new InvalidTokenException($"Numeric value followed by invalid character: {numericText}{(char) c}");
+                throw new InvalidTokenException($"Numeric value followed by invalid character: {numericText}{(char)c}");
 
             // we read off the end of the number, so put back
             // what we don't want, but what ever we have is an int
@@ -1789,7 +1787,7 @@ namespace IonDotnet.Internals.Text
 
         private int LoadRadixValue(StringBuilder sb, int c2, Radix radix)
         {
-            sb.Append((char) c2);
+            sb.Append((char)c2);
 
             return ReadNumeric(sb, radix);
         }
@@ -1806,7 +1804,7 @@ namespace IonDotnet.Internals.Text
                     case NumericState.Start:
                         if (radix.IsValidDigit(c))
                         {
-                            buffer.Append(radix.NormalizeDigit((char) c));
+                            buffer.Append(radix.NormalizeDigit((char)c));
                             state = NumericState.Digit;
                         }
                         else
@@ -1816,7 +1814,7 @@ namespace IonDotnet.Internals.Text
                     case NumericState.Digit:
                         if (radix.IsValidDigit(c))
                         {
-                            buffer.Append(radix.NormalizeDigit((char) c));
+                            buffer.Append(radix.NormalizeDigit((char)c));
                             state = NumericState.Digit;
                         }
                         else if (c == '_')
@@ -1830,7 +1828,7 @@ namespace IonDotnet.Internals.Text
                     case NumericState.Underscore:
                         if (radix.IsValidDigit(c))
                         {
-                            buffer.Append(radix.NormalizeDigit((char) c));
+                            buffer.Append(radix.NormalizeDigit((char)c));
                             state = NumericState.Digit;
                         }
                         else
@@ -1851,7 +1849,7 @@ namespace IonDotnet.Internals.Text
             var c = ReadChar();
             while (TextConstants.IsValidSymbolCharacter(c))
             {
-                valueBuffer.Append((char) c);
+                valueBuffer.Append((char)c);
                 c = ReadChar();
             }
 
@@ -1864,14 +1862,14 @@ namespace IonDotnet.Internals.Text
             // lookahead for +inf and -inf, this will consume the inf if it succeeds
             if ((c == '+' || c == '-') && PeekInf(c))
             {
-                sb.Append((char) c);
+                sb.Append((char)c);
                 sb.Append("inf");
                 return;
             }
 
             while (TextConstants.IsValidExtendedSymbolCharacter(c))
             {
-                sb.Append((char) c);
+                sb.Append((char)c);
                 c = ReadChar();
             }
 
@@ -1916,13 +1914,13 @@ namespace IonDotnet.Internals.Text
                     break;
                 case -1:
                     break;
-//                default:
-//                    if (!isClob && !Characters.Is7BitChar(c))
-//                    {
-//                        c = ReadLargeCharSequence(c);
-//                    }
-//
-//                    break;
+                    //                default:
+                    //                    if (!isClob && !Characters.Is7BitChar(c))
+                    //                    {
+                    //                        c = ReadLargeCharSequence(c);
+                    //                    }
+                    //
+                    //                    break;
             }
 
             return c;
@@ -1960,26 +1958,26 @@ namespace IonDotnet.Internals.Text
                 // handle surrogate encoding (otherwise we don't care)
                 if (!isClob)
                 {
-                    if (char.IsHighSurrogate((char) c))
+                    if (char.IsHighSurrogate((char)c))
                     {
-                        sb.Append((char) c);
+                        sb.Append((char)c);
                         c = ReadChar();
-                        if (!char.IsLowSurrogate((char) c))
+                        if (!char.IsLowSurrogate((char)c))
                         {
-                            throw new IonException($"Invalid character format {(char) c}");
+                            throw new IonException($"Invalid character format {(char)c}");
                         }
                     }
 
-//                    sb.Append(c);
-//
-//                    if (Characters.NeedsSurrogateEncoding(c))
-//                    {
-//                        sb.Append(Characters.GetHighSurrogate(c));
-//                        c = Characters.GetLowSurrogate(c);
-//                    }
+                    //                    sb.Append(c);
+                    //
+                    //                    if (Characters.NeedsSurrogateEncoding(c))
+                    //                    {
+                    //                        sb.Append(Characters.GetHighSurrogate(c));
+                    //                        c = Characters.GetLowSurrogate(c);
+                    //                    }
                 }
 
-                sb.Append((char) c);
+                sb.Append((char)c);
             }
         }
 
@@ -2003,7 +2001,7 @@ namespace IonDotnet.Internals.Text
             {
                 c = ReadChar();
                 readAhead[readCount++] = c;
-                if (!char.IsLetter((char) c))
+                if (!char.IsLetter((char)c))
                 {
                     // it's not a letter we care about but it is
                     // a valid end of const, so maybe we have a keyword now
@@ -2028,7 +2026,7 @@ namespace IonDotnet.Internals.Text
                 for (var i = 0; i < readCount; i++)
                 {
                     //this is horrible but we're throwing anyway
-                    sb.Append((char) readAhead[i]);
+                    sb.Append((char)readAhead[i]);
                 }
 
                 throw new IonException($"invalid type name on a typed null value: {sb}");

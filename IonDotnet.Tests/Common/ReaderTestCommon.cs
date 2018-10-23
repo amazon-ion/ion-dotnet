@@ -113,7 +113,7 @@ namespace IonDotnet.Tests.Common
             reader.MoveNext();
             Assert.AreEqual("longInt", reader.CurrentFieldName);
             Assert.AreEqual(IonType.Int, reader.CurrentType);
-            Assert.AreEqual((long) int.MaxValue * 2, reader.LongValue());
+            Assert.AreEqual((long)int.MaxValue * 2, reader.LongValue());
 
             reader.MoveNext();
             Assert.AreEqual("bigInt", reader.CurrentFieldName);
@@ -159,7 +159,7 @@ namespace IonDotnet.Tests.Common
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var symbols = new[] {"years", "months", "days", "hours", "minutes", "seconds"};
+            var symbols = new[] { "years", "months", "days", "hours", "minutes", "seconds" };
 
             reader.MoveNext();
             reader.StepIn();
@@ -274,7 +274,7 @@ namespace IonDotnet.Tests.Common
 
             for (var i = 0; i < 100; i++)
             {
-                Assert.AreEqual((byte) 1, blob[i]);
+                Assert.AreEqual((byte)1, blob[i]);
             }
         }
 
@@ -322,6 +322,28 @@ namespace IonDotnet.Tests.Common
             }
 
             Assert.IsTrue(ok);
+        }
+
+        public static void Blob_PartialRead(int size, int step, IIonReader reader)
+        {
+            Assert.AreEqual(IonType.Blob, reader.MoveNext());
+            var start = 0;
+            while (start < size)
+            {
+                var bufSize = step;
+                if (bufSize > size - start)
+                {
+                    bufSize = size - start;
+                }
+                var buffer = new byte[bufSize];
+                var nRead = reader.GetBytes(buffer);
+                Assert.AreEqual(bufSize, nRead);
+                for (var i = 0; i < bufSize; i++)
+                {
+                    Assert.AreEqual((byte)(i + start), buffer[i]);
+                }
+                start += nRead;
+            }
         }
     }
 }

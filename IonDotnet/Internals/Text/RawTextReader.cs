@@ -141,11 +141,12 @@ namespace IonDotnet.Internals.Text
 
         #endregion
 
+        private readonly ContainerStack _containerStack;
         protected readonly StringBuilder _valueBuffer;
-        protected ValueVariant _v;
         protected readonly TextScanner _scanner;
         protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
+        protected ValueVariant _v;
         private int _state;
         protected bool _eof;
         protected int _valueKeyword;
@@ -158,7 +159,7 @@ namespace IonDotnet.Internals.Text
         protected string _fieldName;
         protected int _fieldNameSid = SymbolToken.UnknownSid;
 
-        private readonly ContainerStack _containerStack;
+
         protected int _lobToken;
         protected int _lobValuePosition;
         protected byte[] _lobBuffer;
@@ -762,9 +763,9 @@ namespace IonDotnet.Internals.Text
         private static int GetStateAfterValue(IonType currentContainerType)
         {
             //TODO handle nested parent
-//            if (_nesting_parent != null && getDepth() == 0) {
-//                state_after_scalar = STATE_EOF;
-//            }
+            //            if (_nesting_parent != null && getDepth() == 0) {
+            //                state_after_scalar = STATE_EOF;
+            //            }
 
             switch (currentContainerType)
             {
@@ -787,9 +788,9 @@ namespace IonDotnet.Internals.Text
             Debug.Assert(newContainer.IsContainer());
 
             //TODO handle the case for nesting parent that returns eof when its scope ends
-//            if (_nestingparent != None && CurrentDepth == 0) {
-//                new_state = STATE_EOF;
-//            }
+            //            if (_nestingparent != None && CurrentDepth == 0) {
+            //                new_state = STATE_EOF;
+            //            }
 
             switch (newContainer)
             {

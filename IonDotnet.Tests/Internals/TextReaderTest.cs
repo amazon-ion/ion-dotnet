@@ -112,16 +112,16 @@ namespace IonDotnet.Tests.Internals
             ReaderTestCommon.FlatIntList(reader);
         }
 
-//        [TestMethod]
-//        public void ReadAnnotations_SingleField()
-//        {
-//            // a singlefield structure with annotations
-//            // {withannot:years::months::days::hours::minutes::seconds::18}
-//            var annotSingleField = DirStructure.ReadDataFile("text/annot_singlefield.ion");
-//            var converter = new SaveAnnotationsReaderRoutine();
-//            var reader = new UserTextReader(new MemoryStream(annotSingleField), converter);
-//            ReaderTestCommon.ReadAnnotations_SingleField(reader, converter);
-//        }
+        //        [TestMethod]
+        //        public void ReadAnnotations_SingleField()
+        //        {
+        //            // a singlefield structure with annotations
+        //            // {withannot:years::months::days::hours::minutes::seconds::18}
+        //            var annotSingleField = DirStructure.ReadDataFile("text/annot_singlefield.ion");
+        //            var converter = new SaveAnnotationsReaderRoutine();
+        //            var reader = new UserTextReader(new MemoryStream(annotSingleField), converter);
+        //            ReaderTestCommon.ReadAnnotations_SingleField(reader, converter);
+        //        }
 
         [TestMethod]
         public void SingleSymbol()
@@ -217,6 +217,22 @@ namespace IonDotnet.Tests.Internals
             const string text = "{{}}";
             var reader = new UserTextReader(text);
             Assert.AreEqual(IonType.Blob, reader.MoveNext());
+        }
+
+        [TestMethod]
+        [DataRow(0, 0)]
+        [DataRow(100, 24)]
+        public void Blob_PartialRead(int size, int step)
+        {
+            var blob = new byte[size];
+            for (var i = 0; i < size; i++)
+            {
+                blob[i] = (byte)i;
+            }
+
+            var text = "{{" + Convert.ToBase64String(blob) + "}}";
+            var reader = new UserTextReader(text);
+            ReaderTestCommon.Blob_PartialRead(size, step, reader);
         }
     }
 }
