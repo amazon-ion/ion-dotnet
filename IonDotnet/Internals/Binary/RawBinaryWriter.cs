@@ -182,7 +182,10 @@ namespace IonDotnet.Internals.Binary
             }
 
             _lengthBuffer.Wrapup();
-            outer.Sequence.AddRange(_lengthSegments);
+            foreach (var t in _lengthSegments)
+            {
+                outer.Sequence.Add(t);
+            }
 
             outer.Sequence.AddRange(wrappedList);
             _dataBuffer.StartStreak(outer.Sequence);

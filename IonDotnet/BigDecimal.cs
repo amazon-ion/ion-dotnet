@@ -402,6 +402,7 @@ namespace IonDotnet
 
         public override string ToString()
         {
+            //TODO improve this
             if (IsNegativeZero)
             {
                 return "-0d0";

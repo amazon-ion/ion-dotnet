@@ -54,11 +54,11 @@ namespace IonDotnet.Internals
         /// </summary>
         /// <param name="chars">Char sequence</param>
         /// <param name="bytesToWrite">Total bytes needed to utf8-encode the string</param>
-        private void WriteCharsSlow(ReadOnlySpan<char> chars, int bytesToWrite)
+        private void WriteCharsSlow(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
         {
             if (bytesToWrite <= BinaryConstants.ShortStringLength)
             {
-                WriteShortChars(chars, bytesToWrite);
+                WriteShortChars(chars, bytesToWrite, alloc);
             }
             else
             {
@@ -66,9 +66,8 @@ namespace IonDotnet.Internals
             }
         }
 
-        private void WriteShortChars(ReadOnlySpan<char> chars, int bytesToWrite)
+        private void WriteShortChars(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
         {
-            Span<byte> alloc = stackalloc byte[BinaryConstants.ShortStringLength];
             var length = Encoding.UTF8.GetBytes(chars, alloc);
             Debug.Assert(length == bytesToWrite);
             WriteBytes(alloc.Slice(0, bytesToWrite));
@@ -117,10 +116,10 @@ namespace IonDotnet.Internals
             //get the bytecount first
             var byteCount = length == -1 ? Encoding.UTF8.GetByteCount(chars) : length;
             Debug.Assert(length == -1 || length == Encoding.UTF8.GetByteCount(chars));
-
+            Span<byte> alloc = stackalloc byte[BinaryConstants.ShortStringLength];
             if (byteCount > _currentBlock.Length - _runningIndex)
             {
-                WriteCharsSlow(chars, byteCount);
+                WriteCharsSlow(chars, byteCount, alloc);
                 return byteCount;
             }
 

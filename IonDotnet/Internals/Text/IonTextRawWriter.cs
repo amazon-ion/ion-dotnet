@@ -236,6 +236,11 @@ namespace IonDotnet.Internals.Text
             }
         }
 
+        public void Write(decimal d)
+        {
+            _writer.Write(d);
+        }
+
         public void Write(in BigDecimal bd)
         {
             _writer.Write(bd.ToString());

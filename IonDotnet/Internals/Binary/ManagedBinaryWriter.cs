@@ -61,20 +61,16 @@ namespace IonDotnet.Internals.Binary
 
             public bool TryGetValue(string text, out int val)
             {
-                val = default;
-
-                if (text == null) return false;
-                var systemTab = SharedSymbolTable.GetSystem(1);
-                var st = systemTab.Find(text);
-                if (st.Text != null)
+                if (text == null)
                 {
-                    //found it
-                    val = st.Sid;
-                    return true;
+                    val = 0;
+                    return false;
                 }
 
-                if (Parents.Length == 0)
-                    return false;
+                var systemTab = SharedSymbolTable.GetSystem(1);
+                val = systemTab.FindSymbolId(text);
+                if (val > 0)
+                    return true;
 
                 return _dict.TryGetValue(text, out val);
             }

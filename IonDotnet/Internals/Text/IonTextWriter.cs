@@ -365,7 +365,12 @@ namespace IonDotnet.Internals.Text
             CloseValue();
         }
 
-        public override void WriteDecimal(decimal value) => WriteDecimal(new BigDecimal(value));
+        public override void WriteDecimal(decimal value)
+        {
+            StartValue();
+            _textWriter.Write(value);
+            CloseValue();
+        }
 
         public override void WriteDecimal(BigDecimal value)
         {

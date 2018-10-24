@@ -9,6 +9,7 @@ using BenchmarkDotNet.Running;
 using IonDotnet.Conversions;
 using IonDotnet.Serialization;
 using Newtonsoft.Json;
+
 // ReSharper disable All
 
 namespace IonDotnet.Bench
