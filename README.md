@@ -6,10 +6,77 @@ Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for dotnet
 ### Note 
 This project is still in early development and not ready for production use.
 
-[Basic usage](https://github.com/dhhoang/IonDotnet/blob/master/README.md#basic-usage)  
-[Benchmarks](https://github.com/dhhoang/IonDotnet/blob/master/README.md#benchmarks)
+### Manual read/write
+You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default.
+```csharp
+Stream stream;  //input stream
+String text;    //text form
+ICatalog catalog;
+IIonReader reader;  
 
-### Basic usage
+//create a text reader that automatically detect whether the stream is text/binary
+reader = IonReaderBuilder.Build(stream);
+
+//explicitly create a text reader
+reader = IonReaderBuilder.Build(stream, new ReaderOptions {Format = ReaderFormat.Text});
+
+//explicitly create a binary reader
+reader = IonReaderBuilder.Build(stream, new ReaderOptions {Format = ReaderFormat.Binary});
+
+//create a text reader that reads a string and uses a catalog
+reader = IonReaderBuilder.Build(text, new ReaderOptions {Catalog = catalog});
+
+
+/*reader semantics for
+{
+    number: 1,
+    text: "hello world"
+}
+*/
+Console.WriteLine(reader.MoveNext()); // Struct
+reader.StepIn();
+Console.WriteLine(reader.MoveNext()); // Int
+Console.WriteLine(reader.CurrentFieldName); // "number"
+Console.WriteLine(reader.IntValue());   // 1
+Console.WriteLine(reader.MoveNext()); // String
+Console.WriteLine(reader.CurrentFieldName); // "text"
+Console.WriteLine(reader.StringValue());   // "hello world"
+reader.StepOut();
+```
+
+Similarly you can create a writer that write to a (output) stream. 
+
+```csharp
+Stream stream; //output stream
+var stringWriter = new StringWriter();
+IIonWriter writer;
+ISymbolTable table1,table2;
+
+//create a text writer that write to the stream.
+writer = IonTextWriterBuilder.Build(new StreamWriter(stream));
+
+//create a text writer that write to a stringwriter/builder.
+writer = IonTextWriterBuilder.Build(stringWriter);
+
+//create a binary writer using multiple symbol tables
+writer = IonBinaryWriterBuilder.Build(stream, new []{table1,table2});
+
+/*writer semantics for
+{
+    number: 1,
+    text: "hello world"
+}
+*/
+writer.StepIn(IonType.Struct);
+writer.SetFieldName("number");
+writer.WriteInt(1);
+writer.SetFieldName("text");
+writer.WriteString("hello world");
+writer.StepOut();
+writer.Finish();    //this is important
+```
+
+### Serialization
 IonDotnet can (de)serialize any POCO object 
 
 ```csharp
@@ -52,19 +119,19 @@ deserialized = IonSerialization.Text.Deserialize<Experiment>(text);
 Console.WriteLine(text);
 /* Output
 {
-    Id: 233,
-    Name: "Boxing Perftest",
-    Description: "Measure performance impact of boxing",
-    StartDate: 2018-07-21T11:11:11.0000000+00:00,
-    IsActive: true,
-    SampleData: {{ AAAAAAAAAAAAAA== }},
-    Budget: 12345.01234567890123456789,
-    Result: 'Failure',
-    Outputs: [
-        1,
-        2,
-        3
-    ]
+  Id: 233,
+  Name: "Boxing Perftest",
+  Description: "Measure performance impact of boxing",
+  StartDate: 2018-07-21T11:11:11.0000000+00:00,
+  IsActive: true,
+  SampleData: {{ AAAAAAAAAAAAAA== }},
+  Budget: 12345.01234567890123456789,
+  Result: 'Failure',
+  Outputs: [
+    1.2e0,
+    2.3e0,
+    3.1e0
+  ]
 }
 */
 ```
@@ -85,135 +152,3 @@ you can build the project simply by:
 ```
 $ dotnet build
 ``` 
-### Benchmarks
-Environment
-```
-BenchmarkDotNet=v0.11.0, OS=Windows 10.0.17134.191 (1803/April2018Update/Redstone4)
-Intel Core i7-6700HQ CPU 2.60GHz (Max: 2.59GHz) (Skylake), 1 CPU, 8 logical and 4 physical cores
-Frequency=2531251 Hz, Resolution=395.0616 ns, Timer=TSC
-.NET Core SDK=2.1.302
-  [Host]     : .NET Core 2.1.2 (CoreCLR 4.6.26628.05, CoreFX 4.6.26629.01), 64bit RyuJIT
-  DefaultJob : .NET Core 2.1.2 (CoreCLR 4.6.26628.05, CoreFX 4.6.26629.01), 64bit RyuJIT
-```
-
-#### Serialization: Text vs JSON.NET
-Test: Serialize 1000 record
-```
-           Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
------------------ |---------:|----------:|----------:|---------:|---------:|---------:|----------:|
-    IonDotnetText | 2.030 ms | 0.0378 ms | 0.0388 ms | 417.9688 | 312.5000 | 183.5938 |   1.91 MB |
- JsonDotnetString | 2.611 ms | 0.0488 ms | 0.0433 ms | 351.5625 | 277.3438 | 167.9688 |   1.58 MB |
-```
-
-#### Serialization: Binary vs JSON.NET
-Test: serialize 1000 records
-```
-             Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 |  Allocated |
-------------------- |---------:|----------:|----------:|---------:|---------:|---------:|-----------:|
-    JsonDotnetBytes | 2.807 ms | 0.0520 ms | 0.0486 ms | 433.5938 | 347.6563 | 347.6563 | 1594.46 KB |
- IonDotnetExpBinary | 2.576 ms | 0.0507 ms | 0.0660 ms |  58.5938 |  58.5938 |  58.5938 |  382.47 KB |
-```
-
-#### Compared to Java implementation
-Test 1000 serializations of 1000 records. Currently the following code/output is used to reference ion-java speed (probably not fair)
-```sh
-# sample output
-ion-java: writing took 707.86935ms
-IonDotnet: writing took  401.4152ms
-```
-```java
-// JAVA code
-public class MyBenchmark {
-    private static final IonBinaryWriterBuilder builder = IonBinaryWriterBuilder.standard();
-
-    public static void main(String[] args) throws IOException {
-        // warm up
-        System.nanoTime();
-        runOnce();
-
-        long start = System.nanoTime();
-        for (int i = 0; i < 1000; i++) {
-            runOnce();
-        }
-        long end = System.nanoTime();
-        double usec = (end - start) * 1.0 / 1000000;
-        System.out.println("ion-java: writing took " + usec + "ms");
-    }
-
-    private static void runOnce() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        IonWriter writer = builder.build(out);
-        writer.stepIn(IonType.LIST);
-
-        for (int i = 0; i < 1000; i++) {
-            writer.stepIn(IonType.STRUCT);
-
-            writer.setFieldName("boolean");
-            writer.writeBool(true);
-            writer.setFieldName("string");
-            writer.writeString("this is a string");
-            writer.setFieldName("integer");
-            writer.writeInt(Integer.MAX_VALUE);
-            writer.setFieldName("float");
-            writer.writeFloat(432.23123f);
-            writer.setFieldName("timestamp");
-            writer.writeTimestamp(Timestamp.forDay(2000, 11, 11));
-
-            writer.stepOut();
-        }
-
-        writer.stepOut();
-        writer.finish();
-    }
-}
-```
-```csharp
-// C# code
-public void Run(string[] args)
-{
-    //warmup
-    var sw = new Stopwatch();
-    sw.Start();
-    sw.Stop();
-    RunOnce();
-
-    sw.Start();
-
-    for (var i = 0; i < 1000; i++)
-    {
-        RunOnce();
-    }
-
-    sw.Stop();
-    Console.WriteLine($"IonDotnet: writing took {sw.ElapsedTicks * 1.0 / TimeSpan.TicksPerMillisecond}ms");
-}
-
-
-private static void RunOnce()
-{
-    byte[] bytes = null;
-    Benchmark.Writer.StepIn(IonType.List);
-
-    for (var i = 0; i < 1000; i++)
-    {
-        Benchmark.Writer.StepIn(IonType.Struct);
-
-        Benchmark.Writer.SetFieldName("boolean");
-        Benchmark.Writer.WriteBool(true);
-        Benchmark.Writer.SetFieldName("string");
-        Benchmark.Writer.WriteString("this is a string");
-        Benchmark.Writer.SetFieldName("integer");
-        Benchmark.Writer.WriteInt(int.MaxValue);
-        Benchmark.Writer.SetFieldName("float");
-        Benchmark.Writer.WriteFloat(432.23123f);
-        Benchmark.Writer.SetFieldName("timestamp");
-        Benchmark.Writer.WriteTimestamp(new Timestamp(new DateTime(2000, 11, 11)));
-
-        Benchmark.Writer.StepOut();
-    }
-
-    Benchmark.Writer.StepOut();
-    Benchmark.Writer.Flush(ref bytes);
-    Benchmark.Writer.Finish();
-}
-```

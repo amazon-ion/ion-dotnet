@@ -50,17 +50,6 @@ namespace IonDotnet.Bench
 
         public void Run(string[] args)
         {
-//            IIonWriter writer;
-//            var d = -18446744073709551615m;
-//            var sw = new StringWriter();
-////             writer = IonTextWriterBuilder.Build(sw);
-//            var s = new MemoryStream();
-//            writer = IonBinaryWriterBuilder.Build(s);
-//            writer.WriteDecimal(d);
-//            writer.Finish();
-//            var bytes = s.ToArray();
-//            Console.WriteLine(string.Join(',', bytes.Select(b => $"{b:x2}")));
-
             var experiment = new Experiment
             {
                 Name = "Boxing Perftest",

@@ -6,6 +6,20 @@ using IonDotnet.Internals.Text;
 
 namespace IonDotnet.Systems
 {
+    public enum ReaderFormat
+    {
+        Detect,
+        Binary,
+        Text
+    }
+
+    public struct ReaderOptions
+    {
+        public ReaderFormat Format;
+        public Encoding Encoding;
+        public ICatalog Catalog;
+    }
+
     /// <summary>
     /// Builder that can generate <see cref="IIonReader"/> instances for different types of input. 
     /// </summary>
@@ -19,32 +33,43 @@ namespace IonDotnet.Systems
         /// Build a text reader for the string with a catalog.
         /// </summary>
         /// <param name="text">Ion text</param>
-        /// <param name="catalog">Ion catalog</param>
+        /// <param name="options">Reader options.</param>
         /// <returns>Ion text reader</returns>
-        public static IIonReader Build(string text, ICatalog catalog = null)
+        public static IIonReader Build(string text, ReaderOptions options = default)
         {
-            return new UserTextReader(text, catalog);
+            return new UserTextReader(text, options.Catalog);
         }
 
-        public static IIonReader Build(Stream stream)
+        public static IIonReader Build(byte[] data, ReaderOptions options = default)
         {
-            return Build(stream, Encoding.UTF8);
+            return Build(new MemoryStream(data), options);
         }
 
-
-        /// <summary>
-        /// Build an Ion reader for the data stream.
-        /// </summary>
-        /// <param name="stream">Ion data stream in binary of unicode-text.</param>
-        /// <param name="encoding">The type of encoding used.</param>
-        /// <param name="catalog"></param>
-        /// <returns>Ion reader</returns>
-        /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
-        public static IIonReader Build(Stream stream, Encoding encoding, ICatalog catalog = null)
+        public static IIonReader Build(Stream stream, ReaderOptions options = default)
         {
             if (!stream.CanRead)
                 throw new ArgumentException("Stream must be readable", nameof(stream));
 
+            if (options.Encoding is null)
+            {
+                options.Encoding = Encoding.UTF8;
+            }
+
+            switch (options.Format)
+            {
+                default:
+                    throw new ArgumentOutOfRangeException();
+                case ReaderFormat.Detect:
+                    return DetectFormatAndBuild(stream, options);
+                case ReaderFormat.Binary:
+                    return new UserBinaryReader(stream, options.Catalog);
+                case ReaderFormat.Text:
+                    return new UserTextReader(stream, options.Catalog);
+            }
+        }
+
+        private static IIonReader DetectFormatAndBuild(Stream stream, in ReaderOptions options)
+        {
             /* Notes about implementation
                The stream can contain text or binary ion. The ion reader should figure it out. Since we don't want this call to block 
                in case the stream is a network stream or file stream, it can (and should )
@@ -77,19 +102,8 @@ namespace IonDotnet.Systems
             }
 
             return didSeek
-                ? new UserTextReader(stream, encoding, catalog)
-                : new UserTextReader(stream, encoding, initialBytes.Slice(0, bytesRead), catalog);
-        }
-
-        /// <summary>
-        /// Build an Ion reader for the data stream.
-        /// </summary>
-        /// <param name="stream">Ion data stream in binary of UTF8-text form</param>
-        /// <param name="catalog">Ion catalog</param>
-        /// <returns>Ion reader</returns>
-        public static IIonReader Build(Stream stream, ICatalog catalog)
-        {
-            return Build(stream, Encoding.UTF8, catalog);
+                ? new UserTextReader(stream, options.Encoding, options.Catalog)
+                : new UserTextReader(stream, options.Encoding, initialBytes.Slice(0, bytesRead), options.Catalog);
         }
 
         private static bool IsBinaryData(Span<byte> initialByte)

@@ -6,6 +6,7 @@ using BenchmarkDotNet.Running;
 namespace IonDotnet.Bench
 {
     // ReSharper disable once UnusedMember.Global
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class BinaryWriterGround : IRunable
     {
         [MemoryDiagnoser]

@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Text;
 using IonDotnet.Internals;
@@ -33,6 +32,7 @@ namespace IonDotnet.Systems
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(string ionText)
         {
+            IonBinaryWriterBuilder.Build()
             var reader = new UserTextReader(ionText, _catalog);
             return WriteDatagram(reader);
         }
@@ -49,7 +49,7 @@ namespace IonDotnet.Systems
 
         public IonDatagram Load(Stream stream)
         {
-            var reader = IonReaderBuilder.Build(stream, _catalog);
+            var reader = IonReaderBuilder.Build(stream, new ReaderOptions {Catalog = _catalog});
             return WriteDatagram(reader);
         }
 
@@ -62,7 +62,11 @@ namespace IonDotnet.Systems
         /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
         public IonDatagram Load(Stream stream, Encoding encoding)
         {
-            var reader = IonReaderBuilder.Build(stream, encoding, _catalog);
+            var reader = IonReaderBuilder.Build(stream, new ReaderOptions
+            {
+                Encoding = encoding,
+                Catalog = _catalog
+            });
             return WriteDatagram(reader);
         }
 

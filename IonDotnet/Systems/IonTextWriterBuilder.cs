@@ -26,27 +26,5 @@ namespace IonDotnet.Systems
         {
             return new IonTextWriter(textWriter, options);
         }
-
-        /// <summary>
-        /// Build an Ion text writer that writes to the output stream
-        /// </summary>
-        /// <param name="outputStream">Output stream</param>
-        /// <returns>Ion text writer</returns>
-        public static IIonWriter Build(Stream outputStream)
-        {
-            outputStream.CheckStreamCanWrite();
-            return Build(new StreamWriter(outputStream));
-        }
-
-        /// <summary>
-        /// Build an Ion text writer that writes to the output stream
-        /// </summary>
-        /// <param name="outputStream">Output stream</param>
-        /// <returns>Ion text writer</returns>
-        public static IIonWriter Build(Stream outputStream, IonTextOptions options)
-        {
-            outputStream.CheckStreamCanWrite();
-            return Build(new StreamWriter(outputStream), options);
-        }
     }
 }

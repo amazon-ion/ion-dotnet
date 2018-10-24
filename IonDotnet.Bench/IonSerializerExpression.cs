@@ -19,7 +19,8 @@ namespace IonDotnet.Bench
         private static readonly MethodInfo WriteBigIntegerMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteInt), new[] {typeof(BigInteger)});
         private static readonly MethodInfo WriteFloatMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteFloat));
         private static readonly MethodInfo WriteTimestampMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteTimestamp));
-        private static readonly MethodInfo WriteDecimalMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteDecimal));
+        private static readonly MethodInfo WriteDecimalMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteDecimal), new[] {typeof(decimal)});
+        private static readonly MethodInfo WriteBigDecimalMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteDecimal), new[] {typeof(BigDecimal)});
         private static readonly MethodInfo WriteBlobMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteBlob));
         private static readonly MethodInfo WriteSymbolMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteSymbol));
 
@@ -253,6 +254,8 @@ namespace IonDotnet.Bench
             if (type == typeof(decimal))
                 return Expression.Call(writerExpression, WriteDecimalMethod, target);
 
+            if (type == typeof(BigDecimal))
+                return Expression.Call(writerExpression, WriteBigDecimalMethod, target);
             return null;
         }
     }

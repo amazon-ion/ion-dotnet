@@ -9,17 +9,6 @@ namespace IonDotnet.Bench
     {
         public void Run(string[] args)
         {
-            // var exp = typeof(IEnumerator).GetMethod(nameof(IEnumerator.MoveNext));
-            // var exp2 = typeof(IValueWriter).GetMethod(nameof(IIonWriter.WriteString));
-            // Console.WriteLine(exp);
-            // Console.WriteLine(exp2);
-            // return;
-
-            //            var trueS = IonSerialization.Serialize(new Per
-            //            {
-            //                Name = "huy"
-            //            });
-            //            Console.WriteLine(string.Join(',', trueS.Select(b => $"{b:x2}")));
             var s = IonExpressionBinary.Serialize(new[]
             {
                 new Experiment
