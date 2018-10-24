@@ -84,6 +84,28 @@ namespace IonDotnet.Tests.Integration
             LoadFile(fi);
         }
 
+        [TestMethod]
+        [DynamicData(nameof(GoodFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodTimestampFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        public void LoadGood_RoundTrip(FileInfo fi)
+        {
+            var datagram = LoadFile(fi);
+            RoundTrip_AssertText(datagram);
+        }
+
+        private void RoundTrip_AssertText(IonDatagram datagram)
+        {
+            var sw = new StringWriter();
+            var writer = IonTextWriterBuilder.Build(sw, new IonTextOptions {PrettyPrint = true});
+            datagram.WriteTo(writer);
+            writer.Finish();
+            var text = sw.ToString();
+            Console.WriteLine(text);
+            Console.WriteLine(text);
+            var datagram2 = IonLoader.Default.Load(text);
+            AssertDatagramEquivalent(datagram, datagram2);
+        }
+
         /// <summary>
         /// Execute the good/equivs semantics. 
         /// </summary>

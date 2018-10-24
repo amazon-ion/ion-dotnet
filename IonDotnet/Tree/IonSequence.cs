@@ -31,13 +31,22 @@ namespace IonDotnet.Tree
 
             Debug.Assert(_children != null);
 
-            writer.StepIn(Type);
+            var type = Type;
+
+            if (type != IonType.Datagram)
+            {
+                writer.StepIn(type);
+            }
+
             foreach (var val in _children)
             {
                 val.WriteTo(writer);
             }
 
-            writer.StepOut();
+            if (type != IonType.Datagram)
+            {
+                writer.StepOut();
+            }
         }
 
         /// <inheritdoc />
