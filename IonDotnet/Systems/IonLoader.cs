@@ -32,7 +32,6 @@ namespace IonDotnet.Systems
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(string ionText)
         {
-            IonBinaryWriterBuilder.Build()
             var reader = new UserTextReader(ionText, _catalog);
             return WriteDatagram(reader);
         }

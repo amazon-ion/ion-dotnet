@@ -6,7 +6,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>7.3</LangVersion>
     <PackageId>IonDotnet</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.0.1-alpha</Version>
     <Authors>hdhoang</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
