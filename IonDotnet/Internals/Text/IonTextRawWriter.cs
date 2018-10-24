@@ -200,7 +200,7 @@ namespace IonDotnet.Internals.Text
 
         public void Write(string s) => _writer.Write(s);
 
-        public Task FlushAsync() => _writer.FlushAsync();
+//        public Task FlushAsync() => _writer.FlushAsync();
 
         public void Flush() => _writer.Flush();
 

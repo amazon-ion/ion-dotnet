@@ -179,7 +179,7 @@ namespace IonDotnet.Internals
 
             foreach (var symbol in symbols)
             {
-                // TODO What about empty symbols?
+//                Console.WriteLine(symbol);
                 if (symbolMap.ContainsKey(symbol))
                     continue;
                 symbolMap[symbol] = sid;

@@ -40,8 +40,10 @@ namespace IonDotnet.Internals.Binary
                 LocalSidStart = SystemSymbols.Ion10MaxId + 1;
                 foreach (var symbolTable in imports)
                 {
-                    if (symbolTable.IsShared) throw new IonException("Import table cannot be shared");
-                    if (symbolTable.IsSystem) continue;
+                    if (!symbolTable.IsShared)
+                        throw new IonException("Import table must be a shared table.");
+                    if (symbolTable.IsSystem)
+                        continue;
 
                     var declaredSymbols = symbolTable.IterateDeclaredSymbolNames();
                     while (declaredSymbols.HasNext())
@@ -70,14 +72,6 @@ namespace IonDotnet.Internals.Binary
                     val = st.Sid;
                     return true;
                 }
-
-//                for (int i = 0, l = Symbols.SystemSymbolTokens.Length; i < l; i++)
-//                {
-//                    var systemToken = Symbols.SystemSymbolTokens[i];
-//                    if (systemToken.Text != text) continue;
-//                    val = systemToken.Sid;
-//                    return true;
-//                }
 
                 if (Parents.Length == 0)
                     return false;

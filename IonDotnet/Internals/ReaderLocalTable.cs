@@ -11,7 +11,7 @@ namespace IonDotnet.Internals
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
-        internal readonly List<string> OwnSymbols = new List<string>();
+        private readonly List<string> _ownSymbols = new List<string>();
         private int _importedMaxId;
 
         internal ReaderLocalTable(ISymbolTable systemTable)
@@ -22,9 +22,9 @@ namespace IonDotnet.Internals
 
         /// <summary>
         /// Refresh the local symbol table to a valid state. Typically called after <see cref="Imports"/>
-        /// and <see cref="OwnSymbols"/> has been mutated. 
+        /// and <see cref="_ownSymbols"/> has been mutated. 
         /// </summary>
-        private void Refresh()
+        internal void Refresh()
         {
             var maxId = 0;
             foreach (var import in Imports)
@@ -54,22 +54,24 @@ namespace IonDotnet.Internals
 
         public int GetImportedMaxId() => _importedMaxId;
 
-        public int MaxId => _importedMaxId + OwnSymbols.Count;
+        public int MaxId => _importedMaxId + _ownSymbols.Count;
 
         SymbolToken ISymbolTable.Intern(string text) => throw new NotSupportedException();
 
         public SymbolToken Find(string text)
         {
+            var offset = 0;
             foreach (var import in Imports)
             {
                 var t = import.Find(text);
                 if (t != default)
-                    return t;
+                    return new SymbolToken(t.Text, offset + t.Sid);
+                offset += import.MaxId;
             }
 
-            for (var i = 0; i < OwnSymbols.Count; i++)
+            for (var i = 0; i < _ownSymbols.Count; i++)
             {
-                if (OwnSymbols[i] == text)
+                if (_ownSymbols[i] == text)
                     return new SymbolToken(text, i + 1 + _importedMaxId);
             }
 
@@ -78,16 +80,18 @@ namespace IonDotnet.Internals
 
         public int FindSymbolId(string text)
         {
+            var offset = 0;
             foreach (var import in Imports)
             {
                 var t = import.FindSymbolId(text);
                 if (t > 0)
-                    return t;
+                    return t + offset;
+                offset += import.MaxId;
             }
 
-            for (var i = 0; i < OwnSymbols.Count; i++)
+            for (var i = 0; i < _ownSymbols.Count; i++)
             {
-                if (OwnSymbols[i] == text)
+                if (_ownSymbols[i] == text)
                     return i + 1 + _importedMaxId;
             }
 
@@ -100,13 +104,13 @@ namespace IonDotnet.Internals
                 return null;
 
             if (sid > _importedMaxId)
-                return OwnSymbols[sid - _importedMaxId - 1];
+                return _ownSymbols[sid - _importedMaxId - 1];
 
             var offset = 0;
             foreach (var import in Imports)
             {
                 if (import.MaxId + offset >= sid)
-                    return import.FindKnownSymbol(sid);
+                    return import.FindKnownSymbol(sid - offset);
                 offset += import.MaxId;
             }
 
@@ -116,13 +120,13 @@ namespace IonDotnet.Internals
 
         public void WriteTo(IIonWriter writer) => writer.WriteValue(new SymbolTableReader(this));
 
-        public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(OwnSymbols);
+        public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_ownSymbols);
 
         public static ISymbolTable ImportReaderTable(IIonReader reader, ICatalog catalog, bool isOnStruct)
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var importList = table.Imports;
-            var symbolList = table.OwnSymbols;
+            var symbolList = table._ownSymbols;
             var oldLocalSymbolCount = symbolList.Count;
             if (!isOnStruct)
             {
