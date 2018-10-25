@@ -138,15 +138,18 @@ namespace IonDotnet.Internals.Text
 
         private void WriteAnnotationToken(SymbolToken annotation)
         {
-            if (annotation.Text == null)
+            var text = annotation.Text;
+            if (text is null)
             {
                 //unknown text, write sid
                 _textWriter.Write('$');
-                _textWriter.Write(annotation.Sid);
+                _textWriter.Write(annotation.Sid < 0 ? 0 : annotation.Sid);
                 return;
             }
 
-            _textWriter.WriteSymbol(annotation.Text);
+            _textWriter.Write('\'');
+            _textWriter.WriteSymbol(text);
+            _textWriter.Write('\'');
         }
 
         /// <summary>

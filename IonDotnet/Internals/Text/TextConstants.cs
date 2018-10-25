@@ -585,6 +585,215 @@ namespace IonDotnet.Internals.Text
             }
         }
 
+        public static int GetKeyword(string word, int startWord, int endWord)
+        {
+            int c = word[startWord];
+            var len = endWord - startWord; // +1 but we build that into the constants below
+            switch (c)
+            {
+                case '$':
+                    if (len > 1)
+                    {
+                        for (var i = startWord + 1; i < endWord; i++)
+                        {
+                            if (!char.IsDigit(word[i])) return -1;
+                        }
+
+                        return KeywordSid;
+                    }
+
+                    return -1;
+                case 'b':
+                    if (len == 4)
+                    {
+                        if (word[startWord + 1] == 'o'
+                            && word[startWord + 2] == 'o'
+                            && word[startWord + 3] == 'l'
+                        )
+                        {
+                            return KeywordBool;
+                        }
+
+                        if (word[startWord + 1] == 'l'
+                            && word[startWord + 2] == 'o'
+                            && word[startWord + 3] == 'b'
+                        )
+                        {
+                            return KeywordBlob;
+                        }
+                    }
+
+                    return -1;
+                case 'c':
+                    if (len == 4)
+                    {
+                        if (word[startWord + 1] == 'l'
+                            && word[startWord + 2] == 'o'
+                            && word[startWord + 3] == 'b'
+                        )
+                        {
+                            return KeywordClob;
+                        }
+                    }
+
+                    return -1;
+                case 'd':
+                    if (len == 7)
+                    {
+                        if (word[startWord + 1] == 'e'
+                            && word[startWord + 2] == 'c'
+                            && word[startWord + 3] == 'i'
+                            && word[startWord + 4] == 'm'
+                            && word[startWord + 5] == 'a'
+                            && word[startWord + 6] == 'l'
+                        )
+                        {
+                            return KeywordDecimal;
+                        }
+                    }
+
+                    return -1;
+                case 'f':
+                    if (len == 5)
+                    {
+                        if (word[startWord + 1] == 'a'
+                            && word[startWord + 2] == 'l'
+                            && word[startWord + 3] == 's'
+                            && word[startWord + 4] == 'e')
+                        {
+                            return KeywordFalse;
+                        }
+
+                        if (word[startWord + 1] == 'l'
+                            && word[startWord + 2] == 'o'
+                            && word[startWord + 3] == 'a'
+                            && word[startWord + 4] == 't')
+                        {
+                            return KeywordFloat;
+                        }
+                    }
+
+                    return -1;
+                case 'i':
+                    if (len == 3)
+                    {
+                        if (word[startWord + 1] == 'n')
+                        {
+                            if (word[startWord + 2] == 't')
+                            {
+                                return KeywordInt;
+                            }
+                        }
+                    }
+
+                    return -1;
+                case 'l':
+                    if (len == 4)
+                    {
+                        if (word[startWord + 1] == 'i'
+                            && word[startWord + 2] == 's'
+                            && word[startWord + 3] == 't')
+                        {
+                            return KeywordList;
+                        }
+                    }
+
+                    return -1;
+                case 'n':
+                    if (len == 4)
+                    {
+                        if (word[startWord + 1] == 'u'
+                            && word[startWord + 2] == 'l'
+                            && word[startWord + 3] == 'l')
+                        {
+                            return KeywordNull;
+                        }
+                    }
+                    else if (len == 3)
+                    {
+                        if (word[startWord + 1] == 'a'
+                            && word[startWord + 2] == 'n')
+                        {
+                            return KeywordNan;
+                        }
+                    }
+
+                    return -1;
+                case 's':
+                    if (len == 4)
+                    {
+                        if (word[startWord + 1] == 'e'
+                            && word[startWord + 2] == 'x'
+                            && word[startWord + 3] == 'p')
+                        {
+                            return KeywordSexp;
+                        }
+                    }
+                    else if (len == 6)
+                    {
+                        if (word[startWord + 1] == 't'
+                            && word[startWord + 2] == 'r'
+                        )
+                        {
+                            if (word[startWord + 3] == 'i'
+                                && word[startWord + 4] == 'n'
+                                && word[startWord + 5] == 'g')
+                            {
+                                return KeywordString;
+                            }
+
+                            if (word[startWord + 3] == 'u'
+                                && word[startWord + 4] == 'c'
+                                && word[startWord + 5] == 't')
+                            {
+                                return KeywordStruct;
+                            }
+
+                            return -1;
+                        }
+
+                        if (word[startWord + 1] == 'y'
+                            && word[startWord + 2] == 'm'
+                            && word[startWord + 3] == 'b'
+                            && word[startWord + 4] == 'o'
+                            && word[startWord + 5] == 'l')
+                        {
+                            return KeywordSymbol;
+                        }
+                    }
+
+                    return -1;
+                case 't':
+                    if (len == 4)
+                    {
+                        if (word[startWord + 1] == 'r'
+                            && word[startWord + 2] == 'u'
+                            && word[startWord + 3] == 'e')
+                        {
+                            return KeywordTrue;
+                        }
+                    }
+                    else if (len == 9)
+                    {
+                        if (word[startWord + 1] == 'i'
+                            && word[startWord + 2] == 'm'
+                            && word[startWord + 3] == 'e'
+                            && word[startWord + 4] == 's'
+                            && word[startWord + 5] == 't'
+                            && word[startWord + 6] == 'a'
+                            && word[startWord + 7] == 'm'
+                            && word[startWord + 8] == 'p')
+                        {
+                            return KeywordTimestamp;
+                        }
+                    }
+
+                    return -1;
+                default:
+                    return -1;
+            }
+        }
+
         public static int DecodeSid(StringBuilder sb)
         {
             var digits = sb.ToString(1, sb.Length - 1);

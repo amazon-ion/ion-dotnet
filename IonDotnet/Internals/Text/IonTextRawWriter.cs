@@ -173,6 +173,7 @@ namespace IonDotnet.Internals.Text
 
         public void WriteClobAsString(ReadOnlySpan<byte> clobBytes)
         {
+            _writer.Write('"');
             foreach (var b in clobBytes)
             {
                 var c = (char) (b & 0xff);
@@ -186,6 +187,7 @@ namespace IonDotnet.Internals.Text
                     _writer.Write(c);
                 }
             }
+            _writer.Write('"');
         }
 
         private void WriteStringWithEscapes(string text)
@@ -230,15 +232,21 @@ namespace IonDotnet.Internals.Text
             var str = d.ToString(CultureInfo.InvariantCulture);
             _writer.Write(str);
 
-            if (!str.Contains("e") && !str.Contains("E"))
+            foreach (var c in str)
             {
-                _writer.Write("e0");
+                if (c == 'e' || c == 'E')
+                {
+                    return;
+                }
             }
+
+            _writer.Write("e0");
         }
 
         public void Write(decimal d)
         {
-            _writer.Write(d);
+            //TODO detect decimal places and write faster
+            Write(new BigDecimal(d));
         }
 
         public void Write(in BigDecimal bd)

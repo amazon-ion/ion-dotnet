@@ -37,7 +37,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                            //&& f.Name == "timestamps.ion"
+                            //&& f.Name == "annotationQuotedNegInf.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -100,7 +100,6 @@ namespace IonDotnet.Tests.Integration
             datagram.WriteTo(writer);
             writer.Finish();
             var text = sw.ToString();
-            Console.WriteLine(text);
             Console.WriteLine(text);
             var datagram2 = IonLoader.Default.Load(text);
             AssertDatagramEquivalent(datagram, datagram2);
@@ -235,7 +234,8 @@ namespace IonDotnet.Tests.Integration
                 return IonLoader.Default.Load(fi, new UTF32Encoding(true, true));
             }
 
-            return IonLoader.Default.Load(fi);
+            var tree = IonLoader.Default.Load(fi);
+            return tree;
         }
 
         private class ValueComparer : IEqualityComparer<IonValue>

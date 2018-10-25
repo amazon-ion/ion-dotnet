@@ -119,12 +119,6 @@ namespace IonDotnet.Internals
 
         public override void WriteSymbolToken(SymbolToken symbolToken)
         {
-            if (symbolToken == default)
-            {
-                WriteNull(IonType.Symbol);
-                return;
-            }
-
             if (SystemSymbols.Ion10 == symbolToken.Text && GetDepth() == 0 && _annotations.Count == 0)
             {
                 WriteIonVersionMarker();

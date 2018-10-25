@@ -46,7 +46,7 @@ namespace IonDotnet.Tree
                 return;
             }
 
-            writer.WriteSymbol(StringValue);
+            writer.WriteSymbolToken(SymbolValue);
         }
 
         public override IonType Type => IonType.Symbol;

@@ -35,7 +35,7 @@ namespace IonDotnet.Tree
         {
             if (!base.IsEquivalentTo(other))
                 return false;
-            
+
             if (!(other is IonStruct otherStruct))
                 return false;
             if (NullFlagOn())
@@ -49,7 +49,7 @@ namespace IonDotnet.Tree
             var multiset = ToMultiset();
             foreach (var v2 in otherStruct._values)
             {
-                var field = new MultisetField(v2.FieldNameSymbol.Text, v2);
+                var field = new MultisetField(new SymbolToken(v2.FieldNameSymbol.Text, v2.FieldNameSymbol.Sid), v2);
                 if (!multiset.TryGetValue(field, out var mapped) || mapped.Count == 0)
                     return false;
                 mapped.Count--;
@@ -253,7 +253,7 @@ namespace IonDotnet.Tree
             var dict = new Dictionary<MultisetField, MultisetField>();
             foreach (var v in _values)
             {
-                var field = new MultisetField(v.FieldNameSymbol.Text, v)
+                var field = new MultisetField(new SymbolToken(v.FieldNameSymbol.Text, v.FieldNameSymbol.Sid), v)
                 {
                     Count = 1
                 };
@@ -277,11 +277,11 @@ namespace IonDotnet.Tree
         /// </summary>
         private class MultisetField
         {
-            private readonly string _name;
+            private readonly SymbolToken _name;
             private readonly IonValue _value;
             public int Count;
 
-            public MultisetField(string name, IonValue value)
+            public MultisetField(SymbolToken name, IonValue value)
             {
                 Debug.Assert(name != null);
                 _name = name;

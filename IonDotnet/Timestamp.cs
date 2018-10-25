@@ -414,7 +414,7 @@ namespace IonDotnet
         public override string ToString()
         {
             return DateTimeValue.Kind == DateTimeKind.Unspecified
-                ? DateTimeValue.ToString("O")
+                ? DateTimeValue.ToString("O") + "-00:00"
                 : AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
         }
 
