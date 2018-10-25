@@ -9,6 +9,8 @@
     <Version>0.0.1-alpha</Version>
     <Authors>hdhoang</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RepositoryUrl>https://github.com/dhhoang/IonDotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
   <Target Name="TestMessage" AfterTargets="Build">
     <Message Text="'$(TargetFramework)'" Importance="high" />
