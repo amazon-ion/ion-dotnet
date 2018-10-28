@@ -48,7 +48,7 @@ namespace IonDotnet.Tests.Systems
             var child = (IonInt) datagram[0];
             var annots = child.GetTypeAnnotations();
             Assert.AreEqual(1, annots.Count);
-            Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First());
+            Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First().Text);
         }
 
         [TestMethod]

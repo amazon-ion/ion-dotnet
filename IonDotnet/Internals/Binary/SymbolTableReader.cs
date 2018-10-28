@@ -59,9 +59,9 @@ namespace IonDotnet.Internals.Binary
         private string _stringValue;
         private int _intValue;
         private readonly ISymbolTable[] _importedTables;
-        private IIterator<ISymbolTable> _importTablesIterator;
+        private int _importTablesIterator = -1;
         private ISymbolTable _currentImportTable;
-        private readonly IIterator<string> _localSymbolsIterator;
+        private readonly IEnumerator<string> _localSymbolsEnumerator;
 
 
         public SymbolTableReader(ISymbolTable symbolTable)
@@ -71,7 +71,7 @@ namespace IonDotnet.Internals.Binary
             lock (_symbolTable)
             {
                 _maxId = _symbolTable.MaxId;
-                _localSymbolsIterator = _symbolTable.IterateDeclaredSymbolNames();
+                _localSymbolsEnumerator = _symbolTable.GetDeclaredSymbolNames().GetEnumerator();
             }
 
             if (!_symbolTable.IsLocal)
@@ -193,10 +193,10 @@ namespace IonDotnet.Internals.Binary
                 // is at the first symbol so we just fall through to and let the S_SYMBOL
                 // state do it's thing (which it will do every time we move to the next symbol)             
                 case S_SYMBOL:
-                    Debug.Assert(_localSymbolsIterator != null);
-                    if (_localSymbolsIterator.HasNext())
+                    Debug.Assert(_localSymbolsEnumerator != null);
+                    if (_localSymbolsEnumerator.MoveNext())
                     {
-                        _stringValue = _localSymbolsIterator.Next();
+                        _stringValue = _localSymbolsEnumerator.Current;
                         // null means this symbol isn't defined
                         newState = S_SYMBOL;
                         break;
@@ -220,9 +220,9 @@ namespace IonDotnet.Internals.Binary
 
         private int NextImport()
         {
-            if (_importTablesIterator.HasNext())
+            if (_importTablesIterator < _importedTables.Length - 1)
             {
-                _currentImportTable = _importTablesIterator.Next();
+                _currentImportTable = _importedTables[++_importTablesIterator];
                 return S_IMPORT_STRUCT;
             }
 
@@ -246,7 +246,6 @@ namespace IonDotnet.Internals.Binary
                     _currentState = S_IN_STRUCT;
                     break;
                 case S_IMPORT_LIST:
-                    _importTablesIterator = new PeekIterator<ISymbolTable>(_importedTables);
                     _currentState = S_IN_IMPORTS;
                     break;
                 case S_IMPORT_STRUCT:
@@ -286,7 +285,6 @@ namespace IonDotnet.Internals.Binary
                     // if we're outside a struct, and we're in the import list stepOut will be whatever follows the import list
                     // close and we're done with these
                     _currentImportTable = null;
-                    _importTablesIterator.Dispose();
                     newState = StateFollowingImportList(Op.StepOut);
                     break;
                 case S_IN_IMPORT_STRUCT:
@@ -296,7 +294,7 @@ namespace IonDotnet.Internals.Binary
                 case S_IMPORT_STRUCT_CLOSE:
                     // if there is a next import the next state will be its struct open
                     // otherwise next will be the list close
-                    newState = _importTablesIterator.HasNext() ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
+                    newState = _importTablesIterator < _importedTables.Length - 1 ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
                     break;
                 case S_IN_SYMBOLS:
                 case S_SYMBOL:
@@ -304,7 +302,7 @@ namespace IonDotnet.Internals.Binary
                     // I think this is just S_EOF, but if we ever put anything after the symbol list this
                     // will need to be updated. And we're done with our local symbol references.
                     _stringValue = null;
-                    _localSymbolsIterator.Dispose();
+                    _localSymbolsEnumerator.Dispose();
                     newState = StateFollowingLocalSymbols();
                     break;
             }
@@ -588,7 +586,7 @@ namespace IonDotnet.Internals.Binary
                 case S_IN_IMPORTS:
                 case S_IMPORT_STRUCT:
                     // we have more if there is
-                    return _importTablesIterator.HasNext();
+                    return _importTablesIterator < _importedTables.Length - 1;
                 case S_IN_IMPORT_STRUCT:
                 case S_IMPORT_NAME:
                     // we always have a name and version
@@ -610,8 +608,8 @@ namespace IonDotnet.Internals.Binary
                     return false;
                 case S_IN_SYMBOLS:
                 case S_SYMBOL:
-                    if (_localSymbolsIterator.HasNext()) return true;
-                    return false;
+                    //let's return true here, and MoveNext() will figure out whether we still have symbols.
+                    return true;
                 case S_SYMBOL_LIST_CLOSE:
                 case S_STRUCT_CLOSE:
                 case S_EOF:
@@ -777,10 +775,10 @@ namespace IonDotnet.Internals.Binary
         private static void ThrowUnrecognizedState(int state)
             => throw new IonException($"SymbolTableReader is in an unrecognize state: {state}");
 
-        public void Dispose()
+        //TODO is this something we want?
+        ~SymbolTableReader()
         {
-            _importTablesIterator?.Dispose();
-            _localSymbolsIterator?.Dispose();
+            _localSymbolsEnumerator?.Dispose();
         }
     }
 }

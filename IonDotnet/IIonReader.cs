@@ -123,6 +123,9 @@ namespace IonDotnet
         /// <returns>Number of bytes copied</returns>
         int GetBytes(Span<byte> buffer);
 
+        /// <summary>
+        /// Get the list of type annotations of the current value.
+        /// </summary>
         IEnumerable<SymbolToken> GetTypeAnnotations();
     }
 }

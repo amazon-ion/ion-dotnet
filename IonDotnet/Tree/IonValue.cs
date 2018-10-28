@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
@@ -178,7 +179,7 @@ namespace IonDotnet.Tree
 
         #endregion
 
-        private List<string> _annotations;
+        private List<SymbolToken> _annotations;
 
         /// <summary>
         /// Store the field name text and sid.
@@ -202,10 +203,10 @@ namespace IonDotnet.Tree
         /// Get this value's user type annotations.
         /// </summary>
         /// <returns>Read-only collection of type annotations.</returns>
-        public IReadOnlyCollection<string> GetTypeAnnotations()
+        public IReadOnlyCollection<SymbolToken> GetTypeAnnotations()
         {
             if (_annotations == null)
-                return PrivateHelper.EmptyStringArray;
+                return SymbolToken.EmptyArray;
 
             return _annotations;
         }
@@ -216,11 +217,20 @@ namespace IonDotnet.Tree
         /// <param name="annotation">Annotation text.</param>
         public void AddTypeAnnotation(string annotation)
         {
+            AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
+        }
+
+        /// <summary>
+        /// Add an annotation to this value.
+        /// </summary>
+        /// <param name="annotation">Annotation symbol.</param>
+        public void AddTypeAnnotation(SymbolToken annotation)
+        {
             ThrowIfLocked();
 
             if (_annotations == null)
             {
-                _annotations = new List<string>(1);
+                _annotations = new List<SymbolToken>(1);
             }
 
             _annotations.Add(annotation);
@@ -234,7 +244,7 @@ namespace IonDotnet.Tree
             ThrowIfLocked();
             if (_annotations == null)
             {
-                _annotations = new List<string>();
+                _annotations = new List<SymbolToken>();
             }
 
             _annotations.Clear();
@@ -250,7 +260,7 @@ namespace IonDotnet.Tree
             if (text == null)
                 throw new ArgumentNullException(nameof(text));
 
-            return _annotations != null && _annotations.Contains(text);
+            return _annotations != null && _annotations.Any(a => text.Equals(a.Text));
         }
 
         /// <summary>
@@ -309,8 +319,15 @@ namespace IonDotnet.Tree
                 writer.SetFieldNameSymbol(FieldNameSymbol);
             }
 
-            var annotations = GetTypeAnnotations();
-            privateWriter.SetTypeAnnotations(annotations);
+            privateWriter.ClearTypeAnnotations();
+            if (_annotations != null)
+            {
+                foreach (var a in _annotations)
+                {
+                    privateWriter.AddTypeAnnotationSymbol(a);
+                }
+            }
+
 //            privateWriter.SetTypeAnnotation(GetTypeAnnotations());
             WriteBodyTo(privateWriter);
         }

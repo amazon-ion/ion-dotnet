@@ -94,13 +94,6 @@ namespace IonDotnet
         void WriteClob(ReadOnlySpan<byte> value);
 
         /// <summary>
-        /// Set the annotation for the current value.
-        /// </summary>
-        /// <param name="annotation">The value annotation</param>
-        /// <remarks>This will erase all existing annotations for the current value.</remarks>
-        void SetTypeAnnotation(string annotation);
-
-        /// <summary>
         /// Add a annotation for the current value.
         /// </summary>
         /// <param name="annotation">The value annotation to add.</param>
@@ -110,7 +103,12 @@ namespace IonDotnet
         /// Add a type annotation in the form of a symbol. If the text is known, it will be added as is to the current value's annotations.
         /// If the text is unknown (null), the sid will be added to the writer.
         /// </summary>
-        /// <param name="symbolToken"></param>
+        /// <param name="annotation">Annotation as symbol token.</param>
         void AddTypeAnnotationSymbol(SymbolToken annotation);
+
+        /// <summary>
+        /// Remove all the annotations of the value being written.
+        /// </summary>
+        void ClearTypeAnnotations();
     }
 }

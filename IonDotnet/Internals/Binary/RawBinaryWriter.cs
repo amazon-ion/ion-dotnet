@@ -790,7 +790,7 @@ namespace IonDotnet.Internals.Binary
 
         public void AddTypeAnnotationSymbol(SymbolToken annotation) => _annotations.Add(annotation);
 
-        internal void ClearAnnotations() => _annotations.Clear();
+        public void ClearTypeAnnotations() => _annotations.Clear();
 
         public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding annotations");
 

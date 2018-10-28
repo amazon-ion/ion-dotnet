@@ -146,9 +146,9 @@ namespace IonDotnet.Internals
         public abstract void WriteString(string value);
         public abstract void WriteBlob(ReadOnlySpan<byte> value);
         public abstract void WriteClob(ReadOnlySpan<byte> value);
-        public abstract void SetTypeAnnotation(string annotation);
         public abstract void AddTypeAnnotation(string annotation);
         public abstract void AddTypeAnnotationSymbol(SymbolToken symbolToken);
+        public abstract void ClearTypeAnnotations();
         public abstract void Dispose();
         public abstract ISymbolTable SymbolTable { get; }
         public abstract void Flush();

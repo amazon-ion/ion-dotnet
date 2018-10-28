@@ -45,10 +45,9 @@ namespace IonDotnet.Internals.Binary
                     if (symbolTable.IsSystem)
                         continue;
 
-                    var declaredSymbols = symbolTable.IterateDeclaredSymbolNames();
-                    while (declaredSymbols.HasNext())
+                    var declaredSymbols = symbolTable.GetDeclaredSymbolNames();
+                    foreach (var text in declaredSymbols)
                     {
-                        var text = declaredSymbols.Next();
                         if (text != null)
                         {
                             _dict.TryAdd(text, LocalSidStart);
@@ -219,6 +218,8 @@ namespace IonDotnet.Internals.Binary
             var token = InternSymbol(annotation);
             _userWriter.AddTypeAnnotationSymbol(token);
         }
+
+        public override void ClearTypeAnnotations() => _userWriter.ClearTypeAnnotations();
 
         /// <inheritdoc />
         /// <summary>
@@ -452,21 +453,11 @@ namespace IonDotnet.Internals.Binary
 
         public override void WriteClob(ReadOnlySpan<byte> value) => _userWriter.WriteClob(value);
 
-        public override void SetTypeAnnotation(string annotation)
-        {
-            if (annotation == default)
-                throw new ArgumentNullException(nameof(annotation));
-
-            _userWriter.ClearAnnotations();
-            var token = Intern(annotation);
-            _userWriter.AddTypeAnnotationSymbol(token);
-        }
-
         public override void SetTypeAnnotations(IEnumerable<string> annotations)
         {
             if (annotations == null)
                 throw new ArgumentNullException(nameof(annotations));
-            _userWriter.ClearAnnotations();
+            _userWriter.ClearTypeAnnotations();
             foreach (var annotation in annotations)
             {
                 var token = Intern(annotation);
@@ -506,7 +497,7 @@ namespace IonDotnet.Internals.Binary
 
             public override ISymbolTable GetSystemTable() => SharedSymbolTable.GetSystem(1);
 
-            public override IEnumerable<ISymbolTable> GetImportedTables() => _writer._importContext.Parents;
+            public override IReadOnlyList<ISymbolTable> GetImportedTables() => _writer._importContext.Parents;
 
             public override int GetImportedMaxId() => _writer._importContext.LocalSidStart - 1;
 
@@ -544,7 +535,7 @@ namespace IonDotnet.Internals.Binary
                 return _writer._locals.FirstOrDefault(kvp => kvp.Value == sid).Key;
             }
 
-            public override IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_writer._locals.Keys);
+            public override IEnumerable<string> GetDeclaredSymbolNames() => _writer._locals.Keys;
         }
     }
 }

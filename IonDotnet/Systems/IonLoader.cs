@@ -11,18 +11,18 @@ namespace IonDotnet.Systems
         /// <summary>
         /// The default Ion loader without any catalog.
         /// </summary>
-        public static readonly IonLoader Default = new IonLoader(null);
+        public static readonly IonLoader Default = new IonLoader(default);
 
-        private readonly ICatalog _catalog;
+        private readonly ReaderOptions _readerOptions;
 
-        public static IonLoader FromCatalog(ICatalog catalog)
+        public static IonLoader WithReaderOptions(in ReaderOptions readerOptions)
         {
-            return new IonLoader(catalog);
+            return new IonLoader(readerOptions);
         }
 
-        private IonLoader(ICatalog catalog)
+        private IonLoader(ReaderOptions options)
         {
-            _catalog = catalog;
+            _readerOptions = options;
         }
 
         /// <summary>
@@ -32,8 +32,21 @@ namespace IonDotnet.Systems
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(string ionText)
         {
-            var reader = new UserTextReader(ionText, _catalog);
+            var reader = IonReaderBuilder.Build(ionText, _readerOptions);
             return WriteDatagram(reader);
+        }
+
+        /// <summary>
+        /// Load a string of Ion text.
+        /// </summary>
+        /// <param name="ionText">Ion text string.</param>
+        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+        public IonDatagram Load(string ionText, out ISymbolTable readerTable)
+        {
+            var reader = IonReaderBuilder.Build(ionText, _readerOptions);
+            var dg = WriteDatagram(reader);
+            readerTable = reader.GetSymbolTable();
+            return dg;
         }
 
 //        /// <summary>
@@ -48,27 +61,24 @@ namespace IonDotnet.Systems
 
         public IonDatagram Load(Stream stream)
         {
-            var reader = IonReaderBuilder.Build(stream, new ReaderOptions {Catalog = _catalog});
-            return WriteDatagram(reader);
+            var reader = IonReaderBuilder.Build(stream, _readerOptions);
+            var dg = WriteDatagram(reader);
+            return dg;
+        }
+
+        public IonDatagram Load(Stream stream, out ISymbolTable readerTable)
+        {
+            var reader = IonReaderBuilder.Build(stream, _readerOptions);
+            var dg = WriteDatagram(reader);
+            readerTable = reader.GetSymbolTable();
+            return dg;
         }
 
         /// <summary>
-        /// Load Ion data from a stream. Detecting whether it's binary or Unicode text Ion.
+        /// Load Ion data from a file. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
-        /// <param name="stream">Byte stream</param>
-        /// <param name="encoding">Type of text encoding used.</param>
+        /// <param name="ionFile">Ion file.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        /// <remarks>This method does not own the stream and the caller is resposible for disposing it.</remarks>
-        public IonDatagram Load(Stream stream, Encoding encoding)
-        {
-            var reader = IonReaderBuilder.Build(stream, new ReaderOptions
-            {
-                Encoding = encoding,
-                Catalog = _catalog
-            });
-            return WriteDatagram(reader);
-        }
-
         public IonDatagram Load(FileInfo ionFile)
         {
             using (var stream = ionFile.OpenRead())
@@ -82,13 +92,13 @@ namespace IonDotnet.Systems
         /// Load Ion data from a file. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
-        /// <param name="encoding">The type of text encoding used.</param>
+        /// <param name="readerTable">The local table used by the reader.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(FileInfo ionFile, Encoding encoding)
+        public IonDatagram Load(FileInfo ionFile, out ISymbolTable readerTable)
         {
             using (var stream = ionFile.OpenRead())
             {
-                var datagram = Load(stream, encoding);
+                var datagram = Load(stream, out readerTable);
                 return datagram;
             }
         }

@@ -37,18 +37,11 @@ namespace IonDotnet.Internals
 
         public string IonVersionId => null;
 
-        public IEnumerable<ISymbolTable> GetImportedTables()
-        {
-            yield break;
-        }
+        public IReadOnlyList<ISymbolTable> GetImportedTables() => SharedSymbolTable.EmptyArray;
 
         public int GetImportedMaxId() => 0;
 
-
-        public SymbolToken Intern(string text)
-        {
-            throw new InvalidOperationException("Cannot add symbol to read-only tables.");
-        }
+        SymbolToken ISymbolTable.Intern(string text) => throw new InvalidOperationException("Cannot add symbol to read-only tables.");
 
         public SymbolToken Find(string text)
         {
@@ -78,9 +71,9 @@ namespace IonDotnet.Internals
             writer.WriteValues(reader);
         }
 
-        public IIterator<string> IterateDeclaredSymbolNames()
+        public IEnumerable<string> GetDeclaredSymbolNames()
         {
-            throw new NotImplementedException();
+            yield break;
         }
     }
 }

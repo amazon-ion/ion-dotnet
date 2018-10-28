@@ -85,20 +85,22 @@ namespace IonDotnet.Tests.Internals
             Assert.AreEqual(symbols.Count, table.MaxId);
 
             var foundSymbols = new HashSet<string>();
-            var iter = table.IterateDeclaredSymbolNames();
-            for (var i = 0; i < symbols.Count; i++)
+            using (var iter = table.GetDeclaredSymbolNames().GetEnumerator())
             {
-                var sid = i + 1;
-                var text = symbols[i];
+                for (var i = 0; i < symbols.Count; i++)
+                {
+                    var sid = i + 1;
+                    var text = symbols[i];
 
-                Assert.IsTrue(iter.HasNext());
-                Assert.AreEqual(text, iter.Next());
+                    Assert.IsTrue(iter.MoveNext());
+                    Assert.AreEqual(text, iter.Current);
 
-                var duplicate = text != null && !foundSymbols.Add(text);
-                SymTabUtils.AssertSymbolInTable(text, sid, duplicate, table);
+                    var duplicate = text != null && !foundSymbols.Add(text);
+                    SymTabUtils.AssertSymbolInTable(text, sid, duplicate, table);
+                }
+
+                Assert.IsFalse(iter.MoveNext());
             }
-
-            Assert.IsFalse(iter.HasNext());
         }
     }
 }

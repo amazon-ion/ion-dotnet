@@ -10,6 +10,8 @@ namespace IonDotnet.Internals
     /// </summary>
     internal sealed class SharedSymbolTable : ISymbolTable
     {
+        public static readonly ISymbolTable[] EmptyArray = new ISymbolTable[0];
+
         private static readonly string[] SystemSymbolsArray =
         {
             SystemSymbols.Ion,
@@ -79,9 +81,9 @@ namespace IonDotnet.Internals
             }
         }
 
-        IEnumerable<ISymbolTable> ISymbolTable.GetImportedTables()
+        IReadOnlyList<ISymbolTable> ISymbolTable.GetImportedTables()
         {
-            yield break;
+            return EmptyArray;
         }
 
         public int GetImportedMaxId() => 0;
@@ -90,9 +92,9 @@ namespace IonDotnet.Internals
 
         public SymbolToken Intern(string text)
         {
-            if(text==null)
+            if (text == null)
                 throw new ArgumentNullException(nameof(text));
-            
+
             var symtok = Find(text);
             if (symtok == default)
                 throw new InvalidOperationException("Table is read-only");
@@ -127,7 +129,7 @@ namespace IonDotnet.Internals
             writer.WriteValues(new SymbolTableReader(this));
         }
 
-        public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_symbolNames);
+        public IEnumerable<string> GetDeclaredSymbolNames() => _symbolNames;
 
         /// <summary>
         /// Get the system symbol table
@@ -163,10 +165,9 @@ namespace IonDotnet.Internals
             var symbolMap = new Dictionary<string, int>();
             if (priorSymtab != null)
             {
-                var priorSymbols = priorSymtab.IterateDeclaredSymbolNames();
-                while (priorSymbols.HasNext())
+                var priorSymbols = priorSymtab.GetDeclaredSymbolNames();
+                foreach (var text in priorSymbols)
                 {
-                    var text = priorSymbols.Next();
                     if (text != null && !symbolMap.ContainsKey(text))
                     {
                         symbolMap[text] = sid;
@@ -179,7 +180,6 @@ namespace IonDotnet.Internals
 
             foreach (var symbol in symbols)
             {
-//                Console.WriteLine(symbol);
                 if (symbolMap.ContainsKey(symbol))
                     continue;
                 symbolMap[symbol] = sid;

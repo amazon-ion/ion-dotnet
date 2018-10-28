@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 
 namespace IonDotnet
 {
@@ -70,7 +71,7 @@ namespace IonDotnet
         /// <remarks>The version identifier is a string of the form "ion_X_Y".</remarks>
         string IonVersionId { get; }
 
-        IEnumerable<ISymbolTable> GetImportedTables();
+        IReadOnlyList<ISymbolTable> GetImportedTables();
 
         /// <summary>
         /// Gets the highest symbol id reserved by this table's imports (including system symbols)
@@ -126,10 +127,10 @@ namespace IonDotnet
         void WriteTo(IIonWriter writer);
 
         /// <summary>
-        /// Creates an iterator that will return all non-imported symbol names, in order of their symbol IDs. 
+        /// Creates an <see cref="IEnumerable"/> that will return all non-imported symbol names, in order of their symbol IDs. 
         /// The iterator will return Null where there is an undefined sid.
         /// </summary>
-        /// <returns></returns>
-        IIterator<string> IterateDeclaredSymbolNames();
+        /// <returns>Own symbol names of this table.</returns>
+        IEnumerable<string> GetDeclaredSymbolNames();
     }
 }

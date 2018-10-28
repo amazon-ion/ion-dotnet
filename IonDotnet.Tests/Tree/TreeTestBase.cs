@@ -29,7 +29,7 @@ namespace IonDotnet.Tests.Tree
             foreach (var annotation in annotations)
             {
                 Assert.IsTrue(v.HasAnnotation(annotation));
-                Assert.IsTrue(annotReturns.Contains(annotation));
+                Assert.IsTrue(annotReturns.Any(a => a.Text == annotation));
             }
         }
     }

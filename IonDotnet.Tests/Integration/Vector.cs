@@ -37,7 +37,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                            //&& f.Name == "annotationQuotedNegInf.ion"
+                            && f.Name == "item1.10n"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -89,11 +89,11 @@ namespace IonDotnet.Tests.Integration
         [DynamicData(nameof(GoodTimestampFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadGood_RoundTrip(FileInfo fi)
         {
-            var datagram = LoadFile(fi);
-            RoundTrip_AssertText(datagram);
+            var datagram = LoadFile(fi, out var readerTable);
+            RoundTrip_AssertText(datagram, readerTable);
         }
 
-        private void RoundTrip_AssertText(IonDatagram datagram)
+        private void RoundTrip_AssertText(IonDatagram datagram, ISymbolTable readerTable)
         {
             var sw = new StringWriter();
             var writer = IonTextWriterBuilder.Build(sw, new IonTextOptions {PrettyPrint = true});
@@ -154,7 +154,7 @@ namespace IonDotnet.Tests.Integration
         public void Good_Non_Equivalence(FileInfo fi)
         {
             var datagram = LoadFile(fi);
-            int i = 0;
+            var i = 0;
             foreach (var topLevelValue in datagram)
             {
                 i++;
@@ -222,21 +222,27 @@ namespace IonDotnet.Tests.Integration
             return eq;
         }
 
-        private static IonDatagram LoadFile(FileInfo fi)
+        private static IonDatagram LoadFile(FileInfo fi, out ISymbolTable readerTable)
         {
             if (fi.Name == "utf16.ion")
             {
-                return IonLoader.Default.Load(fi, new UnicodeEncoding(true, true));
+                return IonLoader
+                    .WithReaderOptions(new ReaderOptions {Encoding = new UnicodeEncoding(true, true)})
+                    .Load(fi, out readerTable);
             }
 
             if (fi.Name == "utf32.ion")
             {
-                return IonLoader.Default.Load(fi, new UTF32Encoding(true, true));
+                return IonLoader
+                    .WithReaderOptions(new ReaderOptions {Encoding = new UTF32Encoding(true, true)})
+                    .Load(fi, out readerTable);
             }
 
-            var tree = IonLoader.Default.Load(fi);
+            var tree = IonLoader.Default.Load(fi, out readerTable);
             return tree;
         }
+
+        private static IonDatagram LoadFile(FileInfo fi) => LoadFile(fi, out _);
 
         private class ValueComparer : IEqualityComparer<IonValue>
         {

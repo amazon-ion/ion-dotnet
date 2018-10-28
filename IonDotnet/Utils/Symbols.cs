@@ -4,7 +4,7 @@
     {
         public static readonly ISymbolTable[] EmptySymbolTablesArray = new ISymbolTable[0];
 
-        
+
         public static readonly SymbolToken[] SystemSymbolTokens =
         {
             new SymbolToken(SystemSymbols.Ion, SystemSymbols.IonSid),
@@ -21,7 +21,7 @@
         public static SymbolToken GetSystemSymbol(int sid) => SystemSymbolTokens[sid - 1];
 
         /// <summary>
-        /// Try to re-make the token in the context of the <paramref name="table"/>
+        /// Try to re-make the token in the context of the <paramref name="table"/>.
         /// </summary>
         /// <param name="table">Symbol table</param>
         /// <param name="token">Un-localized token</param>

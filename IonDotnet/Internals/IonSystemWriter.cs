@@ -7,7 +7,7 @@ namespace IonDotnet.Internals
 {
     /// <inheritdoc />
     /// <summary>
-    /// Base class for text and tree writer (why is this called 'system' ?) 
+    /// Base class for text and tree writer.
     /// </summary>
     internal abstract class IonSystemWriter : PrivateIonWriterBase
     {
@@ -36,9 +36,16 @@ namespace IonDotnet.Internals
 
         public override void SetFieldNameSymbol(SymbolToken symbol)
         {
+            if (symbol.Text is null)
+            {
+                symbol = Symbols.Localize(_symbolTable, symbol);
+            }
+
             _fieldName = symbol.Text;
             _fieldNameSid = symbol.Sid;
         }
+
+        public override void ClearTypeAnnotations() => _annotations.Clear();
 
         public override void AddTypeAnnotation(string annotation)
         {
@@ -54,22 +61,15 @@ namespace IonDotnet.Internals
 
         public override void AddTypeAnnotationSymbol(SymbolToken annotation)
         {
-            if (annotation.Text != null)
+            if (annotation.Text is null)
             {
-                _annotations.Add(annotation);
-                return;
+                //no text, check if sid is sth we know 
+                annotation = Symbols.Localize(_symbolTable, annotation);
             }
 
-            //no text, check if sid is sth we know            
-            if (annotation.Sid > _symbolTable.MaxId)
+            if (annotation == default)
             {
                 throw new UnknownSymbolException(annotation.Sid);
-            }
-
-            if (annotation.Sid > 0)
-            {
-                var knownText = _symbolTable.FindKnownSymbol(annotation.Sid);
-                annotation = new SymbolToken(knownText, SymbolToken.UnknownSid);
             }
 
             _annotations.Add(annotation);
@@ -80,16 +80,8 @@ namespace IonDotnet.Internals
             _annotations.Clear();
             foreach (var annotation in annotations)
             {
-                var a = Symbols.Localize(_symbolTable, new SymbolToken(annotation, SymbolToken.UnknownSid));
-
-                _annotations.Add(a);
+                AddTypeAnnotationSymbol(new SymbolToken(annotation, SymbolToken.UnknownSid));
             }
-        }
-
-        public override void SetTypeAnnotation(string annotation)
-        {
-            _annotations.Clear();
-            AddTypeAnnotation(annotation);
         }
 
         public override bool IsFieldNameSet() => _fieldName != null || _fieldNameSid > 0;

@@ -50,7 +50,7 @@ namespace IonDotnet.Internals
 
         public string IonVersionId => GetSystemTable().IonVersionId;
 
-        public IEnumerable<ISymbolTable> GetImportedTables() => Imports;
+        public IReadOnlyList<ISymbolTable> GetImportedTables() => Imports;
 
         public int GetImportedMaxId() => _importedMaxId;
 
@@ -120,7 +120,7 @@ namespace IonDotnet.Internals
 
         public void WriteTo(IIonWriter writer) => writer.WriteValue(new SymbolTableReader(this));
 
-        public IIterator<string> IterateDeclaredSymbolNames() => new PeekIterator<string>(_ownSymbols);
+        public IEnumerable<string> GetDeclaredSymbolNames() => _ownSymbols;
 
         public static ISymbolTable ImportReaderTable(IIonReader reader, ICatalog catalog, bool isOnStruct)
         {

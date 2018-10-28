@@ -23,7 +23,7 @@ namespace IonDotnet.Internals.Binary
 
         public string IonVersionId => SystemSymbols.Ion10;
 
-        public abstract IEnumerable<ISymbolTable> GetImportedTables();
+        public abstract IReadOnlyList<ISymbolTable> GetImportedTables();
         public abstract int GetImportedMaxId();
         public abstract int MaxId { get; }
         public abstract SymbolToken Intern(string text);
@@ -42,6 +42,6 @@ namespace IonDotnet.Internals.Binary
             throw new NotImplementedException();
         }
 
-        public abstract IIterator<string> IterateDeclaredSymbolNames();
+        public abstract IEnumerable<string> GetDeclaredSymbolNames();
     }
 }
