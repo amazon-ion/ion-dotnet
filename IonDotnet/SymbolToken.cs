@@ -65,5 +65,15 @@ namespace IonDotnet
         public override int GetHashCode() => Text?.GetHashCode() ?? Sid;
 
         public bool Equals(SymbolToken other) => this == other;
+
+        public bool IsEquivalentTo(SymbolToken other)
+        {
+            if (!(Text is null))
+                return Text == other.Text;
+            if (other.Text != null)
+                return false;
+
+            return other.Sid == Sid;
+        }
     }
 }

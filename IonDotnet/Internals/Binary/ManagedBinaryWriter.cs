@@ -32,13 +32,13 @@ namespace IonDotnet.Internals.Binary
             public readonly ISymbolTable[] Parents;
             public readonly int LocalSidStart;
 
-            public ImportedSymbolsContext(ISymbolTable[] imports)
+            public ImportedSymbolsContext(IEnumerable<ISymbolTable> imports)
             {
-                Parents = imports;
+                Parents = imports?.ToArray() ?? Symbols.EmptySymbolTablesArray;
 
                 //add all the system symbols
                 LocalSidStart = SystemSymbols.Ion10MaxId + 1;
-                foreach (var symbolTable in imports)
+                foreach (var symbolTable in Parents)
                 {
                     if (!symbolTable.IsShared)
                         throw new IonException("Import table must be a shared table.");
@@ -85,7 +85,7 @@ namespace IonDotnet.Internals.Binary
         private SymbolState _symbolState;
         private readonly Stream _outputStream;
 
-        public ManagedBinaryWriter(Stream outputStream, ISymbolTable[] importedTables)
+        public ManagedBinaryWriter(Stream outputStream, IEnumerable<ISymbolTable> importedTables)
         {
             if (!outputStream.CanWrite)
                 throw new ArgumentException("Output stream must be writable", nameof(outputStream));
@@ -125,14 +125,7 @@ namespace IonDotnet.Internals.Binary
 
                 foreach (var importedTable in _importContext.Parents)
                 {
-                    _symbolsWriter.StepIn(IonType.Struct); // {name:'a', version: 1, max_id: 33}
-                    _symbolsWriter.SetFieldNameSymbol(Symbols.GetSystemSymbol(SystemSymbols.NameSid));
-                    _symbolsWriter.WriteString(importedTable.Name);
-                    _symbolsWriter.SetFieldNameSymbol(Symbols.GetSystemSymbol(SystemSymbols.VersionSid));
-                    _symbolsWriter.WriteInt(importedTable.Version);
-                    _symbolsWriter.SetFieldNameSymbol(Symbols.GetSystemSymbol(SystemSymbols.MaxIdSid));
-                    _symbolsWriter.WriteInt(importedTable.MaxId);
-                    _symbolsWriter.StepOut();
+                    _symbolsWriter.WriteImportTable(importedTable);
                 }
 
                 _symbolsWriter.StepOut(); // $imports: []

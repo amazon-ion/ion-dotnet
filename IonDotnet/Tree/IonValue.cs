@@ -299,7 +299,7 @@ namespace IonDotnet.Tree
 
             for (int i = 0, l = _annotations.Count; i < l; i++)
             {
-                if (_annotations[i] != otherAnnotations[i])
+                if (!_annotations[i].IsEquivalentTo(otherAnnotations[i]))
                     return false;
             }
 

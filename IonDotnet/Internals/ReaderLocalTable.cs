@@ -42,7 +42,7 @@ namespace IonDotnet.Internals
         public bool IsShared => false;
         public bool IsSubstitute => false;
         public bool IsSystem => false;
-        public bool IsReadOnly => false;
+        public bool IsReadOnly => true;
 
         void ISymbolTable.MakeReadOnly() => throw new NotSupportedException();
 

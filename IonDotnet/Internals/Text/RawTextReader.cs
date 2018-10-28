@@ -237,11 +237,6 @@ namespace IonDotnet.Internals.Text
 
                         LoadTokenContents(token);
                         var symtok = ParseSymbolToken(_valueBuffer, token);
-                        if (symtok.Sid > 0 && GetSymbolTable().FindKnownSymbol(symtok.Sid) == null)
-                        {
-                            throw new UnknownSymbolException(symtok.Sid);
-                        }
-
                         SetFieldName(symtok);
                         ClearValueBuffer();
                         token = _scanner.NextToken();
@@ -466,12 +461,14 @@ namespace IonDotnet.Internals.Text
             _fieldNameSid = symtok.Sid;
         }
 
-        private static SymbolToken ParseSymbolToken(StringBuilder sb, int token)
+        private SymbolToken ParseSymbolToken(StringBuilder sb, int token)
         {
             if (token != TextConstants.TokenSymbolIdentifier)
                 return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
 
             var kw = TextConstants.GetKeyword(sb, 0, sb.Length);
+            string text;
+            int sid;
             switch (kw)
             {
                 case TextConstants.KeywordFalse:
@@ -481,10 +478,16 @@ namespace IonDotnet.Internals.Text
                     // keywords are not ok unless they're quoted
                     throw new IonException($"Cannot use unquoted keyword {sb}");
                 case TextConstants.KeywordSid:
-                    return new SymbolToken(null, TextConstants.DecodeSid(sb));
+                    sid = TextConstants.DecodeSid(sb);
+                    text = GetSymbolTable().FindKnownSymbol(sid);
+                    break;
                 default:
-                    return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
+                    text = sb.ToString();
+                    sid = GetSymbolTable().FindSymbolId(text);
+                    break;
             }
+
+            return new SymbolToken(text, sid);
         }
 
         private void FinishValue()

@@ -288,7 +288,18 @@ namespace IonDotnet.Internals.Text
             }
         }
 
-        public override SymbolToken GetFieldNameSymbol() => new SymbolToken(CurrentFieldName, _fieldNameSid);
+        public override SymbolToken GetFieldNameSymbol()
+        {
+            if (_fieldName is null)
+            {
+                if (_fieldNameSid < 0 || _fieldNameSid > GetSymbolTable().MaxId)
+                    throw new UnknownSymbolException(_fieldNameSid);
+
+                _fieldName = GetSymbolTable().FindKnownSymbol(_fieldNameSid);
+            }
+
+            return new SymbolToken(_fieldName, _fieldNameSid);
+        }
 
         private void SetBigIntegerFromBinaryString(string s, bool negative)
         {
@@ -345,7 +356,7 @@ namespace IonDotnet.Internals.Text
                 Array.Resize(ref _lobBuffer, _valueBuffer.Length);
                 for (int i = 0, l = _valueBuffer.Length; i < l; i++)
                 {
-                    _lobBuffer[i] = (byte)_valueBuffer[i];
+                    _lobBuffer[i] = (byte) _valueBuffer[i];
                 }
             }
 

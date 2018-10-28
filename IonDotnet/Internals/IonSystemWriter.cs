@@ -13,17 +13,15 @@ namespace IonDotnet.Internals
     {
         private string _fieldName;
         private int _fieldNameSid = SymbolToken.UnknownSid;
-        protected IonWriterBuilderBase.InitialIvmHandlingOption _ivmHandlingOption;
         protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
 
-        private readonly ISymbolTable _symbolTable;
+        protected readonly ReaderLocalTable _symbolTable;
         private readonly ISymbolTable _systemSymtab;
 
-        protected IonSystemWriter(IonWriterBuilderBase.InitialIvmHandlingOption ivmHandlingOption)
+        protected IonSystemWriter()
         {
             _systemSymtab = SharedSymbolTable.GetSystem(1);
-            _symbolTable = _systemSymtab;
-            _ivmHandlingOption = ivmHandlingOption;
+            _symbolTable = new ReaderLocalTable(_systemSymtab);
         }
 
         public override ISymbolTable SymbolTable => _symbolTable;
@@ -71,7 +69,6 @@ namespace IonDotnet.Internals
             {
                 throw new UnknownSymbolException(annotation.Sid);
             }
-
             _annotations.Add(annotation);
         }
 
@@ -94,7 +91,6 @@ namespace IonDotnet.Internals
             if (_systemSymtab.IonVersionId != SystemSymbols.Ion10)
                 throw new UnsupportedIonVersionException(_symbolTable.IonVersionId);
 
-            _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
             WriteIonVersionMarker(_systemSymtab);
         }
 
@@ -141,22 +137,6 @@ namespace IonDotnet.Internals
         {
             _fieldName = null;
             _fieldNameSid = SymbolToken.UnknownSid;
-        }
-
-        /// <summary>
-        /// Called before writing a value
-        /// </summary>
-        protected virtual void StartValue()
-        {
-            if (_ivmHandlingOption == IonWriterBuilderBase.InitialIvmHandlingOption.Ensure)
-            {
-                WriteIonVersionMarker();
-            }
-        }
-
-        protected void EndValue()
-        {
-            _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
         }
     }
 }

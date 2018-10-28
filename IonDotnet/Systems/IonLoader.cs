@@ -40,6 +40,7 @@ namespace IonDotnet.Systems
         /// Load a string of Ion text.
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
+        /// <param name="readerTable">Reader's local symbol table.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(string ionText, out ISymbolTable readerTable)
         {

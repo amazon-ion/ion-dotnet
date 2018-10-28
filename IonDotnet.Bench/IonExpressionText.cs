@@ -8,7 +8,7 @@ namespace IonDotnet.Bench
         public static string Serialize<T>(T obj)
         {
             var sw = new StringWriter();
-            var writer = new IonTextWriter(sw);
+            var writer = new IonTextWriter(sw, null);
             var action = IonSerializerExpression.GetAction<T>();
             action(obj, writer);
             writer.Finish();

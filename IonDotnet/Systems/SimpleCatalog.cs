@@ -8,7 +8,7 @@ namespace IonDotnet.Systems
 {
     /// <inheritdoc cref="ICatalog" />
     /// <summary>
-    /// A basic implementation for a catalog
+    /// A basic implementation for a mutable catalog.
     /// </summary>
     public class SimpleCatalog : IMutableCatalog, IEnumerable<ISymbolTable>
     {

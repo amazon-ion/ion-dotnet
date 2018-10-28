@@ -29,23 +29,45 @@ namespace IonDotnet.Internals.Text
         private bool _pendingSeparator;
         private bool _isWritingIvm;
         private bool _followingLongString;
+        private bool _valueStarted;
         private char _separatorCharacter;
 
-        public IonTextWriter(TextWriter textWriter) : base(IonWriterBuilderBase.InitialIvmHandlingOption.Default)
+        public IonTextWriter(TextWriter textWriter, IEnumerable<ISymbolTable> imports = null) : this(textWriter, IonTextOptions.Default, imports)
         {
-            _textWriter = new IonTextRawWriter(textWriter);
-            _options = IonTextOptions.Default;
-            _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
         }
 
-        public IonTextWriter(TextWriter textWriter, IonTextOptions textOptions)
-            : base(textOptions.WriteVersionMarker
-                ? IonWriterBuilderBase.InitialIvmHandlingOption.Ensure
-                : IonWriterBuilderBase.InitialIvmHandlingOption.Suppress)
+        public IonTextWriter(TextWriter textWriter, IonTextOptions textOptions, IEnumerable<ISymbolTable> imports = null)
         {
             _textWriter = new IonTextRawWriter(textWriter);
             _options = textOptions;
+            InitializeImportList(imports);
             _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
+        }
+
+
+        private void InitializeImportList(IEnumerable<ISymbolTable> imports)
+        {
+            if (imports == null)
+            {
+                return;
+            }
+
+            foreach (var table in imports)
+            {
+                if (!table.IsShared)
+                {
+                    throw new ArgumentException($"Import table is not shared: {table}");
+                }
+
+                if (table.IsSystem)
+                {
+                    continue;
+                }
+
+                _symbolTable.Imports.Add(table);
+            }
+
+            _symbolTable.Refresh();
         }
 
         private void WriteLeadingWhiteSpace()
@@ -147,9 +169,19 @@ namespace IonDotnet.Internals.Text
                 return;
             }
 
-            _textWriter.Write('\'');
+            var needQuote = GetSymbolVariant(text) != SymbolVariant.Identifier;
+            //TODO extra need quote
+            if (needQuote)
+            {
+                _textWriter.Write('\'');
+            }
+
             _textWriter.WriteSymbol(text);
-            _textWriter.Write('\'');
+
+            if (needQuote)
+            {
+                _textWriter.Write('\'');
+            }
         }
 
         /// <summary>
@@ -168,7 +200,7 @@ namespace IonDotnet.Internals.Text
                     followingLongString = false;
                 }
 
-                if (_ivmHandlingOption == IonWriterBuilderBase.InitialIvmHandlingOption.Default)
+                if (_valueStarted)
                 {
                     //this mean we've written something
                     _textWriter.Write(_options.LineSeparator);
@@ -221,9 +253,20 @@ namespace IonDotnet.Internals.Text
             _isWritingIvm = false;
         }
 
-        protected override void StartValue()
+        protected void StartValue()
         {
-            base.StartValue();
+            if (!_valueStarted)
+            {
+                _valueStarted = true;
+                if (_options.WriteVersionMarker)
+                {
+                    WriteIonVersionMarker();
+                }
+
+                //write the imports here
+                WriteImports();
+            }
+
             var followingLongString = WriteSeparator(_followingLongString);
 
             //write field name
@@ -256,9 +299,39 @@ namespace IonDotnet.Internals.Text
             _followingLongString = followingLongString;
         }
 
+        /// <summary>
+        /// Write all the imported symbol tables
+        /// </summary>
+        /// <exception cref="NotImplementedException"></exception>
+        private void WriteImports()
+        {
+            //only write local symtab if we import sth more than just system table
+            if (_symbolTable.Imports.Count <= 1)
+            {
+                return;
+            }
+
+            AddTypeAnnotation(SystemSymbols.IonSymbolTable);
+            StepIn(IonType.Struct);
+            SetFieldName(SystemSymbols.Imports);
+            StepIn(IonType.List);
+
+            foreach (var importedTable in _symbolTable.Imports)
+            {
+                if (importedTable.IsSystem)
+                {
+                    continue;
+                }
+
+                this.WriteImportTable(importedTable);
+            }
+
+            StepOut();
+            StepOut();
+        }
+
         private void CloseValue()
         {
-            EndValue();
             _pendingSeparator = true;
             _followingLongString = false;
 
@@ -271,6 +344,27 @@ namespace IonDotnet.Internals.Text
 
 //        public override Task FlushAsync() => _textWriter.FlushAsync();
         public override void Flush() => _textWriter.Flush();
+
+        /// <summary>
+        /// Override this so that the imports are written first.
+        /// </summary>
+        /// <param name="annotation"></param>
+        public override void AddTypeAnnotationSymbol(SymbolToken annotation)
+        {
+            if (!_valueStarted)
+            {
+                _valueStarted = true;
+                if (_options.WriteVersionMarker)
+                {
+                    WriteIonVersionMarker();
+                }
+
+                //write the imports here
+                WriteImports();
+            }
+
+            base.AddTypeAnnotationSymbol(annotation);
+        }
 
         public override void WriteNull()
         {
@@ -358,7 +452,7 @@ namespace IonDotnet.Internals.Text
             StartValue();
             //this is not optimal but it's not a common use case
             _textWriter.Write(value.ToString());
-            EndValue();
+            CloseValue();
         }
 
         public override void WriteFloat(double value)
@@ -529,7 +623,6 @@ namespace IonDotnet.Internals.Text
 
             _textWriter.Write(opener);
             //we've started the value and written something, ivm no longer needed
-            _ivmHandlingOption = IonWriterBuilderBase.InitialIvmHandlingOption.Default;
             _pendingSeparator = false;
             _followingLongString = false;
         }

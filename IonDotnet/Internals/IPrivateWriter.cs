@@ -7,7 +7,5 @@
         int GetDepth();
 
         void WriteIonVersionMarker();
-
-        bool IsStreamCopyOptimized { get; }
     }
 }

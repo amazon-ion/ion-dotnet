@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using IonDotnet.Systems;
@@ -10,7 +11,7 @@ namespace IonDotnet.Internals
     {
         private IonContainer _currentContainer;
 
-        public IonTreeWriter(IonContainer root) : base(IonWriterBuilderBase.InitialIvmHandlingOption.Suppress)
+        public IonTreeWriter(IonContainer root)
         {
             Debug.Assert(root != null);
             _currentContainer = root;
