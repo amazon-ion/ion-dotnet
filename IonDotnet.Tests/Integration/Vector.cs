@@ -38,7 +38,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                            //&& f.Name == "structs.ion"
+                            //&& f.Name == "item1.10n"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()
@@ -92,6 +92,7 @@ namespace IonDotnet.Tests.Integration
         {
             var datagram = LoadFile(fi, out var readerTable);
             RoundTrip_AssertText(datagram, readerTable);
+            RoundTrip_AssertBinary(datagram, readerTable);
         }
 
         private static void RoundTrip_AssertText(IonDatagram datagram, ISymbolTable readerTable)
@@ -105,6 +106,22 @@ namespace IonDotnet.Tests.Integration
             var catalog = Symbols.GetReaderCatalog(readerTable);
             var datagram2 = IonLoader.WithReaderOptions(new ReaderOptions {Catalog = catalog}).Load(text);
             AssertDatagramEquivalent(datagram, datagram2);
+        }
+
+        private static void RoundTrip_AssertBinary(IonDatagram datagram, ISymbolTable readerTable)
+        {
+            using (var ms = new MemoryStream())
+            {
+                using (var writer = IonBinaryWriterBuilder.Build(ms, readerTable.GetImportedTables()))
+                {
+                    datagram.WriteTo(writer);
+                    writer.Finish();
+                    var bin = ms.ToArray();
+                    var catalog = Symbols.GetReaderCatalog(readerTable);
+                    var datagram2 = IonLoader.WithReaderOptions(new ReaderOptions {Catalog = catalog, Format = ReaderFormat.Binary}).Load(bin);
+                    AssertDatagramEquivalent(datagram, datagram2);
+                }
+            }
         }
 
         /// <summary>

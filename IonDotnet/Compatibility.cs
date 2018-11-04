@@ -18,7 +18,6 @@ namespace System.Collections.Generic
             }
         }
     }
-
 }
 #if NET45
 namespace System
@@ -51,27 +50,31 @@ namespace System.IO
             buf.AsSpan(0, r).CopyTo(dest);
             return r;
         }
+
         public static void Write(this Stream stream, ReadOnlySpan<byte> src)
         {
             stream.Write(src.ToArray(), 0, src.Length);
         }
+
         public static Threading.Tasks.Task WriteAsync(this Stream stream, Memory<byte> src)
         {
             return stream.WriteAsync(src.ToArray(), 0, src.Length);
         }
     }
-
 }
 #endif
 
 #if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
-    namespace System.Text
+namespace System.Text
 {
     internal static class EncodingExtensions
     {
-
         public static string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
         {
+            if (bytes.Length == 0)
+            {
+                return string.Empty;
+            }
 #if NET45
             return encoding.GetString(bytes.ToArray());
 #else
@@ -81,12 +84,17 @@ namespace System.IO
                 {
                     return encoding.GetString(ptr, bytes.Length);
                 }
-        }
+            }
 #endif
         }
 
         public static int GetBytes(this Encoding encoding, ReadOnlySpan<char> chars, Span<byte> bytes)
         {
+            if (chars.Length == 0)
+            {
+                return 0;
+            }
+
             unsafe
             {
                 fixed (char* sptr = chars)
@@ -99,6 +107,11 @@ namespace System.IO
 
         public static int GetByteCount(this Encoding encoding, ReadOnlySpan<char> chars)
         {
+            if (chars.Length == 0)
+            {
+                return 0;
+            }
+
             unsafe
             {
                 fixed (char* sptr = chars)
@@ -115,32 +128,31 @@ namespace System.IO
 #if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
 namespace System
 {
-
     internal static class BitConverterEx
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe int SingleToInt32Bits(float value)
         {
-            return *((int*)&value);
+            return *((int*) &value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe float Int32BitsToSingle(int value)
         {
-            return *((float*)&value);
+            return *((float*) &value);
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe long DoubleToInt64Bits(double value)
         {
-            return *((long*)&value);
+            return *((long*) &value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe double Int64BitsToDouble(long value)
         {
-            return *((double*)&value);
+            return *((double*) &value);
         }
     }
 }

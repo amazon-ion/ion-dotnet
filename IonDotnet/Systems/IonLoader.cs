@@ -104,6 +104,35 @@ namespace IonDotnet.Systems
             }
         }
 
+        /// <summary>
+        /// Load Ion data from a byte array.
+        /// </summary>
+        /// <param name="data">Ion data.</param>
+        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+        public IonDatagram Load(byte[] data)
+        {
+            using (var stream = new MemoryStream(data))
+            {
+                var datagram = Load(stream);
+                return datagram;
+            }
+        }
+
+        /// <summary>
+        /// Load Ion data from a byte array.
+        /// </summary>
+        /// <param name="data">Ion data.</param>
+        /// <param name="readerTable">The local table used by the reader.</param>
+        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+        public IonDatagram Load(byte[] data, out ISymbolTable readerTable)
+        {
+            using (var stream = new MemoryStream(data))
+            {
+                var datagram = Load(stream, out readerTable);
+                return datagram;
+            }
+        }
+
         private static IonDatagram WriteDatagram(IIonReader reader)
         {
             var datagram = new IonDatagram();

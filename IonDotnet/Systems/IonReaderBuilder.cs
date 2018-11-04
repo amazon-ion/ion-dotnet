@@ -98,7 +98,7 @@ namespace IonDotnet.Systems
             if (IsBinaryData(initialBytes.Slice(0, bytesRead)))
             {
                 //skipping the version marker should be fine for binary reader
-                return new UserBinaryReader(stream);
+                return new UserBinaryReader(stream, options.Catalog);
             }
 
             return didSeek

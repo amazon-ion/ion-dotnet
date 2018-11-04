@@ -45,6 +45,25 @@ namespace IonDotnet.Internals.Binary
                     if (symbolTable.IsSystem)
                         continue;
 
+                    if (symbolTable.IsSubstitute)
+                    {
+                        var sTable = (SubstituteSymbolTable) symbolTable;
+                        var oSymbols = sTable.GetOriginalSymbols();
+                        var idStart = LocalSidStart;
+                        foreach (var otext in oSymbols)
+                        {
+                            if (otext != null)
+                            {
+                                _dict.TryAdd(otext, idStart);
+                            }
+
+                            idStart++;
+                        }
+
+                        LocalSidStart += symbolTable.MaxId;
+                        continue;
+                    }
+
                     var declaredSymbols = symbolTable.GetDeclaredSymbolNames();
                     foreach (var text in declaredSymbols)
                     {

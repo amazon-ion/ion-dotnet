@@ -69,7 +69,7 @@ namespace IonDotnet.Utils
             foreach (var importedTable in readerTable.GetImportedTables())
             {
                 Debug.Assert(importedTable.IsShared);
-                if (importedTable.IsSystem)
+                if (importedTable.IsSystem || importedTable.IsSubstitute)
                 {
                     continue;
                 }

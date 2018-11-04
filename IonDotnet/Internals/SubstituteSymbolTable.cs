@@ -25,7 +25,7 @@ namespace IonDotnet.Internals
         public int Version { get; }
         public bool IsLocal => false;
         public bool IsShared => true;
-        public bool IsSubstitute => false;
+        public bool IsSubstitute => true;
         public bool IsSystem => false;
         public bool IsReadOnly => true;
 
@@ -74,6 +74,19 @@ namespace IonDotnet.Internals
         public IEnumerable<string> GetDeclaredSymbolNames()
         {
             yield break;
+        }
+
+        public IEnumerable<string> GetOriginalSymbols()
+        {
+            if (_original == null)
+            {
+                yield break;
+            }
+
+            foreach (var s in _original.GetDeclaredSymbolNames())
+            {
+                yield return s;
+            }
         }
     }
 }

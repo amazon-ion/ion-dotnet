@@ -56,6 +56,23 @@ namespace IonDotnet
         }
 
         public Timestamp(int year, int month, int day, int hour, int minute, int second,
+            Precision precision = Precision.Second)
+        {
+            TimestampPrecision = precision;
+
+            //no frag, no perf lost
+            //offset known
+            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
+            LocalOffset = 0;
+        }
+
+        public Timestamp(int year, int month, int day, int hour, int minute, int second,
+            int offset, Precision precision = Precision.Second) :
+            this(year, month, day, hour, minute, second, offset, 0, precision)
+        {
+        }
+
+        public Timestamp(int year, int month, int day, int hour, int minute, int second,
             int offset, in decimal frac, Precision precision = Precision.Second)
         {
             TimestampPrecision = precision;
@@ -76,40 +93,19 @@ namespace IonDotnet
                 kind = offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local;
             }
 
+            const int maxOffset = 14 * 60;
+            var shift = TimeSpan.FromTicks(ticks);
+            if (offset > maxOffset || offset < -maxOffset)
+            {
+                var minuteShift = (offset / maxOffset) * maxOffset;
+                offset = offset % maxOffset;
+                shift -= TimeSpan.FromMinutes(minuteShift);
+            }
+
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
-                .Add(TimeSpan.FromTicks(ticks));
+                .Add(shift);
+
             LocalOffset = offset;
-        }
-
-        public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            int offset, Precision precision = Precision.Second)
-        {
-            TimestampPrecision = precision;
-
-            var kind = DateTimeKind.Unspecified;
-            //offset only makes sense if precision >= Minute
-            if (precision < Precision.Minute)
-            {
-                offset = 0;
-            }
-            else
-            {
-                kind = offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local;
-            }
-
-            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind);
-            LocalOffset = offset;
-        }
-
-        public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            Precision precision = Precision.Second)
-        {
-            TimestampPrecision = precision;
-
-            //no frag, no perf lost
-            //offset known
-            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
-            LocalOffset = 0;
         }
 
         public DateTimeOffset AsDateTimeOffset()

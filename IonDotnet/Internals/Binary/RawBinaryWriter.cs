@@ -537,7 +537,7 @@ namespace IonDotnet.Internals.Binary
             }
             else
             {
-                WriteDecimalNumber(value);
+                WriteDecimalNumber(value, true);
             }
 
             FinishValue();
@@ -590,7 +590,7 @@ namespace IonDotnet.Internals.Binary
             FinishValue();
         }
 
-        private void WriteDecimalNumber(decimal value)
+        private void WriteDecimalNumber(decimal value, bool writeTid)
         {
             Span<byte> bytes = stackalloc byte[sizeof(decimal)];
             var maxIdx = DecimalHelper.CopyDecimalBigEndian(bytes, value);
@@ -607,18 +607,21 @@ namespace IonDotnet.Internals.Binary
                 totalLength++;
             }
 
-            var tidByte = TidDecimalByte;
-            if (totalLength <= 0x0D)
+            if (writeTid)
             {
-                tidByte |= (byte) totalLength;
-                _dataBuffer.WriteByte(tidByte);
-                totalLength++;
-            }
-            else
-            {
-                tidByte |= BinaryConstants.LnIsVarLen;
-                _dataBuffer.WriteByte(tidByte);
-                totalLength += 1 + _dataBuffer.WriteVarUint(totalLength);
+                var tidByte = TidDecimalByte;
+                if (totalLength <= 0x0D)
+                {
+                    tidByte |= (byte) totalLength;
+                    _dataBuffer.WriteByte(tidByte);
+                    totalLength++;
+                }
+                else
+                {
+                    tidByte |= BinaryConstants.LnIsVarLen;
+                    _dataBuffer.WriteByte(tidByte);
+                    totalLength += 1 + _dataBuffer.WriteVarUint(totalLength);
+                }
             }
 
             const byte isNegativeAndDone = 0b_1100_0000;
@@ -706,7 +709,7 @@ namespace IonDotnet.Internals.Binary
             if (precision == fracPrecision)
             {
                 tickRemainder /= TimeSpan.TicksPerSecond;
-                WriteDecimalNumber(tickRemainder);
+                WriteDecimalNumber(tickRemainder, false);
             }
 
             PopContainer();
@@ -767,26 +770,17 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteBlob(ReadOnlySpan<byte> value)
         {
-            if (value == null)
-            {
-                WriteNull(IonType.Blob);
-                return;
-            }
-
             PrepareValue();
-
             WriteTypedBytes(TidBlobByte, value);
-
             FinishValue();
         }
 
         public void WriteClob(ReadOnlySpan<byte> value)
         {
-            throw new NotImplementedException();
+            PrepareValue();
+            WriteTypedBytes(TidClobType, value);
+            FinishValue();
         }
-
-        public void SetTypeAnnotation(string annotation)
-            => throw new NotSupportedException("raw writer does not support setting annotations as text");
 
         public void AddTypeAnnotationSymbol(SymbolToken annotation) => _annotations.Add(annotation);
 
@@ -808,8 +802,6 @@ namespace IonDotnet.Internals.Binary
             _dataBuffer.WriteUint32(0xE0_01_00_EA);
             _containerStack.IncreaseCurrentContainerLength(4);
         }
-
-        public bool IsStreamCopyOptimized => throw new NotImplementedException();
 
         internal IWriterBuffer GetLengthBuffer() => _lengthBuffer;
         internal IWriterBuffer GetDataBuffer() => _dataBuffer;
