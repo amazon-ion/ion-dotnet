@@ -59,7 +59,7 @@ namespace IonDotnet.Internals.Binary
         private string _stringValue;
         private int _intValue;
         private readonly ISymbolTable[] _importedTables;
-        private int _importTablesIterator = -1;
+        private int _importTablesIdx = -1;
         private ISymbolTable _currentImportTable;
         private readonly IEnumerator<string> _localSymbolsEnumerator;
 
@@ -153,7 +153,6 @@ namespace IonDotnet.Internals.Binary
                     // we only need to get the import list once, which we
                     // do as we step into the import list, so it should
                     // be waiting for us here.
-                    Debug.Assert(_importTablesIterator != null);
                     newState = NextImport();
                     break;
                 case S_IN_IMPORT_STRUCT:
@@ -220,9 +219,9 @@ namespace IonDotnet.Internals.Binary
 
         private int NextImport()
         {
-            if (_importTablesIterator < _importedTables.Length - 1)
+            if (_importTablesIdx < _importedTables.Length - 1)
             {
-                _currentImportTable = _importedTables[++_importTablesIterator];
+                _currentImportTable = _importedTables[++_importTablesIdx];
                 return S_IMPORT_STRUCT;
             }
 
@@ -294,7 +293,7 @@ namespace IonDotnet.Internals.Binary
                 case S_IMPORT_STRUCT_CLOSE:
                     // if there is a next import the next state will be its struct open
                     // otherwise next will be the list close
-                    newState = _importTablesIterator < _importedTables.Length - 1 ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
+                    newState = _importTablesIdx < _importedTables.Length - 1 ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
                     break;
                 case S_IN_SYMBOLS:
                 case S_SYMBOL:
@@ -586,7 +585,7 @@ namespace IonDotnet.Internals.Binary
                 case S_IN_IMPORTS:
                 case S_IMPORT_STRUCT:
                     // we have more if there is
-                    return _importTablesIterator < _importedTables.Length - 1;
+                    return _importTablesIdx < _importedTables.Length - 1;
                 case S_IN_IMPORT_STRUCT:
                 case S_IMPORT_NAME:
                     // we always have a name and version

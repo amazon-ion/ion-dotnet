@@ -173,15 +173,11 @@ namespace IonDotnet.Internals.Text
             //TODO extra need quote
             if (needQuote)
             {
-                _textWriter.Write('\'');
+                _textWriter.WriteSingleQuotedSymbol(text);
+                return;
             }
 
             _textWriter.WriteSymbol(text);
-
-            if (needQuote)
-            {
-                _textWriter.Write('\'');
-            }
         }
 
         /// <summary>
@@ -688,14 +684,19 @@ namespace IonDotnet.Internals.Text
 
         public override int GetDepth() => _containerStack.Count;
 
-        private static bool IsIdentifierPart(char c)
+        /// <summary>
+        /// Returns true if c is part of an symbol identifier string.
+        /// </summary>
+        /// <param name="c">Character</param>
+        /// <param name="start">True if character is the start of the text</param>
+        private static bool IsIdentifierPart(char c, bool start)
         {
             if (c >= 'a' && c <= 'z')
                 return true;
             if (c >= 'A' && c <= 'Z')
                 return true;
             if (c >= '0' && c <= '9')
-                return true;
+                return !start;
 
             return c == '_' || c == '$';
         }
@@ -806,12 +807,12 @@ namespace IonDotnet.Internals.Text
             // first one we hit will fall through and return QUOTED.
             // TODO test that
 
-            if (IsIdentifierPart(c))
+            if (IsIdentifierPart(c, true))
             {
                 for (var ii = 0; ii < length; ii++)
                 {
                     c = symbol[ii];
-                    if (c == '\'' || c < 32 || c > 126 || !IsIdentifierPart(c))
+                    if (c == '\'' || c < 32 || c > 126 || !IsIdentifierPart(c, false))
                         return SymbolVariant.Quoted;
                 }
 

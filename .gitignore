@@ -3,7 +3,5 @@
 **/bin/*
 **/obj/*
 .vscode/
-FundaMl/appsettings.local.json
-FundaMl/Properties/PublishProfiles/
 **/publish/*
 BenchmarkDotNet.Artifacts/

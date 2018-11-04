@@ -38,7 +38,7 @@ namespace IonDotnet.Tests.Integration
             => dirInfo.GetFiles()
                 .Where(f => !Excludes.Contains(f.Name)
                             //this is for debugging the interested file
-                            //&& f.Name == "strings2.ion"
+                            //&& f.Name == "structs.ion"
                             && (f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n")));
 
         public static IEnumerable<object[]> GoodFiles()

@@ -57,8 +57,10 @@ namespace IonDotnet.Tests.Integration
 
             Assert.AreEqual(IonType.Struct, reader.MoveNext());
             reader.StepIn();
+
             //should throw here
             reader.MoveNext();
+            var _ = reader.CurrentFieldName;
         }
     }
 }

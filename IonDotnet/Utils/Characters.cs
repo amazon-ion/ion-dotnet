@@ -26,10 +26,24 @@ namespace IonDotnet.Utils
         private const int SurrogateUtf32Shift = 10;
         private const int SurrogateUtf32Offset = 0x10000;
 
+        /// <summary>
+        /// This enum is used to specify the characters prohibited in certain string types.
+        /// </summary>
         public enum ProhibitionContext
         {
+            /// <summary>
+            /// Short string char i.e. double-quoted string.
+            /// </summary>
             ShortChar,
+            
+            /// <summary>
+            /// Long string char i.e. triple-quoted string.
+            /// </summary>
             LongChar,
+            
+            /// <summary>
+            /// No prohibition.
+            /// </summary>
             None
         }
 
@@ -54,14 +68,14 @@ namespace IonDotnet.Utils
         // already.  This is a perf issue since normally this check has been done
         // to detect that these routines should be called at all - no need to do it
         // twice.
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int MakeUnicodeScalar(int highSurrogate, int lowSurrogate)
-        {
-            var c = (highSurrogate & SurrogateValueMask) << SurrogateUtf32Shift;
-            c |= lowSurrogate & SurrogateValueMask;
-            c += SurrogateUtf32Offset;
-            return c;
-        }
+//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//        public static int MakeUnicodeScalar(int highSurrogate, int lowSurrogate)
+//        {
+//            var c = (highSurrogate & SurrogateValueMask) << SurrogateUtf32Shift;
+//            c |= lowSurrogate & SurrogateValueMask;
+//            c += SurrogateUtf32Offset;
+//            return c;
+//        }
 
         /// <summary>
         /// Put these 2 UTF-8 bytes to a C# <see cref="char"/>
@@ -142,27 +156,27 @@ namespace IonDotnet.Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsFourByteUtf8(int b) => (b & ~UnicodeFourByteMask) == UnicodeFourByteHeader;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool NeedsSurrogateEncoding(int unicodeScalar) => unicodeScalar > MaximumUtf16OneCharCodePoint;
+//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//        public static bool NeedsSurrogateEncoding(int unicodeScalar) => unicodeScalar > MaximumUtf16OneCharCodePoint;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static char GetHighSurrogate(int unicodeScalar)
-        {
-            Debug.Assert(unicodeScalar > MaximumUtf16OneCharCodePoint);
-            var c = (unicodeScalar - SurrogateOffset) >> 10;
-            return (char) ((c | HighSurrogate) & 0xffff);
-        }
+//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//        public static char GetHighSurrogate(int unicodeScalar)
+//        {
+//            Debug.Assert(unicodeScalar > MaximumUtf16OneCharCodePoint);
+//            var c = (unicodeScalar - SurrogateOffset) >> 10;
+//            return (char) ((c | HighSurrogate) & 0xffff);
+//        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static char GetLowSurrogate(int unicodeScalar)
-        {
-            Debug.Assert(unicodeScalar > MaximumUtf16OneCharCodePoint);
-            var c = (unicodeScalar - SurrogateOffset) & 0x3ff;
-            return (char) ((c | LowSurrogate) & 0xffff);
-        }
+//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//        public static char GetLowSurrogate(int unicodeScalar)
+//        {
+//            Debug.Assert(unicodeScalar > MaximumUtf16OneCharCodePoint);
+//            var c = (unicodeScalar - SurrogateOffset) & 0x3ff;
+//            return (char) ((c | LowSurrogate) & 0xffff);
+//        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Is7BitChar(int c) => (c & ~0x7f) == 0;
+//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//        public static bool Is7BitChar(int c) => (c & ~0x7f) == 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Is8BitChar(int c) => (c & ~0xff) == 0;
