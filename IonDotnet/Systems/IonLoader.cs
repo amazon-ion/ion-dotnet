@@ -82,6 +82,11 @@ namespace IonDotnet.Systems
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
         public IonDatagram Load(FileInfo ionFile)
         {
+            if (!ionFile.Exists)
+            {
+                throw new FileNotFoundException("File must exist", ionFile.FullName);
+            }
+
             using (var stream = ionFile.OpenRead())
             {
                 var datagram = Load(stream);

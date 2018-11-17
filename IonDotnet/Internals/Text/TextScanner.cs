@@ -1515,13 +1515,13 @@ namespace IonDotnet.Internals.Text
                 // year followed by a dash and no leading sign
                 if (hasSign)
                 {
-                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char)c}");
+                    throw new FormatException($"Numeric value followed by invalid character: {valueBuffer}{(char)c}");
                 }
 
                 var len = valueBuffer.Length;
                 if (len != 4)
                 {
-                    throw new IonException($"Numeric value followed by invalid character: {valueBuffer}{(char)c}");
+                    throw new FormatException($"Numeric value followed by invalid character: {valueBuffer}{(char)c}");
                 }
 
                 return LoadTimestamp(valueBuffer, c);
@@ -1538,7 +1538,7 @@ namespace IonDotnet.Internals.Text
                 }
 
                 if (len != 1)
-                    throw new IonException("Invalid leading zero in number: " + valueBuffer);
+                    throw new FormatException("Invalid leading zero in number: " + valueBuffer);
             }
 
             int t;
@@ -1774,7 +1774,7 @@ namespace IonDotnet.Internals.Text
         {
             // all forms of numeric need to stop someplace rational
             if (!IsTerminatingCharacter(c))
-                throw new InvalidTokenException($"Numeric value followed by invalid character: {numericText}{(char)c}");
+                throw new FormatException($"Numeric value followed by invalid character: {numericText}{(char)c}");
 
             // we read off the end of the number, so put back
             // what we don't want, but what ever we have is an int

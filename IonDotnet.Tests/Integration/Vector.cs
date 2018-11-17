@@ -233,7 +233,6 @@ namespace IonDotnet.Tests.Integration
                     var eq = AssertDatagramEquivalent(dg1, dg2);
                     if (expected != eq)
                     {
-                        Console.WriteLine(i);
                         Console.WriteLine(((IonString) doc1).StringValue);
                         Console.WriteLine(((IonString) doc2).StringValue);
                     }
