@@ -1,0 +1,7 @@
+.vs/
+.idea/
+**/bin/*
+**/obj/*
+.vscode/
+**/publish/*
+BenchmarkDotNet.Artifacts/
