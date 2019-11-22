@@ -1,0 +1,22 @@
+{
+  menu: {  
+    id: "file",
+    popup: [    
+      "Open",
+      "Load",
+      "Close"
+    ],
+    deep1: {    
+      deep2: {      
+        deep3: {        
+          deep4val: "enddeep"
+        }
+      }
+    },
+    positions: [    
+      1234,
+      5678,
+      90
+    ]
+  }
+}
