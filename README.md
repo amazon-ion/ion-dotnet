@@ -139,10 +139,10 @@ Console.WriteLine(text);
 ```
 
 ### Setup
-This repository contains a git submodule called ion-tests, which holds test data used by ion-java's unit tests.
+This repository contains a git submodule called ion-tests, which holds test data used by ion-dotnet's unit tests.
 Clone the whole repository and initialize the submodule by:
 ```
-$ git clone --recurse-submodules git@github.com:dhhoang/IonDotnet.git
+$ git clone --recurse-submodules git@github.com:amzn/ion-dotnet.git
 ```
 Or you can initilize the submodules in the clone
 ```
