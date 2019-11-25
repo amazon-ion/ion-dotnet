@@ -31,7 +31,9 @@ namespace IonDotnet.Tests.Integration
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
         private static readonly DirectoryInfo GoodDir = IonTestDir.GetDirectories("good").First();
         private static readonly DirectoryInfo GoodTimestampDir = IonTestDir.GetDirectories("good/timestamp").First();
+        private static readonly DirectoryInfo GoodTimestampEquivDir = IonTestDir.GetDirectories("good/timestamp/equivTimeline").First();
         private static readonly DirectoryInfo GoodEquivDir = IonTestDir.GetDirectories("good/equivs").First();
+        private static readonly DirectoryInfo GoodEquivUtf8Dir = IonTestDir.GetDirectories("good/equivs/utf8").First();
         private static readonly DirectoryInfo GoodNonEquivDir = IonTestDir.GetDirectories("good/non-equivs").First();
 
         private static IEnumerable<FileInfo> GetIonFiles(DirectoryInfo dirInfo)
@@ -53,9 +55,21 @@ namespace IonDotnet.Tests.Integration
                 .Select(f => new[] {f});
         }
 
+        public static IEnumerable<object[]> GoodTimestampEquivFiles()
+        {
+            return GetIonFiles(GoodTimestampEquivDir)
+                .Select(f => new[] {f});
+        }
+
         public static IEnumerable<object[]> GoodEquivFiles()
         {
             return GetIonFiles(GoodEquivDir)
+                .Select(f => new[] {f});
+        }
+
+        public static IEnumerable<object[]> GoodEquivUtf8Files()
+        {
+            return GetIonFiles(GoodEquivUtf8Dir)
                 .Select(f => new[] {f});
         }
 
@@ -67,7 +81,7 @@ namespace IonDotnet.Tests.Integration
 
         public static string TestCaseName(MethodInfo methodInfo, object[] data)
         {
-            var fileFullName = ((FileInfo) data[0]).FullName;
+            var fileFullName = ((FileInfo)data[0]).FullName;
             var testDirIdx = fileFullName.IndexOf(IonTestDir.FullName, StringComparison.OrdinalIgnoreCase);
             return fileFullName.Substring(testDirIdx + IonTestDir.FullName.Length);
         }
@@ -78,7 +92,9 @@ namespace IonDotnet.Tests.Integration
         [TestMethod]
         [DynamicData(nameof(GoodFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         [DynamicData(nameof(GoodTimestampFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodTimestampEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         [DynamicData(nameof(GoodEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodEquivUtf8Files), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         [DynamicData(nameof(GoodNonEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadGood_Successful(FileInfo fi)
         {
@@ -88,6 +104,10 @@ namespace IonDotnet.Tests.Integration
         [TestMethod]
         [DynamicData(nameof(GoodFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         [DynamicData(nameof(GoodTimestampFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodTimestampEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodEquivUtf8Files), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(GoodNonEquivFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadGood_RoundTrip(FileInfo fi)
         {
             var datagram = LoadFile(fi, out var readerTable);
