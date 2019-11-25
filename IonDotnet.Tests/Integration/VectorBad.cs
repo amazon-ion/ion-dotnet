@@ -67,7 +67,6 @@ namespace IonDotnet.Tests.Integration
         [DynamicData(nameof(BadOutOfRangeTimestamp), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
         public void LoadBad_RoundTrip(FileInfo fi)
         {
-            Console.WriteLine("aaa " + fi.FullName);
             IonLoader.WithReaderOptions(new ReaderOptions { Format = ReaderFormat.Text }).Load(fi);
         }
     }
