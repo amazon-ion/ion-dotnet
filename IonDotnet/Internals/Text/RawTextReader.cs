@@ -164,6 +164,10 @@ namespace IonDotnet.Internals.Text
         protected int _lobValuePosition;
         protected byte[] _lobBuffer;
 
+        // For any container being opened, its closing symbole should come before
+        // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
+        private Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
+
         protected RawTextReader(TextStream input)
         {
             _state = GetStateAtContainerStart(IonType.Datagram);
@@ -279,14 +283,17 @@ namespace IonDotnet.Internals.Text
                         break;
                     case ActionStartStruct:
                         _valueType = IonType.Struct;
+                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseBrace);
                         _state = StateBeforeFieldName;
                         return;
                     case ActionStartList:
                         _valueType = IonType.List;
+                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseSquare);
                         _state = StateBeforeAnnotationContained;
                         return;
                     case ActionStartSexp:
                         _valueType = IonType.Sexp;
+                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseParen);
                         _state = StateBeforeAnnotationSexp;
                         return;
                     case ActionStartLob:
@@ -374,6 +381,8 @@ namespace IonDotnet.Internals.Text
                         _state = StateEof;
                         return;
                     case ActionFinishContainer:
+                        if (_expectedContainerClosingSymbol.Count == 0 || _expectedContainerClosingSymbol.Pop() != token)
+                            throw new FormatException($"Illegal character");
                         _state = GetStateAfterContainer(_containerStack.Peek());
                         _eof = true;
                         return;
