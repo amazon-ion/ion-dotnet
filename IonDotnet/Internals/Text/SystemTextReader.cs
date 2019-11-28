@@ -454,7 +454,7 @@ namespace IonDotnet.Internals.Text
             {
                 //lookup symbol string from sid
                 var text = GetSymbolTable().FindKnownSymbol(_v.IntValue);
-                if (text == null && (_v.IntValue > GetSymbolTable().MaxId + 1 || _v.IntValue < 0))
+                if (text == null && (_v.IntValue > GetSymbolTable().MaxId || _v.IntValue < 0))
                 {
                     throw new UnknownSymbolException(_v.IntValue);
                 }
