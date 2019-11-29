@@ -998,6 +998,8 @@ namespace IonDotnet.Internals.Text
                     case CharacterSequence.CharSeqEscapedNewlineSequence3:
                         continue;
                     case -1:
+                        FinishNextToken(isClob ? Token : TextConstants.TokenStringDoubleQuote, isClob);
+                        return Token == TextConstants.TokenStringDoubleQuote ? TextConstants.TokenEof : c;
                     case '"':
                         FinishNextToken(isClob ? Token : TextConstants.TokenStringDoubleQuote, isClob);
                         return c;
