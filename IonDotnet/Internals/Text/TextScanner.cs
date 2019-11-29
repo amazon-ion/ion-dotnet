@@ -1964,11 +1964,6 @@ namespace IonDotnet.Internals.Text
             while (true)
             {
                 var c = ReadTripleQuotedChar(isClob);
-                // CLOB texts should be only 7-bit ASCII characters
-                if (isClob)
-                {
-                    Required7BitChar(c);
-                }
                 switch (c)
                 {
                     case CharacterSequence.CharSeqStringTerminator:
@@ -2013,6 +2008,11 @@ namespace IonDotnet.Internals.Text
                     //                        sb.Append(Characters.GetHighSurrogate(c));
                     //                        c = Characters.GetLowSurrogate(c);
                     //                    }
+                }
+                else
+                {
+                    // CLOB texts should be only 7-bit ASCII characters
+                    Required7BitChar(c);
                 }
 
                 sb.Append((char)c);
