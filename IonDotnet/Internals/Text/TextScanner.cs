@@ -992,9 +992,9 @@ namespace IonDotnet.Internals.Text
             {
                 var c = ReadStringChar(Characters.ProhibitionContext.ShortChar);
                 // CLOB texts should be only 7-bit ASCII characters
-                if (isClob && !Characters.Is7BitChar(c))
+                if (isClob)
                 {
-                    throw new IonException($"Illegal character: {(char)c}. All characters must be 7-bit ASCII");
+                    Required7BitChar(c);
                 }
                 switch (c)
                 {
@@ -1964,6 +1964,11 @@ namespace IonDotnet.Internals.Text
             while (true)
             {
                 var c = ReadTripleQuotedChar(isClob);
+                // CLOB texts should be only 7-bit ASCII characters
+                if (isClob)
+                {
+                    Required7BitChar(c);
+                }
                 switch (c)
                 {
                     case CharacterSequence.CharSeqStringTerminator:
@@ -2011,6 +2016,14 @@ namespace IonDotnet.Internals.Text
                 }
 
                 sb.Append((char)c);
+            }
+        }
+
+        private void Required7BitChar(int c)
+        {
+            if (!Characters.Is7BitChar(c))
+            {
+                throw new IonException($"Illegal character: {(char)c}. All characters must be 7-bit ASCII");
             }
         }
 
