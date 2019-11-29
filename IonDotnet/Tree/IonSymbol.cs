@@ -5,6 +5,7 @@ namespace IonDotnet.Tree
     public sealed class IonSymbol : IonText
     {
         private int _sid;
+        private ImportLocation _importLocation;
 
         public IonSymbol(string text, int sid = SymbolToken.UnknownSid) : this(new SymbolToken(text, sid))
         {
@@ -13,6 +14,7 @@ namespace IonDotnet.Tree
         public IonSymbol(SymbolToken symbolToken) : base(symbolToken.Text, symbolToken == default)
         {
             _sid = symbolToken.Sid;
+            _importLocation = symbolToken.ImportLocation;
         }
 
         private IonSymbol(bool isNull) : base(null, isNull)
@@ -28,7 +30,7 @@ namespace IonDotnet.Tree
         {
             if (!base.IsEquivalentTo(other))
                 return false;
-            
+
             if (!(other is IonSymbol oSymbol))
                 return false;
 
@@ -63,11 +65,12 @@ namespace IonDotnet.Tree
 
         public SymbolToken SymbolValue
         {
-            get => new SymbolToken(StringVal, _sid);
+            get => new SymbolToken(StringVal, _sid, _importLocation);
             set
             {
                 StringValue = value.Text;
                 _sid = value.Sid;
+                _importLocation = value.ImportLocation;
             }
         }
     }

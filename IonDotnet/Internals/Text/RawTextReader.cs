@@ -705,7 +705,7 @@ namespace IonDotnet.Internals.Text
                     }
 
                     var text = symtab.FindKnownSymbol(a.Sid);
-                    yield return new SymbolToken(text, a.Sid);
+                    yield return new SymbolToken(text, a.Sid, a.ImportLocation);
                 }
                 else
                 {

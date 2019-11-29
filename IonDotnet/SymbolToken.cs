@@ -18,6 +18,11 @@ namespace IonDotnet
         public const int UnknownSid = -1;
 
         /// <summary>
+        /// The default import location, corresponds to not_found/unknown
+        /// </summary>
+        public static readonly ImportLocation UnknownImportLocation = new ImportLocation(ImportLocation.UnknownImportName, UnknownSid);
+
+        /// <summary>
         /// The default value, corresponds to not_found/unknown
         /// </summary>
         public static readonly SymbolToken None = default;
@@ -41,6 +46,26 @@ namespace IonDotnet
 
             Text = text;
             _sid = sid + 1;
+            ImportLocation = UnknownImportLocation;
+        }
+
+        /// <summary>
+        /// Create a new symbol token.
+        /// </summary>
+        /// <param name="text">Text</param>
+        /// <param name="sid">Sid</param>
+        /// <param name="importLocation">ImportLocation</param>
+        public SymbolToken(string text, int sid, ImportLocation importLocation)
+        {
+            /**
+             * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
+             * Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
+             * returned value
+             */
+
+            Text = text;
+            _sid = sid + 1;
+            ImportLocation = importLocation;
         }
 
         /// <summary>
@@ -53,10 +78,15 @@ namespace IonDotnet
         /// </summary>
         public int Sid => _sid - 1;
 
-        //Override everything to avoid boxing allocation
-        public override string ToString() => $"SymbolToken::{{text:{Text}, id:{Sid}}}";
+        /// <summary>
+        /// The import location of this symbol token.
+        /// </summary>
+        public readonly ImportLocation ImportLocation;
 
-        public static bool operator ==(SymbolToken x, SymbolToken y) => x.Text == y.Text && x._sid == y._sid;
+        //Override everything to avoid boxing allocation
+        public override string ToString() => $"SymbolToken::{{text:{Text}, importLocation:{ImportLocation.ToString()}}}";
+
+        public static bool operator ==(SymbolToken x, SymbolToken y) => x.Text == y.Text && x.ImportLocation == y.ImportLocation;
 
         public static bool operator !=(SymbolToken x, SymbolToken y) => !(x == y);
 
@@ -73,7 +103,7 @@ namespace IonDotnet
             if (other.Text != null)
                 return false;
 
-            return other.Sid == Sid;
+            return other.ImportLocation == ImportLocation;
         }
     }
 }
