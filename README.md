@@ -1,5 +1,7 @@
 ## Ion.net
 
+[![Build Status](https://travis-ci.com/amzn/ion-dotnet.svg?branch=master)](https://travis-ci.com/amzn/ion-dotnet)
+
 Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for .NET
 
 **Note**: This project is still in early development and not ready for production use.
