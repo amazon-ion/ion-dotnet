@@ -453,7 +453,12 @@ namespace IonDotnet.Internals.Text
             if (_v.TypeSet.HasFlag(ScalarType.Int) && !_v.TypeSet.HasFlag(ScalarType.String))
             {
                 //lookup symbol string from sid
-                _v.AddString(GetSymbolTable().FindKnownSymbol(_v.IntValue));
+                var text = GetSymbolTable().FindKnownSymbol(_v.IntValue);
+                if (text == null && (_v.IntValue > GetSymbolTable().MaxId || _v.IntValue < 0))
+                {
+                    throw new UnknownSymbolException(_v.IntValue);
+                }
+                _v.AddString(text);
             }
             else if (_v.StringValue != null && !_v.TypeSet.HasFlag(ScalarType.Int))
             {

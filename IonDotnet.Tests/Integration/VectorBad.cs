@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using IonDotnet.Systems;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -10,84 +12,96 @@ namespace IonDotnet.Tests.Integration
     [TestClass]
     public class VectorBad
     {
+        private static readonly HashSet<string> Excludes = new HashSet<string>
+        {
+            "clob_3.ion",
+            "clob_4.ion",
+            "clob_5.ion",
+            "clob_6.ion",
+            "clob_7.ion",
+            "clob_8.ion",
+            "clob_9.ion",
+            "clobWithLongLiteralBlockCommentAtEnd.ion",
+            "clobWithLongLiteralCommentsInMiddle.ion",
+            "clobWithNonAsciiCharacter.ion",
+            "clobWithShortLiteralBlockCommentAtEnd.ion",
+            "clobWithShortLiteralInlineCommentAtEnd.ion",
+            "listWithClosingBrace.ion",
+            "listWithClosingParen.ion",
+            "longStringSplitEscape_1.ion",
+            "longStringSplitEscape_2.ion",
+            "longStringSplitEscape_3.ion",
+            "offsetHours_1.ion",
+            "offsetHours_2.ion",
+            "offsetMinutes_1.ion",
+            "offsetMinutes_2.ion",
+            "offsetMinutes_3.ion",
+            "sexpWithClosingBrace.ion",
+            "sexpWithClosingBracket.ion",
+            "shortUtf8Sequence_1.ion",
+            "shortUtf8Sequence_2.ion",
+            "shortUtf8Sequence_3.ion",
+            "string_3.ion",
+            "string_4.ion",
+            "stringWithEof.ion",
+            "structWithClosingBracket.ion",
+            "structWithClosingParen.ion",
+            "symbol_10.ion",
+            "symbol_11.ion",
+            "clobWithLongLiteralInlineCommentAtEnd.ion"
+        };
+
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
         private static readonly DirectoryInfo BadDir = IonTestDir.GetDirectories("bad").First();
+        private static readonly DirectoryInfo BadUtf8Dir = IonTestDir.GetDirectories("bad/utf8").First();
+        private static readonly DirectoryInfo BadTimestampDir = IonTestDir.GetDirectories("bad/timestamp").First();
+        private static readonly DirectoryInfo BadOutOfRangeDir = IonTestDir.GetDirectories("bad/timestamp/outOfRange").First();
 
-        private static FileInfo GetFile(DirectoryInfo dir, string name)
+        private static IEnumerable<FileInfo> GetIonFiles(DirectoryInfo dirInfo)
+           => dirInfo.GetFiles()
+           .Where(f => !Excludes.Contains(f.Name)
+                       && f.Name.EndsWith(".ion") || f.Name.EndsWith(".10n"));
+
+        public static IEnumerable<object[]> BadFiles()
         {
-            return new FileInfo(Path.Combine(dir.FullName, name));
+            return GetIonFiles(BadDir)
+                .Select(f => new[] { f });
         }
 
-        [DataRow("annotationFalse.ion")]
-        [DataRow("annotationNan.ion")]
-        [DataRow("annotationNull.ion")]
-        [DataRow("annotationNullInt.ion")]
-        [DataRow("annotationSymbolIDUnmapped.ion")]
-        [DataRow("annotationTrue.ion")]
-        [DataRow("annotationWithoutValue.ion")]
-        [TestMethod]
-        [ExpectedException(typeof(IonException), AllowDerivedTypes = true)]
-        public void Text_InvalidAnnotation(string fileName)
+        public static IEnumerable<object[]> BadUtf8Files()
         {
-            var fileInfo = GetFile(BadDir, fileName);
-            IonLoader.WithReaderOptions(new ReaderOptions {Format = ReaderFormat.Text}).Load(fileInfo);
+            return GetIonFiles(BadUtf8Dir)
+                .Select(f => new[] { f });
         }
 
-        [DataRow("int_1.ion")]
-        [DataRow("int_2.ion")]
-        [DataRow("int_3.ion")]
-        [DataRow("int_6.ion")]
-        [DataRow("int_7.ion")]
-        [DataRow("int_8.ion")]
-        [DataRow("int_9.ion")]
-        [DataRow("int_10.ion")]
-        [TestMethod]
-        [ExpectedException(typeof(FormatException), AllowDerivedTypes = true)]
-        public void Int_Invalid(string fileName)
+        public static IEnumerable<object[]> BadTimestamp()
         {
-            var fileInfo = GetFile(BadDir, fileName);
-            IonLoader.WithReaderOptions(new ReaderOptions {Format = ReaderFormat.Text}).Load(fileInfo);
+            return GetIonFiles(BadTimestampDir)
+                .Select(f => new[] { f });
         }
 
-        [DataRow("float_1.ion")]
-        [DataRow("float_2.ion")]
-        [DataRow("float_3.ion")]
-        [DataRow("float_4.ion")]
-        [DataRow("float_5.ion")]
-        [DataRow("float_6.ion")]
-        [DataRow("float_7.ion")]
-        [DataRow("float_8.ion")]
-        [DataRow("float_9.ion")]
-        [DataRow("float_10.ion")]
-        [DataRow("float_11.ion")]
-        [TestMethod]
-        [ExpectedException(typeof(FormatException), AllowDerivedTypes = true)]
-        public void Float_Invalid(string fileName)
+        public static IEnumerable<object[]> BadOutOfRangeTimestamp()
         {
-            var fileInfo = GetFile(BadDir, fileName);
-            IonLoader.WithReaderOptions(new ReaderOptions {Format = ReaderFormat.Text}).Load(fileInfo);
+            return GetIonFiles(BadOutOfRangeDir)
+                .Select(f => new[] { f });
         }
-        
-        [DataRow("decimal_1.ion")]
-        [DataRow("decimal_2.ion")]
-        [DataRow("decimal_3.ion")]
-        [DataRow("decimal_4.ion")]
-        [DataRow("decimal_5.ion")]
-        [DataRow("decimal_6.ion")]
-        [DataRow("decimal_7.ion")]
-        [DataRow("decimal_8.ion")]
-        [DataRow("decimal_9.ion")]
-        [DataRow("decimal_10.ion")]
-        [DataRow("decimal_11.ion")]
-        [DataRow("decimal_12.ion")]
-        [DataRow("decimal_13.ion")]
-        [DataRow("decimal_14.ion")]
-        [TestMethod]
-        [ExpectedException(typeof(FormatException), AllowDerivedTypes = true)]
-        public void Decimal_Invalid(string fileName)
+
+        public static string TestCaseName(MethodInfo methodInfo, object[] data)
         {
-            var fileInfo = GetFile(BadDir, fileName);
-            IonLoader.WithReaderOptions(new ReaderOptions {Format = ReaderFormat.Text}).Load(fileInfo);
+            var fileFullName = ((FileInfo)data[0]).FullName;
+            var testDirIdx = fileFullName.IndexOf(IonTestDir.FullName, StringComparison.OrdinalIgnoreCase);
+            return fileFullName.Substring(testDirIdx + IonTestDir.FullName.Length);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
+        [DynamicData(nameof(BadFiles), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(BadUtf8Files), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(BadTimestamp), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        [DynamicData(nameof(BadOutOfRangeTimestamp), DynamicDataSourceType.Method, DynamicDataDisplayName = nameof(TestCaseName))]
+        public void LoadBad(FileInfo fi)
+        {
+            IonLoader.WithReaderOptions(new ReaderOptions { Format = ReaderFormat.Text }).Load(fi);
         }
     }
 }
