@@ -25,7 +25,10 @@ namespace IonDotnet.Tests.Integration
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
             "subfieldVarInt.ion",
-            "whitespace.ion"
+            "whitespace.ion",
+            "localSymbolTableAppend.ion",
+            "stringUtf8.ion"
+
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();

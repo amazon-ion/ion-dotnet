@@ -13,6 +13,7 @@ namespace IonDotnet.Tests.Systems
         /// See 'cascading_symtabs.ion'
         /// </summary>
         [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
         public void CascadingSymtab_TestCorrectSymbolDecoding()
         {
             var file = DirStructure.OwnFile("text/cascading_symtabs.ion");
