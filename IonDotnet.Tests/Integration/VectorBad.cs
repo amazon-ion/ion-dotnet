@@ -43,7 +43,6 @@ namespace IonDotnet.Tests.Integration
             "shortUtf8Sequence_3.ion",
             "string_3.ion",
             "string_4.ion",
-            "stringWithEof.ion",
             "structWithClosingBracket.ion",
             "structWithClosingParen.ion",
             "symbol_10.ion",
