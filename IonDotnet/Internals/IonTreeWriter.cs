@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using IonDotnet.Systems;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 
 namespace IonDotnet.Internals
 {

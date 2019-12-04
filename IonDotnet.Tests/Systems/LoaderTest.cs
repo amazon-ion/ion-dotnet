@@ -1,7 +1,7 @@
 using System.Linq;
 using IonDotnet.Systems;
 using IonDotnet.Tests.Common;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Systems

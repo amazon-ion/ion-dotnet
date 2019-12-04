@@ -2,7 +2,7 @@ using System.IO;
 using System.Text;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 
 namespace IonDotnet.Systems
 {

@@ -1,4 +1,4 @@
-﻿using IonDotnet.Tree;
+﻿using IonDotnet.Tree.Impl;
 
 namespace IonDotnet
 {

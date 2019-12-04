@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree

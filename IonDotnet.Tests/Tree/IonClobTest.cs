@@ -1,6 +1,6 @@
 using System;
 using System.Text;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
