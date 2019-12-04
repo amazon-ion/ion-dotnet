@@ -1460,7 +1460,7 @@ namespace IonDotnet.Internals.Text
 
         /// <summary>
         /// Any CLOB with double quote, can hold only one " " and the only
-        /// acceptable character after the second double quote is }}
+        /// acceptable character after the second double quote is }
         /// </summary>
         private void HandleClobsWithDoubleQuote()
         {
