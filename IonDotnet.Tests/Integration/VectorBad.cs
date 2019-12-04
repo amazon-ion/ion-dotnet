@@ -28,8 +28,6 @@ namespace IonDotnet.Tests.Integration
             "clobWithShortLiteralInlineCommentAtEnd.ion",
             "listWithClosingBrace.ion",
             "listWithClosingParen.ion",
-            "longStringSplitEscape_1.ion",
-            "longStringSplitEscape_2.ion",
             "longStringSplitEscape_3.ion",
             "offsetHours_1.ion",
             "offsetHours_2.ion",
@@ -41,13 +39,9 @@ namespace IonDotnet.Tests.Integration
             "shortUtf8Sequence_1.ion",
             "shortUtf8Sequence_2.ion",
             "shortUtf8Sequence_3.ion",
-            "string_3.ion",
-            "string_4.ion",
             "stringWithEof.ion",
             "structWithClosingBracket.ion",
             "structWithClosingParen.ion",
-            "symbol_10.ion",
-            "symbol_11.ion",
             "clobWithLongLiteralInlineCommentAtEnd.ion"
         };
 
