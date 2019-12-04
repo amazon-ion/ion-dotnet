@@ -164,7 +164,7 @@ namespace IonDotnet.Internals.Text
         protected int _lobValuePosition;
         protected byte[] _lobBuffer;
 
-        // For any container being opened, its closing symbole should come before
+        // For any container being opened, its closing symbol should come before
         // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
         private Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
 
