@@ -26,6 +26,7 @@ namespace IonDotnet.Tests.Integration
             "clobWithNonAsciiCharacter.ion",
             "clobWithShortLiteralBlockCommentAtEnd.ion",
             "clobWithShortLiteralInlineCommentAtEnd.ion",
+            "clobWithLongLiteralInlineCommentAtEnd.ion",
             "listWithClosingBrace.ion",
             "listWithClosingParen.ion",
             "longStringSplitEscape_1.ion",
@@ -46,8 +47,7 @@ namespace IonDotnet.Tests.Integration
             "structWithClosingBracket.ion",
             "structWithClosingParen.ion",
             "symbol_10.ion",
-            "symbol_11.ion",
-            "clobWithLongLiteralInlineCommentAtEnd.ion"
+            "symbol_11.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
