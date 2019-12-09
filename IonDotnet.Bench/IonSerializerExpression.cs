@@ -12,17 +12,17 @@ namespace IonDotnet.Bench
     {
         private static readonly MethodInfo EnumGetnameMethod = typeof(Enum).GetMethod(nameof(Enum.GetName));
 
-        private static readonly MethodInfo WriteNullTypeMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteNull), new[] {typeof(IonType)});
-        private static readonly MethodInfo WriteStringMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteString));
-        private static readonly MethodInfo WriteBoolMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteBool));
-        private static readonly MethodInfo WriteIntMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteInt), new[] {typeof(long)});
-        private static readonly MethodInfo WriteBigIntegerMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteInt), new[] {typeof(BigInteger)});
-        private static readonly MethodInfo WriteFloatMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteFloat));
-        private static readonly MethodInfo WriteTimestampMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteTimestamp));
-        private static readonly MethodInfo WriteDecimalMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteDecimal), new[] {typeof(decimal)});
-        private static readonly MethodInfo WriteBigDecimalMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteDecimal), new[] {typeof(BigDecimal)});
-        private static readonly MethodInfo WriteBlobMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteBlob));
-        private static readonly MethodInfo WriteSymbolMethod = typeof(IValueWriter).GetMethod(nameof(IValueWriter.WriteSymbol));
+        private static readonly MethodInfo WriteNullTypeMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteNull), new[] {typeof(IonType)});
+        private static readonly MethodInfo WriteStringMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteString));
+        private static readonly MethodInfo WriteBoolMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteBool));
+        private static readonly MethodInfo WriteIntMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] {typeof(long)});
+        private static readonly MethodInfo WriteBigIntegerMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteInt), new[] {typeof(BigInteger)});
+        private static readonly MethodInfo WriteFloatMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteFloat));
+        private static readonly MethodInfo WriteTimestampMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteTimestamp));
+        private static readonly MethodInfo WriteDecimalMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteDecimal), new[] {typeof(decimal)});
+        private static readonly MethodInfo WriteBigDecimalMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteDecimal), new[] {typeof(BigDecimal)});
+        private static readonly MethodInfo WriteBlobMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteBlob));
+        private static readonly MethodInfo WriteSymbolMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.WriteSymbol));
 
         private static readonly MethodInfo StepInMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.StepIn));
         private static readonly MethodInfo StepOutMethod = typeof(IIonWriter).GetMethod(nameof(IIonWriter.StepOut));
