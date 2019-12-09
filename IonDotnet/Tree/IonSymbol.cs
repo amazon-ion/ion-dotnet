@@ -7,7 +7,7 @@ namespace IonDotnet.Tree
         private int _sid;
         private ImportLocation _importLocation;
 
-        public IonSymbol(string text, int sid = SymbolToken.UnknownSid) : this(new SymbolToken(text, sid))
+        public IonSymbol(string text, int sid = SymbolToken.UnknownSid, ImportLocation importLocation = default) : this(new SymbolToken(text, sid, importLocation))
         {
         }
 
