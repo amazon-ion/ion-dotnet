@@ -1,6 +1,6 @@
 using System;
 
-namespace IonDotnet.Conversions
+namespace IonDotnet.Internals.Conversions
 {
     /// <summary>
     /// List of C# types that the ion value translates to

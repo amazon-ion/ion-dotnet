@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using IonDotnet.Conversions;
 
 // ReSharper disable InconsistentNaming
 

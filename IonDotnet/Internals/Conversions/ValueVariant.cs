@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace IonDotnet.Conversions
+namespace IonDotnet.Internals.Conversions
 {
     /// <summary>
     /// Structure that holds the loaded scalar value from IonReader

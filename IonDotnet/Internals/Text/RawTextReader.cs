@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using IonDotnet.Conversions;
+using IonDotnet.Internals.Conversions;
 using IonDotnet.Systems;
 
 // ReSharper disable ImpureMethodCallOnReadonlyValueField
