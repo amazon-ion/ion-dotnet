@@ -5,7 +5,7 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonInt : IonValue, IIonInt
+    internal sealed class IonInt : IonValue, IIonInt
     {
         // This mask combine the 4th and 5th bit of the flag byte
         private const int IntSizeMask = 0x18;

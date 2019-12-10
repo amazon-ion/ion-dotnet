@@ -9,7 +9,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// A container that is a sequence of values.
     /// </summary>
-    public abstract class IonSequence : IonContainer, IList<IonValue>, IIonSequence
+    internal abstract class IonSequence : IonContainer, IList<IonValue>, IIonSequence
     {
         private List<IonValue> _children;
 

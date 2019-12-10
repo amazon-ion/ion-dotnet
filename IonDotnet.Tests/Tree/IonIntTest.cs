@@ -6,9 +6,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    public class IonIntTest : TreeTestBase
+    internal class IonIntTest : TreeTestBase
     {
-        protected override IonValue MakeMutableValue() => new IonInt(0);
+        internal override IonValue MakeMutableValue() => new IonInt(0);
 
         [TestMethod]
         public void Null()

@@ -4,7 +4,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// A Ion List value.
     /// </summary>
-    public sealed class IonList : IonSequence, IIonList
+    internal sealed class IonList : IonSequence, IIonList
     {
         public IonList() : this(false)
         {
@@ -12,7 +12,6 @@ namespace IonDotnet.Tree.Impl
 
         private IonList(bool isNull) : base(isNull)
         {
-            var foo = new ValueFactory();
         }
 
         /// <summary>

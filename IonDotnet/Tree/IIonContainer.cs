@@ -7,7 +7,5 @@ namespace IonDotnet.Tree
     {
         void MakeNull();
         int Count { get; }
-        bool Remove(IonValue item);
-        IEnumerator<IonValue> GetEnumerator();
     }
 }

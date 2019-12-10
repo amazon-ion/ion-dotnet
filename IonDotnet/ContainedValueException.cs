@@ -8,7 +8,7 @@ namespace IonDotnet
         {
         }
 
-        public ContainedValueException(IonValue value) : this(value.ToString())
+        internal ContainedValueException(IonValue value) : this(value.ToString())
         {
         }
 

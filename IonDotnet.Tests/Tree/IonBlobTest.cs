@@ -5,9 +5,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    public class IonBlobTest : IonLobTest
+    internal class IonBlobTest : IonLobTest
     {
-        protected override IonValue MakeMutableValue()
+        internal override IonValue MakeMutableValue()
         {
             return new IonBlob(new byte[0]);
         }

@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    public abstract class IonLobTest : TreeTestBase
+    internal abstract class IonLobTest : TreeTestBase
     {
         protected abstract IonLob MakeNullValue();
 

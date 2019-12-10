@@ -6,7 +6,7 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonStruct : IonContainer, IIonStruct
+    internal sealed class IonStruct : IonContainer, IIonStruct
     {
         private List<IonValue> _values;
 

@@ -30,7 +30,7 @@ namespace IonDotnet.Systems
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(string ionText)
+        internal IonDatagram Load(string ionText)
         {
             var reader = IonReaderBuilder.Build(ionText, _readerOptions);
             return WriteDatagram(reader);
@@ -42,7 +42,7 @@ namespace IonDotnet.Systems
         /// <param name="ionText">Ion text string.</param>
         /// <param name="readerTable">Reader's local symbol table.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(string ionText, out ISymbolTable readerTable)
+        internal IonDatagram Load(string ionText, out ISymbolTable readerTable)
         {
             var reader = IonReaderBuilder.Build(ionText, _readerOptions);
             var dg = WriteDatagram(reader);
@@ -60,14 +60,14 @@ namespace IonDotnet.Systems
 //            throw new NotImplementedException();
 //        }
 
-        public IonDatagram Load(Stream stream)
+        internal IonDatagram Load(Stream stream)
         {
             var reader = IonReaderBuilder.Build(stream, _readerOptions);
             var dg = WriteDatagram(reader);
             return dg;
         }
 
-        public IonDatagram Load(Stream stream, out ISymbolTable readerTable)
+        internal IonDatagram Load(Stream stream, out ISymbolTable readerTable)
         {
             var reader = IonReaderBuilder.Build(stream, _readerOptions);
             var dg = WriteDatagram(reader);
@@ -80,7 +80,7 @@ namespace IonDotnet.Systems
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(FileInfo ionFile)
+        internal IonDatagram Load(FileInfo ionFile)
         {
             if (!ionFile.Exists)
             {
@@ -100,7 +100,7 @@ namespace IonDotnet.Systems
         /// <param name="ionFile">Ion file.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(FileInfo ionFile, out ISymbolTable readerTable)
+        internal IonDatagram Load(FileInfo ionFile, out ISymbolTable readerTable)
         {
             using (var stream = ionFile.OpenRead())
             {
@@ -114,7 +114,7 @@ namespace IonDotnet.Systems
         /// </summary>
         /// <param name="data">Ion data.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(byte[] data)
+        internal IonDatagram Load(byte[] data)
         {
             using (var stream = new MemoryStream(data))
             {
@@ -129,7 +129,7 @@ namespace IonDotnet.Systems
         /// <param name="data">Ion data.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
         /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        public IonDatagram Load(byte[] data, out ISymbolTable readerTable)
+        internal IonDatagram Load(byte[] data, out ISymbolTable readerTable)
         {
             using (var stream = new MemoryStream(data))
             {

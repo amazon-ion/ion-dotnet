@@ -9,7 +9,7 @@ namespace IonDotnet.Tree.Impl
     /// Base class for all container type (List,Struct,Sexp,Datagram) Ion values.
     /// This class also implements the <see cref="ICollection"/> interface.
     /// </summary>
-    public abstract class IonContainer : IonValue, ICollection<IonValue>, IIonContainer
+    internal abstract class IonContainer : IonValue, ICollection<IonValue>, IIonContainer
     {
         protected IonContainer(bool isNull) : base(isNull)
         {

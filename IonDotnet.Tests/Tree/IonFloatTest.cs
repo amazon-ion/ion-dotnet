@@ -5,9 +5,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    public class IonFloatTest : TreeTestBase
+    internal class IonFloatTest : TreeTestBase
     {
-        protected override IonValue MakeMutableValue()
+        internal override IonValue MakeMutableValue()
         {
             return new IonFloat(0.2);
         }

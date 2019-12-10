@@ -7,7 +7,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// A value that holds a blob of byte data.
     /// </summary>
-    public abstract class IonLob : IonValue, IIonLob
+    internal abstract class IonLob : IonValue, IIonLob
     {
         protected byte[] ByteBuffer;
 

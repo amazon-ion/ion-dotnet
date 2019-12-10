@@ -2,7 +2,7 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonSymbol : IonText, IIonSymbol
+    internal sealed class IonSymbol : IonText, IIonSymbol
     {
         private int _sid;
 

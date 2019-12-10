@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    public abstract class IonSequenceTest : IonContainerTest
+    internal abstract class IonSequenceTest : IonContainerTest
     {
         [TestMethod]
         [DataRow(0, 1)]

@@ -9,7 +9,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// Ion value representing a floating point number.
     /// </summary>
-    public sealed class IonFloat : IonValue, IIonFloat
+    internal sealed class IonFloat : IonValue, IIonFloat
     {
         private double _d;
 

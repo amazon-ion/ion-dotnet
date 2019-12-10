@@ -5,7 +5,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// Ion object holding a boolean value
     /// </summary>
-    public sealed class IonBool : IonValue, IIonBool
+    internal sealed class IonBool : IonValue, IIonBool
     {
         public IonBool(bool value) : base(false)
         {

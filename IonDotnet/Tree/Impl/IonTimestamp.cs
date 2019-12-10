@@ -2,7 +2,7 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonTimestamp : IonValue, IIonTimestamp
+    internal sealed class IonTimestamp : IonValue, IIonTimestamp
     {
         private Timestamp _timestamp;
 

@@ -6,7 +6,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// Represent a null.null value.
     /// </summary>
-    public sealed class IonNull : IonValue, IIonNull
+    internal sealed class IonNull : IonValue, IIonNull
     {
         public IonNull() : base(true)
         {

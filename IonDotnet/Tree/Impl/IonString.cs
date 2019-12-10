@@ -6,7 +6,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// An Ion string value.
     /// </summary>
-    public sealed class IonString : IonText, IIonString
+    internal sealed class IonString : IonText, IIonString
     {
         public IonString(string value) : base(value, value is null)
         {

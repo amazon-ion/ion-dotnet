@@ -3,7 +3,7 @@ using IonDotnet.Internals;
 
 namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonDecimal : IonValue, IIonDecimal
+    internal sealed class IonDecimal : IonValue, IIonDecimal
     {
         private BigDecimal _val;
 

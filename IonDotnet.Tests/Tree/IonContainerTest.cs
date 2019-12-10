@@ -6,17 +6,17 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    public abstract class IonContainerTest : TreeTestBase
+    internal abstract class IonContainerTest : TreeTestBase
     {
         /// <summary>
         /// Implementations should return a new null container.
         /// </summary>
-        protected abstract IonContainer MakeNullValue();
+        internal abstract IonContainer MakeNullValue();
 
         /// <summary>
         /// Implementations should add <paramref name="item"/> to <paramref name="container"/>.
         /// </summary>
-        protected abstract void DoAdd(IonContainer container, IonValue item);
+        internal abstract void DoAdd(IonContainer container, IonValue item);
 
         [TestMethod]
         public void Null()

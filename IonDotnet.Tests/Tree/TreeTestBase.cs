@@ -4,9 +4,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    public abstract class TreeTestBase
+    internal abstract class TreeTestBase
     {
-        protected abstract IonValue MakeMutableValue();
+        internal abstract IonValue MakeMutableValue();
 
         [DataRow(new string[0])]
         [DataRow(new[] {"a"})]

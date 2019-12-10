@@ -10,7 +10,6 @@ namespace IonDotnet.Tree
         void AddTypeAnnotation(string annotation);
         void AddTypeAnnotation(SymbolToken annotation);
         void ClearAnnotations();
-        bool IsEquivalentTo(IonValue other);
         void MakeReadOnly();
         string ToPrettyString();
         void WriteTo(IIonWriter writer);

@@ -9,7 +9,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// An Ion clob value.
     /// </summary>
-    public sealed class IonClob : IonLob, IIonClob
+    internal sealed class IonClob : IonLob, IIonClob
     {
         public IonClob(ReadOnlySpan<byte> bytes) : base(bytes)
         {

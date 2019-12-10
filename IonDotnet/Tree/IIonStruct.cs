@@ -1,11 +1,9 @@
-﻿namespace IonDotnet.Tree.Impl
+﻿using IonDotnet.Tree.Impl;
+namespace IonDotnet.Tree
 {
     public interface IIonStruct : IIonContainer
     {
-        void Add(IonValue item);
-        void Add(string fieldName, IonValue value);
         void Clear();
-        bool Contains(IonValue item);
         bool RemoveField(string fieldName);
         bool ContainsField(string fieldName);
     }

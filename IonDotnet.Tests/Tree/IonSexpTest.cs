@@ -4,19 +4,19 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    public class IonSexpTest : IonSequenceTest
+    internal class IonSexpTest : IonSequenceTest
     {
-        protected override IonValue MakeMutableValue()
+        internal override IonValue MakeMutableValue()
         {
             return new IonSexp();
         }
 
-        protected override IonContainer MakeNullValue()
+        internal override IonContainer MakeNullValue()
         {
             return IonSexp.NewNull();
         }
 
-        protected override void DoAdd(IonContainer container, IonValue item)
+        internal override void DoAdd(IonContainer container, IonValue item)
         {
             container.Add(item);
         }

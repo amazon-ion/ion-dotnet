@@ -4,7 +4,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// Represent Ion textual values.
     /// </summary>
-    public abstract class IonText : IonValue, IIonText
+    internal abstract class IonText : IonValue, IIonText
     {
         protected string StringVal;
 

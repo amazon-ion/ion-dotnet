@@ -4,7 +4,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// An Ion S-exp value.
     /// </summary>
-    public sealed class IonSexp : IonSequence, IIonSexp
+    internal sealed class IonSexp : IonSequence, IIonSexp
     {
         public IonSexp() : this(false)
         {

@@ -7,7 +7,7 @@ namespace IonDotnet.Tree.Impl
     /// <summary>
     /// An Ion blob value.
     /// </summary>
-    public sealed class IonBlob : IonLob, IIonBlob
+    internal sealed class IonBlob : IonLob, IIonBlob
     {
         public IonBlob(ReadOnlySpan<byte> bytes) : base(bytes)
         {

@@ -5,21 +5,21 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    public class IonStructTest : IonContainerTest
+    internal class IonStructTest : IonContainerTest
     {
         private static int _serial = 1;
 
-        protected override IonValue MakeMutableValue()
+        internal override IonValue MakeMutableValue()
         {
             return new IonStruct();
         }
 
-        protected override IonContainer MakeNullValue()
+        internal override IonContainer MakeNullValue()
         {
             return IonStruct.NewNull();
         }
 
-        protected override void DoAdd(IonContainer container, IonValue item)
+        internal override void DoAdd(IonContainer container, IonValue item)
         {
             var fieldName = $"Field{_serial++}";
             var v = (IonStruct) container;

@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    public class IonClobTest : IonLobTest
+    internal class IonClobTest : IonLobTest
     {
         private static readonly Encoding[] Encodings =
         {
@@ -14,7 +14,7 @@ namespace IonDotnet.Tests.Tree
             Encoding.UTF8
         };
 
-        protected override IonValue MakeMutableValue()
+        internal override IonValue MakeMutableValue()
         {
             return new IonClob(new byte[0]);
         }
