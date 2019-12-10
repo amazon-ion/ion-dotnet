@@ -22,11 +22,11 @@ namespace IonDotnet.Tests.Common
 
             Assert.AreEqual(sid, symbolTable.FindSymbolId(text));
             var token = symbolTable.Find(text);
-            Assert.AreEqual(sid, token.Sid);
+            Assert.AreEqual(sid, token.ImportLocation.Sid);
             Assert.AreEqual(text, token.Text);
 
             token = symbolTable.Intern(text);
-            Assert.AreEqual(sid, token.Sid);
+            Assert.AreEqual(sid, token.ImportLocation.Sid);
             Assert.AreEqual(text, token.Text);
         }
     }

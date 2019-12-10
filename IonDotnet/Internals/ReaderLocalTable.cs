@@ -65,14 +65,14 @@ namespace IonDotnet.Internals
             {
                 var t = import.Find(text);
                 if (t != default)
-                    return new SymbolToken(t.Text, offset + t.Sid);
+                    return new SymbolToken(t.Text, offset + t.Sid, new ImportLocation(t.Text, offset + t.ImportLocation.Sid));
                 offset += import.MaxId;
             }
 
             for (var i = 0; i < _ownSymbols.Count; i++)
             {
                 if (_ownSymbols[i] == text)
-                    return new SymbolToken(text, i + 1 + _importedMaxId);
+                    return new SymbolToken(text, i + 1 + _importedMaxId, new ImportLocation(text, i + 1 + _importedMaxId));
             }
 
             return default;

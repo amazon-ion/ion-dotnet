@@ -111,7 +111,7 @@ namespace IonDotnet.Internals
 
             var internedText = _symbolNames[sid - 1];
             // Normalize the SID and import reference to this table.
-            return new SymbolToken(internedText, sid, new ImportLocation(Name, sid));
+            return new SymbolToken(internedText, SymbolToken.UnknownSid, new ImportLocation(Name, sid));
         }
 
         public int FindSymbolId(string name)

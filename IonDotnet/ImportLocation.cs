@@ -13,6 +13,15 @@
         /// </summary>
         public static readonly ImportLocation None = default;
 
+        /// <summary>
+        /// The import name of this import location.
+        /// </summary>
+        public readonly string ImportName;
+
+        /// <summary>
+        /// The ID of this import location.
+        /// </summary>
+        public readonly int Sid;
 
         /// <summary>
         /// Create a new ImportLocation struct.
@@ -25,16 +34,6 @@
             Sid = sid;
         }
 
-        /// <summary>
-        /// The import name of this import location.
-        /// </summary>
-        public readonly string ImportName;
-
-        /// <summary>
-        /// The ID of this import location.
-        /// </summary>
-        public readonly int Sid;
-
         public override string ToString() => $"ImportLocation::{{importName:{ImportName}, id:{Sid}}}";
 
         public static bool operator ==(ImportLocation x, ImportLocation y) => x.ImportName == y.ImportName && x.Sid == y.Sid;
@@ -42,6 +41,8 @@
         public static bool operator !=(ImportLocation x, ImportLocation y) => !(x == y);
 
         public override bool Equals(object that) => that is ImportLocation token && Equals(token);
+
+        public bool Equals(ImportLocation other) => this == other;
 
         public override int GetHashCode() => ImportName?.GetHashCode() ?? Sid;
     }

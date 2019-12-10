@@ -18,11 +18,6 @@ namespace IonDotnet
         public const int UnknownSid = -1;
 
         /// <summary>
-        /// The default import location, corresponds to not_found/unknown
-        /// </summary>
-        public static readonly ImportLocation UnknownImportLocation = new ImportLocation(ImportLocation.UnknownImportName, UnknownSid);
-
-        /// <summary>
         /// The default value, corresponds to not_found/unknown
         /// </summary>
         public static readonly SymbolToken None = default;
@@ -30,43 +25,6 @@ namespace IonDotnet
         public static readonly SymbolToken[] EmptyArray = new SymbolToken[0];
 
         private readonly int _sid;
-
-        /// <summary>
-        /// Create a new symbol token.
-        /// </summary>
-        /// <param name="text">Text</param>
-        /// <param name="sid">Sid</param>
-        public SymbolToken(string text, int sid)
-        {
-            /**
-             * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
-             * Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
-             * returned value
-             */
-
-            Text = text;
-            _sid = sid + 1;
-            ImportLocation = UnknownImportLocation;
-        }
-
-        /// <summary>
-        /// Create a new symbol token.
-        /// </summary>
-        /// <param name="text">Text</param>
-        /// <param name="sid">Sid</param>
-        /// <param name="importLocation">ImportLocation</param>
-        public SymbolToken(string text, int sid, ImportLocation importLocation)
-        {
-            /**
-             * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
-             * Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
-             * returned value
-             */
-
-            Text = text;
-            _sid = sid + 1;
-            ImportLocation = importLocation;
-        }
 
         /// <summary>
         /// The text of this symbol.
@@ -83,10 +41,29 @@ namespace IonDotnet
         /// </summary>
         public readonly ImportLocation ImportLocation;
 
-        //Override everything to avoid boxing allocation
-        public override string ToString() => $"SymbolToken::{{text:{Text}, importLocation:{ImportLocation.ToString()}}}";
+        /// <summary>
+        /// Create a new symbol token.
+        /// </summary>
+        /// <param name="text">Text</param>
+        /// <param name="sid">Sid</param>
+        /// <param name="importLocation">ImportLocation</param>
+        public SymbolToken(string text, int sid, ImportLocation importLocation = default)
+        {
+            /**
+             * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
+             * Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
+             * returned value
+             */
 
-        public static bool operator ==(SymbolToken x, SymbolToken y) => x.Text == y.Text && x.ImportLocation == y.ImportLocation;
+            Text = text;
+            _sid = sid + 1;
+            ImportLocation = importLocation;
+        }
+
+        //Override everything to avoid boxing allocation
+        public override string ToString() => $"SymbolToken::{{text:{Text}, id:{Sid}, importLocation:{ImportLocation.ToString()}}}";
+
+        public static bool operator ==(SymbolToken x, SymbolToken y) => x.Text == y.Text && x.Sid == y.Sid && x.ImportLocation == y.ImportLocation;
 
         public static bool operator !=(SymbolToken x, SymbolToken y) => !(x == y);
 

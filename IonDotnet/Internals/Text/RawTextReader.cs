@@ -704,7 +704,7 @@ namespace IonDotnet.Internals.Text
                         throw new UnknownSymbolException(a.Sid);
                     }
 
-                    var text = symtab.FindKnownSymbol(a.Sid);
+                    var text = symtab.FindKnownSymbol(a.ImportLocation.Sid);
                     yield return new SymbolToken(text, a.Sid, a.ImportLocation);
                 }
                 else

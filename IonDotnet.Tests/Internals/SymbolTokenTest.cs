@@ -16,6 +16,46 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        [DataRow("text1", 123, "text1", 123)]
+        [DataRow("text2", 456, "text2", 456)]
+        public void Bool_EqualsOperator(string text1, int sid1, string text2, int sid2)
+        {
+            var token1 = new SymbolToken(text1, sid1);
+            var token2 = new SymbolToken(text2, sid2);
+            Assert.IsTrue(token1 == token2);
+        }
+
+        [TestMethod]
+        [DataRow("text1", 123, "text1", 456)]
+        [DataRow("text2", 456, "text3", 456)]
+        public void Bool_NotEqualsOperator(string text1, int sid1, string text2, int sid2)
+        {
+            var token1 = new SymbolToken(text1, sid1);
+            var token2 = new SymbolToken(text2, sid2);
+            Assert.IsTrue(token1 != token2);
+        }
+
+        [TestMethod]
+        public void EqualsMethod()
+        {
+            var token = CreateSampleToken();
+            var equalToken = new SymbolToken("yo", 30);
+            var unEqualToken = new SymbolToken("yo", 31);
+            Assert.IsTrue(token.Equals(equalToken));
+            Assert.IsFalse(token.Equals(unEqualToken));
+        }
+
+        [TestMethod]
+        public void IsEquivalentTo()
+        {
+            var token = CreateSampleTokenWihtImportLocation();
+            var equalToken = new SymbolToken("yo", 30, new ImportLocation("hey", 40));
+            var unEqualToken = new SymbolToken("oy", 30, new ImportLocation("hey", 41));
+            Assert.IsTrue(token.IsEquivalentTo(equalToken));
+            Assert.IsFalse(token.IsEquivalentTo(unEqualToken));
+        }
+
+        [TestMethod]
         [DataRow(0)]
         [DataRow(1)]
         [DataRow(3)]
@@ -58,5 +98,6 @@ namespace IonDotnet.Tests.Internals
         }
 
         private static SymbolToken CreateSampleToken() => new SymbolToken("yo", 30);
+        private static SymbolToken CreateSampleTokenWihtImportLocation() => new SymbolToken("yo", 30, new ImportLocation("hey", 40));
     }
 }
