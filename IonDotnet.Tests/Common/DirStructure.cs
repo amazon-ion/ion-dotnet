@@ -8,7 +8,7 @@ namespace IonDotnet.Tests.Common
         private static DirectoryInfo GetRootDir()
         {
             var dirInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
-            while (!string.Equals(dirInfo.Name, "ion-dotnet2", StringComparison.OrdinalIgnoreCase))
+            while (!string.Equals(dirInfo.Name, "ion-dotnet", StringComparison.OrdinalIgnoreCase))
             {
                 dirInfo = Directory.GetParent(dirInfo.FullName);
             }
