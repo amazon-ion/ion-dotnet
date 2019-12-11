@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using IonDotnet.Conversions;
 using IonDotnet.Internals.Text;
-using IonDotnet.Systems;
+using IonDotnet.Builders;
 
 namespace IonDotnet.Serialization
 {

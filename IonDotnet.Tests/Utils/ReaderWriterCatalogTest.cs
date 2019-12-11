@@ -2,10 +2,11 @@ using System;
 using System.IO;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Binary;
-using IonDotnet.Systems;
+using IonDotnet.Builders;
+using IonDotnet.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests.Systems
+namespace IonDotnet.Tests.Utils
 {
     [TestClass]
     public class ReaderWriterCatalogTest

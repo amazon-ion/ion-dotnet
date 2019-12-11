@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using IonDotnet.Systems;
 using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Text

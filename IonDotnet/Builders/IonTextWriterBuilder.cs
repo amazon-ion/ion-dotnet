@@ -2,7 +2,7 @@
 using System.IO;
 using IonDotnet.Internals.Text;
 
-namespace IonDotnet.Systems
+namespace IonDotnet.Builders
 {
     public static class IonTextWriterBuilder
     {
