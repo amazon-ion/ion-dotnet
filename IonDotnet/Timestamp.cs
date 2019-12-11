@@ -365,7 +365,7 @@ namespace IonDotnet
 
             if (hour > 23 || minute > 59)
             {
-                throw new FormatException($"{s} - Offset { offset } must be between -1439 and 1439 inclusive and minute between 00 and 59.");
+                throw new FormatException($"{s} - Offset must be between -23:59 and 23:59");
             }
 
             return offset;
