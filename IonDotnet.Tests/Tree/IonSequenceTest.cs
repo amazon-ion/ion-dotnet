@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    internal abstract class IonSequenceTest : IonContainerTest
+    public abstract class IonSequenceTest : IonContainerTest
     {
         [TestMethod]
         [DataRow(0, 1)]
@@ -19,7 +19,7 @@ namespace IonDotnet.Tests.Tree
             IonValue r = null;
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 if (i == idx)
                 {
                     r = c;
@@ -40,10 +40,10 @@ namespace IonDotnet.Tests.Tree
         {
             Debug.Assert(count > idx);
             var v = (IonSequence) MakeMutableValue();
-            var r = MakeMutableValue();
+            var r = (IonValue) MakeMutableValue();
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 DoAdd(v, c);
             }
 
@@ -64,7 +64,7 @@ namespace IonDotnet.Tests.Tree
             var v = (IonSequence) MakeMutableValue();
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 DoAdd(v, c);
             }
 

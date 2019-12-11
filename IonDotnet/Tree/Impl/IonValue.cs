@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
 using IonDotnet.Systems;
-using IonDotnet.Utils;
 
 namespace IonDotnet.Tree.Impl
 {

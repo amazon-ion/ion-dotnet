@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    internal abstract class IonContainerTest : TreeTestBase
+    public abstract class IonContainerTest : TreeTestBase
     {
         /// <summary>
         /// Implementations should return a new null container.
@@ -21,7 +21,7 @@ namespace IonDotnet.Tests.Tree
         [TestMethod]
         public void Null()
         {
-            var v = MakeMutableValue();
+            var v = (IonValue) MakeMutableValue();
             var n = MakeNullValue();
             Assert.AreEqual(v.Type, n.Type);
             Assert.IsTrue(n.IsNull);
@@ -62,7 +62,7 @@ namespace IonDotnet.Tests.Tree
             Assert.AreEqual(0, v.Count);
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 list.Add(c);
                 DoAdd(v, c);
             }
@@ -95,7 +95,7 @@ namespace IonDotnet.Tests.Tree
             Assert.AreEqual(0, v.Count);
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 list.Add(c);
                 DoAdd(v, c);
             }
@@ -114,7 +114,7 @@ namespace IonDotnet.Tests.Tree
         public void Copy_NotSupported()
         {
             var v = (IonContainer) MakeMutableValue();
-            DoAdd(v, MakeMutableValue());
+            DoAdd(v, (IonValue) MakeMutableValue());
             var arr = new IonValue[1];
             v.CopyTo(arr, 0);
         }
@@ -131,7 +131,7 @@ namespace IonDotnet.Tests.Tree
             IonValue r = null;
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 if (i == idx)
                 {
                     r = c;
@@ -152,7 +152,7 @@ namespace IonDotnet.Tests.Tree
         public void AddChildOfAnotherContainer()
         {
             var v1 = MakeMutableValue() as IonContainer;
-            var item = MakeMutableValue();
+            var item = (IonValue) MakeMutableValue();
             var v2 = MakeMutableValue() as IonContainer;
             DoAdd(v1, item);
             DoAdd(v2, item);

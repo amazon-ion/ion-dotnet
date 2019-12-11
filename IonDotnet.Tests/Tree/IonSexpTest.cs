@@ -4,9 +4,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    internal class IonSexpTest : IonSequenceTest
+    public class IonSexpTest : IonSequenceTest
     {
-        internal override IonValue MakeMutableValue()
+        protected override object MakeMutableValue()
         {
             return new IonSexp();
         }

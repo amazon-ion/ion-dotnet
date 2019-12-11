@@ -4,9 +4,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
-    internal abstract class TreeTestBase
+    public abstract class TreeTestBase
     {
-        internal abstract IonValue MakeMutableValue();
+        protected abstract object MakeMutableValue();
 
         [DataRow(new string[0])]
         [DataRow(new[] {"a"})]
@@ -15,7 +15,7 @@ namespace IonDotnet.Tests.Tree
         [TestMethod]
         public void AddAnnotations(string[] annotations)
         {
-            var v = MakeMutableValue();
+            var v = (IonValue) MakeMutableValue();
             Assert.AreEqual(0, v.GetTypeAnnotations().Count);
 
             foreach (var annotation in annotations)

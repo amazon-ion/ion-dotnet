@@ -5,11 +5,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace IonDotnet.Tests.Tree
 {
     [TestClass]
-    internal class IonStructTest : IonContainerTest
+    public class IonStructTest : IonContainerTest
     {
         private static int _serial = 1;
 
-        internal override IonValue MakeMutableValue()
+        protected override object MakeMutableValue()
         {
             return new IonStruct();
         }
@@ -33,7 +33,7 @@ namespace IonDotnet.Tests.Tree
 
             var v = (IonStruct) MakeMutableValue();
             Assert.AreEqual(0, v.Count);
-            var c1 = MakeMutableValue();
+            var c1 = (IonValue) MakeMutableValue();
 
             Assert.IsFalse(v.ContainsField(field));
             Assert.IsFalse(v.Contains(c1));
@@ -44,7 +44,7 @@ namespace IonDotnet.Tests.Tree
             Assert.IsTrue(v.Contains(c1));
             Assert.AreEqual(c1, v[field]);
 
-            var c2 = MakeMutableValue();
+            var c2 = (IonValue) MakeMutableValue();
             v[field] = c2;
             Assert.AreEqual(1, v.Count);
             Assert.IsFalse(v.Contains(c1));
@@ -98,7 +98,7 @@ namespace IonDotnet.Tests.Tree
         {
             const string field = "field";
             var v = (IonStruct) MakeMutableValue();
-            var c = MakeMutableValue();
+            var c = (IonValue) MakeMutableValue();
             v[field] = c;
             var removed = v.RemoveField(field);
 
@@ -114,7 +114,7 @@ namespace IonDotnet.Tests.Tree
         {
             const string field = "field";
             var v = (IonStruct) MakeMutableValue();
-            var c = MakeMutableValue();
+            var c = (IonValue) MakeMutableValue();
             v[field] = c;
             v.Remove(c);
             Assert.AreEqual(0, v.Count);
