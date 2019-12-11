@@ -381,8 +381,7 @@ namespace IonDotnet.Internals.Text
                         _state = StateEof;
                         return;
                     case ActionFinishContainer:
-                        if (_expectedContainerClosingSymbol.Count == 0 || _expectedContainerClosingSymbol.Pop() != token)
-                            throw new FormatException($"Illegal character");
+                        ValidateClosingSymbol(token);
                         _state = GetStateAfterContainer(_containerStack.Peek());
                         _eof = true;
                         return;
@@ -402,6 +401,32 @@ namespace IonDotnet.Internals.Text
                         _state = GetStateAfterValue(_containerStack.Peek());
                         return;
                 }
+            }
+        }
+
+        private void ValidateClosingSymbol(int token)
+        {
+            if (_expectedContainerClosingSymbol.Count == 0)
+                throw new FormatException($"Unexpected { GetCharacterValueOfClosingContainerToken(token) }");
+
+            var latestContainerSymbol = _expectedContainerClosingSymbol.Pop();
+            if (latestContainerSymbol != token)
+            {
+                var currentToken = GetCharacterValueOfClosingContainerToken(token);
+                var expectedToken = GetCharacterValueOfClosingContainerToken(latestContainerSymbol);
+
+                throw new FormatException($"Illegal character: expected '{ expectedToken }' character but encountered '{ currentToken }'");
+            }
+        }
+
+        private char GetCharacterValueOfClosingContainerToken(int tokenCode)
+        {
+            switch (tokenCode)
+            {
+                case TextConstants.TokenCloseParen: return ')';
+                case TextConstants.TokenCloseBrace: return '}';
+                case TextConstants.TokenCloseSquare: return ']';
+                default: return ' ';
             }
         }
 
