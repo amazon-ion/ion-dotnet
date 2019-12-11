@@ -994,7 +994,7 @@ namespace IonDotnet.Internals.Text
                 // CLOB texts should be only 7-bit ASCII characters
                 if (isClob)
                 {
-                    Required7BitChar(c);
+                    Require7BitChar(c);
                 }
                 switch (c)
                 {
@@ -1467,7 +1467,7 @@ namespace IonDotnet.Internals.Text
             var c = SkipOverWhiteSpace(CommentStrategy.Error);
             if (c != '}')
             {
-                throw new IonException($"Invalid character format: {(char)c}");
+                throw new IonException($"Bad Character in Clob:: { ((char)c) } , expected \"}}}}\"");
             }
             UnreadChar(c);
         }
@@ -1926,7 +1926,7 @@ namespace IonDotnet.Internals.Text
                         // so the only acceptable charcter is the closing brace
                         if (isClob && c != '}')
                         {
-                            throw new IonException($"Bad Character: { ((char)c) } , expected \"}}}}\"");
+                            throw new IonException($"Bad Character in Clob: { ((char)c) } , expected \"}}}}\"");
                         }
 
                         // end of last segment - we're done (although we read a bit too far)
@@ -2012,14 +2012,14 @@ namespace IonDotnet.Internals.Text
                 else
                 {
                     // CLOB texts should be only 7-bit ASCII characters
-                    Required7BitChar(c);
+                    Require7BitChar(c);
                 }
 
                 sb.Append((char)c);
             }
         }
 
-        private void Required7BitChar(int c)
+        private void Require7BitChar(int c)
         {
             if (!Characters.Is7BitChar(c))
             {
