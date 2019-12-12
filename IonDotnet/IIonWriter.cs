@@ -92,12 +92,6 @@ namespace IonDotnet
         void WriteValues(IIonReader reader);
 
         /// <summary>
-        /// Set the annotations of the current value.
-        /// </summary>
-        /// <param name="annotations">Set of annotations.</param>
-        void SetTypeAnnotations(IEnumerable<string> annotations);
-
-        /// <summary>
         /// Write a null.null
         /// </summary>
         void WriteNull();
@@ -197,5 +191,11 @@ namespace IonDotnet
         /// Remove all the annotations of the value being written.
         /// </summary>
         void ClearTypeAnnotations();
+
+        /// <summary>
+        /// Set the annotations of the current value.
+        /// </summary>
+        /// <param name="annotations">Set of annotations.</param>
+        void SetTypeAnnotations(IEnumerable<string> annotations);
     }
 }
