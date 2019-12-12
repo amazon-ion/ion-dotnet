@@ -14,17 +14,11 @@ namespace IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "listWithClosingBrace.ion",
-            "listWithClosingParen.ion",
             "longStringSplitEscape_3.ion",
-            "sexpWithClosingBrace.ion",
-            "sexpWithClosingBracket.ion",
             "shortUtf8Sequence_1.ion",
             "shortUtf8Sequence_2.ion",
             "shortUtf8Sequence_3.ion",
-            "stringWithEof.ion",
-            "structWithClosingBracket.ion",
-            "structWithClosingParen.ion",
+            "stringWithEof.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
