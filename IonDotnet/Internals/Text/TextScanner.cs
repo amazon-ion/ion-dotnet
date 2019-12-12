@@ -77,6 +77,8 @@ namespace IonDotnet.Internals.Text
                     var c2 = ReadChar();
                     if (c2 == ':')
                         return FinishNextToken(TextConstants.TokenDoubleColon, true);
+                    if (c2 == '}')
+                        throw new IonException("Unexpected }");
 
                     UnreadChar(c2);
                     return FinishNextToken(TextConstants.TokenColon, true);
@@ -95,7 +97,7 @@ namespace IonDotnet.Internals.Text
                 case '[':
                     return FinishNextToken(TextConstants.TokenOpenSquare, true);
                 case ']':
-                    return FinishNextToken(TextConstants.TokenCloseBrace, false);
+                    return FinishNextToken(TextConstants.TokenCloseSquare, false);
                 case '(':
                     return FinishNextToken(TextConstants.TokenOpenParen, true);
                 case ')':
