@@ -54,10 +54,10 @@ namespace IonDotnet.Internals.Binary
             {
                 default:
                     return;
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     _v.BoolValue = _valueIsTrue;
                     break;
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     if (_valueLength == 0)
                     {
                         _v.IntValue = 0;
@@ -100,11 +100,11 @@ namespace IonDotnet.Internals.Binary
                     var bigInt = ReadBigInteger(_valueLength, isNegative);
                     _v.BigIntegerValue = bigInt;
                     break;
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     var d = ReadFloat(_valueLength);
                     _v.DoubleValue = d;
                     break;
-                case IonType.Symbol:
+                case IonType w when w.Id == IonType.Symbol.Id:
                     //treat the symbol as int32, since it's cheap and there's no lookup
                     //until the text is required
                     var sid = ReadUlong(_valueLength);
@@ -112,10 +112,10 @@ namespace IonDotnet.Internals.Binary
                         throw new IonException("Sid is not an uint32");
                     _v.IntValue = (int) sid;
                     break;
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     _v.DecimalValue = ReadBigDecimal(_valueLength);
                     break;
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     if (_valueLength == 0)
                     {
                         _v.SetNull(IonType.Timestamp);
@@ -124,7 +124,7 @@ namespace IonDotnet.Internals.Binary
 
                     _v.TimestampValue = ReadTimeStamp(_valueLength);
                     break;
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     _v.StringValue = ReadString(_valueLength);
                     _v.AuthoritativeType = ScalarType.String;
                     break;

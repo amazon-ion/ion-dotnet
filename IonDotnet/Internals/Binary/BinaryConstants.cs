@@ -54,44 +54,44 @@ namespace IonDotnet.Internals.Binary
             byte data;
             switch (type)
             {
-                case IonType.None:
-                case IonType.Null:
+                case IonType w when w.Id == IonType.None.Id:
+                case IonType t when t.Id == IonType.Null.Id:
                     data = 0x0F;
                     break;
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     data = 0x1F;
                     break;
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     data = 0x2F;
                     break;
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     data = 0x4F;
                     break;
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     data = 0x5F;
                     break;
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     data = 0x6F;
                     break;
-                case IonType.Symbol:
+                case IonType w when w.Id == IonType.Symbol.Id:
                     data = 0x7F;
                     break;
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     data = 0x8F;
                     break;
-                case IonType.Clob:
+                case IonType w when w.Id == IonType.Clob.Id:
                     data = 0x9F;
                     break;
-                case IonType.Blob:
+                case IonType w when w.Id == IonType.Blob.Id:
                     data = 0xAF;
                     break;
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     data = 0xBF;
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     data = 0xCF;
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     data = 0xDF;
                     break;
                 default:

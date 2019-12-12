@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using IonDotnet.Utils;
@@ -317,17 +318,21 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void WriteNulls()
         {
+            var listOfIonTypes = typeof(IonType).GetMembers(BindingFlags.Static | BindingFlags.Public)
+                .OfType<FieldInfo>()
+                .Where(f => typeof(IonType).IsAssignableFrom(f.FieldType));
+
             using (var writer = new ManagedBinaryWriter(_memoryStream, Symbols.EmptySymbolTablesArray))
             {
                 writer.StepIn(IonType.Struct);
-
-                foreach (var iType in Enum.GetValues(typeof(IonType)))
+                
+                foreach (var iType in listOfIonTypes)
                 {
-                    if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
-
-                    var name = Enum.GetName(typeof(IonType), iType);
+                    var ionTypeValue = (IonType) iType.GetValue(null);
+                    if (ionTypeValue == IonType.Datagram || ionTypeValue == IonType.None) continue;
+                    var name = ionTypeValue.Name;
                     writer.SetFieldName($"null_{name}");
-                    writer.WriteNull((IonType) iType);
+                    writer.WriteNull(ionTypeValue);
                 }
 
                 writer.StepOut();
@@ -338,11 +343,12 @@ namespace IonDotnet.Tests.Internals
             reader.MoveNext();
             reader.StepIn();
 
-            foreach (var iType in Enum.GetValues(typeof(IonType)))
+            foreach (var iType in listOfIonTypes)
             {
-                if ((IonType) iType == IonType.Datagram || (IonType) iType == IonType.None) continue;
-                var name = Enum.GetName(typeof(IonType), iType);
-                Assert.AreEqual((IonType) iType, reader.MoveNext());
+                var ionTypeValue = (IonType)iType.GetValue(null);
+                if (ionTypeValue == IonType.Datagram || ionTypeValue == IonType.None) continue;
+                var name = ionTypeValue.Name;
+                Assert.AreEqual(ionTypeValue, reader.MoveNext());
                 Assert.AreEqual($"null_{name}", reader.CurrentFieldName);
                 Assert.IsTrue(reader.CurrentIsNull);
             }

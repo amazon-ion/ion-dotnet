@@ -124,28 +124,28 @@ namespace IonDotnet.Conversions
         {
             switch (ionType)
             {
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     AuthoritativeType = ScalarType.Int;
                     break;
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     AuthoritativeType = ScalarType.Decimal;
                     break;
-                case IonType.Null:
+                case IonType w when w.Id == IonType.Null.Id:
                     AuthoritativeType = ScalarType.Null;
                     break;
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     AuthoritativeType = ScalarType.Bool;
                     break;
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     AuthoritativeType = ScalarType.String;
                     break;
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     AuthoritativeType = ScalarType.Timestamp;
                     break;
-                case IonType.Symbol:
+                case IonType w when w.Id == IonType.Symbol.Id:
                     AuthoritativeType = ScalarType.Int;
                     break;
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     AuthoritativeType = ScalarType.Double;
                     break;
             }

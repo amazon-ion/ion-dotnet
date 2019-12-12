@@ -58,7 +58,7 @@ namespace IonDotnet.Internals.Text
                 {
                     switch (_valueType)
                     {
-                        case IonType.Struct:
+                        case IonType w when w.Id == IonType.Struct.Id:
                             if (_annotations.Count > 0 && _annotations[0].Text == SystemSymbols.IonSymbolTable)
                             {
                                 _currentSymtab = ReaderLocalTable.ImportReaderTable(this, _catalog, true);
@@ -66,7 +66,7 @@ namespace IonDotnet.Internals.Text
                             }
 
                             break;
-                        case IonType.Symbol:
+                        case IonType w when w.Id == IonType.Symbol.Id:
                             // $ion_1_0 is read as an IVM only if it is not annotated
                             if (_annotations.Count == 0)
                             {

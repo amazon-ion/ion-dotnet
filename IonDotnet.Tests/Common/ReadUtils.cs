@@ -47,17 +47,17 @@ namespace IonDotnet.Tests.Common
             {
                 default:
                     return false;
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     return dotnetType == typeof(bool);
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     return dotnetType == typeof(int) || dotnetType == typeof(long) || dotnetType == typeof(BigInteger);
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     return dotnetType == typeof(float) || dotnetType == typeof(double);
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     return dotnetType == typeof(decimal);
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     return dotnetType == typeof(string);
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     return dotnetType == typeof(DateTime) || dotnetType == typeof(DateTimeOffset) || dotnetType == typeof(Timestamp);
             }
         }
@@ -68,9 +68,9 @@ namespace IonDotnet.Tests.Common
             {
                 default:
                     return null;
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     return reader.BoolValue();
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     switch (reader.GetIntegerSize())
                     {
                         default: return null;
@@ -78,16 +78,16 @@ namespace IonDotnet.Tests.Common
                         case IntegerSize.Int: return reader.IntValue();
                         case IntegerSize.Long: return reader.LongValue();
                     }
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     var doubleVal = reader.DoubleValue();
                     if (Math.Abs(doubleVal - (float) doubleVal) < float.Epsilon) return (float) doubleVal;
 
                     return doubleVal;
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     return reader.DecimalValue().ToDecimal();
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     return reader.StringValue();
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     return reader.TimestampValue();
             }
         }

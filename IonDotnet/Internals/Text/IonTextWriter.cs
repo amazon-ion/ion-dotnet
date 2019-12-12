@@ -381,43 +381,43 @@ namespace IonDotnet.Internals.Text
             {
                 switch (type)
                 {
-                    case IonType.Null:
+                    case IonType w when w.Id == IonType.Null.Id:
                         nullImage = "null";
                         break;
-                    case IonType.Bool:
+                    case IonType w when w.Id == IonType.Bool.Id:
                         nullImage = "null.bool";
                         break;
-                    case IonType.Int:
+                    case IonType w when w.Id == IonType.Int.Id:
                         nullImage = "null.int";
                         break;
-                    case IonType.Float:
+                    case IonType w when w.Id == IonType.Float.Id:
                         nullImage = "null.float";
                         break;
-                    case IonType.Decimal:
+                    case IonType w when w.Id == IonType.Decimal.Id:
                         nullImage = "null.decimal";
                         break;
-                    case IonType.Timestamp:
+                    case IonType w when w.Id == IonType.Timestamp.Id:
                         nullImage = "null.timestamp";
                         break;
-                    case IonType.Symbol:
+                    case IonType w when w.Id == IonType.Symbol.Id:
                         nullImage = "null.symbol";
                         break;
-                    case IonType.String:
+                    case IonType w when w.Id == IonType.String.Id:
                         nullImage = "null.string";
                         break;
-                    case IonType.Clob:
+                    case IonType w when w.Id == IonType.Clob.Id:
                         nullImage = "null.clob";
                         break;
-                    case IonType.Blob:
+                    case IonType w when w.Id == IonType.Blob.Id:
                         nullImage = "null.blob";
                         break;
-                    case IonType.List:
+                    case IonType w when w.Id == IonType.List.Id:
                         nullImage = "null.list";
                         break;
-                    case IonType.Sexp:
+                    case IonType w when w.Id == IonType.Sexp.Id:
                         nullImage = "null.sexp";
                         break;
-                    case IonType.Struct:
+                    case IonType w when w.Id == IonType.Struct.Id:
                         nullImage = "null.struct";
                         break;
                     default:
@@ -584,16 +584,16 @@ namespace IonDotnet.Internals.Text
             char opener;
             switch (type)
             {
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     _isInStruct = false;
                     opener = '[';
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     //TODO handle sexp as list option
                     opener = '(';
                     _isInStruct = false;
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     opener = '{';
                     _isInStruct = true;
                     break;
@@ -605,11 +605,11 @@ namespace IonDotnet.Internals.Text
             //determine the separator in this container
             switch (type)
             {
-                case IonType.Struct:
-                case IonType.List:
+                case IonType w when w.Id == IonType.Struct.Id:
+                case IonType t when t.Id == IonType.List.Id:
                     _separatorCharacter = ',';
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     _separatorCharacter = ' ';
                     break;
                 default:
@@ -633,15 +633,15 @@ namespace IonDotnet.Internals.Text
             var parentType = _containerStack.Count == 0 ? IonType.Datagram : _containerStack.Peek().containerType;
             switch (parentType)
             {
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     _isInStruct = false;
                     _separatorCharacter = ' ';
                     break;
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     _isInStruct = false;
                     _separatorCharacter = ',';
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     _isInStruct = true;
                     _separatorCharacter = ',';
                     break;
@@ -658,13 +658,13 @@ namespace IonDotnet.Internals.Text
                 default:
                     //shoud not happen
                     throw new IonException($"{top.containerType} is no container");
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     closer = ']';
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     closer = ')';
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     closer = '}';
                     break;
             }

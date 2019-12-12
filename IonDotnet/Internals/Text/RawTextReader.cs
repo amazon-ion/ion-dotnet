@@ -603,23 +603,23 @@ namespace IonDotnet.Internals.Text
             {
                 default:
                     throw new IonException("Invalid state");
-                case IonType.Datagram:
+                case IonType w when w.Id == IonType.Datagram.Id:
                     break;
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     if (!_eof)
                     {
                         _scanner.SkipOverList();
                     }
 
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     if (!_eof)
                     {
                         _scanner.SkipOverStruct();
                     }
 
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     if (!_eof)
                     {
                         _scanner.SkipOverSexp();
@@ -726,13 +726,13 @@ namespace IonDotnet.Internals.Text
                 default:
                     //should not happen
                     throw new IonException($"{container} is no container");
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     return StateBeforeFieldName;
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     return StateBeforeAnnotationContained;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     return StateBeforeAnnotationSexp;
-                case IonType.Datagram:
+                case IonType w when w.Id == IonType.Datagram.Id:
                     return StateBeforeAnnotationDatagram;
             }
         }
@@ -748,11 +748,11 @@ namespace IonDotnet.Internals.Text
                     {
                         default:
                             throw new IonException($"{container} is no container");
-                        case IonType.Struct:
-                        case IonType.List:
-                        case IonType.Datagram:
+                        case IonType w when w.Id == IonType.Struct.Id:
+                        case IonType t when t.Id == IonType.List.Id:
+                        case IonType v when v.Id == IonType.Datagram.Id:
                             return StateBeforeValueContent;
-                        case IonType.Sexp:
+                        case IonType w when w.Id == IonType.Sexp.Id:
                             return StateBeforeValueContentSexp;
                     }
                 case StateBeforeAnnotationDatagram:
@@ -774,12 +774,12 @@ namespace IonDotnet.Internals.Text
             {
                 default:
                     throw new IonException($"{currentContainerType} is no container");
-                case IonType.List:
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.List.Id:
+                case IonType t when t.Id == IonType.Struct.Id:
                     return StateAfterValueContents;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     return StateBeforeAnnotationSexp;
-                case IonType.Datagram:
+                case IonType w when w.Id == IonType.Datagram.Id:
                     return StateBeforeAnnotationDatagram;
             }
         }
@@ -800,12 +800,12 @@ namespace IonDotnet.Internals.Text
                 default:
                     //should not happen
                     throw new IonException($"{newContainer} is no container");
-                case IonType.Struct:
-                case IonType.List:
+                case IonType w when w.Id == IonType.Struct.Id:
+                case IonType t when t.Id == IonType.List.Id:
                     return StateAfterValueContents;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     return StateBeforeAnnotationSexp;
-                case IonType.Datagram:
+                case IonType w when w.Id == IonType.Datagram.Id:
                     return StateBeforeAnnotationDatagram;
             }
         }
@@ -862,19 +862,19 @@ namespace IonDotnet.Internals.Text
                 {
                     default:
                         throw new IonException($"{type} is no container");
-                    case IonType.Struct:
+                    case IonType w when w.Id == IonType.Struct.Id:
                         _rawTextReader._containerIsStruct = true;
                         _rawTextReader._containerProhibitsCommas = false;
                         return;
-                    case IonType.List:
+                    case IonType w when w.Id == IonType.List.Id:
                         _rawTextReader._containerIsStruct = false;
                         _rawTextReader._containerProhibitsCommas = false;
                         return;
-                    case IonType.Datagram:
+                    case IonType w when w.Id == IonType.Datagram.Id:
                         _rawTextReader._containerIsStruct = false;
                         _rawTextReader._containerProhibitsCommas = true;
                         return;
-                    case IonType.Sexp:
+                    case IonType w when w.Id == IonType.Sexp.Id:
                         _rawTextReader._containerIsStruct = false;
                         _rawTextReader._containerProhibitsCommas = false;
                         return;

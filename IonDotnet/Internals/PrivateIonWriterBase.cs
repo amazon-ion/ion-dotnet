@@ -47,10 +47,10 @@ namespace IonDotnet.Internals
 
             switch (type)
             {
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     WriteBool(reader.BoolValue());
                     break;
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     switch (reader.GetIntegerSize())
                     {
                         case IntegerSize.Int:
@@ -67,30 +67,30 @@ namespace IonDotnet.Internals
                     }
 
                     break;
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     WriteFloat(reader.DoubleValue());
                     break;
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     WriteDecimal(reader.DecimalValue());
                     break;
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     WriteTimestamp(reader.TimestampValue());
                     break;
-                case IonType.Symbol:
+                case IonType w when w.Id == IonType.Symbol.Id:
                     WriteSymbolToken(reader.SymbolValue());
                     break;
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     WriteString(reader.StringValue());
                     break;
-                case IonType.Clob:
+                case IonType w when w.Id == IonType.Clob.Id:
                     WriteClob(reader.NewByteArray());
                     break;
-                case IonType.Blob:
+                case IonType w when w.Id == IonType.Blob.Id:
                     WriteBlob(reader.NewByteArray());
                     break;
-                case IonType.List:
-                case IonType.Sexp:
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.List.Id:
+                case IonType t when t.Id == IonType.Sexp.Id:
+                case IonType v when v.Id == IonType.Struct.Id:
                     WriteContainerRecursively(type, reader);
                     break;
             }

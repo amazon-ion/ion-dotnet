@@ -1,23 +1,48 @@
-﻿namespace IonDotnet
+﻿using System;
+
+namespace IonDotnet
 {
-    public enum IonType : short
+    /// <summary>
+    /// Defines the static constant Ion types.
+    /// </summary>
+    public class IonType : IonTypeEnumeration
     {
-        None = -1,
-        Null = 0,
-        Bool = 1,
-        Int = 2,
-        Float = 3,
-        Decimal = 4,
-        Timestamp = 5,
-        Symbol = 6,
-        String = 7,
-        Clob = 8,
-        Blob = 9,
-        List = 10,
-        Sexp = 11,
-        Struct = 12,
-        Datagram = 13
+        public static readonly IonType None = new IonType("none", -1);
+        public static readonly IonType Null = new IonType("null", 0);
+        public static readonly IonType Bool = new IonType("bool", 1);
+        // note that INT is actually 0x2 **and** 0x3 in the Ion binary encoding
+        public static readonly IonType Int = new IonType("int", 2);
+        public static readonly IonType Float = new IonType("float", 4);
+        public static readonly IonType Decimal = new IonType("decimals", 5);
+        public static readonly IonType Timestamp = new IonType("timestamp", 6);
+        public static readonly IonType Symbol = new IonType("symbol", 7);
+        public static readonly IonType String = new IonType("string", 8);
+        public static readonly IonType Blob = new IonType("blob", 9);
+        public static readonly IonType Clob = new IonType("clob", 10);
+        public static readonly IonType List = new IonType("list", 11);
+        public static readonly IonType Sexp = new IonType("sexp", 12);
+        public static readonly IonType Struct = new IonType("struct", 13);
+        public static readonly IonType Datagram = new IonType("datagram", 14);
+
+        public IonType(string name, int id) : base(name, id)
+        {
+        }
     }
+
+    /// <summary>
+    /// An abstract base class used for the creation of an Ion type.
+    /// </summary>
+    public abstract class IonTypeEnumeration
+    {
+        public string Name { get; private set; }
+        public int Id { get; private set; }
+
+        protected IonTypeEnumeration(string name, int id)
+        {
+            Name = name;
+            Id = id;
+        }
+    } 
 
     public static class IonTypeExtensions
     {
@@ -26,7 +51,7 @@
         /// </summary>
         /// <param name="t">IonType enum</param>
         /// <returns>true when t is enum after List</returns>
-        public static bool IsContainer(this IonType t) => t >= IonType.List;
+        public static bool IsContainer(this IonType t) => t.Id >= IonType.List.Id;
 
         /// <summary>
         /// Determines whether a type represents an Ion text scalar, namely
@@ -47,7 +72,7 @@
         /// </summary>
         /// <param name="t">IonType enum</param>
         /// <returns>true when the this is a scalar type</returns>
-        public static bool IsScalar(this IonType t) => t > IonType.None && t < IonType.Clob;
+        public static bool IsScalar(this IonType t) => t.Id > IonType.None.Id && t.Id < IonType.Clob.Id;
 
         /// <summary>
         /// Determines whether a type represents a numeric type

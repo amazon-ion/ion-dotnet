@@ -81,16 +81,16 @@ namespace IonDotnet.Internals.Text
                     {
                         default:
                             throw new IonException($"Expected value type to be numeric, but is {_valueType}");
-                        case IonType.Int:
+                        case IonType w when w.Id == IonType.Int.Id:
                             SetInteger(Radix.Decimal, s, negative);
                             break;
-                        case IonType.Decimal:
+                        case IonType w when w.Id == IonType.Decimal.Id:
                             SetDecimalOrDouble(s);
                             break;
-                        case IonType.Float:
+                        case IonType w when w.Id == IonType.Float.Id:
                             SetFloat(s);
                             break;
-                        case IonType.Timestamp:
+                        case IonType w when w.Id == IonType.Timestamp.Id:
                             _v.TimestampValue = Timestamp.Parse(s);
                             break;
                     }
@@ -125,16 +125,16 @@ namespace IonDotnet.Internals.Text
                     {
                         default:
                             throw new IonException($"Unexpected type {_valueType}");
-                        case IonType.Symbol:
+                        case IonType w when w.Id == IonType.Symbol.Id:
                             _v.StringValue = s;
                             _v.AuthoritativeType = ScalarType.String;
                             break;
-                        case IonType.Float:
+                        case IonType w when w.Id == IonType.Float.Id:
                             if (_valueKeyword != TextConstants.KeywordNan)
                                 throw new IonException($"Unexpected keyword {s} as float");
                             _v.DoubleValue = double.NaN;
                             break;
-                        case IonType.Bool:
+                        case IonType w when w.Id == IonType.Bool.Id:
                             if (_valueKeyword == TextConstants.KeywordTrue)
                             {
                                 _v.BoolValue = true;

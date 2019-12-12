@@ -29,43 +29,43 @@ namespace IonDotnet.Internals
 
             switch (type)
             {
-                case IonType.Null:
+                case IonType w when w.Id == IonType.Null.Id:
                     v = new IonNull();
                     break;
-                case IonType.Bool:
+                case IonType w when w.Id == IonType.Bool.Id:
                     v = IonBool.NewNull();
                     break;
-                case IonType.Int:
+                case IonType w when w.Id == IonType.Int.Id:
                     v = IonInt.NewNull();
                     break;
-                case IonType.Float:
+                case IonType w when w.Id == IonType.Float.Id:
                     v = IonFloat.NewNull();
                     break;
-                case IonType.Decimal:
+                case IonType w when w.Id == IonType.Decimal.Id:
                     v = IonDecimal.NewNull();
                     break;
-                case IonType.Timestamp:
+                case IonType w when w.Id == IonType.Timestamp.Id:
                     v = IonTimestamp.NewNull();
                     break;
-                case IonType.Symbol:
+                case IonType w when w.Id == IonType.Symbol.Id:
                     v = IonSymbol.NewNull();
                     break;
-                case IonType.String:
+                case IonType w when w.Id == IonType.String.Id:
                     v = new IonString(null);
                     break;
-                case IonType.Clob:
+                case IonType w when w.Id == IonType.Clob.Id:
                     v = IonClob.NewNull();
                     break;
-                case IonType.Blob:
+                case IonType w when w.Id == IonType.Blob.Id:
                     v = IonBlob.NewNull();
                     break;
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     v = IonList.NewNull();
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     v = IonSexp.NewNull();
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     v = IonStruct.NewNull();
                     break;
                 default:
@@ -154,13 +154,13 @@ namespace IonDotnet.Internals
             IonContainer c;
             switch (type)
             {
-                case IonType.List:
+                case IonType w when w.Id == IonType.List.Id:
                     c = new IonList();
                     break;
-                case IonType.Sexp:
+                case IonType w when w.Id == IonType.Sexp.Id:
                     c = new IonSexp();
                     break;
-                case IonType.Struct:
+                case IonType w when w.Id == IonType.Struct.Id:
                     c = new IonStruct();
                     break;
                 default:
