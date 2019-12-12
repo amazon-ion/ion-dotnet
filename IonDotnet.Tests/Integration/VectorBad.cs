@@ -17,8 +17,7 @@ namespace IonDotnet.Tests.Integration
             "longStringSplitEscape_3.ion",
             "shortUtf8Sequence_1.ion",
             "shortUtf8Sequence_2.ion",
-            "shortUtf8Sequence_3.ion",
-            "stringWithEof.ion"
+            "shortUtf8Sequence_3.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
