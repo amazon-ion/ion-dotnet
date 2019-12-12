@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using IonDotnet.Internals.Binary;
 using IonDotnet.Builders;
+using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using IonDotnet.Tree;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

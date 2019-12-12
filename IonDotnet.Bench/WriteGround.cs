@@ -1,10 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using IonDotnet.Serialization;
 using IonDotnet.Builders;
+using IonDotnet.Serialization;
 using Newtonsoft.Json;
 
 namespace IonDotnet.Bench
