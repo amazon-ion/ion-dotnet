@@ -993,6 +993,11 @@ namespace IonDotnet.Internals.Text
             while (true)
             {
                 var c = ReadStringChar(Characters.ProhibitionContext.ShortChar);
+                // CLOB texts should be only 7-bit ASCII characters
+                if (isClob)
+                {
+                    Require7BitChar(c);
+                }
                 switch (c)
                 {
                     case CharacterSequence.CharSeqEscapedNewlineSequence1:
@@ -1001,6 +1006,10 @@ namespace IonDotnet.Internals.Text
                         continue;
                     case -1:
                     case '"':
+                        if (isClob)
+                        {
+                            HandleClobsWithDoubleQuote();
+                        }
                         FinishNextToken(isClob ? Token : TextConstants.TokenStringDoubleQuote, isClob);
                         return c;
                     case CharacterSequence.CharSeqNewlineSequence1:
@@ -1452,6 +1461,20 @@ namespace IonDotnet.Internals.Text
         }
 
         /// <summary>
+        /// Any CLOB with double quote, can hold only one " " and the only
+        /// acceptable character after the second double quote is }
+        /// </summary>
+        private void HandleClobsWithDoubleQuote()
+        {
+            var c = SkipOverWhiteSpace(CommentStrategy.Error);
+            if (c != '}')
+            {
+                throw new IonException($"Bad Character in Clob:: { ((char)c) } , expected \"}}}}\"");
+            }
+            UnreadChar(c);
+        }
+
+        /// <summary>
         /// Finish the current 'token', skip to end if neccessary.
         /// </summary>
         public void FinishToken()
@@ -1886,16 +1909,26 @@ namespace IonDotnet.Internals.Text
                 case '\'':
                     if (Is2SingleQuotes())
                     {
+                        // clobs disallow comments everywhere within the value
+                        var commentStrategy = isClob ? CommentStrategy.Error : CommentStrategy.Ignore;
+
                         // so at this point we are at the end of the closing
                         // triple quote - so we need to look ahead to see if
                         // there's just whitespace and a new opening triple quote
-                        c = SkipOverWhiteSpace(CommentStrategy.Ignore);
+                        c = SkipOverWhiteSpace(commentStrategy);
                         if (c == '\'' && Is2SingleQuotes())
                         {
                             // there's another segment so read the next segment as well
                             // since we're now just before char 1 of the next segment
                             // loop again, but don't append this char
                             return CharacterSequence.CharSeqStringNonTerminator;
+                        }
+                        // at this point, we are at the end of the closing
+                        // triple quote and it does not follow by any other '
+                        // so the only acceptable charcter is the closing brace
+                        if (isClob && c != '}')
+                        {
+                            throw new IonException($"Bad Character in Clob: { ((char)c) } , expected \"}}}}\"");
                         }
 
                         // end of last segment - we're done (although we read a bit too far)
@@ -1978,8 +2011,21 @@ namespace IonDotnet.Internals.Text
                     //                        c = Characters.GetLowSurrogate(c);
                     //                    }
                 }
+                else
+                {
+                    // CLOB texts should be only 7-bit ASCII characters
+                    Require7BitChar(c);
+                }
 
                 sb.Append((char)c);
+            }
+        }
+
+        private void Require7BitChar(int c)
+        {
+            if (!Characters.Is7BitChar(c))
+            {
+                throw new IonException($"Illegal character: {(char)c}. All characters must be 7-bit ASCII");
             }
         }
 

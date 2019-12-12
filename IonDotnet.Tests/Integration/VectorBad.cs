@@ -14,18 +14,6 @@ namespace IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "clob_3.ion",
-            "clob_4.ion",
-            "clob_5.ion",
-            "clob_6.ion",
-            "clob_7.ion",
-            "clob_8.ion",
-            "clob_9.ion",
-            "clobWithLongLiteralBlockCommentAtEnd.ion",
-            "clobWithLongLiteralCommentsInMiddle.ion",
-            "clobWithNonAsciiCharacter.ion",
-            "clobWithShortLiteralBlockCommentAtEnd.ion",
-            "clobWithShortLiteralInlineCommentAtEnd.ion",
             "listWithClosingBrace.ion",
             "listWithClosingParen.ion",
             "longStringSplitEscape_3.ion",
@@ -37,7 +25,6 @@ namespace IonDotnet.Tests.Integration
             "stringWithEof.ion",
             "structWithClosingBracket.ion",
             "structWithClosingParen.ion",
-            "clobWithLongLiteralInlineCommentAtEnd.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
