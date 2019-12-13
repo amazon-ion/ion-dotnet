@@ -6,8 +6,6 @@ using System.Net.Http;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using IonDotnet.Conversions;
-using IonDotnet.Serialization;
 using Newtonsoft.Json;
 
 // ReSharper disable All

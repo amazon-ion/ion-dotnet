@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using IonDotnet.Systems;
+using IonDotnet.Builders;
 using IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,41 +14,10 @@ namespace IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "clob_3.ion",
-            "clob_4.ion",
-            "clob_5.ion",
-            "clob_6.ion",
-            "clob_7.ion",
-            "clob_8.ion",
-            "clob_9.ion",
-            "clobWithLongLiteralBlockCommentAtEnd.ion",
-            "clobWithLongLiteralCommentsInMiddle.ion",
-            "clobWithNonAsciiCharacter.ion",
-            "clobWithShortLiteralBlockCommentAtEnd.ion",
-            "clobWithShortLiteralInlineCommentAtEnd.ion",
-            "listWithClosingBrace.ion",
-            "listWithClosingParen.ion",
-            "longStringSplitEscape_1.ion",
-            "longStringSplitEscape_2.ion",
             "longStringSplitEscape_3.ion",
-            "offsetHours_1.ion",
-            "offsetHours_2.ion",
-            "offsetMinutes_1.ion",
-            "offsetMinutes_2.ion",
-            "offsetMinutes_3.ion",
-            "sexpWithClosingBrace.ion",
-            "sexpWithClosingBracket.ion",
             "shortUtf8Sequence_1.ion",
             "shortUtf8Sequence_2.ion",
-            "shortUtf8Sequence_3.ion",
-            "string_3.ion",
-            "string_4.ion",
-            "stringWithEof.ion",
-            "structWithClosingBracket.ion",
-            "structWithClosingParen.ion",
-            "symbol_10.ion",
-            "symbol_11.ion",
-            "clobWithLongLiteralInlineCommentAtEnd.ion"
+            "shortUtf8Sequence_3.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();

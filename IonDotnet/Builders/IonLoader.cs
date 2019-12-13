@@ -4,7 +4,7 @@ using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
 using IonDotnet.Tree.Impl;
 
-namespace IonDotnet.Systems
+namespace IonDotnet.Builders
 {
     public class IonLoader
     {

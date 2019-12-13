@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
-using IonDotnet.Conversions;
+using IonDotnet.Internals.Conversions;
 
 namespace IonDotnet.Internals.Text
 {

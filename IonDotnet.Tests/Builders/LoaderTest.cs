@@ -1,10 +1,10 @@
 using System.Linq;
-using IonDotnet.Systems;
+using IonDotnet.Builders;
 using IonDotnet.Tests.Common;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests.Systems
+namespace IonDotnet.Tests.Builders
 {
     [TestClass]
     public class LoaderTest

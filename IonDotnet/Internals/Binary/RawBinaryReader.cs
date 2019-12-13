@@ -6,8 +6,7 @@ using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using IonDotnet.Conversions;
-using IonDotnet.Systems;
+using IonDotnet.Internals.Conversions;
 
 #if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
 using BitConverterEx = System.BitConverter;
