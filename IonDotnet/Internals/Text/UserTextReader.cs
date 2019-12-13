@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using IonDotnet.Conversions;
+using IonDotnet.Internals.Conversions;
 
 namespace IonDotnet.Internals.Text
 {

@@ -1,12 +1,12 @@
 using System;
 
-namespace IonDotnet.Conversions
+namespace IonDotnet.Internals.Conversions
 {
     /// <summary>
     /// List of C# types that the ion value translates to
     /// </summary>
     [Flags]
-    public enum ScalarType
+    internal enum ScalarType
     {
         Nothing = 0,
         Null = 1 << 0,

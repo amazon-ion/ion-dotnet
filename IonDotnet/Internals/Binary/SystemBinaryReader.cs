@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
-using IonDotnet.Conversions;
+using IonDotnet.Internals.Conversions;
 
 namespace IonDotnet.Internals.Binary
 {

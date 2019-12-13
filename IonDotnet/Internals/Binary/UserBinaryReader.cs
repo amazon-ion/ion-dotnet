@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using IonDotnet.Conversions;
 
 namespace IonDotnet.Internals.Binary
 {

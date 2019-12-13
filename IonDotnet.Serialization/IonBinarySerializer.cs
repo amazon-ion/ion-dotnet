@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using IonDotnet.Conversions;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Utils;
 

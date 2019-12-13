@@ -1,12 +1,12 @@
 using System;
 using System.Numerics;
 
-namespace IonDotnet.Conversions
+namespace IonDotnet.Internals.Conversions
 {
     /// <summary>
     /// Structure that holds the loaded scalar value from IonReader
     /// </summary>
-    public struct ValueVariant
+    internal struct ValueVariant
     {
         private int _intValue;
         private long _longValue;
