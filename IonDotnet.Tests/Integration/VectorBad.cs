@@ -14,7 +14,6 @@ namespace IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "longStringSplitEscape_3.ion",
             "shortUtf8Sequence_1.ion",
             "shortUtf8Sequence_2.ion",
             "shortUtf8Sequence_3.ion"
