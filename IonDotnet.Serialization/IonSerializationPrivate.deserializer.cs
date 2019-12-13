@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
-using IonDotnet.Conversions;
 
 namespace IonDotnet.Serialization
 {

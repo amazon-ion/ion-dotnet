@@ -1,4 +1,4 @@
-namespace IonDotnet.Systems
+namespace IonDotnet
 {
     public class UnexpectedEofException : IonException
     {

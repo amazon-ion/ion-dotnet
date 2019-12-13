@@ -175,8 +175,8 @@ namespace IonDotnet.Utils
 //            return (char) ((c | LowSurrogate) & 0xffff);
 //        }
 
-//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-//        public static bool Is7BitChar(int c) => (c & ~0x7f) == 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool Is7BitChar(int c) => (c & ~0x7f) == 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Is8BitChar(int c) => (c & ~0xff) == 0;

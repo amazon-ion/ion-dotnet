@@ -267,7 +267,7 @@ namespace IonDotnet.Internals.Text
             if (h >= 'A' && h <= 'F')
                 return h - 'A' + 10;
 
-            return -1;
+            throw new InvalidTokenException($"Invalid Hex value: { h }");
         }
 
         public static bool IsValidSymbolCharacter(int c)

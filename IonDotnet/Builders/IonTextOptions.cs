@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IonDotnet.Systems
+namespace IonDotnet.Builders
 {
     public class IonTextOptions
     {

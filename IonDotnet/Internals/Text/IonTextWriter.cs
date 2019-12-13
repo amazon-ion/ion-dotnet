@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using IonDotnet.Systems;
+using IonDotnet.Builders;
 using IonDotnet.Utils;
 
 namespace IonDotnet.Internals.Text
