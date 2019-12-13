@@ -1970,9 +1970,11 @@ namespace IonDotnet.Internals.Text
                 switch (c)
                 {
                     case CharacterSequence.CharSeqStringTerminator:
-                    case CharacterSequence.CharSeqEof: // was 
                         FinishNextToken(isClob ? Token : TextConstants.TokenStringTripleQuote, isClob);
                         return c;
+                    case CharacterSequence.CharSeqEof:
+                        FinishNextToken(isClob ? Token : TextConstants.TokenStringTripleQuote, isClob);
+                        return Token == TextConstants.TokenStringTripleQuote ? TextConstants.TokenEof : c;
                     // new line normalization and counting is handled in read_char
                     case CharacterSequence.CharSeqNewlineSequence1:
                         c = '\n';
