@@ -9,6 +9,6 @@
         /// <typeparam name="T">Type of the value</typeparam>
         /// <param name="value"></param>
         /// <returns>True if the written is done</returns>
-        bool TryWriteValue<T>(IValueWriter valueWriter, T value);
+        bool TryWriteValue<T>(IIonWriter valueWriter, T value);
     }
 }
