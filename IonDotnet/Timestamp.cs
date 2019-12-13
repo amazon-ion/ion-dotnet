@@ -361,7 +361,14 @@ namespace IonDotnet
                 throw new FormatException(s);
             }
 
-            return hour * 60 + minute;
+            int offset = hour * 60 + minute;
+
+            if (hour > 23 || minute > 59)
+            {
+                throw new FormatException($"{s} - Offset must be between -23:59 and 23:59");
+            }
+
+            return offset;
         }
 
         /// <summary>

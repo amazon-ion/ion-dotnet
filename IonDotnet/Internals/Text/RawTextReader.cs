@@ -164,6 +164,10 @@ namespace IonDotnet.Internals.Text
         protected int _lobValuePosition;
         protected byte[] _lobBuffer;
 
+        // For any container being opened, its closing symbol should come before
+        // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
+        private Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
+
         protected RawTextReader(TextStream input)
         {
             _state = GetStateAtContainerStart(IonType.Datagram);
@@ -279,14 +283,17 @@ namespace IonDotnet.Internals.Text
                         break;
                     case ActionStartStruct:
                         _valueType = IonType.Struct;
+                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseBrace);
                         _state = StateBeforeFieldName;
                         return;
                     case ActionStartList:
                         _valueType = IonType.List;
+                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseSquare);
                         _state = StateBeforeAnnotationContained;
                         return;
                     case ActionStartSexp:
                         _valueType = IonType.Sexp;
+                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseParen);
                         _state = StateBeforeAnnotationSexp;
                         return;
                     case ActionStartLob:
@@ -374,6 +381,7 @@ namespace IonDotnet.Internals.Text
                         _state = StateEof;
                         return;
                     case ActionFinishContainer:
+                        ValidateClosingSymbol(token);
                         _state = GetStateAfterContainer(_containerStack.Peek());
                         _eof = true;
                         return;
@@ -393,6 +401,32 @@ namespace IonDotnet.Internals.Text
                         _state = GetStateAfterValue(_containerStack.Peek());
                         return;
                 }
+            }
+        }
+
+        private void ValidateClosingSymbol(int token)
+        {
+            if (_expectedContainerClosingSymbol.Count == 0)
+                throw new FormatException($"Unexpected { GetCharacterValueOfClosingContainerToken(token) }");
+
+            var latestContainerSymbol = _expectedContainerClosingSymbol.Pop();
+            if (latestContainerSymbol != token)
+            {
+                var currentToken = GetCharacterValueOfClosingContainerToken(token);
+                var expectedToken = GetCharacterValueOfClosingContainerToken(latestContainerSymbol);
+
+                throw new FormatException($"Illegal character: expected '{ expectedToken }' character but encountered '{ currentToken }'");
+            }
+        }
+
+        private char GetCharacterValueOfClosingContainerToken(int tokenCode)
+        {
+            switch (tokenCode)
+            {
+                case TextConstants.TokenCloseParen: return ')';
+                case TextConstants.TokenCloseBrace: return '}';
+                case TextConstants.TokenCloseSquare: return ']';
+                default: return ' ';
             }
         }
 
