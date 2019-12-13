@@ -6,7 +6,7 @@ namespace IonDotnet.Internals.Conversions
     /// List of C# types that the ion value translates to
     /// </summary>
     [Flags]
-    public enum ScalarType
+    internal enum ScalarType
     {
         Nothing = 0,
         Null = 1 << 0,
