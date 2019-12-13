@@ -193,9 +193,9 @@ namespace IonDotnet.Tests.Internals
             var reader = new UserTextReader(fileAsStream);
             Assert.AreEqual(IonType.List, reader.MoveNext());
             reader.StepIn();
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
             reader.StepOut();
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
         }
 
         [DataRow("good/commentMultiLineThenEof.ion")]
@@ -208,7 +208,7 @@ namespace IonDotnet.Tests.Internals
 
             Assert.AreEqual(IonType.Symbol, reader.MoveNext());
             Assert.AreEqual("abc", reader.SymbolValue().Text);
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
         }
 
         [TestMethod]

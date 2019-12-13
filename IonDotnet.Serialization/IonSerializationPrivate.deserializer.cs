@@ -22,7 +22,7 @@ namespace IonDotnet.Serialization
             t = Activator.CreateInstance(type);
             reader.StepIn();
 
-            while (reader.MoveNext() != IonType.None)
+            while (reader.MoveNext() != null)
             {
                 //find the property
                 var prop = type.GetProperty(reader.CurrentFieldName, BindingFlags.Public | BindingFlags.Instance);
@@ -65,7 +65,7 @@ namespace IonDotnet.Serialization
             reader.StepIn();
             var arrayList = new ArrayList();
 
-            while (reader.MoveNext() != IonType.None)
+            while (reader.MoveNext() != null)
             {
                 var element = Deserialize(reader, elementType);
                 arrayList.Add(element);

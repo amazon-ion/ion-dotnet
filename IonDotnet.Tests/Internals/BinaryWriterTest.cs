@@ -72,9 +72,9 @@ namespace IonDotnet.Tests.Internals
                 Assert.AreEqual(IonType.String, reader.MoveNext());
                 Assert.AreEqual("key", reader.CurrentFieldName);
                 Assert.AreEqual("value", reader.StringValue());
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
                 reader.StepOut();
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
             }
         }
 
@@ -104,10 +104,10 @@ namespace IonDotnet.Tests.Internals
                 Assert.AreEqual(IonType.String, reader.MoveNext());
                 Assert.AreEqual("key", reader.CurrentFieldName);
                 Assert.AreEqual("value", reader.StringValue());
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
                 reader.StepOut();
                 //movenext() should skip over bvm
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
             }
         }
 
@@ -329,7 +329,7 @@ namespace IonDotnet.Tests.Internals
                 foreach (var iType in listOfIonTypes)
                 {
                     var ionTypeValue = (IonType) iType.GetValue(null);
-                    if (ionTypeValue == IonType.Datagram || ionTypeValue == IonType.None) continue;
+                    if (ionTypeValue == IonType.Datagram) continue;
                     var name = ionTypeValue.Name;
                     writer.SetFieldName($"null_{name}");
                     writer.WriteNull(ionTypeValue);
@@ -346,7 +346,7 @@ namespace IonDotnet.Tests.Internals
             foreach (var iType in listOfIonTypes)
             {
                 var ionTypeValue = (IonType)iType.GetValue(null);
-                if (ionTypeValue == IonType.Datagram || ionTypeValue == IonType.None) continue;
+                if (ionTypeValue == IonType.Datagram) continue;
                 var name = ionTypeValue.Name;
                 Assert.AreEqual(ionTypeValue, reader.MoveNext());
                 Assert.AreEqual($"null_{name}", reader.CurrentFieldName);

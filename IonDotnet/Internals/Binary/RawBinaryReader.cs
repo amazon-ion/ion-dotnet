@@ -111,7 +111,7 @@ namespace IonDotnet.Internals.Binary
         private void ClearValue()
         {
             Annotations.Clear();
-            _valueType = IonType.None;
+            _valueType = null;
             _valueTid = -1;
             _valueIsNull = false;
             _v.Clear();
@@ -245,7 +245,7 @@ namespace IonDotnet.Internals.Binary
                 case BinaryConstants.TidStruct: // 13 D
                     return IonType.Struct;
                 case BinaryConstants.TidTypedecl: // 14 E
-                    return IonType.None; // we don't know yet
+                    return null; // we don't know yet
                 default:
                     throw new IonException($"Unrecognized value type encountered: {tid}");
             }
@@ -930,7 +930,7 @@ namespace IonDotnet.Internals.Binary
         public virtual IonType MoveNext()
         {
             if (_eof)
-                return IonType.None;
+                return null;
             if (_moveNextNeeded)
             {
                 try
@@ -944,7 +944,7 @@ namespace IonDotnet.Internals.Binary
             }
 
             _moveNextNeeded = true;
-            Debug.Assert(_valueType != IonType.None || _eof);
+            Debug.Assert(_valueType != null || _eof);
             return _valueType;
         }
 

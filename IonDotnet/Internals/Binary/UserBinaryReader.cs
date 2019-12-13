@@ -21,7 +21,7 @@ namespace IonDotnet.Internals.Binary
         public override IonType MoveNext()
         {
             GetSymbolTable();
-            if (!HasNext()) return IonType.None;
+            if (!HasNext()) return null;
             _moveNextNeeded = true;
             return _valueType;
         }

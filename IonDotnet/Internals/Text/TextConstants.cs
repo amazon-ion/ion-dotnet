@@ -372,7 +372,7 @@ namespace IonDotnet.Internals.Text
                 case TokenStringTripleQuote:
                     return IonType.String;
                 default:
-                    return IonType.None;
+                    return null;
             }
         }
 

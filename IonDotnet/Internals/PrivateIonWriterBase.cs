@@ -22,12 +22,12 @@ namespace IonDotnet.Internals
         public void WriteValues(IIonReader reader)
         {
             //TODO possible optimization?
-            if (reader.CurrentType == IonType.None)
+            if (reader.CurrentType == null)
             {
                 reader.MoveNext();
             }
 
-            while (reader.CurrentType != IonType.None)
+            while (reader.CurrentType != null)
             {
                 WriteValue(reader);
                 reader.MoveNext();
@@ -102,7 +102,7 @@ namespace IonDotnet.Internals
 
             StepIn(type);
             reader.StepIn();
-            while ((type = reader.MoveNext()) != IonType.None)
+            while ((type = reader.MoveNext()) != null)
             {
                 WriteValueRecursively(type, reader);
             }

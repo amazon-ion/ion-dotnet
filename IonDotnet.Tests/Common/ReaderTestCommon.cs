@@ -12,7 +12,7 @@ namespace IonDotnet.Tests.Common
         {
             //also convieniently testing symtab
             Assert.IsNotNull(reader.GetSymbolTable());
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
         }
 
         //empty struct {}
@@ -22,10 +22,10 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual(IonType.Struct, reader.CurrentType);
             reader.StepIn();
             Assert.AreEqual(1, reader.CurrentDepth);
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
             for (var i = 0; i < 10; i++)
             {
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
             }
 
             reader.StepOut();
@@ -75,7 +75,7 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual(IonType.Bool, reader.CurrentType);
             Assert.AreEqual("yolo", reader.CurrentFieldName);
             Assert.AreEqual(true, reader.BoolValue());
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
             reader.StepOut();
             Assert.AreEqual(0, reader.CurrentDepth);
         }
@@ -125,7 +125,7 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual(IonType.Float, reader.CurrentType);
             Assert.AreEqual(2213.1267567, reader.DoubleValue());
 
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
             reader.StepOut();
             Assert.AreEqual(0, reader.CurrentDepth);
         }
@@ -150,7 +150,7 @@ namespace IonDotnet.Tests.Common
             Assert.AreEqual(IonType.Int, reader.CurrentType);
             Assert.AreEqual(789, reader.IntValue());
 
-            Assert.AreEqual(IonType.None, reader.MoveNext());
+            Assert.AreEqual(null, reader.MoveNext());
             reader.StepOut();
             Assert.AreEqual(0, reader.CurrentDepth);
         }

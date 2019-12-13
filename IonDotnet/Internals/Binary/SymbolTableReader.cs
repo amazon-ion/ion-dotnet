@@ -106,7 +106,7 @@ namespace IonDotnet.Internals.Binary
         public IonType MoveNext()
         {
             if (!HasNext())
-                return IonType.None;
+                return null;
             var newState = _currentState;
             switch (_currentState)
             {
@@ -710,31 +710,31 @@ namespace IonDotnet.Internals.Binary
         {
             switch (state)
             {
-                case S_BOF: return IonType.None;
+                case S_BOF: return null;
                 case S_STRUCT: return IonType.Struct;
-                case S_IN_STRUCT: return IonType.None;
+                case S_IN_STRUCT: return null;
                 case S_NAME: return IonType.String;
                 case S_VERSION: return IonType.Int;
                 case S_MAX_ID: return IonType.Int;
                 case S_IMPORT_LIST: return IonType.List;
-                case S_IN_IMPORTS: return IonType.None;
+                case S_IN_IMPORTS: return null;
                 case S_IMPORT_STRUCT: return IonType.Struct;
-                case S_IN_IMPORT_STRUCT: return IonType.None;
+                case S_IN_IMPORT_STRUCT: return null;
                 case S_IMPORT_NAME: return IonType.String;
                 case S_IMPORT_VERSION: return IonType.Int;
                 case S_IMPORT_MAX_ID: return IonType.Int;
-                case S_IMPORT_STRUCT_CLOSE: return IonType.None;
-                case S_IMPORT_LIST_CLOSE: return IonType.None;
-                case S_AFTER_IMPORT_LIST: return IonType.None;
+                case S_IMPORT_STRUCT_CLOSE: return null;
+                case S_IMPORT_LIST_CLOSE: return null;
+                case S_AFTER_IMPORT_LIST: return null;
                 case S_SYMBOL_LIST: return IonType.List;
-                case S_IN_SYMBOLS: return IonType.None;
+                case S_IN_SYMBOLS: return null;
                 case S_SYMBOL: return IonType.String;
-                case S_SYMBOL_LIST_CLOSE: return IonType.None;
-                case S_STRUCT_CLOSE: return IonType.None;
-                case S_EOF: return IonType.None;
+                case S_SYMBOL_LIST_CLOSE: return null;
+                case S_STRUCT_CLOSE: return null;
+                case S_EOF: return null;
                 default:
                     ThrowUnrecognizedState(state);
-                    return IonType.None;
+                    return null;
             }
         }
 

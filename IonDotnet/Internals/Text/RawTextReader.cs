@@ -173,7 +173,7 @@ namespace IonDotnet.Internals.Text
             _valueBuffer = new StringBuilder();
             _scanner = new TextScanner(input);
             _eof = false;
-            _valueType = IonType.None;
+            _valueType = null;
             _hasNextCalled = false;
             _containerStack = new ContainerStack(this, 6);
             _containerStack.PushContainer(IonType.Datagram);
@@ -200,7 +200,7 @@ namespace IonDotnet.Internals.Text
 
         private void ClearValue()
         {
-            _valueType = IonType.None;
+            _valueType = null;
             ClearValueBuffer();
             _annotations.Clear();
             ClearFieldName();
@@ -537,9 +537,9 @@ namespace IonDotnet.Internals.Text
         public IonType MoveNext()
         {
             if (!HasNext())
-                return IonType.None;
+                return null;
 
-            if (_valueType == IonType.None && _scanner.UnfinishedToken)
+            if (_valueType == null && _scanner.UnfinishedToken)
             {
                 LoadTokenContents(_scanner.Token);
             }
@@ -623,7 +623,7 @@ namespace IonDotnet.Internals.Text
                 _hasNextCalled = true;
             }
 
-            _valueType = IonType.None;
+            _valueType = null;
         }
 
         public void StepOut()
@@ -749,7 +749,7 @@ namespace IonDotnet.Internals.Text
 
         private static int GetStateAtContainerStart(IonType container)
         {
-            if (container == IonType.None)
+            if (container == null)
                 return StateBeforeAnnotationDatagram;
 
             Debug.Assert(container.IsContainer());
@@ -819,7 +819,7 @@ namespace IonDotnet.Internals.Text
 
         private static int GetStateAfterContainer(IonType newContainer)
         {
-            if (newContainer == IonType.None)
+            if (newContainer == null)
                 return StateBeforeAnnotationDatagram;
             Debug.Assert(newContainer.IsContainer());
 

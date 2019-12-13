@@ -54,7 +54,7 @@ namespace IonDotnet.Internals.Text
             {
                 base.HasNext();
 
-                if (_valueType != IonType.None && !CurrentIsNull && GetContainerType() == IonType.Datagram)
+                if (_valueType != null && !CurrentIsNull && GetContainerType() == IonType.Datagram)
                 {
                     switch (_valueType)
                     {

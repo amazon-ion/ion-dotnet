@@ -5,9 +5,8 @@ namespace IonDotnet
     /// <summary>
     /// Defines the static constant Ion types.
     /// </summary>
-    public class IonType : IonTypeEnumeration
+    public class IonType
     {
-        public static readonly IonType None = new IonType("none", -1);
         public static readonly IonType Null = new IonType("null", 0);
         public static readonly IonType Bool = new IonType("bool", 1);
         // note that INT is actually 0x2 **and** 0x3 in the Ion binary encoding
@@ -17,32 +16,22 @@ namespace IonDotnet
         public static readonly IonType Timestamp = new IonType("timestamp", 6);
         public static readonly IonType Symbol = new IonType("symbol", 7);
         public static readonly IonType String = new IonType("string", 8);
-        public static readonly IonType Blob = new IonType("blob", 9);
-        public static readonly IonType Clob = new IonType("clob", 10);
+        public static readonly IonType Clob = new IonType("clob", 9);
+        public static readonly IonType Blob = new IonType("blob", 10);
         public static readonly IonType List = new IonType("list", 11);
         public static readonly IonType Sexp = new IonType("sexp", 12);
         public static readonly IonType Struct = new IonType("struct", 13);
         public static readonly IonType Datagram = new IonType("datagram", 14);
 
-        public IonType(string name, int id) : base(name, id)
-        {
-        }
-    }
-
-    /// <summary>
-    /// An abstract base class used for the creation of an Ion type.
-    /// </summary>
-    public abstract class IonTypeEnumeration
-    {
         public string Name { get; private set; }
         public int Id { get; private set; }
 
-        protected IonTypeEnumeration(string name, int id)
+        private IonType(string name, int id)
         {
             Name = name;
             Id = id;
         }
-    } 
+    }
 
     public static class IonTypeExtensions
     {
@@ -72,7 +61,7 @@ namespace IonDotnet
         /// </summary>
         /// <param name="t">IonType enum</param>
         /// <returns>true when the this is a scalar type</returns>
-        public static bool IsScalar(this IonType t) => t.Id > IonType.None.Id && t.Id < IonType.Clob.Id;
+        public static bool IsScalar(this IonType t) => t.Id > IonType.Null.Id && t.Id < IonType.Blob.Id;
 
         /// <summary>
         /// Determines whether a type represents a numeric type

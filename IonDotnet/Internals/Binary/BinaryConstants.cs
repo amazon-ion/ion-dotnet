@@ -54,8 +54,8 @@ namespace IonDotnet.Internals.Binary
             byte data;
             switch (type)
             {
-                case IonType w when w.Id == IonType.None.Id:
-                case IonType t when t.Id == IonType.Null.Id:
+                case null:
+                case IonType w when w.Id == IonType.Null.Id:
                     data = 0x0F;
                     break;
                 case IonType w when w.Id == IonType.Bool.Id:

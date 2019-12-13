@@ -21,7 +21,7 @@ namespace IonDotnet.Tests.Integration
             {
                 Assert.AreEqual(IonType.Int, reader.MoveNext());
                 Assert.AreEqual(3, reader.IntValue());
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
             }
 
             void writerFunc(IIonWriter writer)
@@ -241,7 +241,7 @@ namespace IonDotnet.Tests.Integration
                     ReaderTestCommon.AssertFloatEqual(f, reader.DoubleValue());
                 }
 
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
             }
 
             void writerFunc(IIonWriter writer)
@@ -279,7 +279,7 @@ namespace IonDotnet.Tests.Integration
                 Assert.AreEqual(IonType.Float, reader.MoveNext());
                 Assert.IsTrue(double.IsNegativeInfinity(reader.DoubleValue()));
 
-                Assert.AreEqual(IonType.None, reader.MoveNext());
+                Assert.AreEqual(null, reader.MoveNext());
             }
 
             void writerFunc(IIonWriter writer)
@@ -308,7 +308,7 @@ namespace IonDotnet.Tests.Integration
             Assert.AreEqual(IonType.Float, r.MoveNext());
             ReaderTestCommon.AssertFloatEqual(12.3, r.DoubleValue());
 
-            Assert.AreEqual(IonType.None, r.MoveNext());
+            Assert.AreEqual(null, r.MoveNext());
         }
 
         [TestMethod]
@@ -316,7 +316,7 @@ namespace IonDotnet.Tests.Integration
         {
             var file = DirStructure.IonTestFile("good/float_zeros.ion");
             var reader = ReaderFromFile(file, InputStyle.FileStream);
-            while (reader.MoveNext() != IonType.None)
+            while (reader.MoveNext() != null)
             {
                 Assert.AreEqual(IonType.Float, reader.CurrentType);
                 Assert.AreEqual(0d, reader.DoubleValue());

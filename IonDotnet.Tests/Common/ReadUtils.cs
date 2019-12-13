@@ -14,7 +14,7 @@ namespace IonDotnet.Tests.Common
             if (reader.MoveNext() != IonType.Struct) return false;
             var empty = true;
             reader.StepIn();
-            if (reader.MoveNext() != IonType.None)
+            if (reader.MoveNext() != null)
             {
                 empty = false;
             }
@@ -104,7 +104,7 @@ namespace IonDotnet.Tests.Common
             public static bool DatagramEmpty(byte[] data)
             {
                 var reader = new UserBinaryReader(new MemoryStream(data));
-                return reader.MoveNext() == IonType.None;
+                return reader.MoveNext() == null;
             }
 
             public static BigDecimal ReadSingleDecimal(byte[] data)

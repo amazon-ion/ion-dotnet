@@ -139,7 +139,7 @@ namespace IonDotnet.Internals
             reader.StepIn();
             bool foundImport = false, foundLocals = false;
             IonType fieldType;
-            while ((fieldType = reader.MoveNext()) != IonType.None)
+            while ((fieldType = reader.MoveNext()) != null)
             {
                 if (reader.CurrentIsNull)
                     continue;
@@ -204,7 +204,7 @@ namespace IonDotnet.Internals
             reader.StepIn();
 
             IonType type;
-            while ((type = reader.MoveNext()) != IonType.None)
+            while ((type = reader.MoveNext()) != null)
             {
                 var text = type == IonType.String ? reader.StringValue() : null;
 
@@ -228,7 +228,7 @@ namespace IonDotnet.Internals
             reader.StepIn();
 
             IonType t;
-            while ((t = reader.MoveNext()) != IonType.None)
+            while ((t = reader.MoveNext()) != null)
             {
                 if (reader.CurrentIsNull || t != IonType.Struct)
                     continue;
@@ -253,7 +253,7 @@ namespace IonDotnet.Internals
             string name = null;
             var version = -1;
             var maxId = -1;
-            while ((t = reader.MoveNext()) != IonType.None)
+            while ((t = reader.MoveNext()) != null)
             {
                 if (reader.CurrentIsNull)
                     continue;
