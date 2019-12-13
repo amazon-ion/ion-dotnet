@@ -61,7 +61,7 @@ namespace IonDotnet
         /// </summary>
         /// <param name="t">IonType enum</param>
         /// <returns>true when the this is a scalar type</returns>
-        public static bool IsScalar(this IonType t) => t.Id > IonType.Null.Id && t.Id < IonType.Blob.Id;
+        public static bool IsScalar(this IonType t) => t.Id >= IonType.Null.Id && t.Id < IonType.Clob.Id;
 
         /// <summary>
         /// Determines whether a type represents a numeric type
