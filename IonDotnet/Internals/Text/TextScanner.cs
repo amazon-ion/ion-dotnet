@@ -1972,7 +1972,7 @@ namespace IonDotnet.Internals.Text
                     case CharacterSequence.CharSeqStringTerminator:
                         FinishNextToken(isClob ? Token : TextConstants.TokenStringTripleQuote, isClob);
                         return c;
-                    case CharacterSequence.CharSeqEof: // was
+                    case CharacterSequence.CharSeqEof:
                         FinishNextToken(isClob ? Token : TextConstants.TokenStringTripleQuote, isClob);
                         return Token == TextConstants.TokenStringTripleQuote ? TextConstants.TokenEof : c;
                     // new line normalization and counting is handled in read_char
