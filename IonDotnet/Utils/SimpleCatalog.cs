@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static System.Diagnostics.Debug;
 
-namespace IonDotnet.Systems
+namespace IonDotnet.Utils
 {
     /// <inheritdoc cref="ICatalog" />
     /// <summary>

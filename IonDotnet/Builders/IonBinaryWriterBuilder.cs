@@ -3,7 +3,7 @@ using System.IO;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Utils;
 
-namespace IonDotnet.Systems
+namespace IonDotnet.Builders
 {
     public static class IonBinaryWriterBuilder
     {
