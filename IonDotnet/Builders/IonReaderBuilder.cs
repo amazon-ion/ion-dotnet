@@ -4,7 +4,7 @@ using System.Text;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
 
-namespace IonDotnet.Systems
+namespace IonDotnet.Builders
 {
     public enum ReaderFormat
     {

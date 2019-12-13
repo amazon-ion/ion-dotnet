@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using IonDotnet.Internals;
-using IonDotnet.Systems;
+using IonDotnet.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IonDotnet.Tests.Systems
+namespace IonDotnet.Tests.Utils
 {
     [TestClass]
     public class SimpleCatalogTest
