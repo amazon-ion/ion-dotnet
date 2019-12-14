@@ -1,4 +1,5 @@
 using System;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -7,7 +8,7 @@ namespace IonDotnet.Tests.Tree
     [TestClass]
     public class IonBoolTest : TreeTestBase
     {
-        protected override object MakeMutableValue() => new IonBool(false);
+        protected override IIonValue MakeMutableValue() => new IonBool(false);
 
         [TestMethod]
         public void Null()

@@ -362,5 +362,11 @@ namespace IonDotnet.Tree.Impl
                 return sw.ToString();
             }
         }
+
+        public bool IsEquivalentTo(IIonValue value)
+        {
+            var valueIonValue = (IonValue)value;
+            return IsEquivalentTo(valueIonValue);
+        }
     }
 }

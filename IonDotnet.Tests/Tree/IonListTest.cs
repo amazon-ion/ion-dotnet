@@ -1,3 +1,4 @@
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -6,7 +7,7 @@ namespace IonDotnet.Tests.Tree
     [TestClass]
     public class IonListTest : IonSequenceTest
     {
-        protected override object MakeMutableValue()
+        protected override IIonValue MakeMutableValue()
         {
             return new IonList();
         }

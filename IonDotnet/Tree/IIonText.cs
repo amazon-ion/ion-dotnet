@@ -7,6 +7,5 @@
             get;
             set;
         }
-        void MakeNull();
     }
 }

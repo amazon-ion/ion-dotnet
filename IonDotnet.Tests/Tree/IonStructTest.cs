@@ -1,4 +1,5 @@
 using System.Linq;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -9,7 +10,7 @@ namespace IonDotnet.Tests.Tree
     {
         private static int _serial = 1;
 
-        protected override object MakeMutableValue()
+        protected override IIonValue MakeMutableValue()
         {
             return new IonStruct();
         }

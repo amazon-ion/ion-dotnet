@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -14,17 +15,17 @@ namespace IonDotnet.Tests.Tree
             Encoding.UTF8
         };
 
-        protected override object MakeMutableValue()
+        protected override IIonValue MakeMutableValue()
         {
             return new IonClob(new byte[0]);
         }
 
-        protected override object MakeNullValue()
+        protected override IIonLob MakeNullValue()
         {
             return IonClob.NewNull();
         }
 
-        protected override object MakeWithBytes(ReadOnlySpan<byte> bytes)
+        protected override IIonLob MakeWithBytes(ReadOnlySpan<byte> bytes)
         {
             return new IonClob(bytes);
         }

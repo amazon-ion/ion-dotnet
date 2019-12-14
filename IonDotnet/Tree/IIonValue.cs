@@ -13,8 +13,10 @@ namespace IonDotnet.Tree
         void MakeReadOnly();
         string ToPrettyString();
         void WriteTo(IIonWriter writer);
-
-        SymbolToken FieldNameSymbol { get; }
+        bool IsEquivalentTo(IIonValue value);
         IonType Type { get; }
+        bool IsReadOnly { get; }
+        bool IsNull { get; }
+        void MakeNull();
     }
 }

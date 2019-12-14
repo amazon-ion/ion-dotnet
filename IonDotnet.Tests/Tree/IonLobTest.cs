@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -8,16 +9,16 @@ namespace IonDotnet.Tests.Tree
 {
     public abstract class IonLobTest : TreeTestBase
     {
-        protected abstract object MakeNullValue();
+        protected abstract IIonLob MakeNullValue();
 
-        protected abstract object MakeWithBytes(ReadOnlySpan<byte> bytes);
+        protected abstract IIonLob MakeWithBytes(ReadOnlySpan<byte> bytes);
 
         protected abstract IonType MainIonType { get; }
 
         [TestMethod]
         public void Null()
         {
-            var n = (IonLob) MakeNullValue();
+            var n = MakeNullValue();
             Assert.IsTrue(n.IsNull);
             Assert.AreEqual(MainIonType, n.Type);
             Assert.ThrowsException<NullValueException>(() => n.Bytes());
@@ -31,7 +32,7 @@ namespace IonDotnet.Tests.Tree
         public void MakeWithBytes()
         {
             var bytes = Enumerable.Repeat<byte>(1, 10).ToArray();
-            var v = (IonLob) MakeWithBytes(bytes);
+            var v = MakeWithBytes(bytes);
             Assert.AreEqual(MainIonType, v.Type);
             Assert.IsFalse(v.IsNull);
             Assert.IsTrue(v.Bytes().SequenceEqual(bytes));
