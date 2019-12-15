@@ -2,10 +2,6 @@
 {
     public interface IIonTimestamp : IIonValue
     {
-        Timestamp Value
-        {
-            get;
-            set;
-        }
+        Timestamp Value { get; set; }
     }
 }

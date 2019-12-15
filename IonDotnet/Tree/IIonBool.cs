@@ -2,10 +2,6 @@
 {
     public interface IIonBool : IIonValue
     {
-        bool Value
-        {
-            get;
-            set;
-        }
+        bool Value { get; set; }
     }
 }

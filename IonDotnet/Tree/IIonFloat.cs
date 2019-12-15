@@ -2,10 +2,6 @@
 {
     public interface IIonFloat : IIonValue
     {
-        double Value
-        {
-            get;
-            set;
-        }
+        double Value { get; set; }
     }
 }
