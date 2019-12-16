@@ -15,7 +15,7 @@ namespace IonDotnet.Tests.Internals
                 {
                     var symtok = tab.Find(sym.sym);
                     Assert.AreEqual(sym, sym, symtok.Text);
-                    Assert.AreEqual(sym.id, symtok.ImportLocation.Sid);
+                    Assert.AreEqual(SymbolToken.UnknownSid, symtok.Sid);
                     var symText = tab.FindKnownSymbol(sym.id);
                     Assert.AreEqual(sym.sym, symText);
                     var sid = tab.FindSymbolId(sym.sym);

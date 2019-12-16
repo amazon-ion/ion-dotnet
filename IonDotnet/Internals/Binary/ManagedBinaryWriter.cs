@@ -529,10 +529,10 @@ namespace IonDotnet.Internals.Binary
                 if (text == null) throw new ArgumentNullException(nameof(text));
 
                 var found = _writer._importContext.TryGetValue(text, out var sid);
-                if (found) return new SymbolToken(text, sid);
+                if (found) return new SymbolToken(text, SymbolToken.UnknownSid);
                 found = _writer._locals.TryGetValue(text, out sid);
 
-                return found ? new SymbolToken(text, sid) : default;
+                return found ? new SymbolToken(text, SymbolToken.UnknownSid) : default;
             }
 
             public override string FindKnownSymbol(int sid)

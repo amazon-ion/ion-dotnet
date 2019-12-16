@@ -45,7 +45,7 @@ namespace IonDotnet.Tests.Internals
 
             //make sure that no extra allocation is made
             Assert.AreSame(text, symtok.Text);
-            Assert.AreEqual(1, symtok.ImportLocation.Sid);
+            Assert.AreEqual(SymbolToken.UnknownSid, symtok.Sid);
         }
 
         [TestMethod]

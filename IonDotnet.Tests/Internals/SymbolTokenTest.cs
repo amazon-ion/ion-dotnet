@@ -48,7 +48,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void IsEquivalentTo()
         {
-            var token = CreateSampleTokenWihtImportLocation();
+            var token = CreateSampleTokenWithImportLocation();
             var equalToken = new SymbolToken("yo", 30, new ImportLocation("hey", 40));
             var unEqualToken = new SymbolToken("oy", 30, new ImportLocation("hey", 41));
             Assert.IsTrue(token.IsEquivalentTo(equalToken));
@@ -98,6 +98,6 @@ namespace IonDotnet.Tests.Internals
         }
 
         private static SymbolToken CreateSampleToken() => new SymbolToken("yo", 30);
-        private static SymbolToken CreateSampleTokenWihtImportLocation() => new SymbolToken("yo", 30, new ImportLocation("hey", 40));
+        private static SymbolToken CreateSampleTokenWithImportLocation() => new SymbolToken("yo", 30, new ImportLocation("hey", 40));
     }
 }
