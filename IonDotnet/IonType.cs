@@ -5,18 +5,19 @@
         None = -1,
         Null = 0,
         Bool = 1,
+        // note that INT is actually 0x2 **and** 0x3 in the Ion binary encoding
         Int = 2,
-        Float = 3,
-        Decimal = 4,
-        Timestamp = 5,
-        Symbol = 6,
-        String = 7,
-        Clob = 8,
-        Blob = 9,
-        List = 10,
-        Sexp = 11,
-        Struct = 12,
-        Datagram = 13
+        Float = 4,
+        Decimal = 5,
+        Timestamp = 6,
+        Symbol = 7,
+        String = 8,
+        Clob = 9,
+        Blob = 10,
+        List = 11,
+        Sexp = 12,
+        Struct = 13,
+        Datagram = 14
     }
 
     public static class IonTypeExtensions
