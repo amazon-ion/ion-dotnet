@@ -110,7 +110,7 @@ namespace IonDotnet.Internals
                 return default;
 
             var internedText = _symbolNames[sid - 1];
-            return new SymbolToken(internedText, sid);
+            return new SymbolToken(internedText, SymbolToken.UnknownSid);
         }
 
         public int FindSymbolId(string name)

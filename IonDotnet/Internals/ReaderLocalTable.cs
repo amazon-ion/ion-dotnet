@@ -60,19 +60,17 @@ namespace IonDotnet.Internals
 
         public SymbolToken Find(string text)
         {
-            var offset = 0;
             foreach (var import in Imports)
             {
                 var t = import.Find(text);
                 if (t != default)
-                    return new SymbolToken(t.Text, offset + t.Sid);
-                offset += import.MaxId;
+                    return new SymbolToken(t.Text, SymbolToken.UnknownSid);
             }
 
             for (var i = 0; i < _ownSymbols.Count; i++)
             {
                 if (_ownSymbols[i] == text)
-                    return new SymbolToken(text, i + 1 + _importedMaxId);
+                    return new SymbolToken(text, SymbolToken.UnknownSid);
             }
 
             return default;
