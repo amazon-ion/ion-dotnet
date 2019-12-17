@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Numerics;
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonInt : IonValue
+    internal sealed class IonInt : IonValue, IIonInt
     {
         // This mask combine the 4th and 5th bit of the flag byte
         private const int IntSizeMask = 0x18;

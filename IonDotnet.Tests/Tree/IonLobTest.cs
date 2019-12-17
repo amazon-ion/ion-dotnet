@@ -2,15 +2,16 @@ using System;
 using System.Linq;
 using System.Text;
 using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
 {
     public abstract class IonLobTest : TreeTestBase
     {
-        protected abstract IonLob MakeNullValue();
+        protected abstract IIonLob MakeNullValue();
 
-        protected abstract IonLob MakeWithBytes(ReadOnlySpan<byte> bytes);
+        protected abstract IIonLob MakeWithBytes(ReadOnlySpan<byte> bytes);
 
         protected abstract IonType MainIonType { get; }
 

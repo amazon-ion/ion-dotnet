@@ -1,10 +1,10 @@
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// A Ion List value.
     /// </summary>
-    public sealed class IonList : IonSequence
+    internal sealed class IonList : IonSequence, IIonList
     {
         public IonList() : this(false)
         {

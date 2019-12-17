@@ -1,5 +1,6 @@
 using System;
 using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
@@ -7,7 +8,7 @@ namespace IonDotnet.Tests.Tree
     [TestClass]
     public class IonFloatTest : TreeTestBase
     {
-        protected override IonValue MakeMutableValue()
+        protected override IIonValue MakeMutableValue()
         {
             return new IonFloat(0.2);
         }

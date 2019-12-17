@@ -1,13 +1,13 @@
 using System;
 using System.Diagnostics;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// A value that holds a blob of byte data.
     /// </summary>
-    public abstract class IonLob : IonValue
+    internal abstract class IonLob : IonValue, IIonLob
     {
         protected byte[] ByteBuffer;
 

@@ -1,10 +1,10 @@
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// Represent Ion textual values.
     /// </summary>
-    public abstract class IonText : IonValue
+    internal abstract class IonText : IonValue, IIonText
     {
         protected string StringVal;
 

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
@@ -19,7 +19,7 @@ namespace IonDotnet.Tests.Tree
             IonValue r = null;
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 if (i == idx)
                 {
                     r = c;
@@ -40,10 +40,10 @@ namespace IonDotnet.Tests.Tree
         {
             Debug.Assert(count > idx);
             var v = (IonSequence) MakeMutableValue();
-            var r = MakeMutableValue();
+            var r = (IonValue) MakeMutableValue();
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 DoAdd(v, c);
             }
 
@@ -64,7 +64,7 @@ namespace IonDotnet.Tests.Tree
             var v = (IonSequence) MakeMutableValue();
             for (var i = 0; i < count; i++)
             {
-                var c = MakeMutableValue();
+                var c = (IonValue) MakeMutableValue();
                 DoAdd(v, c);
             }
 

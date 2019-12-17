@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonStruct : IonContainer
+    internal sealed class IonStruct : IonContainer, IIonStruct
     {
         private List<IonValue> _values;
 

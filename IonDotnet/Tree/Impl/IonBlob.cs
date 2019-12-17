@@ -1,13 +1,13 @@
 using System;
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// An Ion blob value.
     /// </summary>
-    public sealed class IonBlob : IonLob
+    internal sealed class IonBlob : IonLob, IIonBlob
     {
         public IonBlob(ReadOnlySpan<byte> bytes) : base(bytes)
         {

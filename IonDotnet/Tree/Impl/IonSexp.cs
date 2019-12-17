@@ -1,10 +1,10 @@
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// An Ion S-exp value.
     /// </summary>
-    public sealed class IonSexp : IonSequence
+    internal sealed class IonSexp : IonSequence, IIonSexp
     {
         public IonSexp() : this(false)
         {

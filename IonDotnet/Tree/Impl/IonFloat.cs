@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using IonDotnet.Internals;
 using IonDotnet.Utils;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// Ion value representing a floating point number.
     /// </summary>
-    public sealed class IonFloat : IonValue
+    internal sealed class IonFloat : IonValue, IIonFloat
     {
         private double _d;
 

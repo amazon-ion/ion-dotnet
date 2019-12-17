@@ -3,13 +3,13 @@ using System.IO;
 using System.Text;
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// An Ion clob value.
     /// </summary>
-    public sealed class IonClob : IonLob
+    internal sealed class IonClob : IonLob, IIonClob
     {
         public IonClob(ReadOnlySpan<byte> bytes) : base(bytes)
         {

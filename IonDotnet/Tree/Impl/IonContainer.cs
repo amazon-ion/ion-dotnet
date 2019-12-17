@@ -2,14 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc cref="IonValue" />
     /// <summary>
     /// Base class for all container type (List,Struct,Sexp,Datagram) Ion values.
     /// This class also implements the <see cref="ICollection"/> interface.
     /// </summary>
-    public abstract class IonContainer : IonValue, ICollection<IonValue>
+    internal abstract class IonContainer : IonValue, ICollection<IonValue>, IIonContainer
     {
         protected IonContainer(bool isNull) : base(isNull)
         {

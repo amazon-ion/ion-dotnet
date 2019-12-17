@@ -7,13 +7,13 @@ using IonDotnet.Builders;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <summary>
     /// Represents a tree view into Ion data. Each <see cref="IonValue" /> is a node in the tree. These values are
     /// mutable and strictly hierarchical. 
     /// </summary>
-    public abstract class IonValue
+    internal abstract class IonValue : IIonValue
     {
         #region Flags
 
@@ -361,6 +361,12 @@ namespace IonDotnet.Tree
                 writer.Finish();
                 return sw.ToString();
             }
+        }
+
+        public bool IsEquivalentTo(IIonValue value)
+        {
+            var valueIonValue = (IonValue)value;
+            return IsEquivalentTo(valueIonValue);
         }
     }
 }

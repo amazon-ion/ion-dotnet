@@ -1,9 +1,9 @@
 using System;
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonDecimal : IonValue
+    internal sealed class IonDecimal : IonValue, IIonDecimal
     {
         private BigDecimal _val;
 

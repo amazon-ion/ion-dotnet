@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Tree
@@ -8,7 +9,7 @@ namespace IonDotnet.Tests.Tree
     [TestClass]
     public class IonIntTest : TreeTestBase
     {
-        protected override IonValue MakeMutableValue() => new IonInt(0);
+        protected override IIonValue MakeMutableValue() => new IonInt(0);
 
         [TestMethod]
         public void Null()

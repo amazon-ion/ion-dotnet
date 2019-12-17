@@ -3,7 +3,7 @@ using System.IO;
 using IonDotnet.Builders;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
-using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IonDotnet.Tests.Internals

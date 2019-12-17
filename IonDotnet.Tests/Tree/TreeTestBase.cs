@@ -6,7 +6,7 @@ namespace IonDotnet.Tests.Tree
 {
     public abstract class TreeTestBase
     {
-        protected abstract IonValue MakeMutableValue();
+        protected abstract IIonValue MakeMutableValue();
 
         [DataRow(new string[0])]
         [DataRow(new[] {"a"})]

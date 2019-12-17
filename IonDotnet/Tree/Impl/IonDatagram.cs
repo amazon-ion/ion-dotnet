@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc />
     /// <summary>
     /// An ion datagram is a special kind of value which represents a stream of Ion values.
     /// </summary>
-    public sealed class IonDatagram : IonSequence
+    internal sealed class IonDatagram : IonSequence, IIonDatagram
     {
         public IonDatagram() : base(false)
         {

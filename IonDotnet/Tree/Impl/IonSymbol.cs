@@ -1,8 +1,8 @@
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonSymbol : IonText
+    internal sealed class IonSymbol : IonText, IIonSymbol
     {
         private int _sid;
         private ImportLocation _importLocation;

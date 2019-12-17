@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
     /// <inheritdoc cref="IonContainer" />
     /// <summary>
     /// A container that is a sequence of values.
     /// </summary>
-    public abstract class IonSequence : IonContainer, IList<IonValue>
+    internal abstract class IonSequence : IonContainer, IList<IonValue>, IIonSequence
     {
         private List<IonValue> _children;
 

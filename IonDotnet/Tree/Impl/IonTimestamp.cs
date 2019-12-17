@@ -1,8 +1,8 @@
 using IonDotnet.Internals;
 
-namespace IonDotnet.Tree
+namespace IonDotnet.Tree.Impl
 {
-    public sealed class IonTimestamp : IonValue
+    internal sealed class IonTimestamp : IonValue, IIonTimestamp
     {
         private Timestamp _timestamp;
 
