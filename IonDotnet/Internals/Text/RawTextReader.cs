@@ -487,7 +487,7 @@ namespace IonDotnet.Internals.Text
                     break;
             }
 
-            return new SymbolToken(text, sid);
+            return new SymbolToken(text, sid, new ImportLocation(GetSymbolTable().Name, sid));
         }
 
         private void FinishValue()
@@ -696,10 +696,10 @@ namespace IonDotnet.Internals.Text
 
             foreach (var a in _annotations)
             {
-                if (a.Text is null && a.Sid != 0)
+                if (a.Text is null && a.ImportLocation != default)
                 {
                     var symtab = GetSymbolTable();
-                    if (a.Sid < -1 || a.Sid > symtab.MaxId)
+                    if (a.ImportLocation.Sid < -1 || a.ImportLocation.Sid > symtab.MaxId)
                     {
                         throw new UnknownSymbolException(a.Sid);
                     }
