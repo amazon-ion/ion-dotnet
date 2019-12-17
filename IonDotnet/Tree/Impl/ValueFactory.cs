@@ -29,7 +29,7 @@ namespace IonDotnet.Tree.Impl
             return new IonBool(value);
         }
 
-        public IIonClob NullClob()
+        public IIonClob NewNullClob()
         {
             return IonClob.NewNull();
         }
@@ -104,9 +104,14 @@ namespace IonDotnet.Tree.Impl
             return IonSexp.NewNull();
         }
 
-        public IIonSexp NewSexp()
+        public IIonSexp NewEmptySexp()
         {
             return new IonSexp();
+        }
+
+        public IIonString NewNullString()
+        {
+            return IonString.NewNull();
         }
 
         public IIonString NewString(string value)
@@ -134,9 +139,9 @@ namespace IonDotnet.Tree.Impl
             return new IonSymbol(symbolToken);
         }
 
-        public IIonSymbol NewSymbol(string text, int sid)
+        public IIonSymbol NewSymbol(string text)
         {
-            return new IonSymbol(text, sid);
+            return new IonSymbol(text);
         }
 
         public IIonTimestamp NewNullTimestamp()

@@ -12,6 +12,11 @@ namespace IonDotnet.Tree.Impl
         {
         }
 
+        /// <summary>
+        /// Returns a new null.string value.
+        /// </summary>
+        public static IonString NewNull() => new IonString(null);
+
         public override bool IsEquivalentTo(IonValue other)
         {
             if (!base.IsEquivalentTo(other))

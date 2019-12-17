@@ -5,8 +5,6 @@ namespace IonDotnet.Tree
 {
     /// <summary>
     /// The factory for all {@link IonValue}s.
-    /// WARNING: This interface should not be implemented or extended by
-    /// code outside of this library.
     /// </summary>
     public interface IValueFactory
     {
@@ -40,7 +38,7 @@ namespace IonDotnet.Tree
         /// Constructs a new {@code null.clob} instance.
         /// </summary>
         /// <returns>A new {@code null.clob} instance.</returns>
-        IIonClob NullClob();
+        IIonClob NewNullClob();
 
         /// <summary>
         /// Constructs a new Ion {@code clob} instance, copying bytes from an array.
@@ -137,7 +135,13 @@ namespace IonDotnet.Tree
         /// Constructs a new empty (not null) {@code sexp} instance.
         /// </summary>
         /// <returns>A new empty {@code sexp} instance.</returns>
-        IIonSexp NewSexp();
+        IIonSexp NewEmptySexp();
+
+        /// <summary>
+        /// Constructs a new {@code null.string} instance.
+        /// </summary>
+        /// <returns>A new {@code null.string} instance.</returns>
+        IIonString NewNullString();
 
         /// <summary>
         /// Constructs a new Ion string with the given value.
@@ -175,9 +179,8 @@ namespace IonDotnet.Tree
         /// Constructs a new Ion symbol with the given values.
         /// </summary>
         /// <param name="text">The text value for the new symbol.</param>
-        /// <param name="sid">The SID value for the new symbol.</param>
         /// <returns>A new {@code symbol} instance.</returns>
-        IIonSymbol NewSymbol(string text, int sid);
+        IIonSymbol NewSymbol(string text);
 
         /// <summary>
         /// Constructs a new {@code null.timestamp} instance.
