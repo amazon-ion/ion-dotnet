@@ -22,7 +22,7 @@ namespace IonDotnet.Tree.Impl
             if (NullFlagOn())
                 return otherBool.IsNull;
 
-            return !otherBool.IsNull && otherBool.Value == Value;
+            return !otherBool.IsNull && otherBool.BoolValue == BoolValue;
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
@@ -39,7 +39,7 @@ namespace IonDotnet.Tree.Impl
 
         public override IonType Type => IonType.Bool;
 
-        public bool Value
+        public override bool BoolValue
         {
             get
             {

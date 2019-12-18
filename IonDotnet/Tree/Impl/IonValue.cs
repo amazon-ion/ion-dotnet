@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using IonDotnet.Builders;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
@@ -352,6 +354,34 @@ namespace IonDotnet.Tree.Impl
         /// <summary>The <see cref="IonType"/> of this value.</summary>
         public abstract IonType Type { get; }
 
+        // Applicable to IonDecimal
+        public virtual decimal DecimalValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual BigDecimal BigDecimalValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        // Applicable to IonContainer
+        public virtual int Count => throw new NotImplementedException();
+
+        // Applicable to IonText
+        public virtual string StringValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        // Applicable to IonInt
+        public virtual IntegerSize IntegerSize => throw new NotImplementedException();
+        public virtual BigInteger BigIntegerValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual int IntValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual long LongValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        // Applicable to IonSymbol
+        public virtual SymbolToken SymbolValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        // Applicable to IonBool
+        public virtual bool BoolValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        // Applicable to IonFloat
+        public virtual double FloatValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        // Applicable to IonTimestamp
+        public virtual Timestamp TimestampValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         public string ToPrettyString()
         {
             using (var sw = new StringWriter())
@@ -367,6 +397,41 @@ namespace IonDotnet.Tree.Impl
         {
             var valueIonValue = (IonValue)value;
             return IsEquivalentTo(valueIonValue);
+        }
+
+        public virtual ReadOnlySpan<byte> Bytes()
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void SetBytes(ReadOnlySpan<byte> buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual StreamReader NewReader(Encoding encoding)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void RemoveAt(int index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual bool RemoveField(string fieldName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual bool ContainsField(string fieldName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void Clear()
+        {
+            throw new NotImplementedException();
         }
     }
 }

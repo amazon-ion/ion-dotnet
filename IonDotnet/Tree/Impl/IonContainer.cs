@@ -35,7 +35,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// The number of children of this container.
         /// </summary>
-        public abstract int Count { get; }
+        public override abstract int Count { get; }
 
 
         /// <inheritdoc />
@@ -45,7 +45,7 @@ namespace IonDotnet.Tree.Impl
         /// <remarks>
         /// If this container is null, it will be set to a non-null empty container.
         /// </remarks>
-        public abstract void Clear();
+        public override abstract void Clear();
 
         /// <inheritdoc />
         /// <summary>

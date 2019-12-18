@@ -181,7 +181,7 @@ namespace IonDotnet.Tree.Impl
         /// <param name="fieldName">Field name.</param>
         /// <returns>True if the field was removed, false otherwise.</returns>
         /// <exception cref="ArgumentNullException">When <paramref name="fieldName"/> is empty.</exception>
-        public bool RemoveField(string fieldName)
+        public override bool RemoveField(string fieldName)
         {
             ThrowIfNull();
             ThrowIfLocked();
@@ -193,7 +193,7 @@ namespace IonDotnet.Tree.Impl
         }
 
         /// <returns>True if the struct contains such field name.</returns>
-        public bool ContainsField(string fieldName)
+        public override bool ContainsField(string fieldName)
             => _values != null && _values.Any(v => v.FieldNameSymbol.Text == fieldName);
 
         /// <summary>

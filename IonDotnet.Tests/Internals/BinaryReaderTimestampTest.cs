@@ -33,7 +33,7 @@ namespace IonDotnet.Tests.Internals
                 var dg = IonLoader.Default.Load(bytes);
                 Assert.IsTrue(dg[0] is IonTimestamp);
                 var ionTimestamp = (IonTimestamp) dg[0];
-                Assert.AreEqual(0.123 * TimeSpan.TicksPerSecond, ionTimestamp.Value.DateTimeValue.Ticks % TimeSpan.TicksPerSecond);
+                Assert.AreEqual(0.123 * TimeSpan.TicksPerSecond, ionTimestamp.TimestampValue.DateTimeValue.Ticks % TimeSpan.TicksPerSecond);
             }
         }
     }

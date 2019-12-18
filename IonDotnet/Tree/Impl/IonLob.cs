@@ -25,7 +25,7 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         /// <returns>Read-only view of the bytes in this lob.</returns>
         /// <exception cref="NullValueException">If this lob is null.</exception>
-        public ReadOnlySpan<byte> Bytes()
+        public override ReadOnlySpan<byte> Bytes()
         {
             ThrowIfNull();
             Debug.Assert(ByteBuffer != null);
@@ -36,7 +36,7 @@ namespace IonDotnet.Tree.Impl
         /// Copy the bytes from the buffer to this lob.
         /// </summary>
         /// <param name="buffer">Byte buffer</param>
-        public void SetBytes(ReadOnlySpan<byte> buffer)
+        public override void SetBytes(ReadOnlySpan<byte> buffer)
         {
             ThrowIfLocked();
             //this is bad but this operation is pretty non-common.

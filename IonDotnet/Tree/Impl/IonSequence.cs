@@ -110,7 +110,7 @@ namespace IonDotnet.Tree.Impl
             item.Container = this;
         }
 
-        public void RemoveAt(int index)
+        public override void RemoveAt(int index)
         {
             ThrowIfNull();
             if (index >= _children.Count)

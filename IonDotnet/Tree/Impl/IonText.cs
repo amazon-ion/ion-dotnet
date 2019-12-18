@@ -16,7 +16,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// Textual value as string.
         /// </summary>
-        public virtual string StringValue
+        public override string StringValue
         {
             get => StringVal;
             set

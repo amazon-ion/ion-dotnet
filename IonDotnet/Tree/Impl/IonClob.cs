@@ -53,7 +53,7 @@ namespace IonDotnet.Tree.Impl
         /// Returns a new <see cref="StreamReader"/> to read the content of this clob.
         /// </summary>
         /// <param name="encoding">Encoding to use.</param>
-        public StreamReader NewReader(Encoding encoding)
+        public override StreamReader NewReader(Encoding encoding)
         {
             ThrowIfNull();
             return new StreamReader(new MemoryStream(ByteBuffer), encoding);
