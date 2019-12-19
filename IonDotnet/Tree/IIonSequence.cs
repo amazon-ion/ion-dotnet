@@ -1,6 +1,4 @@
-﻿using IonDotnet.Tree.Impl;
-
-namespace IonDotnet.Tree
+﻿namespace IonDotnet.Tree
 {
     public interface IIonSequence : IIonContainer
     {

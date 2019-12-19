@@ -347,6 +347,11 @@ namespace IonDotnet.Tree.Impl
 //            throw new NotImplementedException();
 //        }
 
+        private string GetErrorMessage()
+        {
+            return $"This operation is not supported for IonType {Type}";
+        }
+
         public bool IsReadOnly => LockedFlagOn();
 
         public void MakeReadOnly() => LockedFlagOn(true);
@@ -355,32 +360,73 @@ namespace IonDotnet.Tree.Impl
         public abstract IonType Type { get; }
 
         // Applicable to IonDecimal
-        public virtual decimal DecimalValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual BigDecimal BigDecimalValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual decimal DecimalValue {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+        public virtual BigDecimal BigDecimalValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         // Applicable to IonContainer
-        public virtual int Count => throw new NotImplementedException();
+        public virtual int Count => throw new InvalidOperationException(GetErrorMessage());
 
         // Applicable to IonText
-        public virtual string StringValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual string StringValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         // Applicable to IonInt
-        public virtual IntegerSize IntegerSize => throw new NotImplementedException();
-        public virtual BigInteger BigIntegerValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual int IntValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public virtual long LongValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual IntegerSize IntegerSize => throw new InvalidOperationException(GetErrorMessage());
+        public virtual BigInteger BigIntegerValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual int IntValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual long LongValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         // Applicable to IonSymbol
-        public virtual SymbolToken SymbolValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual SymbolToken SymbolValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         // Applicable to IonBool
-        public virtual bool BoolValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual bool BoolValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         // Applicable to IonFloat
-        public virtual double FloatValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual double FloatValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         // Applicable to IonTimestamp
-        public virtual Timestamp TimestampValue { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual Timestamp TimestampValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         public string ToPrettyString()
         {
@@ -401,37 +447,37 @@ namespace IonDotnet.Tree.Impl
 
         public virtual ReadOnlySpan<byte> Bytes()
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual void SetBytes(ReadOnlySpan<byte> buffer)
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual StreamReader NewReader(Encoding encoding)
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual void RemoveAt(int index)
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual bool RemoveField(string fieldName)
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual bool ContainsField(string fieldName)
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual void Clear()
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException(GetErrorMessage());
         }
     }
 }

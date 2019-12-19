@@ -2,9 +2,9 @@
 
 namespace IonDotnet.Tree
 {
-    public interface IIonValue : IIonInt, IIonFloat, IIonTimestamp, IIonDecimal,
-        IIonBlob, IIonClob, IIonDatagram, IIonList, IIonStruct,
-        IIonNull, IIonSexp, IIonString, IIonSymbol, IIonBool
+    public interface IIonValue : IIonNull, IIonBool, IIonInt, IIonFloat,
+        IIonDecimal, IIonTimestamp, IIonSymbol, IIonString, IIonClob,
+        IIonBlob, IIonList, IIonSexp, IIonStruct, IIonDatagram
     {
         IReadOnlyCollection<SymbolToken> GetTypeAnnotations();
         bool HasAnnotation(string text);
