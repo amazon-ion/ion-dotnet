@@ -1,7 +1,7 @@
 ﻿namespace IonDotnet.Tree
 {
-    public interface IIonBool : IIonValue
+    public interface IIonBool
     {
-        bool Value { get; set; }
+        bool BoolValue { get; set; }
     }
 }

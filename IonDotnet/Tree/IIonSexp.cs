@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet.Tree
 {
-    public interface IIonSexp : IIonValue, IIonSequence
+    public interface IIonSexp : IIonSequence
     {
     }
 }

@@ -63,7 +63,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public SymbolToken SymbolValue
+        public override SymbolToken SymbolValue
         {
             get => new SymbolToken(StringVal, _sid, _importLocation);
             set

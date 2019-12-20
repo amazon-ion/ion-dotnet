@@ -78,7 +78,7 @@ namespace IonDotnet.Tree.Impl
             writer.WriteInt(_longValue);
         }
 
-        public int IntValue
+        public override int IntValue
         {
             get
             {
@@ -90,7 +90,7 @@ namespace IonDotnet.Tree.Impl
             set => LongValue = value;
         }
 
-        public long LongValue
+        public override long LongValue
         {
             get
             {
@@ -110,7 +110,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public BigInteger BigIntegerValue
+        public override BigInteger BigIntegerValue
         {
             get
             {
@@ -133,7 +133,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public IntegerSize IntegerSize
+        public override IntegerSize IntegerSize
         {
             get
             {

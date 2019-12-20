@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
-using IonDotnet.Tree.Impl;
 
 namespace IonDotnet.Tree
 {
-    public interface IIonValue
+    public interface IIonValue : IIonNull, IIonBool, IIonInt, IIonFloat,
+        IIonDecimal, IIonTimestamp, IIonSymbol, IIonString, IIonClob,
+        IIonBlob, IIonList, IIonSexp, IIonStruct, IIonDatagram
     {
         IReadOnlyCollection<SymbolToken> GetTypeAnnotations();
         bool HasAnnotation(string text);
@@ -14,9 +15,7 @@ namespace IonDotnet.Tree
         string ToPrettyString();
         void WriteTo(IIonWriter writer);
         bool IsEquivalentTo(IIonValue value);
-        IonType Type { get; }
         bool IsReadOnly { get; }
-        bool IsNull { get; }
         void MakeNull();
     }
 }

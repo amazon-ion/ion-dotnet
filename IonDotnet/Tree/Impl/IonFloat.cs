@@ -42,7 +42,7 @@ namespace IonDotnet.Tree.Impl
             if (PrivateHelper.IsNegativeZero(_d) ^ PrivateHelper.IsNegativeZero(oFloat._d))
                 return false;
 
-            return EqualityComparer<double>.Default.Equals(oFloat.Value, Value);
+            return EqualityComparer<double>.Default.Equals(oFloat.FloatValue, FloatValue);
         }
 
         internal override void WriteBodyTo(IPrivateWriter writer)
@@ -59,7 +59,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// Get or set the value of this float as <see cref="System.Double"/>.
         /// </summary>
-        public double Value
+        public override double FloatValue
         {
             get
             {

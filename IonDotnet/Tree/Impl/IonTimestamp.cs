@@ -44,7 +44,7 @@ namespace IonDotnet.Tree.Impl
             writer.WriteTimestamp(_timestamp);
         }
 
-        public Timestamp Value
+        public override Timestamp TimestampValue
         {
             get
             {

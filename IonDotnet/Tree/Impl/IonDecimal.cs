@@ -63,7 +63,7 @@ namespace IonDotnet.Tree.Impl
             writer.WriteDecimal(BigDecimalValue);
         }
 
-        public decimal DecimalValue
+        public override decimal DecimalValue
         {
             get
             {
@@ -77,7 +77,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public BigDecimal BigDecimalValue
+        public override BigDecimal BigDecimalValue
         {
             get
             {

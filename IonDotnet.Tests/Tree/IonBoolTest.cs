@@ -16,7 +16,7 @@ namespace IonDotnet.Tests.Tree
             var n = IonBool.NewNull();
             Assert.AreEqual(IonType.Bool, n.Type);
             Assert.IsTrue(n.IsNull);
-            Assert.ThrowsException<NullValueException>(() => n.Value);
+            Assert.ThrowsException<NullValueException>(() => n.BoolValue);
         }
 
         [TestMethod]
@@ -27,9 +27,9 @@ namespace IonDotnet.Tests.Tree
             var v = new IonBool(value);
             Assert.AreEqual(IonType.Bool, v.Type);
             Assert.IsFalse(v.IsNull);
-            Assert.AreEqual(value, v.Value);
-            v.Value = !value;
-            Assert.AreEqual(!value, v.Value);
+            Assert.AreEqual(value, v.BoolValue);
+            v.BoolValue = !value;
+            Assert.AreEqual(!value, v.BoolValue);
         }
 
         [DataRow(true)]
@@ -42,7 +42,7 @@ namespace IonDotnet.Tests.Tree
             Assert.IsFalse(v.IsReadOnly);
             v.MakeReadOnly();
             Assert.IsTrue(v.IsReadOnly);
-            Assert.ThrowsException<InvalidOperationException>(() => v.Value = value != true);
+            Assert.ThrowsException<InvalidOperationException>(() => v.BoolValue = value != true);
             Assert.ThrowsException<InvalidOperationException>(() => v.AddTypeAnnotation("something"));
             Assert.ThrowsException<InvalidOperationException>(() => v.MakeNull());
         }

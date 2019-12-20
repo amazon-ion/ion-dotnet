@@ -1,7 +1,8 @@
 ﻿namespace IonDotnet.Tree
 {
-    public interface IIonContainer : IIonValue
+    public interface IIonContainer
     {
         int Count { get; }
+        void Clear();
     }
 }
