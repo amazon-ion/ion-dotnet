@@ -1029,11 +1029,17 @@ namespace IonDotnet.Internals.Text
                         //                        break;
                 }
 
-                if (!isClob && char.IsHighSurrogate((char)c))
-                {
-                    sb.Append((char)c);
-                    c = ReadChar();
-                    if (!char.IsLowSurrogate((char)c))
+                if (!isClob) {
+                    if (char.IsHighSurrogate((char)c))
+                    {
+                        sb.Append((char)c);
+                        c = ReadChar();
+                        if (!char.IsLowSurrogate((char)c))
+                        {
+                            throw new IonException($"Invalid character format {(char)c}");
+                        }
+                    }
+                    else if (char.IsLowSurrogate((char)c))
                     {
                         throw new IonException($"Invalid character format {(char)c}");
                     }
@@ -1125,6 +1131,10 @@ namespace IonDotnet.Internals.Text
                         {
                             throw new IonException($"Invalid character format {(char)c}");
                         }
+                    }
+                    else if (char.IsLowSurrogate((char)c))
+                    {
+                        throw new IonException($"Invalid character format {(char)c}");
                     }
                 }
                 else if (Characters.Is8BitChar(c))
@@ -2005,7 +2015,10 @@ namespace IonDotnet.Internals.Text
                             throw new IonException($"Invalid character format {(char)c}");
                         }
                     }
-
+                    else if (char.IsLowSurrogate((char)c))
+                    {
+                        throw new IonException($"Invalid character format {(char)c}");
+                    }
                     //                    sb.Append(c);
                     //
                     //                    if (Characters.NeedsSurrogateEncoding(c))

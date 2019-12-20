@@ -16,10 +16,7 @@ namespace IonDotnet.Tests.Integration
         {
             "shortUtf8Sequence_1.ion",
             "shortUtf8Sequence_2.ion",
-            "shortUtf8Sequence_3.ion",
-            "surrogate_6.ion",
-            "surrogate_7.ion",
-            "surrogate_8.ion"
+            "shortUtf8Sequence_3.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
