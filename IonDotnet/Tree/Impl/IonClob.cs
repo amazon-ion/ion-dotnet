@@ -24,7 +24,7 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         public static IonClob NewNull() => new IonClob();
 
-        public override bool IsEquivalentTo(IonValue other)
+        public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
                 return false;
@@ -47,7 +47,7 @@ namespace IonDotnet.Tree.Impl
             writer.WriteClob(Bytes());
         }
 
-        public override IonType Type => IonType.Clob;
+        public override IonType Type() => IonType.Clob;
 
         /// <summary>
         /// Returns a new <see cref="StreamReader"/> to read the content of this clob.

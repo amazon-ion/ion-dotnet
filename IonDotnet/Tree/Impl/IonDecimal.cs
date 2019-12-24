@@ -26,7 +26,7 @@ namespace IonDotnet.Tree.Impl
 
         public static IonDecimal NewNull() => new IonDecimal(true);
 
-        public override bool IsEquivalentTo(IonValue other)
+        public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
                 return false;
@@ -91,6 +91,6 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public override IonType Type => IonType.Decimal;
+        public override IonType Type() => IonType.Decimal;
     }
 }

@@ -185,7 +185,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// Store the field name text and sid.
         /// </summary>
-        public SymbolToken FieldNameSymbol { get; internal set; }
+        public SymbolToken FieldNameSymbol { get; set; }
 
         protected IonValue(bool isNull)
         {
@@ -198,7 +198,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// The container of this value, or null if this is not part of one.
         /// </summary>
-        public virtual IonContainer Container { get; internal set; }
+        public virtual IIonContainer Container { get; set; }
 
         /// <summary>
         /// Get this value's user type annotations.
@@ -286,9 +286,9 @@ namespace IonDotnet.Tree.Impl
         /// Equivalency is determined by whether the <see cref="IonValue"/> objects has the same annotations,
         /// hold equal values, or in the case of container, they contain equivalent sets of children.
         /// </remarks>
-        public virtual bool IsEquivalentTo(IonValue other)
+        private bool IsEquivalentTo(IonValue other)
         {
-            if (other == null || Type != other.Type)
+            if (other == null || Type() != other.Type())
                 return false;
 
             var otherAnnotations = other._annotations;
@@ -349,15 +349,12 @@ namespace IonDotnet.Tree.Impl
 
         private string GetErrorMessage()
         {
-            return $"This operation is not supported for IonType {Type}";
+            return $"This operation is not supported for IonType {Type()}";
         }
 
         public bool IsReadOnly => LockedFlagOn();
 
         public void MakeReadOnly() => LockedFlagOn(true);
-
-        /// <summary>The <see cref="IonType"/> of this value.</summary>
-        public abstract IonType Type { get; }
 
         // Applicable to IonDecimal
         public virtual decimal DecimalValue {
@@ -439,7 +436,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public bool IsEquivalentTo(IIonValue value)
+        public virtual bool IsEquivalentTo(IIonValue value)
         {
             var valueIonValue = (IonValue)value;
             return IsEquivalentTo(valueIonValue);
@@ -476,6 +473,41 @@ namespace IonDotnet.Tree.Impl
         }
 
         public virtual void Clear()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void Add(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual int IndexOf(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool Remove(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool Contains(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void CopyTo(IIonValue[] array, int arrayIndex)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual IEnumerator<IIonValue> GetEnumerator()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual IonType Type()
         {
             throw new InvalidOperationException(GetErrorMessage());
         }

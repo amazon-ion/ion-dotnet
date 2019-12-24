@@ -1,6 +1,7 @@
 using System.Linq;
 using IonDotnet.Builders;
 using IonDotnet.Tests.Common;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -21,23 +22,32 @@ namespace IonDotnet.Tests.Builders
 
             Assert.AreEqual(3, datagram.Count);
 
-            //the first value $13 should be unknown text
-            Assert.AreEqual(IonType.Symbol, datagram[0].Type);
-            var token = ((IonSymbol) datagram[0]).SymbolValue;
-            Assert.AreEqual(13, token.Sid);
-            Assert.IsNull(token.Text);
+            int i = 0;
+            foreach (var ionValue in datagram)
+            {
+                CascadingSymtabAssertion(ionValue, i++);
+            }
+        }
 
-            //2nd value $10 should be rock:10
-            Assert.AreEqual(IonType.Symbol, datagram[1].Type);
-            token = ((IonSymbol) datagram[1]).SymbolValue;
-            Assert.AreEqual(10, token.Sid);
-            Assert.AreEqual("rock", token.Text);
-
-            //3rd value $10 should be unknown text
-            Assert.AreEqual(IonType.Symbol, datagram[0].Type);
-            token = ((IonSymbol) datagram[2]).SymbolValue;
-            Assert.AreEqual(10, token.Sid);
-            Assert.IsNull(token.Text);
+        private void CascadingSymtabAssertion(IIonValue ionValue, int itemNumber)
+        {
+            Assert.AreEqual(IonType.Symbol, ionValue.Type());
+            var token = ((IonSymbol)ionValue).SymbolValue;
+            switch (itemNumber)
+            {
+                case 0:
+                    Assert.AreEqual(13, token.Sid);
+                    Assert.IsNull(token.Text);
+                    break;
+                case 1:
+                    Assert.AreEqual(10, token.Sid);
+                    Assert.AreEqual("rock", token.Text);
+                    break;
+                case 2:
+                    Assert.AreEqual(10, token.Sid);
+                    Assert.IsNull(token.Text);
+                    break;
+            }
         }
 
         [TestMethod]
@@ -46,10 +56,13 @@ namespace IonDotnet.Tests.Builders
             const string doc = "$3::123";
             var datagram = IonLoader.Default.Load(doc);
 
-            var child = (IonInt) datagram[0];
-            var annots = child.GetTypeAnnotations();
-            Assert.AreEqual(1, annots.Count);
-            Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First().Text);
+            foreach (var ionValue in datagram)
+            {
+                var child = (IonInt)ionValue;
+                var annots = child.GetTypeAnnotations();
+                Assert.AreEqual(1, annots.Count);
+                Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First().Text);
+            }
         }
 
         [TestMethod]
@@ -57,8 +70,11 @@ namespace IonDotnet.Tests.Builders
         {
             const string doc = "{{'''hello'''}}";
             var datagram = IonLoader.Default.Load(doc);
-            var child = (IonClob) datagram[0];
-            Assert.AreEqual("hello".Length, child.Bytes().Length);
+            foreach (var ionValue in datagram)
+            {
+                var child = (IonClob)ionValue;
+                Assert.AreEqual("hello".Length, child.Bytes().Length);
+            }
         }
     }
 }

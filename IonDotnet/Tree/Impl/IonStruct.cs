@@ -8,7 +8,7 @@ namespace IonDotnet.Tree.Impl
 {
     internal sealed class IonStruct : IonContainer, IIonStruct
     {
-        private List<IonValue> _values;
+        private List<IIonValue> _values;
 
         public IonStruct() : this(false)
         {
@@ -18,7 +18,7 @@ namespace IonDotnet.Tree.Impl
         {
             if (!isNull)
             {
-                _values = new List<IonValue>();
+                _values = new List<IIonValue>();
             }
         }
 
@@ -31,7 +31,7 @@ namespace IonDotnet.Tree.Impl
         /// <remarks>
         /// Struct equivalence is an expensive operation.
         /// </remarks>
-        public override bool IsEquivalentTo(IonValue other)
+        public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
                 return false;
@@ -77,9 +77,9 @@ namespace IonDotnet.Tree.Impl
             writer.StepOut();
         }
 
-        public override IonType Type => IonType.Struct;
+        public override IonType Type() => IonType.Struct;
 
-        public override void Add(IonValue item)
+        public override void Add(IIonValue item)
             => throw new NotSupportedException("Cannot add a value to a struct without field name");
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace IonDotnet.Tree.Impl
         /// <param name="value">Ion value to add.</param>
         /// <exception cref="ArgumentNullException">When field name is null.</exception>
         /// <exception cref="ContainedValueException">If the value is already child of a container.</exception>
-        public void Add(string fieldName, IonValue value)
+        public void Add(string fieldName, IIonValue value)
         {
             if (fieldName is null)
                 throw new ArgumentNullException(nameof(fieldName));
@@ -103,7 +103,7 @@ namespace IonDotnet.Tree.Impl
             _values.Add(value);
         }
 
-        public void Add(SymbolToken symbol, IonValue value)
+        public void Add(SymbolToken symbol, IIonValue value)
         {
             if (symbol.Text != null)
             {
@@ -127,7 +127,7 @@ namespace IonDotnet.Tree.Impl
         {
             ThrowIfLocked();
             if (NullFlagOn() && _values == null)
-                _values = new List<IonValue>();
+                _values = new List<IIonValue>();
 
             NullFlagOn(false);
             foreach (var v in _values)
@@ -138,7 +138,7 @@ namespace IonDotnet.Tree.Impl
             _values.Clear();
         }
 
-        public override bool Contains(IonValue item)
+        public override bool Contains(IIonValue item)
         {
             if (NullFlagOn() || item is null)
                 return false;
@@ -147,7 +147,7 @@ namespace IonDotnet.Tree.Impl
             return item.Container == this;
         }
 
-        public override IEnumerator<IonValue> GetEnumerator()
+        public override IEnumerator<IIonValue> GetEnumerator()
         {
             if (NullFlagOn())
                 yield break;
@@ -158,7 +158,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public override bool Remove(IonValue item)
+        public override bool Remove(IIonValue item)
         {
             ThrowIfNull();
             ThrowIfLocked();
@@ -203,7 +203,7 @@ namespace IonDotnet.Tree.Impl
         /// <param name="fieldName">Field name.</param>
         /// <exception cref="ArgumentNullException">When field name is null.</exception>
         /// <exception cref="ContainedValueException">If the value being set is already contained in another container.</exception>
-        public IonValue this[string fieldName]
+        public IIonValue this[string fieldName]
         {
             get
             {
@@ -278,10 +278,10 @@ namespace IonDotnet.Tree.Impl
         private class MultisetField
         {
             private readonly SymbolToken _name;
-            private readonly IonValue _value;
+            private readonly IIonValue _value;
             public int Count;
 
-            public MultisetField(SymbolToken name, IonValue value)
+            public MultisetField(SymbolToken name, IIonValue value)
             {
                 Debug.Assert(name != null);
                 _name = name;

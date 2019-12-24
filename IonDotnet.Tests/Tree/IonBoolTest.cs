@@ -14,7 +14,7 @@ namespace IonDotnet.Tests.Tree
         public void Null()
         {
             var n = IonBool.NewNull();
-            Assert.AreEqual(IonType.Bool, n.Type);
+            Assert.AreEqual(IonType.Bool, n.Type());
             Assert.IsTrue(n.IsNull);
             Assert.ThrowsException<NullValueException>(() => n.BoolValue);
         }
@@ -25,7 +25,7 @@ namespace IonDotnet.Tests.Tree
         public void SimpleValue(bool value)
         {
             var v = new IonBool(value);
-            Assert.AreEqual(IonType.Bool, v.Type);
+            Assert.AreEqual(IonType.Bool, v.Type());
             Assert.IsFalse(v.IsNull);
             Assert.AreEqual(value, v.BoolValue);
             v.BoolValue = !value;

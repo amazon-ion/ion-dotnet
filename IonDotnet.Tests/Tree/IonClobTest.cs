@@ -20,12 +20,12 @@ namespace IonDotnet.Tests.Tree
             return new IonClob(new byte[0]);
         }
 
-        protected override IIonLob MakeNullValue()
+        protected override IIonValue MakeNullValue()
         {
             return IonClob.NewNull();
         }
 
-        protected override IIonLob MakeWithBytes(ReadOnlySpan<byte> bytes)
+        protected override IIonValue MakeWithBytes(ReadOnlySpan<byte> bytes)
         {
             return new IonClob(bytes);
         }

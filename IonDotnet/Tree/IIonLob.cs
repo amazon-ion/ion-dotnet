@@ -5,7 +5,6 @@ namespace IonDotnet.Tree
     {
         ReadOnlySpan<byte> Bytes();
         void SetBytes(ReadOnlySpan<byte> buffer);
-        IonType Type { get; }
         bool IsNull { get; }
     }
 }

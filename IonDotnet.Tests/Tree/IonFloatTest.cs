@@ -17,7 +17,7 @@ namespace IonDotnet.Tests.Tree
         public void Null()
         {
             var n = IonFloat.NewNull();
-            Assert.AreEqual(IonType.Float, n.Type);
+            Assert.AreEqual(IonType.Float, n.Type());
             Assert.IsTrue(n.IsNull);
             Assert.ThrowsException<NullValueException>(() => n.FloatValue);
         }
@@ -29,7 +29,7 @@ namespace IonDotnet.Tests.Tree
         public void SimpleValueTest(double value)
         {
             var v = new IonFloat(value);
-            Assert.AreEqual(IonType.Float, v.Type);
+            Assert.AreEqual(IonType.Float, v.Type());
             Assert.IsFalse(v.IsNull);
             Assert.AreEqual(value, v.FloatValue);
 

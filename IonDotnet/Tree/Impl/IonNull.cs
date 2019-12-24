@@ -14,6 +14,6 @@ namespace IonDotnet.Tree.Impl
 
         internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteNull();
 
-        public override IonType Type => IonType.Null;
+        public override IonType Type() => IonType.Null;
     }
 }
