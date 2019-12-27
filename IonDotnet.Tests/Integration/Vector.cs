@@ -268,9 +268,26 @@ namespace IonDotnet.Tests.Integration
 
         private static bool AssertDatagramEquivalent(IIonValue d1, IIonValue d2)
         {
-            //TODO: FIX
-            var eq = true; // d1.SequenceEqual(d2, IonValueComparer);
+            IonValue[] values1 = GetIonValues(d1);
+            IonValue[] values2 = GetIonValues(d2);
+
+            var eq = values1.SequenceEqual(values2, IonValueComparer);
             return eq;
+        }
+
+        private static IonValue[] GetIonValues(IIonValue value)
+        {
+            if (value is null)
+                return new IonValue[0];
+
+            IonValue[] ionValues = new IonValue[value.Count];
+            int counter = 0;
+            foreach (var ionValue in value)
+            {
+                ionValues[counter++] = (IonValue)ionValue;
+            }
+
+            return ionValues;
         }
 
         private static IIonValue LoadFile(FileInfo fi, out ISymbolTable readerTable)

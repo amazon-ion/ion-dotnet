@@ -22,10 +22,10 @@ namespace IonDotnet.Tests.Builders
 
             Assert.AreEqual(3, datagram.Count);
 
-            int i = 0;
+            int counter = 0;
             foreach (var ionValue in datagram)
             {
-                CascadingSymtabAssertion(ionValue, i++);
+                CascadingSymtabAssertion(ionValue, counter++);
             }
         }
 

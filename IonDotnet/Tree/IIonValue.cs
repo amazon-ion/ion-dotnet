@@ -14,7 +14,9 @@ namespace IonDotnet.Tree
         void ClearAnnotations();
         void MakeReadOnly();
         string ToPrettyString();
+        void WriteTo(IIonWriter writer);
         bool IsEquivalentTo(IIonValue value);
+        bool IsNull { get; }
         bool IsReadOnly { get; }
         void MakeNull();
         IonType Type();
