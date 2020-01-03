@@ -357,7 +357,8 @@ namespace IonDotnet.Tree.Impl
         public void MakeReadOnly() => LockedFlagOn(true);
 
         // Applicable to IonDecimal
-        public virtual decimal DecimalValue {
+        public virtual decimal DecimalValue
+        {
             get => throw new InvalidOperationException(GetErrorMessage());
             set => throw new InvalidOperationException(GetErrorMessage());
         }
@@ -379,6 +380,7 @@ namespace IonDotnet.Tree.Impl
 
         // Applicable to IonInt
         public virtual IntegerSize IntegerSize => throw new InvalidOperationException(GetErrorMessage());
+
         public virtual BigInteger BigIntegerValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());

@@ -4,13 +4,13 @@ namespace IonDotnet.Tree
 {
     public interface IIonContainer
     {
+        IIonContainer Container { get; set; }
         int Count { get; }
-        void Clear();
         void Add(IIonValue item);
-        bool Remove(IIonValue item);
+        void Clear();
         bool Contains(IIonValue item);
         void CopyTo(IIonValue[] array, int arrayIndex);
         IEnumerator<IIonValue> GetEnumerator();
-        IIonContainer Container { get; set; }
+        bool Remove(IIonValue item);
     }
 }
