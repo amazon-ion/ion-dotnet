@@ -120,6 +120,16 @@ namespace IonDotnet.Tree.Impl
             Remove(_children[index]);
         }
 
+        public override IIonValue GetElementAt(int index)
+        {
+            ThrowIfNull();
+            if (index >= _children.Count)
+                throw new IndexOutOfRangeException($"Container has only {_children.Count} children");
+
+            //this will check for lock
+            return this[index];
+        }
+
         public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))

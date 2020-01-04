@@ -464,6 +464,11 @@ namespace IonDotnet.Tree.Impl
             throw new InvalidOperationException(GetErrorMessage());
         }
 
+        public virtual IIonValue GetElementAt(int index)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
         public virtual bool RemoveField(string fieldName)
         {
             throw new InvalidOperationException(GetErrorMessage());

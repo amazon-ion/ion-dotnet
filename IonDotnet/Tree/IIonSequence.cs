@@ -4,5 +4,6 @@
     {
         void RemoveAt(int index);
         int IndexOf(IIonValue item);
+        IIonValue GetElementAt(int index);
     }
 }

@@ -56,14 +56,10 @@ namespace IonDotnet.Tests.Builders
             const string doc = "$3::123";
             var datagram = IonLoader.Default.Load(doc);
             Assert.AreEqual(1, datagram.Count);
-            foreach (var ionValue in datagram)
-            {
-                var child = ionValue;
-                Assert.AreEqual(0, datagram.IndexOf(child));
-                var annots = child.GetTypeAnnotations();
-                Assert.AreEqual(1, annots.Count);
-                Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First().Text);
-            }
+            var child = datagram.GetElementAt(0);
+            var annots = child.GetTypeAnnotations();
+            Assert.AreEqual(1, annots.Count);
+            Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First().Text);
         }
 
         [TestMethod]
@@ -72,12 +68,8 @@ namespace IonDotnet.Tests.Builders
             const string doc = "{{'''hello'''}}";
             var datagram = IonLoader.Default.Load(doc);
             Assert.AreEqual(1, datagram.Count);
-            foreach (var ionValue in datagram)
-            {
-                var child = ionValue;
-                Assert.AreEqual(0, datagram.IndexOf(child));
-                Assert.AreEqual("hello".Length, child.Bytes().Length);
-            }
+            var child = datagram.GetElementAt(0);
+            Assert.AreEqual("hello".Length, child.Bytes().Length);
         }
     }
 }
