@@ -32,7 +32,7 @@ namespace IonDotnet.Tests.Builders
         private void CascadingSymtabAssertion(IIonValue ionValue, int itemNumber)
         {
             Assert.AreEqual(IonType.Symbol, ionValue.Type());
-            var token = ((IonSymbol)ionValue).SymbolValue;
+            var token = ionValue.SymbolValue;
             switch (itemNumber)
             {
                 case 0:
@@ -55,10 +55,11 @@ namespace IonDotnet.Tests.Builders
         {
             const string doc = "$3::123";
             var datagram = IonLoader.Default.Load(doc);
-
+            Assert.AreEqual(1, datagram.Count);
             foreach (var ionValue in datagram)
             {
-                var child = (IonInt)ionValue;
+                var child = ionValue;
+                Assert.AreEqual(0, datagram.IndexOf(child));
                 var annots = child.GetTypeAnnotations();
                 Assert.AreEqual(1, annots.Count);
                 Assert.AreEqual(SystemSymbols.IonSymbolTable, annots.First().Text);
@@ -70,9 +71,11 @@ namespace IonDotnet.Tests.Builders
         {
             const string doc = "{{'''hello'''}}";
             var datagram = IonLoader.Default.Load(doc);
+            Assert.AreEqual(1, datagram.Count);
             foreach (var ionValue in datagram)
             {
-                var child = (IonClob)ionValue;
+                var child = ionValue;
+                Assert.AreEqual(0, datagram.IndexOf(child));
                 Assert.AreEqual("hello".Length, child.Bytes().Length);
             }
         }

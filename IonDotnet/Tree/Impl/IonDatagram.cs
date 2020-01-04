@@ -36,17 +36,6 @@ namespace IonDotnet.Tree.Impl
             Debug.Assert(item != null, nameof(item) + " != null");
         }
 
-        public IIonValue[] ToArray()
-        {
-            IIonValue[] nn = new IIonValue[this.Count];
-            int i = 0;
-            foreach (var ionValue in this)
-            {
-                nn[i++] = ionValue;
-            }
-            return nn;
-        }
-
         public int GetHashCode(IonValue obj) => obj.GetHashCode();
     }
 }

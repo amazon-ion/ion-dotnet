@@ -34,7 +34,7 @@ namespace IonDotnet.Tests.Internals
                 foreach (var ionValue in datagram)
                 {
                     Assert.IsTrue(ionValue is IonTimestamp);
-                    var ionTimestamp = (IonTimestamp)ionValue;
+                    var ionTimestamp = ionValue;
                     Assert.AreEqual(0.123 * TimeSpan.TicksPerSecond, ionTimestamp.TimestampValue.DateTimeValue.Ticks % TimeSpan.TicksPerSecond);
                 }
             }
