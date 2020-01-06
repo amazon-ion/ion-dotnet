@@ -119,11 +119,11 @@ namespace IonDotnet.Tests.Integration
             RoundTrip_AssertBinary(datagram, readerTable);
         }
 
-        private static void RoundTrip_AssertText(IIonDatagram datagram, ISymbolTable readerTable)
+        private static void RoundTrip_AssertText(IIonValue datagram, ISymbolTable readerTable)
         {
             var sw = new StringWriter();
             var writer = IonTextWriterBuilder.Build(sw, new IonTextOptions {PrettyPrint = true}, readerTable.GetImportedTables());
-            ((IIonValue)datagram).WriteTo(writer);
+            datagram.WriteTo(writer);
             writer.Finish();
             var text = sw.ToString();
             Console.WriteLine(text);
@@ -132,13 +132,13 @@ namespace IonDotnet.Tests.Integration
             AssertDatagramEquivalent(datagram, datagram2);
         }
 
-        private static void RoundTrip_AssertBinary(IIonDatagram datagram, ISymbolTable readerTable)
+        private static void RoundTrip_AssertBinary(IIonValue datagram, ISymbolTable readerTable)
         {
             using (var ms = new MemoryStream())
             {
                 using (var writer = IonBinaryWriterBuilder.Build(ms, readerTable.GetImportedTables()))
                 {
-                    ((IIonValue)datagram).WriteTo(writer);
+                    datagram.WriteTo(writer);
                     writer.Finish();
                     var bin = ms.ToArray();
                     var catalog = Symbols.GetReaderCatalog(readerTable);
@@ -266,7 +266,7 @@ namespace IonDotnet.Tests.Integration
             }
         }
 
-        private static bool AssertDatagramEquivalent(IIonDatagram d1, IIonDatagram d2)
+        private static bool AssertDatagramEquivalent(IIonValue d1, IIonValue d2)
         {
             IonValue[] values1 = GetIonValues(d1);
             IonValue[] values2 = GetIonValues(d2);
@@ -275,7 +275,7 @@ namespace IonDotnet.Tests.Integration
             return eq;
         }
 
-        private static IonValue[] GetIonValues(IIonDatagram value)
+        private static IonValue[] GetIonValues(IIonValue value)
         {
             if (value is null)
                 return new IonValue[0];
@@ -290,7 +290,7 @@ namespace IonDotnet.Tests.Integration
             return ionValues;
         }
 
-        private static IIonDatagram LoadFile(FileInfo fi, out ISymbolTable readerTable)
+        private static IIonValue LoadFile(FileInfo fi, out ISymbolTable readerTable)
         {
             if (fi.Name == "utf16.ion")
             {
@@ -310,7 +310,7 @@ namespace IonDotnet.Tests.Integration
             return tree;
         }
 
-        private static IIonDatagram LoadFile(FileInfo fi) => LoadFile(fi, out _);
+        private static IIonValue LoadFile(FileInfo fi) => LoadFile(fi, out _);
 
         private class ValueComparer : IEqualityComparer<IonValue>
         {
