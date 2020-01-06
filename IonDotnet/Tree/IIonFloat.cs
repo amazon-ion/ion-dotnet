@@ -2,6 +2,6 @@
 {
     public interface IIonFloat
     {
-        double FloatValue { get; set; }
+        double DoubleValue { get; set; }
     }
 }

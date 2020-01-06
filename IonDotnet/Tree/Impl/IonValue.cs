@@ -414,7 +414,7 @@ namespace IonDotnet.Tree.Impl
         }
 
         // Applicable to IonFloat
-        public virtual double FloatValue
+        public virtual double DoubleValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
             set => throw new InvalidOperationException(GetErrorMessage());

@@ -28,7 +28,7 @@ namespace IonDotnet.Builders
         /// Load a string of Ion text.
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view.</returns>
+        /// <returns>An <see cref="IIonDatagram"/> tree view.</returns>
         public IIonDatagram Load(string ionText)
         {
             var reader = IonReaderBuilder.Build(ionText, _readerOptions);
@@ -40,7 +40,7 @@ namespace IonDotnet.Builders
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
         /// <param name="readerTable">Reader's local symbol table.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view.</returns>
+        /// <returns>An <see cref="IIonDatagram"/> tree view.</returns>
         public IIonDatagram Load(string ionText, out ISymbolTable readerTable)
         {
             var reader = IonReaderBuilder.Build(ionText, _readerOptions);
@@ -78,7 +78,7 @@ namespace IonDotnet.Builders
         /// Load Ion data from a file. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view.</returns>
+        /// <returns>An <see cref="IIonDatagram"/> tree view.</returns>
         public IIonDatagram Load(FileInfo ionFile)
         {
             if (!ionFile.Exists)
@@ -98,7 +98,7 @@ namespace IonDotnet.Builders
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view.</returns>
+        /// <returns>An <see cref="IIonDatagram"/> tree view.</returns>
         public IIonDatagram Load(FileInfo ionFile, out ISymbolTable readerTable)
         {
             using (var stream = ionFile.OpenRead())
@@ -112,7 +112,7 @@ namespace IonDotnet.Builders
         /// Load Ion data from a byte array.
         /// </summary>
         /// <param name="data">Ion data.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view.</returns>
+        /// <returns>An <see cref="IIonDatagram"/> tree view.</returns>
         public IIonDatagram Load(byte[] data)
         {
             using (var stream = new MemoryStream(data))
@@ -127,7 +127,7 @@ namespace IonDotnet.Builders
         /// </summary>
         /// <param name="data">Ion data.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view.</returns>
+        /// <returns>An <see cref="IIonDatagram"/> tree view.</returns>
         public IIonDatagram Load(byte[] data, out ISymbolTable readerTable)
         {
             using (var stream = new MemoryStream(data))
