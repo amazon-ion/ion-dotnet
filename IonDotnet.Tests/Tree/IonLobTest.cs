@@ -9,9 +9,9 @@ namespace IonDotnet.Tests.Tree
 {
     public abstract class IonLobTest : TreeTestBase
     {
-        protected abstract IIonLob MakeNullValue();
+        protected abstract IIonValue MakeNullValue();
 
-        protected abstract IIonLob MakeWithBytes(ReadOnlySpan<byte> bytes);
+        protected abstract IIonValue MakeWithBytes(ReadOnlySpan<byte> bytes);
 
         protected abstract IonType MainIonType { get; }
 
@@ -20,7 +20,7 @@ namespace IonDotnet.Tests.Tree
         {
             var n = MakeNullValue();
             Assert.IsTrue(n.IsNull);
-            Assert.AreEqual(MainIonType, n.Type);
+            Assert.AreEqual(MainIonType, n.Type());
             Assert.ThrowsException<NullValueException>(() => n.Bytes());
             if (n is IonClob nclob)
             {
@@ -33,7 +33,7 @@ namespace IonDotnet.Tests.Tree
         {
             var bytes = Enumerable.Repeat<byte>(1, 10).ToArray();
             var v = MakeWithBytes(bytes);
-            Assert.AreEqual(MainIonType, v.Type);
+            Assert.AreEqual(MainIonType, v.Type());
             Assert.IsFalse(v.IsNull);
             Assert.IsTrue(v.Bytes().SequenceEqual(bytes));
             bytes[0] = 2;

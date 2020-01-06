@@ -1,7 +1,7 @@
 ﻿namespace IonDotnet.Tree
 {
-    public interface IIonFloat : IIonValue
+    public interface IIonFloat
     {
-        double Value { get; set; }
+        double DoubleValue { get; set; }
     }
 }

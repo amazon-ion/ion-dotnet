@@ -9,7 +9,7 @@ namespace IonDotnet.Tree.Impl
     /// Base class for all container type (List,Struct,Sexp,Datagram) Ion values.
     /// This class also implements the <see cref="ICollection"/> interface.
     /// </summary>
-    internal abstract class IonContainer : IonValue, ICollection<IonValue>, IIonContainer
+    internal abstract class IonContainer : IonValue, ICollection<IIonValue>, IIonContainer
     {
         protected IonContainer(bool isNull) : base(isNull)
         {
@@ -20,7 +20,7 @@ namespace IonDotnet.Tree.Impl
         /// Add an Ion value to the container.
         /// </summary>
         /// <param name="item">Ion value.</param>
-        public abstract void Add(IonValue item);
+        public override abstract void Add(IIonValue item);
 
         /// <inheritdoc />
         /// <summary>
@@ -28,14 +28,14 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         /// <param name="item"></param>
         /// <returns>True if the item has been removed</returns>
-        public abstract bool Remove(IonValue item);
+        public override abstract bool Remove(IIonValue item);
 
 
         /// <inheritdoc />
         /// <summary>
         /// The number of children of this container.
         /// </summary>
-        public abstract int Count { get; }
+        public override abstract int Count { get; }
 
 
         /// <inheritdoc />
@@ -45,21 +45,21 @@ namespace IonDotnet.Tree.Impl
         /// <remarks>
         /// If this container is null, it will be set to a non-null empty container.
         /// </remarks>
-        public abstract void Clear();
+        public override abstract void Clear();
 
         /// <inheritdoc />
         /// <summary>
         /// Returns true if the container contains an Ion value.
         /// </summary>
         /// <param name="item">Ion value.</param>
-        public abstract bool Contains(IonValue item);
+        public override abstract bool Contains(IIonValue item);
 
         /// <inheritdoc />
         /// <summary>
         /// This operation is not supported.
         /// </summary>
         /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-        public void CopyTo(IonValue[] array, int arrayIndex) => throw new NotSupportedException();
+        public override void CopyTo(IIonValue[] array, int arrayIndex) => throw new NotSupportedException();
 
         public override void MakeNull()
         {
@@ -67,7 +67,7 @@ namespace IonDotnet.Tree.Impl
             base.MakeNull();
         }
 
-        public abstract IEnumerator<IonValue> GetEnumerator();
+        public override abstract IEnumerator<IIonValue> GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

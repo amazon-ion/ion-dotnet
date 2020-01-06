@@ -3,6 +3,7 @@
     public interface IIonSequence : IIonContainer
     {
         void RemoveAt(int index);
-        void Clear();
+        int IndexOf(IIonValue item);
+        IIonValue GetElementAt(int index);
     }
 }

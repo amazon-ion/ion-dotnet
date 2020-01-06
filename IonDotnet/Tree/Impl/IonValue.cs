@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using IonDotnet.Builders;
 using IonDotnet.Internals;
 using IonDotnet.Internals.Text;
@@ -183,7 +185,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// Store the field name text and sid.
         /// </summary>
-        public SymbolToken FieldNameSymbol { get; internal set; }
+        public SymbolToken FieldNameSymbol { get; set; }
 
         protected IonValue(bool isNull)
         {
@@ -196,7 +198,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// The container of this value, or null if this is not part of one.
         /// </summary>
-        public virtual IonContainer Container { get; internal set; }
+        public virtual IIonContainer Container { get; set; }
 
         /// <summary>
         /// Get this value's user type annotations.
@@ -284,9 +286,9 @@ namespace IonDotnet.Tree.Impl
         /// Equivalency is determined by whether the <see cref="IonValue"/> objects has the same annotations,
         /// hold equal values, or in the case of container, they contain equivalent sets of children.
         /// </remarks>
-        public virtual bool IsEquivalentTo(IonValue other)
+        private bool IsEquivalentTo(IonValue other)
         {
-            if (other == null || Type != other.Type)
+            if (other == null || Type() != other.Type())
                 return false;
 
             var otherAnnotations = other._annotations;
@@ -345,12 +347,85 @@ namespace IonDotnet.Tree.Impl
 //            throw new NotImplementedException();
 //        }
 
+        private string GetErrorMessage()
+        {
+            return $"This operation is not supported for IonType {Type()}";
+        }
+
         public bool IsReadOnly => LockedFlagOn();
 
         public void MakeReadOnly() => LockedFlagOn(true);
 
-        /// <summary>The <see cref="IonType"/> of this value.</summary>
-        public abstract IonType Type { get; }
+        // Applicable to IonDecimal
+        public virtual decimal DecimalValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+        public virtual BigDecimal BigDecimalValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        // Applicable to IonContainer
+        public virtual int Count => throw new InvalidOperationException(GetErrorMessage());
+
+        // Applicable to IonText
+        public virtual string StringValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        // Applicable to IonInt
+        public virtual IntegerSize IntegerSize => throw new InvalidOperationException(GetErrorMessage());
+
+        public virtual BigInteger BigIntegerValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual int IntValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual long LongValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        // Applicable to IonSymbol
+        public virtual SymbolToken SymbolValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        // Applicable to IonBool
+        public virtual bool BoolValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        // Applicable to IonFloat
+        public virtual double DoubleValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        // Applicable to IonTimestamp
+        public virtual Timestamp TimestampValue
+        {
+            get => throw new InvalidOperationException(GetErrorMessage());
+            set => throw new InvalidOperationException(GetErrorMessage());
+        }
 
         public string ToPrettyString()
         {
@@ -363,10 +438,85 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public bool IsEquivalentTo(IIonValue value)
+        public virtual bool IsEquivalentTo(IIonValue value)
         {
             var valueIonValue = (IonValue)value;
             return IsEquivalentTo(valueIonValue);
+        }
+
+        public virtual ReadOnlySpan<byte> Bytes()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void SetBytes(ReadOnlySpan<byte> buffer)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual StreamReader NewReader(Encoding encoding)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void RemoveAt(int index)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual IIonValue GetElementAt(int index)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool RemoveField(string fieldName)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool ContainsField(string fieldName)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void Clear()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void Add(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual int IndexOf(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool Remove(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool Contains(IIonValue item)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void CopyTo(IIonValue[] array, int arrayIndex)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual IEnumerator<IIonValue> GetEnumerator()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual IonType Type()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
         }
     }
 }

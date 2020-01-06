@@ -1,4 +1,4 @@
-﻿using IonDotnet.Tree.Impl;
+﻿using IonDotnet.Tree;
 
 namespace IonDotnet
 {
@@ -8,7 +8,7 @@ namespace IonDotnet
         {
         }
 
-        internal ContainedValueException(IonValue value) : this(value.ToString())
+        internal ContainedValueException(IIonValue value) : this(value.ToString())
         {
         }
 

@@ -30,10 +30,13 @@ namespace IonDotnet.Tests.Internals
                 binWriter.WriteTimestamp(ts);
                 binWriter.Finish();
                 var bytes = memStream.ToArray();
-                var dg = IonLoader.Default.Load(bytes);
-                Assert.IsTrue(dg[0] is IonTimestamp);
-                var ionTimestamp = (IonTimestamp) dg[0];
-                Assert.AreEqual(0.123 * TimeSpan.TicksPerSecond, ionTimestamp.Value.DateTimeValue.Ticks % TimeSpan.TicksPerSecond);
+                var datagram = IonLoader.Default.Load(bytes);
+                foreach (var ionValue in datagram)
+                {
+                    Assert.IsTrue(ionValue is IonTimestamp);
+                    var ionTimestamp = ionValue;
+                    Assert.AreEqual(0.123 * TimeSpan.TicksPerSecond, ionTimestamp.TimestampValue.DateTimeValue.Ticks % TimeSpan.TicksPerSecond);
+                }
             }
         }
     }

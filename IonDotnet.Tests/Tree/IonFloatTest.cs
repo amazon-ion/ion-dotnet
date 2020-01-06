@@ -17,9 +17,9 @@ namespace IonDotnet.Tests.Tree
         public void Null()
         {
             var n = IonFloat.NewNull();
-            Assert.AreEqual(IonType.Float, n.Type);
+            Assert.AreEqual(IonType.Float, n.Type());
             Assert.IsTrue(n.IsNull);
-            Assert.ThrowsException<NullValueException>(() => n.Value);
+            Assert.ThrowsException<NullValueException>(() => n.DoubleValue);
         }
 
         [DataRow(0.0)]
@@ -29,12 +29,12 @@ namespace IonDotnet.Tests.Tree
         public void SimpleValueTest(double value)
         {
             var v = new IonFloat(value);
-            Assert.AreEqual(IonType.Float, v.Type);
+            Assert.AreEqual(IonType.Float, v.Type());
             Assert.IsFalse(v.IsNull);
-            Assert.AreEqual(value, v.Value);
+            Assert.AreEqual(value, v.DoubleValue);
 
-            v.Value = 1.0 + value;
-            Assert.AreEqual(1.0 + value, v.Value);
+            v.DoubleValue = 1.0 + value;
+            Assert.AreEqual(1.0 + value, v.DoubleValue);
         }
 
         [DataRow(null)]
@@ -48,7 +48,7 @@ namespace IonDotnet.Tests.Tree
             Assert.IsFalse(v.IsReadOnly);
             v.MakeReadOnly();
             Assert.IsTrue(v.IsReadOnly);
-            Assert.ThrowsException<InvalidOperationException>(() => v.Value = 0.5);
+            Assert.ThrowsException<InvalidOperationException>(() => v.DoubleValue = 0.5);
             Assert.ThrowsException<InvalidOperationException>(() => v.AddTypeAnnotation("something"));
             Assert.ThrowsException<InvalidOperationException>(() => v.MakeNull());
         }

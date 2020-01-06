@@ -1,13 +1,14 @@
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 
 namespace IonDotnet.Internals
 {
     internal class IonTreeWriter : IonSystemWriter
     {
-        private IonContainer _currentContainer;
+        private IIonContainer _currentContainer;
 
         public IonTreeWriter(IonContainer root)
         {
@@ -176,7 +177,7 @@ namespace IonDotnet.Internals
             _currentContainer = _currentContainer.Container;
         }
 
-        public override bool IsInStruct => _currentContainer.Type == IonType.Struct;
+        public override bool IsInStruct => ((IIonValue)_currentContainer).Type() == IonType.Struct;
 
         public override int GetDepth()
         {

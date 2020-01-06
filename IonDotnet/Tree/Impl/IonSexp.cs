@@ -19,6 +19,6 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         public static IonSexp NewNull() => new IonSexp(true);
 
-        public override IonType Type => IonType.Sexp;
+        public override IonType Type() => IonType.Sexp;
     }
 }

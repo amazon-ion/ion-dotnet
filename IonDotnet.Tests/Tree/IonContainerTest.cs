@@ -23,7 +23,7 @@ namespace IonDotnet.Tests.Tree
         {
             var v = (IonValue) MakeMutableValue();
             var n = MakeNullValue();
-            Assert.AreEqual(v.Type, n.Type);
+            Assert.AreEqual(v.Type(), n.Type());
             Assert.IsTrue(n.IsNull);
             Assert.AreEqual(0, n.Count);
             Assert.IsFalse(v.IsNull);
