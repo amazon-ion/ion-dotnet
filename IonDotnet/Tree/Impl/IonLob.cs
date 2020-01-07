@@ -50,5 +50,10 @@ namespace IonDotnet.Tree.Impl
             base.MakeNull();
             ByteBuffer = null;
         }
+
+        public override int ByteSize()
+        {
+            return ByteBuffer.Length;
+        }
     }
 }
