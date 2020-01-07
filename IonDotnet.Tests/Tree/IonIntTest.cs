@@ -15,7 +15,7 @@ namespace IonDotnet.Tests.Tree
         public void Null()
         {
             var n = IonInt.NewNull();
-            Assert.AreEqual(IonType.Int, n.Type);
+            Assert.AreEqual(IonType.Int, n.Type());
             Assert.IsTrue(n.IsNull);
             Assert.AreEqual(IntegerSize.Unknown, n.IntegerSize);
             Assert.ThrowsException<NullValueException>(() => n.IntValue);

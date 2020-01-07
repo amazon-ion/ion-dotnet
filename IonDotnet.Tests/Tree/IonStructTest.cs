@@ -91,7 +91,7 @@ namespace IonDotnet.Tests.Tree
             Assert.AreEqual(2, v.Count);
             Assert.AreEqual(1, v.Count(val => val.FieldNameSymbol.Text == fieldName));
             var ionBool = (IonBool) v[fieldName];
-            Assert.IsFalse(ionBool.Value);
+            Assert.IsFalse(ionBool.BoolValue);
         }
 
         [TestMethod]

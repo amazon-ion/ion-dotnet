@@ -26,7 +26,7 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         public static IonSymbol NewNull() => new IonSymbol(true);
 
-        public override bool IsEquivalentTo(IonValue other)
+        public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
                 return false;
@@ -51,7 +51,7 @@ namespace IonDotnet.Tree.Impl
             writer.WriteSymbolToken(SymbolValue);
         }
 
-        public override IonType Type => IonType.Symbol;
+        public override IonType Type() => IonType.Symbol;
 
         public override string StringValue
         {
@@ -63,7 +63,7 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
-        public SymbolToken SymbolValue
+        public override SymbolToken SymbolValue
         {
             get => new SymbolToken(StringVal, _sid, _importLocation);
             set

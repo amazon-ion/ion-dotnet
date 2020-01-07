@@ -1,6 +1,6 @@
 ﻿namespace IonDotnet.Tree
 {
-    public interface IIonText : IIonValue
+    public interface IIonText
     {
         string StringValue { get; set; }
     }

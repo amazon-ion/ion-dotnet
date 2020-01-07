@@ -22,7 +22,7 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         public static IonBlob NewNull() => new IonBlob();
 
-        public override bool IsEquivalentTo(IonValue other)
+        public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
                 return false;
@@ -45,6 +45,6 @@ namespace IonDotnet.Tree.Impl
             writer.WriteBlob(Bytes());
         }
 
-        public override IonType Type => IonType.Blob;
+        public override IonType Type() => IonType.Blob;
     }
 }

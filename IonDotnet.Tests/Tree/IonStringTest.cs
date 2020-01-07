@@ -14,7 +14,7 @@ namespace IonDotnet.Tests.Tree
         public void Null()
         {
             var n = new IonString(null);
-            Assert.AreEqual(IonType.String, n.Type);
+            Assert.AreEqual(IonType.String, n.Type());
             Assert.IsTrue(n.IsNull);
             Assert.IsNull(n.StringValue);
         }
@@ -26,7 +26,7 @@ namespace IonDotnet.Tests.Tree
         public void SimpleValue(string value, string value2)
         {
             var v = new IonString(value);
-            Assert.AreEqual(IonType.String, v.Type);
+            Assert.AreEqual(IonType.String, v.Type());
             Assert.IsFalse(v.IsNull);
             Assert.AreEqual(value, v.StringValue);
 

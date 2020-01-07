@@ -2,7 +2,7 @@
 
 namespace IonDotnet.Tree
 {
-    public interface IIonInt : IIonValue
+    public interface IIonInt
     {
         IntegerSize IntegerSize { get; }
         BigInteger BigIntegerValue { get; set; }

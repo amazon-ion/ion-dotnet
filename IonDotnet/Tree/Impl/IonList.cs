@@ -19,6 +19,6 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         public static IonList NewNull() => new IonList(true);
 
-        public override IonType Type => IonType.List;
+        public override IonType Type() => IonType.List;
     }
 }

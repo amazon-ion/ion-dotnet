@@ -1,7 +1,7 @@
 ﻿namespace IonDotnet.Tree
 {
-    public interface IIonTimestamp : IIonValue
+    public interface IIonTimestamp
     {
-        Timestamp Value { get; set; }
+        Timestamp TimestampValue { get; set; }
     }
 }

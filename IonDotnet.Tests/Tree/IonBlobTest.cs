@@ -13,12 +13,12 @@ namespace IonDotnet.Tests.Tree
             return new IonBlob(new byte[0]);
         }
 
-        protected override IIonLob MakeNullValue()
+        protected override IIonValue MakeNullValue()
         {
             return IonBlob.NewNull();
         }
 
-        protected override IIonLob MakeWithBytes(ReadOnlySpan<byte> bytes)
+        protected override IIonValue MakeWithBytes(ReadOnlySpan<byte> bytes)
         {
             return new IonBlob(bytes);
         }

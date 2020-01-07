@@ -17,11 +17,11 @@ namespace IonDotnet.Tree.Impl
         /// </summary>
         public static IonString NewNull() => new IonString(null);
 
-        public override bool IsEquivalentTo(IonValue other)
+        public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
                 return false;
-            
+
             if (!(other is IonString otherString))
                 return false;
             return StringVal == otherString.StringVal;
@@ -29,6 +29,6 @@ namespace IonDotnet.Tree.Impl
 
         internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(StringVal);
 
-        public override IonType Type => IonType.String;
+        public override IonType Type() => IonType.String;
     }
 }

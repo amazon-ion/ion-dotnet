@@ -1,7 +1,6 @@
 using System.IO;
-using System.Text;
 using IonDotnet.Internals;
-using IonDotnet.Internals.Text;
+using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 
 namespace IonDotnet.Builders
@@ -29,8 +28,8 @@ namespace IonDotnet.Builders
         /// Load a string of Ion text.
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        internal IonDatagram Load(string ionText)
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(string ionText)
         {
             var reader = IonReaderBuilder.Build(ionText, _readerOptions);
             return WriteDatagram(reader);
@@ -41,8 +40,8 @@ namespace IonDotnet.Builders
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
         /// <param name="readerTable">Reader's local symbol table.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        internal IonDatagram Load(string ionText, out ISymbolTable readerTable)
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(string ionText, out ISymbolTable readerTable)
         {
             var reader = IonReaderBuilder.Build(ionText, _readerOptions);
             var dg = WriteDatagram(reader);
@@ -50,24 +49,35 @@ namespace IonDotnet.Builders
             return dg;
         }
 
-//        /// <summary>
-//        /// Load Ion data from a byte buffer. Detecting whether it's binary or Unicode text Ion.
-//        /// </summary>
-//        /// <param name="data">Byte buffer.</param>
-//        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-//        public IonDatagram Load(Span<byte> data)
-//        {
-//            throw new NotImplementedException();
-//        }
+        //        /// <summary>
+        //        /// Load Ion data from a byte buffer. Detecting whether it's binary or Unicode text Ion.
+        //        /// </summary>
+        //        /// <param name="data">Byte buffer.</param>
+        //        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
+        //        public IonDatagram Load(Span<byte> data)
+        //        {
+        //            throw new NotImplementedException();
+        //        }
 
-        internal IonDatagram Load(Stream stream)
+        /// <summary>
+        /// Load Ion data from stream.
+        /// </summary>
+        /// <param name="stream">Stream</param>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(Stream stream)
         {
             var reader = IonReaderBuilder.Build(stream, _readerOptions);
             var dg = WriteDatagram(reader);
             return dg;
         }
 
-        internal IonDatagram Load(Stream stream, out ISymbolTable readerTable)
+        /// <summary>
+        /// Load Ion data from stream.
+        /// </summary>
+        /// <param name="stream">Stream</param>
+        /// <param name="readerTable">Reader's local symbol table.</param>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(Stream stream, out ISymbolTable readerTable)
         {
             var reader = IonReaderBuilder.Build(stream, _readerOptions);
             var dg = WriteDatagram(reader);
@@ -79,8 +89,8 @@ namespace IonDotnet.Builders
         /// Load Ion data from a file. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        internal IonDatagram Load(FileInfo ionFile)
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(FileInfo ionFile)
         {
             if (!ionFile.Exists)
             {
@@ -99,8 +109,8 @@ namespace IonDotnet.Builders
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        internal IonDatagram Load(FileInfo ionFile, out ISymbolTable readerTable)
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(FileInfo ionFile, out ISymbolTable readerTable)
         {
             using (var stream = ionFile.OpenRead())
             {
@@ -113,8 +123,8 @@ namespace IonDotnet.Builders
         /// Load Ion data from a byte array.
         /// </summary>
         /// <param name="data">Ion data.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        internal IonDatagram Load(byte[] data)
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(byte[] data)
         {
             using (var stream = new MemoryStream(data))
             {
@@ -128,8 +138,8 @@ namespace IonDotnet.Builders
         /// </summary>
         /// <param name="data">Ion data.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
-        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        internal IonDatagram Load(byte[] data, out ISymbolTable readerTable)
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        public IIonValue Load(byte[] data, out ISymbolTable readerTable)
         {
             using (var stream = new MemoryStream(data))
             {
@@ -138,7 +148,7 @@ namespace IonDotnet.Builders
             }
         }
 
-        private static IonDatagram WriteDatagram(IIonReader reader)
+        private static IIonValue WriteDatagram(IIonReader reader)
         {
             var datagram = new IonDatagram();
             var writer = new IonTreeWriter(datagram);
