@@ -9,147 +9,147 @@ namespace IonDotnet.Tree.Impl
         {
         }
 
-        public IIonBlob NewNullBlob()
+        public IIonValue NewNullBlob()
         {
             return IonBlob.NewNull();
         }
 
-        public IIonBlob NewBlob(ReadOnlySpan<byte> bytes)
+        public IIonValue NewBlob(ReadOnlySpan<byte> bytes)
         {
             return new IonBlob(bytes);
         }
 
-        public IIonBool NewNullBool()
+        public IIonValue NewNullBool()
         {
             return IonBool.NewNull();
         }
 
-        public IIonBool NewBool(bool value)
+        public IIonValue NewBool(bool value)
         {
             return new IonBool(value);
         }
 
-        public IIonClob NewNullClob()
+        public IIonValue NewNullClob()
         {
             return IonClob.NewNull();
         }
 
-        public IIonClob NewClob(ReadOnlySpan<byte> bytes)
+        public IIonValue NewClob(ReadOnlySpan<byte> bytes)
         {
             return new IonClob(bytes);
         }
 
-        public IIonDecimal NewNullDecimal()
+        public IIonValue NewNullDecimal()
         {
             return IonDecimal.NewNull();
         }
 
-        public IIonDecimal NewDecimal(double doubleValue)
+        public IIonValue NewDecimal(double doubleValue)
         {
             return new IonDecimal(doubleValue);
         }
 
-        public IIonDecimal NewDecimal(decimal value)
+        public IIonValue NewDecimal(decimal value)
         {
             return new IonDecimal(value);
         }
 
-        public IIonDecimal NewDecimal(BigDecimal bigDecimal)
+        public IIonValue NewDecimal(BigDecimal bigDecimal)
         {
             return new IonDecimal(bigDecimal);
         }
 
-        public IIonFloat NewNullFloat()
+        public IIonValue NewNullFloat()
         {
             return IonFloat.NewNull();
         }
 
-        public IIonFloat NewFloat(double value)
+        public IIonValue NewFloat(double value)
         {
             return new IonFloat(value);
         }
 
-        public IIonInt NewNullInt()
+        public IIonValue NewNullInt()
         {
             return IonInt.NewNull();
         }
 
-        public IIonInt NewInt(long value)
+        public IIonValue NewInt(long value)
         {
             return new IonInt(value);
         }
 
-        public IIonInt NewInt(BigInteger value)
+        public IIonValue NewInt(BigInteger value)
         {
             return new IonInt(value);
         }
 
-        public IIonList NewNullList()
+        public IIonValue NewNullList()
         {
             return IonList.NewNull();
         }
 
-        public IIonList NewEmptyList()
+        public IIonValue NewEmptyList()
         {
             return new IonList();
         }
 
-        public IIonNull NewNull()
+        public IIonValue NewNull()
         {
             return new IonNull();
         }
 
-        public IIonSexp NewNullSexp()
+        public IIonValue NewNullSexp()
         {
             return IonSexp.NewNull();
         }
 
-        public IIonSexp NewEmptySexp()
+        public IIonValue NewEmptySexp()
         {
             return new IonSexp();
         }
 
-        public IIonString NewNullString()
+        public IIonValue NewNullString()
         {
             return IonString.NewNull();
         }
 
-        public IIonString NewString(string value)
+        public IIonValue NewString(string value)
         {
             return new IonString(value);
         }
 
-        public IIonStruct NewNullStruct()
+        public IIonValue NewNullStruct()
         {
             return IonStruct.NewNull();
         }
 
-        public IIonStruct NewEmptyStruct()
+        public IIonValue NewEmptyStruct()
         {
             return new IonStruct();
         }
 
-        public IIonSymbol NewNullSymbol()
+        public IIonValue NewNullSymbol()
         {
             return IonSymbol.NewNull();
         }
 
-        public IIonSymbol NewSymbol(SymbolToken symbolToken)
+        public IIonValue NewSymbol(SymbolToken symbolToken)
         {
             return new IonSymbol(symbolToken);
         }
 
-        public IIonSymbol NewSymbol(string text)
+        public IIonValue NewSymbol(string text)
         {
             return new IonSymbol(text);
         }
 
-        public IIonTimestamp NewNullTimestamp()
+        public IIonValue NewNullTimestamp()
         {
             return IonTimestamp.NewNull();
         }
 
-        public IIonTimestamp NewTimestamp(Timestamp val)
+        public IIonValue NewTimestamp(Timestamp val)
         {
             return new IonTimestamp(val);
         }
