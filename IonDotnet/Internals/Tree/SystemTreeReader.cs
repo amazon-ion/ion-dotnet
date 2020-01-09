@@ -36,38 +36,38 @@ namespace IonDotnet.Internals.Tree
             else
             {
                 _parent = (IIonValue)value.Container;
-                _next = value;
+                _current = value;
             }
         }
 
         public int CurrentDepth => _top/2;
 
-        public IonType CurrentType => _value.Type();
+        public IonType CurrentType => _current.Type();
 
         public string CurrentFieldName => throw new NotImplementedException();
 
-        public bool CurrentIsNull => _value.IsNull;
+        public bool CurrentIsNull => _current.IsNull;
 
         public bool IsInStruct => CurrentDepth > 0 && _parent.Type() == IonType.Struct;
 
         public BigInteger BigIntegerValue()
         {
-            return _value.BigIntegerValue;
+            return _current.BigIntegerValue;
         }
 
         public bool BoolValue()
         {
-            return _value.BoolValue;
+            return _current.BoolValue;
         }
 
         public BigDecimal DecimalValue()
         {
-            return _value.BigDecimalValue;
+            return _current.BigDecimalValue;
         }
 
         public double DoubleValue()
         {
-            return _value.DoubleValue;
+            return _current.DoubleValue;
         }
 
         public int GetBytes(Span<byte> buffer)
@@ -81,12 +81,12 @@ namespace IonDotnet.Internals.Tree
             }
             else if (lobSize <= bufSize)
             {
-                _value.Bytes().CopyTo(buffer);
+                _current.Bytes().CopyTo(buffer);
                 return lobSize;
             }
             else if (lobSize > bufSize)
             {
-                _value.Bytes()
+                _current.Bytes()
                     .Slice(0, bufSize - 1)
                     .CopyTo(buffer);
                 return bufSize;
@@ -97,39 +97,39 @@ namespace IonDotnet.Internals.Tree
 
         public SymbolToken GetFieldNameSymbol()
         {
-            return _value.FieldNameSymbol;
+            return _current.FieldNameSymbol;
         }
 
         public IntegerSize GetIntegerSize()
         {
-            return _value.IntegerSize;
+            return _current.IntegerSize;
         }
 
         public int GetLobByteSize()
         {
-            return _value.ByteSize();
+            return _current.ByteSize();
         }
 
         public virtual ISymbolTable GetSymbolTable() => _systemSymbols;
 
         public IEnumerable<SymbolToken> GetTypeAnnotations()
         {
-            return _value.GetTypeAnnotations();
+            return _current.GetTypeAnnotations();
         }
 
         public int IntValue()
         {
-            return _value.IntValue;
+            return _next.IntValue;
         }
 
         public long LongValue()
         {
-            return _value.LongValue;
+            return _current.LongValue;
         }
 
-        public IonType MoveNext()
+        public virtual IonType MoveNext()
         {
-            if (_next == null && !hasNext())
+            if (_next == null && !HasNext())
             {
                 _current = null;
                 return IonType.Null;
@@ -142,7 +142,7 @@ namespace IonDotnet.Internals.Tree
 
         public byte[] NewByteArray()
         {
-            return _value.Bytes().ToArray();
+            return _current.Bytes().ToArray();
         }
 
         public void StepIn()
@@ -152,9 +152,9 @@ namespace IonDotnet.Internals.Tree
                 throw new IonException("current value must be a container");
             }
 
-            push();
+            Push();
             _parent = _current;
-            _iter = _current;
+            _iter = new Children(_current);
             _current = null;
         }
 
@@ -166,7 +166,7 @@ namespace IonDotnet.Internals.Tree
                 || _current.Type() == IonType.Datagram;
         }
 
-        private void push()
+        private void Push()
         {
             int oldlen = _stack.Length;
             if (_top + 1 >= oldlen)
@@ -181,7 +181,7 @@ namespace IonDotnet.Internals.Tree
             _stack[_top++] = _iter;
         }
 
-        private void pop()
+        private void Pop()
         {
             _top--;
             _iter = (IEnumerator<IIonValue>)_stack[_top];
@@ -195,13 +195,13 @@ namespace IonDotnet.Internals.Tree
             _eof = false;
         }
 
-        public bool hasNext()
+        public virtual bool HasNext()
         {
-            IonType next_type = next_helper_system();
+            IonType next_type = NextHelperSystem();
             return (next_type != IonType.Null);
         }
 
-        IonType next_helper_system()
+        protected IonType NextHelperSystem()
         {
             if (_eof) return IonType.Null;
             if (_next != null) return _next.Type();
@@ -218,30 +218,29 @@ namespace IonDotnet.Internals.Tree
             return _next.Type();
         }
 
-        //TODO
         public void StepOut()
         {
             if (_top < 1)
             {
                 throw new IonException("Cannot stepOut any further, already at top level.");
             }
-            pop();
+            Pop();
             _current = null;
         }
 
         public string StringValue()
         {
-            return _value.StringValue;
+            return _current.StringValue;
         }
 
         public SymbolToken SymbolValue()
         {
-            return _value.SymbolValue;
+            return _current.SymbolValue;
         }
 
         public Timestamp TimestampValue()
         {
-            return _value.TimestampValue;
+            return _current.TimestampValue;
         }
 
         internal class Children : IEnumerator<IIonValue>
@@ -285,7 +284,6 @@ namespace IonDotnet.Internals.Tree
                 throw new NotImplementedException();
             }
 
-            //TODO: FIX THE LOGIC
             public bool MoveNext()
             {
                 if (_eof)
@@ -313,16 +311,7 @@ namespace IonDotnet.Internals.Tree
                 {
                     _eof = true;
                 }
-                //return !_eof;
-
-                if (true)
-                {
-                    _next_idx++;
-                    return true;
-                }
-                return false;
-                // position++;
-                // return (position < _people.Length);
+                return !_eof;
             }
 
             public void Reset()
