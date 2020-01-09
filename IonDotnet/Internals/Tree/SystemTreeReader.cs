@@ -44,7 +44,7 @@ namespace IonDotnet.Internals.Tree
 
         public IonType CurrentType => _current.Type();
 
-        public string CurrentFieldName => throw new NotImplementedException();
+        public string CurrentFieldName => _current.FieldNameSymbol.Text;
 
         public bool CurrentIsNull => _current.IsNull;
 
