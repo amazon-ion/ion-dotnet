@@ -13,7 +13,7 @@ namespace IonDotnet.Tree.Impl
 {
     /// <summary>
     /// Represents a tree view into Ion data. Each <see cref="IonValue" /> is a node in the tree. These values are
-    /// mutable and strictly hierarchical. 
+    /// mutable and strictly hierarchical.
     /// </summary>
     internal abstract class IonValue : IIonValue
     {
@@ -174,7 +174,7 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// This field stores information about different value properties, and element Id
         /// First byte for flags.
-        /// <para>The rest 24bit for element id.</para> 
+        /// <para>The rest 24bit for element id.</para>
         /// </summary>
         private byte _flags;
 
@@ -469,12 +469,22 @@ namespace IonDotnet.Tree.Impl
             throw new InvalidOperationException(GetErrorMessage());
         }
 
-        public virtual bool RemoveField(string fieldName)
+        public virtual bool ContainsField(string fieldName)
         {
             throw new InvalidOperationException(GetErrorMessage());
         }
 
-        public virtual bool ContainsField(string fieldName)
+        public virtual IIonValue GetField(string fieldName)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual void SetField(string fieldName, IIonValue value)
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
+        public virtual bool RemoveField(string fieldName)
         {
             throw new InvalidOperationException(GetErrorMessage());
         }

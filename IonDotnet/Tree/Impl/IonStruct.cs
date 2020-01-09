@@ -175,23 +175,6 @@ namespace IonDotnet.Tree.Impl
             return true;
         }
 
-        /// <summary>
-        /// Remove a field from this struct.
-        /// </summary>
-        /// <param name="fieldName">Field name.</param>
-        /// <returns>True if the field was removed, false otherwise.</returns>
-        /// <exception cref="ArgumentNullException">When <paramref name="fieldName"/> is empty.</exception>
-        public override bool RemoveField(string fieldName)
-        {
-            ThrowIfNull();
-            ThrowIfLocked();
-            if (string.IsNullOrWhiteSpace(fieldName))
-                throw new ArgumentNullException(nameof(fieldName));
-
-
-            return RemoveUnsafe(fieldName) > 0;
-        }
-
         /// <returns>True if the struct contains such field name.</returns>
         public override bool ContainsField(string fieldName)
             => _values != null && _values.Any(v => v.FieldNameSymbol.Text == fieldName);
@@ -227,6 +210,33 @@ namespace IonDotnet.Tree.Impl
                 value.Container = this;
                 _values.Add(value);
             }
+        }
+
+        public override IIonValue GetField(string fieldName)
+        {
+            return this[fieldName];
+        }
+
+        public override void SetField(string fieldName, IIonValue value)
+        {
+            this[fieldName] = value;
+        }
+
+        /// <summary>
+        /// Remove a field from this struct.
+        /// </summary>
+        /// <param name="fieldName">Field name.</param>
+        /// <returns>True if the field was removed, false otherwise.</returns>
+        /// <exception cref="ArgumentNullException">When <paramref name="fieldName"/> is empty.</exception>
+        public override bool RemoveField(string fieldName)
+        {
+            ThrowIfNull();
+            ThrowIfLocked();
+            if (string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentNullException(nameof(fieldName));
+
+
+            return RemoveUnsafe(fieldName) > 0;
         }
 
         public override int Count => _values?.Count ?? 0;
