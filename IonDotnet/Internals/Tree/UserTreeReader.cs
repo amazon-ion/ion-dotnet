@@ -8,9 +8,11 @@ namespace IonDotnet.Internals.Tree
     internal class UserTreeReader : SystemTreeReader
     {
         /// The ID of system symbol {@value #ION_1_0}, as defined by Ion 1.0.
-        public static readonly int ION_1_0_SID = 2;
+        private const int ION_1_0_SID = 2;
         private readonly ICatalog _catalog;
         private ISymbolTable _currentSymtab;
+        private int _symbol_table_top = 0;
+        private ISymbolTable[] _symbol_table_stack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
 
         public UserTreeReader(IIonValue value, ICatalog catalog) : base(value)
         {
@@ -101,8 +103,6 @@ namespace IonDotnet.Internals.Tree
             return (next_type != IonType.Null);
         }
 
-        private int _symbol_table_top = 0;
-        private ISymbolTable[] _symbol_table_stack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
         private void ClearSystemValueStack()
         {
             while (_symbol_table_top > 0)

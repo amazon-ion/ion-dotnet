@@ -10,8 +10,6 @@ namespace IonDotnet.Internals.Tree
 {
     internal class SystemTreeReader : IIonReader
     {
-
-        protected readonly IIonValue _value;
         protected readonly ISymbolTable _systemSymbols;
         protected IEnumerator<IIonValue> _iter;
         protected IIonValue _parent;
@@ -119,7 +117,7 @@ namespace IonDotnet.Internals.Tree
 
         public int IntValue()
         {
-            return _next.IntValue;
+            return _current.IntValue;
         }
 
         public long LongValue()
@@ -168,13 +166,13 @@ namespace IonDotnet.Internals.Tree
 
         private void Push()
         {
-            int oldlen = _stack.Length;
-            if (_top + 1 >= oldlen)
+            int oldLen = _stack.Length;
+            if (_top + 1 >= oldLen)
             {
                 // we're going to do a "+2" on top so we need extra space
-                int newlen = oldlen * 2;
-                Object[] temp = new Object[newlen];
-                Array.Copy(_stack, 0, temp, 0, oldlen);
+                int newLen = oldLen * 2;
+                Object[] temp = new Object[newLen];
+                Array.Copy(_stack, 0, temp, 0, oldLen);
                 _stack = temp;
             }
             _stack[_top++] = _parent;
