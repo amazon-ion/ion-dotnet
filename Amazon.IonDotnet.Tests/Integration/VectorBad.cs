@@ -29,9 +29,8 @@ namespace Amazon.IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "shortUtf8Sequence_1.ion",
-            "shortUtf8Sequence_2.ion",
-            "shortUtf8Sequence_3.ion"
+            // To exclude a test file of ion-test submodule from running, add the 
+            // test file with its extension here. For example: "test.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
