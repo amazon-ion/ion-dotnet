@@ -42,8 +42,7 @@ namespace Amazon.IonDotnet.Tests.Integration
         {
             "subfieldVarInt.ion",
             "whitespace.ion",
-            "localSymbolTableAppend.ion",
-            "stringUtf8.ion"
+            "localSymbolTableAppend.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
