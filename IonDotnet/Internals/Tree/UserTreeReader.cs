@@ -11,10 +11,10 @@ namespace IonDotnet.Internals.Tree
         private const int ION_1_0_SID = 2;
         private readonly ICatalog _catalog;
         private ISymbolTable _currentSymtab;
-        private int _symbol_table_top = 0;
-        private ISymbolTable[] _symbol_table_stack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
+        private int _symbolTableTop = 0;
+        private ISymbolTable[] _symbolTableStack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
 
-        public UserTreeReader(IIonValue value, ICatalog catalog) : base(value)
+        public UserTreeReader(IIonValue value, ICatalog catalog = null) : base(value)
         {
             _catalog = catalog;
             _currentSymtab = _systemSymbols;
@@ -32,7 +32,7 @@ namespace IonDotnet.Internals.Tree
             if (!NextHelperUser())
             {
                 _current = null;
-                return IonType.Null;
+                return IonType.None;
             }
             _current = _next;
             _next = null;
@@ -100,37 +100,37 @@ namespace IonDotnet.Internals.Tree
                 // so this is a value the user gets
                 break;
             }
-            return (next_type != IonType.Null);
+            return (next_type != IonType.None);
         }
 
         private void ClearSystemValueStack()
         {
-            while (_symbol_table_top > 0)
+            while (_symbolTableTop > 0)
             {
-                _symbol_table_top--;
-                _symbol_table_stack[_symbol_table_top] = null;
+                _symbolTableTop--;
+                _symbolTableStack[_symbolTableTop] = null;
             }
         }
         private void PushSymbolTable(ISymbolTable symbols)
         {
-            if (_symbol_table_top >= _symbol_table_stack.Length)
+            if (_symbolTableTop >= _symbolTableStack.Length)
             {
-                int new_len = _symbol_table_stack.Length * 2;
+                int new_len = _symbolTableStack.Length * 2;
                 ISymbolTable[] temp = new ISymbolTable[new_len];
-                Array.Copy(_symbol_table_stack, 0, temp, 0, _symbol_table_stack.Length);
-                _symbol_table_stack = temp;
+                Array.Copy(_symbolTableStack, 0, temp, 0, _symbolTableStack.Length);
+                _symbolTableStack = temp;
             }
-            _symbol_table_stack[_symbol_table_top++] = symbols;
+            _symbolTableStack[_symbolTableTop++] = symbols;
         }
         private ISymbolTable PopPassedSymbolTable()
         {
-            if (_symbol_table_top <= 0)
+            if (_symbolTableTop <= 0)
             {
                 return null;
             }
-            _symbol_table_top--;
-            ISymbolTable symbols = _symbol_table_stack[_symbol_table_top];
-            _symbol_table_stack[_symbol_table_top] = null;
+            _symbolTableTop--;
+            ISymbolTable symbols = _symbolTableStack[_symbolTableTop];
+            _symbolTableStack[_symbolTableTop] = null;
             return symbols;
         }
     }

@@ -17,6 +17,7 @@ namespace IonDotnet.Internals.Tree
         protected IIonValue _current;
         protected bool _eof;
         protected int _top;
+        // Holds pairs: IonValue parent (_parent), Iterator<IIonValue> cursor (_iter)
         private Object[] _stack = new Object[10];
 
         protected SystemTreeReader(IIonValue value)
@@ -34,7 +35,7 @@ namespace IonDotnet.Internals.Tree
             else
             {
                 _parent = (IIonValue)value.Container;
-                _current = value;
+                _next = value;
             }
         }
 
@@ -130,7 +131,7 @@ namespace IonDotnet.Internals.Tree
             if (_next == null && !HasNext())
             {
                 _current = null;
-                return IonType.Null;
+                return IonType.None;
             }
             _current = _next;
             _next = null;
@@ -196,12 +197,12 @@ namespace IonDotnet.Internals.Tree
         public virtual bool HasNext()
         {
             IonType next_type = NextHelperSystem();
-            return (next_type != IonType.Null);
+            return (next_type != IonType.None);
         }
 
         protected IonType NextHelperSystem()
         {
-            if (_eof) return IonType.Null;
+            if (_eof) return IonType.None;
             if (_next != null) return _next.Type();
 
             while(_iter != null && _iter.MoveNext())
@@ -211,7 +212,7 @@ namespace IonDotnet.Internals.Tree
 
             if ((_eof = (_next == null)))
             {
-                return IonType.Null;
+                return IonType.None;
             }
             return _next.Type();
         }
@@ -244,14 +245,14 @@ namespace IonDotnet.Internals.Tree
         internal class Children : IEnumerator<IIonValue>
         {
             bool _eof;
-            int _next_idx;
+            int _nextIdx;
             IIonValue _parent;
             IIonValue _curr;
 
             public Children(IIonValue parent)
             {
                 _parent = parent;
-                _next_idx = 0;
+                _nextIdx = 0;
                 _curr = null;
                 if (_parent.IsNull)
                 {
@@ -266,7 +267,7 @@ namespace IonDotnet.Internals.Tree
                 {
                     try
                     {
-                        return _parent.GetElementAt(_next_idx);
+                        return _parent.GetElementAt(_nextIdx);
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -291,21 +292,21 @@ namespace IonDotnet.Internals.Tree
 
                 int len = _parent.Count;
 
-                if (_next_idx > 0)
+                if (_nextIdx > 0)
                 {
-                    int ii = _next_idx - 1;
-                    _next_idx = len;
+                    int ii = _nextIdx - 1;
+                    _nextIdx = len;
 
                     while (ii < len)
                     {
                         if (_curr == _parent.GetElementAt(ii))
                         {
-                            _next_idx = ii + 1;
+                            _nextIdx = ii + 1;
                             break;
                         }
                     }
                 }
-                if (_next_idx >= _parent.Count)
+                if (_nextIdx >= _parent.Count)
                 {
                     _eof = true;
                 }
