@@ -205,7 +205,7 @@ namespace IonDotnet.Internals.Tree
             if (_eof) return IonType.None;
             if (_next != null) return _next.Type();
 
-            while(_iter != null && _iter.MoveNext())
+            if(_iter != null && _iter.MoveNext())
             {
                 _next = _iter.Current;
             }
@@ -252,7 +252,7 @@ namespace IonDotnet.Internals.Tree
             public Children(IIonValue parent)
             {
                 _parent = parent;
-                _nextIdx = 0;
+                _nextIdx = -1;
                 _curr = null;
                 if (_parent.IsNull)
                 {
@@ -287,28 +287,17 @@ namespace IonDotnet.Internals.Tree
             {
                 if (_eof)
                 {
+                    _curr = null;
                     return false;
                 }
 
-                int len = _parent.Count;
-
-                if (_nextIdx > 0)
-                {
-                    int ii = _nextIdx - 1;
-                    _nextIdx = len;
-
-                    while (ii < len)
-                    {
-                        if (_curr == _parent.GetElementAt(ii))
-                        {
-                            _nextIdx = ii + 1;
-                            break;
-                        }
-                    }
-                }
-                if (_nextIdx >= _parent.Count)
+                if (_nextIdx >= _parent.Count - 1)
                 {
                     _eof = true;
+                }
+                else
+                {
+                    _curr = _parent.GetElementAt(++_nextIdx);
                 }
                 return !_eof;
             }
