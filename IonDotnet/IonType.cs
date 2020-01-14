@@ -48,7 +48,7 @@
         /// </summary>
         /// <param name="t">IonType enum</param>
         /// <returns>true when the this is a scalar type</returns>
-        public static bool IsScalar(this IonType t) => t > IonType.None && t < IonType.Clob;
+        public static bool IsScalar(this IonType t) => t > IonType.None && t < IonType.List;
 
         /// <summary>
         /// Determines whether a type represents a numeric type
