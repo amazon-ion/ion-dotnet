@@ -1,14 +1,13 @@
-﻿using IonDotnet.Builders;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using IonDotnet.Internals.Binary;
+using IonDotnet.Internals.Tree;
 using IonDotnet.Tests.Common;
 using IonDotnet.Tree;
 using IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using IonDotnet.Internals.Tree;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Numerics;
-using System.Linq;
 
 namespace IonDotnet.Tests.Internals
 {
@@ -21,7 +20,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void SingleIntNumberTest()
         {
-            var value = (IIonValue)_ionValueFactory.NewInt(123);
+            var value = _ionValueFactory.NewInt(123);
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.SingleNumber(reader, 123);
@@ -31,7 +30,7 @@ namespace IonDotnet.Tests.Internals
         public void SingleDecimalNumberTest()
         {
             var decimalValue = new BigDecimal(decimal.MaxValue);
-            var value = (IIonValue)_ionValueFactory.NewDecimal(decimalValue);
+            var value = _ionValueFactory.NewDecimal(decimalValue);
             var reader = new UserTreeReader(value);
 
             Assert.AreEqual(IonType.Decimal, reader.MoveNext());
@@ -42,7 +41,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void SingleDoubleNumberTest()
         {
-            var value = (IIonValue)_ionValueFactory.NewFloat(123.456);
+            var value = _ionValueFactory.NewFloat(123.456);
             var reader = new UserTreeReader(value);
 
             Assert.AreEqual(IonType.Float, reader.MoveNext());
@@ -53,7 +52,7 @@ namespace IonDotnet.Tests.Internals
         public void TimestampTest()
         {
             var timestamp = new Timestamp(DateTime.Now);
-            var value = (IIonValue)_ionValueFactory.NewTimestamp(timestamp);
+            var value = _ionValueFactory.NewTimestamp(timestamp);
             var reader = new UserTreeReader(value);
 
             Assert.AreEqual(IonType.Timestamp, reader.MoveNext());
@@ -63,7 +62,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void BoolValueTest()
         {
-            var value = (IIonValue)_ionValueFactory.NewBool(true);
+            var value = _ionValueFactory.NewBool(true);
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.SingleBool(reader, true);
@@ -72,7 +71,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void StringValueTest()
         {
-            var value = (IIonValue)_ionValueFactory.NewString("test");
+            var value = _ionValueFactory.NewString("test");
             var reader = new UserTreeReader(value);
 
             Assert.AreEqual(IonType.String, reader.MoveNext());
@@ -82,7 +81,7 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void NullValueTest()
         {
-            var value = (IIonValue)_ionValueFactory.NewNull();
+            var value = _ionValueFactory.NewNull();
             var reader = new UserTreeReader(value);
 
             Assert.AreEqual(IonType.Null, reader.MoveNext());
@@ -93,10 +92,10 @@ namespace IonDotnet.Tests.Internals
         public void ListOfIntsTest()
         {
             //Must be: [123,456,789]
-            var value = (IIonValue)_ionValueFactory.NewEmptyList();
-            value.Add((IIonValue)_ionValueFactory.NewInt(123));
-            value.Add((IIonValue)_ionValueFactory.NewInt(456));
-            value.Add((IIonValue)_ionValueFactory.NewInt(789));
+            var value = _ionValueFactory.NewEmptyList();
+            value.Add(_ionValueFactory.NewInt(123));
+            value.Add(_ionValueFactory.NewInt(456));
+            value.Add(_ionValueFactory.NewInt(789));
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.FlatIntList(reader);
@@ -106,7 +105,7 @@ namespace IonDotnet.Tests.Internals
         public void SimpleDatagramTest()
         {
             //simple datagram: {yolo:true}
-            var value = new IonStruct{{ "yolo", (IIonValue)_ionValueFactory.NewBool(true) }};
+            var value = new IonStruct{{ "yolo", _ionValueFactory.NewBool(true) }};
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.OneBoolInStruct(reader);
@@ -124,12 +123,12 @@ namespace IonDotnet.Tests.Internals
             //double:2213.1267567f
             var value = new IonStruct
             {
-                { "boolean", (IIonValue)_ionValueFactory.NewBool(true) },
-                { "str", (IIonValue)_ionValueFactory.NewString("yes") },
-                { "integer", (IIonValue)_ionValueFactory.NewInt(123456) },
-                { "longInt", (IIonValue)_ionValueFactory.NewInt((long)int.MaxValue * 2) },
-                { "bigInt", (IIonValue)_ionValueFactory.NewInt(BigInteger.Multiply(new BigInteger(long.MaxValue), 10)) },
-                { "double", (IIonValue)_ionValueFactory.NewFloat(2213.1267567) }
+                { "boolean", _ionValueFactory.NewBool(true) },
+                { "str", _ionValueFactory.NewString("yes") },
+                { "integer", _ionValueFactory.NewInt(123456) },
+                { "longInt", _ionValueFactory.NewInt((long)int.MaxValue * 2) },
+                { "bigInt", _ionValueFactory.NewInt(BigInteger.Multiply(new BigInteger(long.MaxValue), 10)) },
+                { "double", _ionValueFactory.NewFloat(2213.1267567) }
             };
             var reader = new UserTreeReader(value);
 
@@ -140,7 +139,7 @@ namespace IonDotnet.Tests.Internals
         public void SingleSymbolTest()
         {
             //{single_symbol:'something'}
-            var value = new IonStruct {{ "single_symbol", (IIonValue)_ionValueFactory.NewSymbol("something")}};
+            var value = new IonStruct {{ "single_symbol", _ionValueFactory.NewSymbol("something")}};
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.SingleSymbol(reader);
@@ -173,25 +172,25 @@ namespace IonDotnet.Tests.Internals
             //   }
             // }
 
-            var popupList = (IIonValue)_ionValueFactory.NewEmptyList();
-            popupList.Add((IIonValue)_ionValueFactory.NewString("Open"));
-            popupList.Add((IIonValue)_ionValueFactory.NewString("Load"));
-            popupList.Add((IIonValue)_ionValueFactory.NewString("Close"));
+            var popupList = _ionValueFactory.NewEmptyList();
+            popupList.Add(_ionValueFactory.NewString("Open"));
+            popupList.Add(_ionValueFactory.NewString("Load"));
+            popupList.Add(_ionValueFactory.NewString("Close"));
 
-            var positionList = (IIonValue)_ionValueFactory.NewEmptyList();
-            positionList.Add((IIonValue)_ionValueFactory.NewInt(1234));
-            positionList.Add((IIonValue)_ionValueFactory.NewInt(5678));
-            positionList.Add((IIonValue)_ionValueFactory.NewInt(90));
+            var positionList = _ionValueFactory.NewEmptyList();
+            positionList.Add(_ionValueFactory.NewInt(1234));
+            positionList.Add(_ionValueFactory.NewInt(5678));
+            positionList.Add(_ionValueFactory.NewInt(90));
 
-            var deep3 = new IonStruct {{ "deep4val", (IIonValue)_ionValueFactory.NewString("enddeep") }};
+            var deep3 = new IonStruct {{ "deep4val", _ionValueFactory.NewString("enddeep") }};
 
-            var deep2 = new IonStruct{{ "deep3", deep3 }};
+            var deep2 = new IonStruct {{ "deep3", deep3 }};
 
-            var deep1 = new IonStruct { { "deep2", deep2 } };
+            var deep1 = new IonStruct {{ "deep2", deep2 }};
 
             var menu = new IonStruct
             {
-                { "id", (IIonValue)_ionValueFactory.NewString("file") },
+                { "id", _ionValueFactory.NewString("file") },
                 { "popup", popupList },
                 { "deep1", deep1 },
                 { "positions", positionList }
@@ -207,14 +206,14 @@ namespace IonDotnet.Tests.Internals
         public void ValueWithAnnotationTest()
         {
             //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
-            var intValue = (IIonValue)_ionValueFactory.NewInt(18);
+            var intValue = _ionValueFactory.NewInt(18);
             intValue.AddTypeAnnotation("years");
             intValue.AddTypeAnnotation("months");
             intValue.AddTypeAnnotation("days");
             intValue.AddTypeAnnotation("hours");
             intValue.AddTypeAnnotation("minutes");
             intValue.AddTypeAnnotation("seconds");
-            var value = new IonStruct { { "withannot", intValue } };
+            var value = new IonStruct {{ "withannot", intValue }};
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.ReadAnnotations_SingleField(reader);
@@ -227,8 +226,8 @@ namespace IonDotnet.Tests.Internals
             // { blobbbb: {{data}} }
             var arrayOfbytes = Enumerable.Repeat<byte>(1, 100).ToArray();         
             ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(arrayOfbytes);
-            var blob = (IIonValue)_ionValueFactory.NewBlob(bytes);
-            var value = new IonStruct { { "blobbbb", blob }};
+            var blob = _ionValueFactory.NewBlob(bytes);
+            var value = new IonStruct {{ "blobbbb", blob }};
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.Struct_OneBlob(reader);
@@ -242,10 +241,28 @@ namespace IonDotnet.Tests.Internals
             {
                 blob[i] = (byte)i;
             }
-            var value = (IIonValue)_ionValueFactory.NewBlob(blob);
+            var value = _ionValueFactory.NewBlob(blob);
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.Blob_PartialRead(30, 7, reader);
+        }
+
+        [TestMethod]
+        public void SymbolTableTest()
+        {
+            //Contents of the file: {single_symbol: 'something'}
+            var data = DirStructure.OwnTestFileAsBytes("binary/single_symbol.bindat");
+            var reader = new UserBinaryReader(new MemoryStream(data));
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+            var symbolTable = reader.GetSymbolTable();
+
+            Assert.IsNotNull(symbolTable);
+            Assert.AreEqual("$ion_1_0", symbolTable.IonVersionId);
+            Assert.IsTrue(symbolTable.IsLocal);
+            Assert.AreEqual(11, symbolTable.FindSymbolId("something"));
+            Assert.AreEqual("something", symbolTable.FindKnownSymbol(11));
         }
     }
 }

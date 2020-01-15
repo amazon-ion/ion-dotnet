@@ -160,9 +160,6 @@ namespace IonDotnet.Tree.Impl
 
         public override IIonValue GetElementAt(int index)
         {
-            if (this.Count <= 0 || index < 0)
-                return null;
-
             return _values.ElementAt(index);
         }
 

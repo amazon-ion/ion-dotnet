@@ -1,10 +1,9 @@
-﻿using IonDotnet.Tree;
-using IonDotnet.Tree.Impl;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
+using IonDotnet.Tree;
+using IonDotnet.Tree.Impl;
 
 namespace IonDotnet.Internals.Tree
 {
@@ -199,8 +198,8 @@ namespace IonDotnet.Internals.Tree
 
         public virtual bool HasNext()
         {
-            IonType next_type = NextHelperSystem();
-            return (next_type != IonType.None);
+            IonType nextType = NextHelperSystem();
+            return (nextType != IonType.None);
         }
 
         protected IonType NextHelperSystem()

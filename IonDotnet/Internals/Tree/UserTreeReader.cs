@@ -1,7 +1,5 @@
-﻿using IonDotnet.Tree;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using IonDotnet.Tree;
 
 namespace IonDotnet.Internals.Tree
 {
@@ -50,14 +48,14 @@ namespace IonDotnet.Internals.Tree
             // reader and if they are system values
             // process them.  Return when we've
             // read all the immediate system values
-            IonType next_type;
+            IonType nextType;
             while (true)
             {
-                next_type = NextHelperSystem();
+                nextType = NextHelperSystem();
 
                 if (_top == 0 && _parent.Type() == IonType.Datagram)
                 {
-                    if (IonType.Symbol == next_type)
+                    if (IonType.Symbol == nextType)
                     {
                         var sym = _next;
                         if (sym.IsNull)
@@ -84,7 +82,7 @@ namespace IonDotnet.Internals.Tree
                             continue;
                         }
                     }
-                    else if (IonType.Struct == next_type && _next.HasAnnotation("$ion_symbol_table"))
+                    else if (IonType.Struct == nextType && _next.HasAnnotation("$ion_symbol_table"))
                     {
                         // read a local symbol table
                         IIonReader reader = new UserTreeReader(_next, _catalog);
@@ -100,7 +98,7 @@ namespace IonDotnet.Internals.Tree
                 // so this is a value the user gets
                 break;
             }
-            return (next_type != IonType.None);
+            return (nextType != IonType.None);
         }
 
         private void ClearSystemValueStack()
