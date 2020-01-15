@@ -4,195 +4,195 @@ using System.Numerics;
 namespace IonDotnet.Tree
 {
     /// <summary>
-    /// The factory for all {@link IonValue}s.
+    /// The factory for all <c>IonValue</c>s.
     /// </summary>
     public interface IValueFactory
     {
         /// <summary>
-        /// Constructs a new {@code null.blob} instance.
+        /// Constructs a new <c>null.blob</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.blob} instance.</returns>
-        IIonBlob NewNullBlob();
+        /// <returns>A new <c>null.blob</c> instance, which implements the <see cref="IIonBlob"/> interface methods.</returns>
+        IIonValue NewNullBlob();
 
         /// <summary>
-        /// Constructs a new Ion {@code blob} instance, copying bytes from an array.
+        /// Constructs a new Ion <c>blob</c> instance, copying bytes from an array.
         /// </summary>
         /// <param name="bytes">The data for the new blob.</param>
-        /// <returns>A new Ion {@code blob} instance.</returns>
-        IIonBlob NewBlob(ReadOnlySpan<byte> bytes);
+        /// <returns>A new Ion <c>blob</c> instance, which implements the <see cref="IIonBlob"/> interface methods.</returns>
+        IIonValue NewBlob(ReadOnlySpan<byte> bytes);
 
         /// <summary>
-        /// Constructs a new {@code null.bool} instance.
+        /// Constructs a new <c>null.bool</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.bool} instance.</returns>
-        IIonBool NewNullBool();
+        /// <returns>A new <c>null.bool</c> instance, which implements the <see cref="IIonBool"/> interface methods.</returns>
+        IIonValue NewNullBool();
 
         /// <summary>
-        /// Constructs a new {@code bool} instance with the given value.
+        /// Constructs a new <c>bool</c> instance with the given value.
         /// </summary>
-        /// <param name="value">The new {@code bool}'s value.</param>
-        /// <returns>A {@code bool} initialized with the provided value.</returns>
-        IIonBool NewBool(bool value);
+        /// <param name="value">The new <c>bool</c>'s value.</param>
+        /// <returns>A <c>bool</c> initialized with the provided value, which implements the <see cref="IIonBool"/> interface methods.</returns>
+        IIonValue NewBool(bool value);
 
         /// <summary>
-        /// Constructs a new {@code null.clob} instance.
+        /// Constructs a new <c>null.clob</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.clob} instance.</returns>
-        IIonClob NewNullClob();
+        /// <returns>A new <c>null.clob</c> instance, which implements the <see cref="IIonClob"/> interface methods.</returns>
+        IIonValue NewNullClob();
 
         /// <summary>
-        /// Constructs a new Ion {@code clob} instance, copying bytes from an array.
+        /// Constructs a new Ion <c>clob</c> instance, copying bytes from an array.
         /// </summary>
         /// <param name="bytes">The data for the new clob.</param>
-        /// <returns>A new Ion {@code clob} instance.</returns>
-        IIonClob NewClob(ReadOnlySpan<byte> bytes);
+        /// <returns>A new Ion <c>clob</c> instance, which implements the <see cref="IIonClob"/> interface methods.</returns>
+        IIonValue NewClob(ReadOnlySpan<byte> bytes);
 
         /// <summary>
-        /// Constructs a new {@code null.decimal} instance.
+        /// Constructs a new <c>null.decimal</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.decimal} instance.</returns>
-        IIonDecimal NewNullDecimal();
+        /// <returns>A new <c>null.decimal</c> instance, which implements the <see cref="IIonDecimal"/> interface methods.</returns>
+        IIonValue NewNullDecimal();
 
         /// <summary>
-        /// Constructs a new Ion {@code decimal} instance from a C# {@code double}.
+        /// Constructs a new Ion <c>decimal</c> instance from a C# <c>double</c>.
         /// </summary>
         /// <param name="doubleValue">The value for the new decimal.</param>
-        /// <returns>A new Ion {@code decimal} instance.</returns>
-        IIonDecimal NewDecimal(double doubleValue);
+        /// <returns>A new Ion <c>decimal</c> instance, which implements the <see cref="IIonDecimal"/> interface methods.</returns>
+        IIonValue NewDecimal(double doubleValue);
 
         /// <summary>
-        /// Constructs a new Ion {@code decimal} instance from a C# {@code decimal}.
+        /// Constructs a new Ion <c>decimal</c> instance from a C# <c>decimal</c>.
         /// </summary>
         /// <param name="value">The value for the new decimal.</param>
-        /// <returns>A new Ion {@code decimal} instance.</returns>
-        IIonDecimal NewDecimal(decimal value);
+        /// <returns>A new Ion <c>decimal</c> instance, which implements the <see cref="IIonDecimal"/> interface methods.</returns>
+        IIonValue NewDecimal(decimal value);
 
         /// <summary>
-        /// Constructs a new Ion {@code decimal} instance from a C# {@code BigDecimal}.
+        /// Constructs a new Ion <c>decimal</c> instance from a C# <c>BigDecimal</c>.
         /// </summary>
         /// <param name="bigDecimal">The value for the new decimal.</param>
-        /// <returns>A new Ion {@code decimal} instance.</returns>
-        IIonDecimal NewDecimal(BigDecimal bigDecimal);
+        /// <returns>A new Ion <c>decimal</c> instance, which implements the <see cref="IIonDecimal"/> interface methods.</returns>
+        IIonValue NewDecimal(BigDecimal bigDecimal);
 
         /// <summary>
-        /// Constructs a new {@code null.float} instance.
+        /// Constructs a new <c>null.float</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.float} instance.</returns>
-        IIonFloat NewNullFloat();
+        /// <returns>A new <c>null.float</c> instance, which implements the <see cref="IIonFloat"/> interface methods.</returns>
+        IIonValue NewNullFloat();
 
         /// <summary>
-        /// Constructs a new Ion {@code float} instance from a C# {@code double}.
+        /// Constructs a new Ion <c>float</c> instance from a C# <c>double</c>.
         /// </summary>
         /// <param name="value">The value for the new float.</param>
-        /// <returns>A new Ion {@code float} instance.</returns>
-        IIonFloat NewFloat(double value);
+        /// <returns>A new Ion <c>float</c> instance, which implements the <see cref="IIonFloat"/> interface methods.</returns>
+        IIonValue NewFloat(double value);
 
         /// <summary>
-        /// Constructs a new {@code null.int} instance.
+        /// Constructs a new <c>null.int</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.int} instance.</returns>
-        IIonInt NewNullInt();
+        /// <returns>A new <c>null.int</c> instance, which implements the <see cref="IIonInt"/> interface methods.</returns>
+        IIonValue NewNullInt();
 
         /// <summary>
-        /// Constructs a new {@code int} instance with the given value.
-        /// </summary>
-        /// <param name="value">The value for the new int.</param>
-        /// <returns>A new {@code int} instance.</returns>
-        IIonInt NewInt(long value);
-
-        /// <summary>
-        /// Constructs a new {@code int} instance with the given value.
+        /// Constructs a new <c>int</c> instance with the given value.
         /// </summary>
         /// <param name="value">The value for the new int.</param>
-        /// <returns>A new {@code int} instance.</returns>
-        IIonInt NewInt(BigInteger value);
+        /// <returns>A new <c>int</c> instance, which implements the <see cref="IIonInt"/> interface methods.</returns>
+        IIonValue NewInt(long value);
 
         /// <summary>
-        /// Constructs a new {@code null.list} instance.
+        /// Constructs a new <c>int</c> instance with the given value.
         /// </summary>
-        /// <returns>A new {@code null.list} instance.</returns>
-        IIonList NewNullList();
+        /// <param name="value">The value for the new int.</param>
+        /// <returns>A new <c>int</c> instance, which implements the <see cref="IIonInt"/> interface methods.</returns>
+        IIonValue NewInt(BigInteger value);
 
         /// <summary>
-        /// Constructs a new empty (not null) {@code list} instance.
+        /// Constructs a new <c>null.list</c> instance.
         /// </summary>
-        /// <returns>A new empty {@code list} instance.</returns>
-        IIonList NewEmptyList();
+        /// <returns>A new <c>null.list</c> instance, which implements the <see cref="IIonList"/> interface methods.</returns>
+        IIonValue NewNullList();
 
         /// <summary>
-        /// Constructs a new {@code null.null} instance.
+        /// Constructs a new empty (not null) <c>list</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.null} instance.</returns>
-        IIonNull NewNull();
+        /// <returns>A new empty <c>list</c> instance, which implements the <see cref="IIonList"/> interface methods.</returns>
+        IIonValue NewEmptyList();
+
+        /// <summary>
+        /// Constructs a new <c>null.null</c> instance.
+        /// </summary>
+        /// <returns>A new <c>null.null</c> instance, which implements the <see cref="IIonNull"/> interface methods.</returns>
+        IIonValue NewNull();
 
         /// <summary>
         /// Constructs a new {@code null.sexp} instance.
         /// </summary>
-        /// <returns>A new {@code null.sexp} instance.</returns>
-        IIonSexp NewNullSexp();
+        /// <returns>A new {@code null.sexp} instance, which implements the <see cref="IIonSexp"/> interface methods.</returns>
+        IIonValue NewNullSexp();
 
         /// <summary>
-        /// Constructs a new empty (not null) {@code sexp} instance.
+        /// Constructs a new empty (not null) <c>sexp</c> instance.
         /// </summary>
-        /// <returns>A new empty {@code sexp} instance.</returns>
-        IIonSexp NewEmptySexp();
+        /// <returns>A new empty <c>sexp</c> instance, which implements the <see cref="IIonSexp"/> interface methods.</returns>
+        IIonValue NewEmptySexp();
 
         /// <summary>
-        /// Constructs a new {@code null.string} instance.
+        /// Constructs a new <c>null.string</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.string} instance.</returns>
-        IIonString NewNullString();
+        /// <returns>A new <c>null.string</c> instance, which implements the <see cref="IIonString"/> interface methods.</returns>
+        IIonValue NewNullString();
 
         /// <summary>
         /// Constructs a new Ion string with the given value.
         /// </summary>
         /// <param name="value">The value of the text for the new string.</param>
-        /// <returns>A new {@code string} instance.</returns>
-        IIonString NewString(string value);
+        /// <returns>A new <c>string</c> instance, which implements the <see cref="IIonString"/> interface methods.</returns>
+        IIonValue NewString(string value);
 
         /// <summary>
-        /// Constructs a new {@code null.struct} instance.
+        /// Constructs a new <c>null.struct</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.struct} instance.</returns>
-        IIonStruct NewNullStruct();
+        /// <returns>A new <c>null.struct</c> instance, which implements the <see cref="IIonStruct"/> interface methods.</returns>
+        IIonValue NewNullStruct();
 
         /// <summary>
-        /// Constructs a new empty (not null) {@code struct} instance.
+        /// Constructs a new empty (not null) <c>struct</c> instance.
         /// </summary>
-        /// <returns>A new empty {@code struct} instance.</returns>
-        IIonStruct NewEmptyStruct();
+        /// <returns>A new empty <c>struct</c> instance, which implements the <see cref="IIonStruct"/> interface methods.</returns>
+        IIonValue NewEmptyStruct();
 
         /// <summary>
-        /// Constructs a new {@code null.symbol} instance.
+        /// Constructs a new <c>null.symbol</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.symbol} instance.</returns>
-        IIonSymbol NewNullSymbol();
+        /// <returns>A new <c>null.symbol</c> instance, which implements the <see cref="IIonSymbol"/> interface methods.</returns>
+        IIonValue NewNullSymbol();
 
         /// <summary>
         /// Constructs a new Ion symbol with the given symbol token.
         /// </summary>
         /// <param name="symbolToken">The value the text and/or SID of the symbol.</param>
-        /// <returns>A new {@code symbol} instance.</returns>
-        IIonSymbol NewSymbol(SymbolToken symbolToken);
+        /// <returns>A new <c>symbol</c> instance, which implements the <see cref="IIonSymbol"/> interface methods.</returns>
+        IIonValue NewSymbol(SymbolToken symbolToken);
 
         /// <summary>
         /// Constructs a new Ion symbol with the given values.
         /// </summary>
         /// <param name="text">The text value for the new symbol.</param>
-        /// <returns>A new {@code symbol} instance.</returns>
-        IIonSymbol NewSymbol(string text);
+        /// <returns>A new <c>symbol</c> instance, which implements the <see cref="IIonSymbol"/> interface methods.</returns>
+        IIonValue NewSymbol(string text);
 
         /// <summary>
-        /// Constructs a new {@code null.timestamp} instance.
+        /// Constructs a new <c>null.timestamp</c> instance.
         /// </summary>
-        /// <returns>A new {@code null.timestamp} instance.</returns>
-        IIonTimestamp NewNullTimestamp();
+        /// <returns>A new <c>null.timestamp</c> instance, which implements the <see cref="IIonTimestamp"/> interface methods.</returns>
+        IIonValue NewNullTimestamp();
 
         /// <summary>
-        /// Constructs a new {@code timestamp} instance with the given value.
+        /// Constructs a new <c>timestamp</c> instance with the given value.
         /// </summary>
         /// <param name="val">The value for the new timestamp.</param>
-        /// <returns>A new {@code timestamp} instance.</returns>
-        IIonTimestamp NewTimestamp(Timestamp val);
+        /// <returns>A new <c>timestamp</c> instance, which implements the <see cref="IIonTimestamp"/> interface methods.</returns>
+        IIonValue NewTimestamp(Timestamp val);
     }
 }
