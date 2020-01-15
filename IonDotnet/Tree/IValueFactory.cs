@@ -4,7 +4,7 @@ using System.Numerics;
 namespace IonDotnet.Tree
 {
     /// <summary>
-    /// The factory for all  <c>IonValue</s.
+    /// The factory for all <c>IonValue</c>s.
     /// </summary>
     public interface IValueFactory
     {
