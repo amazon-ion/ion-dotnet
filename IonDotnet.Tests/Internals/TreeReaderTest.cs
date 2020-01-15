@@ -204,6 +204,23 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void ValueWithAnnotationTest()
+        {
+            //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
+            var intValue = (IIonValue)_ionValueFactory.NewInt(18);
+            intValue.AddTypeAnnotation("years");
+            intValue.AddTypeAnnotation("months");
+            intValue.AddTypeAnnotation("days");
+            intValue.AddTypeAnnotation("hours");
+            intValue.AddTypeAnnotation("minutes");
+            intValue.AddTypeAnnotation("seconds");
+            var value = new IonStruct { { "withannot", intValue } };
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.ReadAnnotations_SingleField(reader);
+        }
+
+        [TestMethod]
         public void BlobTest()
         {
             //Must be in a struct:
@@ -230,17 +247,5 @@ namespace IonDotnet.Tests.Internals
 
             ReaderTestCommon.Blob_PartialRead(30, 7, reader);
         }
-
-        [TestMethod]
-        public void SimpleDatagrasamTest()
-        {
-            //simple datagram: {yolo:true}
-            var value = new IonStruct { { "withannot", (IIonValue)_ionValueFactory.NewInt(18) } };
-            value.AddTypeAnnotation("years::months::days::hours::minutes::seconds");
-            var reader = new UserTreeReader(value);
-
-            ReaderTestCommon.ReadAnnotations_SingleField(reader);
-        }
-
     }
 }
