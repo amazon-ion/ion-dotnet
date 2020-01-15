@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
+using System.Linq;
 
 namespace IonDotnet.Tests.Internals
 {
@@ -148,10 +149,34 @@ namespace IonDotnet.Tests.Internals
         [TestMethod]
         public void NestedAndCombinedListStructTest()
         {
+            //Must be:
+            // {
+            //   menu: {  
+            //     id: "file",
+            //     popup: [    
+            //       "Open",
+            //       "Load",
+            //       "Close"
+            //     ],
+            //     deep1: {    
+            //       deep2: {      
+            //         deep3: {        
+            //           deep4val: "enddeep"
+            //         }
+            //       }
+            //     },
+            //     positions: [    
+            //       1234,
+            //       5678,
+            //       90
+            //     ]
+            //   }
+            // }
+
             var popupList = (IIonValue)_ionValueFactory.NewEmptyList();
-            popupList.Add((IIonValue)_ionValueFactory.NewString("open"));
-            popupList.Add((IIonValue)_ionValueFactory.NewString("load"));
-            popupList.Add((IIonValue)_ionValueFactory.NewString("close"));
+            popupList.Add((IIonValue)_ionValueFactory.NewString("Open"));
+            popupList.Add((IIonValue)_ionValueFactory.NewString("Load"));
+            popupList.Add((IIonValue)_ionValueFactory.NewString("Close"));
 
             var positionList = (IIonValue)_ionValueFactory.NewEmptyList();
             positionList.Add((IIonValue)_ionValueFactory.NewInt(1234));
@@ -160,9 +185,61 @@ namespace IonDotnet.Tests.Internals
 
             var deep3 = new IonStruct {{ "deep4val", (IIonValue)_ionValueFactory.NewString("enddeep") }};
 
-            var deep2 = new IonStruct
-            { { "deep4val", (IIonValue)_ionValueFactory.NewString("enddeep") } };
+            var deep2 = new IonStruct{{ "deep3", deep3 }};
 
+            var deep1 = new IonStruct { { "deep2", deep2 } };
+
+            var menu = new IonStruct
+            {
+                { "id", (IIonValue)_ionValueFactory.NewString("file") },
+                { "popup", popupList },
+                { "deep1", deep1 },
+                { "positions", positionList }
+            };
+
+            var value = new IonStruct {{ "menu", menu }};
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.Combined1(reader);
+        }
+
+        [TestMethod]
+        public void BlobTest()
+        {
+            //Must be in a struct:
+            // { blobbbb: {{data}} }
+            var arrayOfbytes = Enumerable.Repeat<byte>(1, 100).ToArray();         
+            ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(arrayOfbytes);
+            var blob = (IIonValue)_ionValueFactory.NewBlob(bytes);
+            var value = new IonStruct { { "blobbbb", blob }};
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.Struct_OneBlob(reader);
+        }
+
+        [TestMethod]
+        public void BlobPartialReadTest()
+        {
+            var blob = new byte[30];
+            for (var i = 0; i < 30; i++)
+            {
+                blob[i] = (byte)i;
+            }
+            var value = (IIonValue)_ionValueFactory.NewBlob(blob);
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.Blob_PartialRead(30, 7, reader);
+        }
+
+        [TestMethod]
+        public void SimpleDatagrasamTest()
+        {
+            //simple datagram: {yolo:true}
+            var value = new IonStruct { { "withannot", (IIonValue)_ionValueFactory.NewInt(18) } };
+            value.AddTypeAnnotation("years::months::days::hours::minutes::seconds");
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.ReadAnnotations_SingleField(reader);
         }
 
     }
