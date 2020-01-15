@@ -19,6 +19,7 @@ namespace IonDotnet.Internals.Tree
         protected int _top;
         // Holds pairs: IonValue parent (_parent), Iterator<IIonValue> cursor (_iter)
         private Object[] _stack = new Object[10];
+        private int pos = 0;
 
         protected SystemTreeReader(IIonValue value)
         {
@@ -81,13 +82,15 @@ namespace IonDotnet.Internals.Tree
             else if (lobSize <= bufSize)
             {
                 _current.Bytes().CopyTo(buffer);
+                pos += lobSize;
                 return lobSize;
             }
-            else if (lobSize > bufSize)
+            else if (lobSize > bufSize && pos <= lobSize)
             {
                 _current.Bytes()
-                    .Slice(0, bufSize - 1)
+                    .Slice(pos, bufSize)
                     .CopyTo(buffer);
+                pos += bufSize;
                 return bufSize;
             }
 
