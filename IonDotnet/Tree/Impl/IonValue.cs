@@ -454,6 +454,11 @@ namespace IonDotnet.Tree.Impl
             throw new InvalidOperationException(GetErrorMessage());
         }
 
+        public virtual int ByteSize()
+        {
+            throw new InvalidOperationException(GetErrorMessage());
+        }
+
         public virtual StreamReader NewReader(Encoding encoding)
         {
             throw new InvalidOperationException(GetErrorMessage());

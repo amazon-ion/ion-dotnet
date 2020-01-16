@@ -3,6 +3,8 @@ using System.IO;
 using System.Text;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Text;
+using IonDotnet.Internals.Tree;
+using IonDotnet.Tree;
 
 namespace IonDotnet.Builders
 {
@@ -38,6 +40,11 @@ namespace IonDotnet.Builders
         public static IIonReader Build(string text, ReaderOptions options = default)
         {
             return new UserTextReader(text, options.Catalog);
+        }
+
+        public static IIonReader Build(IIonValue value, ReaderOptions options = default)
+        {
+            return new UserTreeReader(value, options.Catalog);
         }
 
         public static IIonReader Build(byte[] data, ReaderOptions options = default)

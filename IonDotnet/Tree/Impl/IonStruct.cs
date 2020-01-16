@@ -158,6 +158,11 @@ namespace IonDotnet.Tree.Impl
             }
         }
 
+        public override IIonValue GetElementAt(int index)
+        {
+            return _values.ElementAt(index);
+        }
+
         public override bool Remove(IIonValue item)
         {
             ThrowIfNull();
