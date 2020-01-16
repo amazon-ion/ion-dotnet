@@ -18,7 +18,7 @@ namespace IonDotnet.Internals.Tree
             _currentSymtab = _systemSymbols;
         }
 
-        public override ISymbolTable GetSymbolTable() => _currentSymtab;
+        public override ISymbolTable GetSymbolTable() => throw new InvalidOperationException("This operation is not supported");
 
         public override bool HasNext()
         {

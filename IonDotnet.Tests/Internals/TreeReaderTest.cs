@@ -246,23 +246,5 @@ namespace IonDotnet.Tests.Internals
 
             ReaderTestCommon.Blob_PartialRead(30, 7, reader);
         }
-
-        [TestMethod]
-        public void SymbolTableTest()
-        {
-            //Contents of the file: {single_symbol: 'something'}
-            var data = DirStructure.OwnTestFileAsBytes("binary/single_symbol.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(data));
-            reader.MoveNext();
-            reader.StepIn();
-            reader.MoveNext();
-            var symbolTable = reader.GetSymbolTable();
-
-            Assert.IsNotNull(symbolTable);
-            Assert.AreEqual("$ion_1_0", symbolTable.IonVersionId);
-            Assert.IsTrue(symbolTable.IsLocal);
-            Assert.AreEqual(11, symbolTable.FindSymbolId("something"));
-            Assert.AreEqual("something", symbolTable.FindKnownSymbol(11));
-        }
     }
 }
