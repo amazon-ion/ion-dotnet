@@ -34,7 +34,7 @@ namespace IonDotnet.Internals.Tree
             }
             else
             {
-                _parent = (IIonValue)value.Container;
+                _parent = value; // (IIonValue)value.Container; //?
                 _next = value;
             }
         }

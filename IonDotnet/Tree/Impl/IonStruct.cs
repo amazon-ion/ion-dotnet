@@ -95,11 +95,12 @@ namespace IonDotnet.Tree.Impl
                 throw new ArgumentNullException(nameof(fieldName));
             ThrowIfLocked();
             ThrowIfNull();
-            if (value.Container != null)
-                throw new ContainedValueException(value);
+            //? Remove
+            //if (value.Container != null)
+            //    throw new ContainedValueException(value);
 
             value.FieldNameSymbol = new SymbolToken(fieldName, SymbolToken.UnknownSid);
-            value.Container = this;
+            //value.Container = this;//?
             _values.Add(value);
         }
 
@@ -115,11 +116,12 @@ namespace IonDotnet.Tree.Impl
                 throw new ArgumentException("symbol has no text or sid", nameof(symbol));
             ThrowIfLocked();
             ThrowIfNull();
-            if (value.Container != null)
-                throw new ContainedValueException(value);
+            //? Remove
+            //if (value.Container != null)
+            //    throw new ContainedValueException(value);
 
             value.FieldNameSymbol = symbol;
-            value.Container = this;
+            //value.Container = this;//?
             _values.Add(value);
         }
 
@@ -130,21 +132,23 @@ namespace IonDotnet.Tree.Impl
                 _values = new List<IIonValue>();
 
             NullFlagOn(false);
-            foreach (var v in _values)
-            {
-                v.Container = null;
-            }
+            //foreach (var v in _values) //?
+            //{
+            //    v.Container = null;
+            //}
 
             _values.Clear();
         }
 
         public override bool Contains(IIonValue item)
         {
+            //? _values.Contains(item);
             if (NullFlagOn() || item is null)
                 return false;
 
             Debug.Assert(_values != null);
-            return item.Container == this;
+            return _values.Contains(item);
+            //return item.Container == this;
         }
 
         public override IEnumerator<IIonValue> GetEnumerator()
@@ -170,12 +174,12 @@ namespace IonDotnet.Tree.Impl
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
 
-            if (item.Container != this)
-                return false;
+            //if (item.Container != this)
+            //    return false;
 
             Debug.Assert(item.FieldNameSymbol != default && _values != null);
             _values.Remove(item);
-            item.Container = null;
+            //item.Container = null;//?
             item.FieldNameSymbol = default;
             return true;
         }
@@ -206,13 +210,14 @@ namespace IonDotnet.Tree.Impl
                     throw new ArgumentNullException(nameof(fieldName));
                 ThrowIfLocked();
                 ThrowIfNull();
-                if (value.Container != null)
-                    throw new ContainedValueException();
+                //? Remove
+                //if (value.Container != null)
+                //    throw new ContainedValueException();
 
                 RemoveUnsafe(fieldName);
 
                 value.FieldNameSymbol = new SymbolToken(fieldName, SymbolToken.UnknownSid);
-                value.Container = this;
+                //value.Container = this;//?
                 _values.Add(value);
             }
         }
@@ -253,7 +258,7 @@ namespace IonDotnet.Tree.Impl
                 var match = v.FieldNameSymbol.Text == fieldName;
                 if (match)
                 {
-                    v.Container = null;
+                    //v.Container = null;//?
                     v.FieldNameSymbol = default;
                 }
 

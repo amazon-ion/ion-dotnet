@@ -198,7 +198,8 @@ namespace IonDotnet.Tree.Impl
         /// <summary>
         /// The container of this value, or null if this is not part of one.
         /// </summary>
-        public virtual IIonContainer Container { get; set; }
+        //? public virtual IIonContainer Container { get; set; } //?
+        public virtual IIonValue Children { get; } //?
 
         /// <summary>
         /// Get this value's user type annotations.
