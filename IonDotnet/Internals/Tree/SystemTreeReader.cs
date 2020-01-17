@@ -34,7 +34,7 @@ namespace IonDotnet.Internals.Tree
             }
             else
             {
-                _parent = value; // (IIonValue)value.Container; //?
+                _parent = null;
                 _next = value;
             }
         }
@@ -47,7 +47,7 @@ namespace IonDotnet.Internals.Tree
 
         public bool CurrentIsNull => _current.IsNull;
 
-        public bool IsInStruct => CurrentDepth > 0 && _parent.Type() == IonType.Struct;
+        public bool IsInStruct => CurrentDepth > 0 && _parent != null && _parent.Type() == IonType.Struct;
 
         public BigInteger BigIntegerValue()
         {

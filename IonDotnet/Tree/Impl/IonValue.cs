@@ -516,7 +516,7 @@ namespace IonDotnet.Tree.Impl
 
         public virtual IonType Type()
         {
-            throw new InvalidOperationException(GetErrorMessage());
+            throw new InvalidOperationException("This operation is not supported for this IonType}");
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using IonDotnet.Internals.Binary;
 using IonDotnet.Internals.Tree;
 using IonDotnet.Tests.Common;
 using IonDotnet.Tree;
