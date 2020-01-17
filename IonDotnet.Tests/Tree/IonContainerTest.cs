@@ -146,16 +146,5 @@ namespace IonDotnet.Tests.Tree
             //Assert.IsNull(r?.Container);
             Assert.AreEqual(count - 1, v.Count);
         }
-
-        [ExpectedException(typeof(ContainedValueException))]
-        [TestMethod][Ignore]
-        public void AddChildOfAnotherContainer()
-        {
-            var v1 = MakeMutableValue() as IonContainer;
-            var item = (IonValue) MakeMutableValue();
-            var v2 = MakeMutableValue() as IonContainer;
-            DoAdd(v1, item);
-            DoAdd(v2, item);
-        }
     }
 }

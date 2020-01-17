@@ -196,12 +196,6 @@ namespace IonDotnet.Tree.Impl
         }
 
         /// <summary>
-        /// The container of this value, or null if this is not part of one.
-        /// </summary>
-        //? public virtual IIonContainer Container { get; set; } //?
-        public virtual IIonValue Children { get; } //?
-
-        /// <summary>
         /// Get this value's user type annotations.
         /// </summary>
         /// <returns>Read-only collection of type annotations.</returns>
@@ -361,12 +355,10 @@ namespace IonDotnet.Tree.Impl
         public virtual decimal DecimalValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
         public virtual BigDecimal BigDecimalValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         // Applicable to IonContainer
@@ -376,7 +368,6 @@ namespace IonDotnet.Tree.Impl
         public virtual string StringValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         // Applicable to IonInt
@@ -385,47 +376,40 @@ namespace IonDotnet.Tree.Impl
         public virtual BigInteger BigIntegerValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual int IntValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         public virtual long LongValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         // Applicable to IonSymbol
         public virtual SymbolToken SymbolValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         // Applicable to IonBool
         public virtual bool BoolValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         // Applicable to IonFloat
         public virtual double DoubleValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         // Applicable to IonTimestamp
         public virtual Timestamp TimestampValue
         {
             get => throw new InvalidOperationException(GetErrorMessage());
-            set => throw new InvalidOperationException(GetErrorMessage());
         }
 
         public string ToPrettyString()

@@ -70,12 +70,8 @@ namespace IonDotnet.Tree.Impl
             ThrowIfNull();
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
-            //? Remove
-            //if (item.Container != null)
-            //    throw new ContainedValueException(item);
 
             _children.Add(item);
-            //item.Container = this; //?
         }
 
         /// <inheritdoc />
@@ -88,12 +84,9 @@ namespace IonDotnet.Tree.Impl
         {
             ThrowIfLocked();
             ThrowIfNull();
-            //?if (NullFlagOn() || item?.Container != this)
-            //    return false;
 
             Debug.Assert(_children?.Contains(item) == true);
             _children.Remove(item);
-            //item.Container = null; //?
             return true;
         }
 
@@ -103,13 +96,9 @@ namespace IonDotnet.Tree.Impl
             ThrowIfNull();
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
-            //? Remove
-            //if (item.Container != null)
-            //    throw new ContainedValueException(item);
-
+            
             //this will check range
             _children.Insert(index, item);
-            //item.Container = this; //?
         }
 
         public override void RemoveAt(int index)
@@ -167,24 +156,17 @@ namespace IonDotnet.Tree.Impl
             {
                 _children = new List<IIonValue>();
             }
-
-            //foreach (var child in _children) //?
-            //{
-            //    child.Container = null;
-            //}
-
+            
             NullFlagOn(false);
             _children.Clear();
         }
 
         public override bool Contains(IIonValue item)
         {
-            //? _children.Contains(item);
             if (NullFlagOn() || item == null)
                 return false;
 
             return _children.Contains(item);
-            //return item.Container == this;
         }
 
         public IIonValue this[int index]

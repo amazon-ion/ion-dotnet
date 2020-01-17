@@ -4,8 +4,6 @@ namespace IonDotnet.Tree
 {
     public interface IIonContainer
     {
-        //IIonContainer Container { get; set; } //?
-        IIonValue Children { get; } //?
         int Count { get; }
         void Add(IIonValue item);
         void Clear();

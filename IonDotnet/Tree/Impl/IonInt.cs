@@ -18,12 +18,12 @@ namespace IonDotnet.Tree.Impl
 
         public IonInt(long value) : base(false)
         {
-            LongValue = value;
+            SetLongValue(value);
         }
 
         public IonInt(BigInteger value) : base(false)
         {
-            BigIntegerValue = value;
+            SetBigIntegerValue(value);
         }
 
         private IonInt(bool isNull) : base(isNull)
@@ -87,7 +87,6 @@ namespace IonDotnet.Tree.Impl
                     throw new OverflowException($"Size of this {nameof(IonInt)} is {IntegerSize}");
                 return (int) _longValue;
             }
-            set => LongValue = value;
         }
 
         public override long LongValue
@@ -100,14 +99,6 @@ namespace IonDotnet.Tree.Impl
 
                 return _longValue;
             }
-            set
-            {
-                ThrowIfLocked();
-                NullFlagOn(false);
-                _longValue = value;
-                _bigInteger = null;
-                SetSize(value < int.MinValue || value > int.MaxValue ? IntegerSize.Long : IntegerSize.Int);
-            }
         }
 
         public override BigInteger BigIntegerValue
@@ -116,20 +107,6 @@ namespace IonDotnet.Tree.Impl
             {
                 ThrowIfNull();
                 return _bigInteger ?? new BigInteger(_longValue);
-            }
-            set
-            {
-                ThrowIfLocked();
-                NullFlagOn(false);
-                if (value >= long.MinValue && value <= long.MaxValue)
-                {
-                    LongValue = (long) value;
-                    return;
-                }
-
-                _longValue = 0;
-                _bigInteger = value;
-                SetSize(IntegerSize.BigInteger);
             }
         }
 
@@ -147,10 +124,31 @@ namespace IonDotnet.Tree.Impl
 
         public override IonType Type() => IonType.Int;
 
+        private void SetLongValue(long value)
+        {
+            _longValue = value;
+            _bigInteger = null;
+            SetSize(value < int.MinValue || value > int.MaxValue ? IntegerSize.Long : IntegerSize.Int);
+        }
+
+        private void SetBigIntegerValue(BigInteger value)
+        {
+            if (value >= long.MinValue && value <= long.MaxValue)
+            {
+                SetLongValue((long)value);
+            }
+            else
+            {
+                _longValue = 0;
+                _bigInteger = value;
+                SetSize(IntegerSize.BigInteger);
+            }
+        }
+
         private void SetSize(IntegerSize size)
         {
             Debug.Assert(size != IntegerSize.Unknown);
-            SetMetadata((int) size, IntSizeMask, IntSizeShift);
+            SetMetadata((int)size, IntSizeMask, IntSizeShift);
         }
     }
 }

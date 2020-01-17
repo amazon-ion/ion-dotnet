@@ -66,12 +66,6 @@ namespace IonDotnet.Tree.Impl
                 ThrowIfNull();
                 return _d;
             }
-            set
-            {
-                ThrowIfLocked();
-                NullFlagOn(false);
-                _d = value;
-            }
         }
 
         public override IonType Type() => IonType.Float;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Numerics;
 using IonDotnet.Tree;
@@ -13,7 +12,8 @@ namespace IonDotnet.Internals
     {
         private IIonContainer _currentContainer;
         private Stack<IIonContainer> _containers = new Stack<IIonContainer>();
-        private IDictionary tracking = new Dictionary<IIonValue, IIonContainer>();
+        // Holds pairs of  containers, and their respective parents
+        private IDictionary _containersParents = new Dictionary<IIonValue, IIonContainer>();
 
         public IonTreeWriter(IonContainer root)
         {
@@ -172,7 +172,7 @@ namespace IonDotnet.Internals
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            tracking.Add(c, _containers.Peek());
+            _containersParents.Add(c, _containers.Peek());
             _containers.Push(c);
             AppendValue(c);
             _currentContainer = c;
@@ -180,20 +180,16 @@ namespace IonDotnet.Internals
 
         public override void StepOut()
         {
-            //? if (_currentContainer.Container is null)
-            //throw new InvalidOperationException("Cannot step out of top level value");
             if (_containers.Count > 0)
             {
-                var s = _containers.Pop();
-                _currentContainer = (IIonContainer) tracking[s];
-                 
-                //_currentContainer = _currentContainer.Container;
+                var c = _containers.Pop();
+                _currentContainer = (IIonContainer)_containersParents[c];
+                _containersParents.Remove(c);
             }
             else
             {
                 throw new InvalidOperationException("Cannot step out of top level value");
             }
-            //_currentContainer.Container;
         }
 
         public override bool IsInStruct => ((IIonValue)_currentContainer).Type() == IonType.Struct;
@@ -218,7 +214,6 @@ namespace IonDotnet.Internals
         /// </summary>
         private void AppendValue(IonValue value)
         {
-
             if (_annotations.Count > 0)
             {
                 value.ClearAnnotations();
@@ -245,8 +240,6 @@ namespace IonDotnet.Internals
             {
                 _currentContainer.Add(value);
             }
-
-            //? Debug.Assert(value.Container == _currentContainer);
         }
     }
 }

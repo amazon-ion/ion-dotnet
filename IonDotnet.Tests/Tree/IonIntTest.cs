@@ -41,9 +41,6 @@ namespace IonDotnet.Tests.Tree
             var v = new IonInt(value);
             Assert.IsFalse(v.IsNull);
             AssertEqual(v, value);
-
-            v.IntValue = 10;
-            AssertEqual(v, 10);
         }
 
         [DataRow((long) int.MinValue - 10)]
@@ -63,9 +60,6 @@ namespace IonDotnet.Tests.Tree
             var v = new IonInt(value);
             Assert.IsFalse(v.IsNull);
             AssertEqual(v, value);
-
-            v.LongValue = long.MaxValue - 1000;
-            AssertEqual(v, long.MaxValue - 1000);
         }
 
         [TestMethod]
@@ -81,9 +75,6 @@ namespace IonDotnet.Tests.Tree
             b1 = b1 + 1000;
             var v = new IonInt(b1);
             AssertEqual(v, b1);
-            var b2 = b1 + 1000;
-            v.BigIntegerValue = b2;
-            AssertEqual(v, b2);
         }
 
         [TestMethod]
@@ -94,7 +85,6 @@ namespace IonDotnet.Tests.Tree
             v.MakeReadOnly();
             Assert.IsTrue(v.IsReadOnly);
 
-            Assert.ThrowsException<InvalidOperationException>(() => v.IntValue = 10);
             Assert.ThrowsException<InvalidOperationException>(() => v.AddTypeAnnotation("something"));
             Assert.ThrowsException<InvalidOperationException>(() => v.MakeNull());
         }

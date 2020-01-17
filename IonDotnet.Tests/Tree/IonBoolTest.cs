@@ -28,8 +28,6 @@ namespace IonDotnet.Tests.Tree
             Assert.AreEqual(IonType.Bool, v.Type());
             Assert.IsFalse(v.IsNull);
             Assert.AreEqual(value, v.BoolValue);
-            v.BoolValue = !value;
-            Assert.AreEqual(!value, v.BoolValue);
         }
 
         [DataRow(true)]
@@ -42,7 +40,6 @@ namespace IonDotnet.Tests.Tree
             Assert.IsFalse(v.IsReadOnly);
             v.MakeReadOnly();
             Assert.IsTrue(v.IsReadOnly);
-            Assert.ThrowsException<InvalidOperationException>(() => v.BoolValue = value != true);
             Assert.ThrowsException<InvalidOperationException>(() => v.AddTypeAnnotation("something"));
             Assert.ThrowsException<InvalidOperationException>(() => v.MakeNull());
         }
