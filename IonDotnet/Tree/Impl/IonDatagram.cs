@@ -21,12 +21,6 @@ namespace IonDotnet.Tree.Impl
 
         public override IonType Type() => IonType.Datagram;
 
-        //public override IIonContainer Container //?
-        //{
-        //    get => null;
-        //    set => throw new InvalidOperationException("Cannot set the container of an Ion Datagram");
-        //}
-
         /// <summary>
         /// Adding an item to the datagram will mark the current symbol table.
         /// </summary>
