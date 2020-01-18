@@ -56,22 +56,11 @@ namespace IonDotnet.Tree.Impl
         public override string StringValue
         {
             get => base.StringValue;
-            set
-            {
-                base.StringValue = value;
-                _sid = SymbolToken.UnknownSid;
-            }
         }
 
         public override SymbolToken SymbolValue
         {
             get => new SymbolToken(StringVal, _sid, _importLocation);
-            set
-            {
-                StringValue = value.Text;
-                _sid = value.Sid;
-                _importLocation = value.ImportLocation;
-            }
         }
     }
 }

@@ -46,12 +46,6 @@ namespace IonDotnet.Tree.Impl
                 ThrowIfNull();
                 return BoolTrueFlagOn();
             }
-            set
-            {
-                ThrowIfLocked();
-                NullFlagOn(false);
-                BoolTrueFlagOn(value);
-            }
         }
 
         /// <summary>

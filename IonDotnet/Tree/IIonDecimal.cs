@@ -2,7 +2,7 @@
 {
     public interface IIonDecimal
     {
-        decimal DecimalValue { get; set; }
-        BigDecimal BigDecimalValue { get; set; }
+        decimal DecimalValue { get; }
+        BigDecimal BigDecimalValue { get; }
     }
 }

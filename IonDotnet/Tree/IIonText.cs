@@ -2,6 +2,6 @@
 {
     public interface IIonText
     {
-        string StringValue { get; set; }
+        string StringValue { get; }
     }
 }

@@ -19,12 +19,6 @@ namespace IonDotnet.Tree.Impl
         public override string StringValue
         {
             get => StringVal;
-            set
-            {
-                ThrowIfLocked();
-                NullFlagOn(value is null);
-                StringVal = value;
-            }
         }
 
         public override void MakeNull()

@@ -51,11 +51,6 @@ namespace IonDotnet.Tree.Impl
                 ThrowIfNull();
                 return _timestamp;
             }
-            set
-            {
-                ThrowIfLocked();
-                _timestamp = value;
-            }
         }
 
         public override IonType Type() => IonType.Timestamp;

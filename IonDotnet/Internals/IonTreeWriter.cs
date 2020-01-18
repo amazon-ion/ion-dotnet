@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using IonDotnet.Tree;
@@ -9,11 +11,13 @@ namespace IonDotnet.Internals
     internal class IonTreeWriter : IonSystemWriter
     {
         private IIonContainer _currentContainer;
+        private Stack<IIonContainer> _containers = new Stack<IIonContainer>();
 
         public IonTreeWriter(IonContainer root)
         {
             Debug.Assert(root != null);
             _currentContainer = root;
+            _containers.Push(root);
         }
 
         public override void WriteNull()
@@ -166,36 +170,29 @@ namespace IonDotnet.Internals
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
+            _containers.Push(c);
             AppendValue(c);
             _currentContainer = c;
         }
 
         public override void StepOut()
         {
-            if (_currentContainer.Container is null)
+            if (_containers.Count > 0)
+            {
+                _containers.Pop();
+                _currentContainer = _containers.Peek();
+            }
+            else
+            {
                 throw new InvalidOperationException("Cannot step out of top level value");
-            _currentContainer = _currentContainer.Container;
+            }
         }
 
         public override bool IsInStruct => ((IIonValue)_currentContainer).Type() == IonType.Struct;
 
         public override int GetDepth()
         {
-            var count = 1;
-            var container = _currentContainer;
-            while (container.Container != null)
-            {
-                container = container.Container;
-                count++;
-            }
-
-            if (container is IonDatagram)
-            {
-                //top-level datagram doesn't count
-                count--;
-            }
-
-            return count;
+            return _containers.Count;
         }
 
         protected override void WriteSymbolAsIs(SymbolToken symbolToken)
@@ -239,8 +236,6 @@ namespace IonDotnet.Internals
             {
                 _currentContainer.Add(value);
             }
-
-            Debug.Assert(value.Container == _currentContainer);
         }
     }
 }

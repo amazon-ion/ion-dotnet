@@ -70,11 +70,6 @@ namespace IonDotnet.Tree.Impl
                 ThrowIfNull();
                 return _val.ToDecimal();
             }
-            set
-            {
-                ThrowIfLocked();
-                _val = new BigDecimal(value);
-            }
         }
 
         public override BigDecimal BigDecimalValue
@@ -83,11 +78,6 @@ namespace IonDotnet.Tree.Impl
             {
                 ThrowIfNull();
                 return _val;
-            }
-            set
-            {
-                ThrowIfLocked();
-                _val = value;
             }
         }
 
