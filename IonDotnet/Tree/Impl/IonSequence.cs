@@ -84,6 +84,8 @@ namespace IonDotnet.Tree.Impl
         {
             ThrowIfLocked();
             ThrowIfNull();
+            if (NullFlagOn())
+                return false;
 
             Debug.Assert(_children?.Contains(item) == true);
             _children.Remove(item);
