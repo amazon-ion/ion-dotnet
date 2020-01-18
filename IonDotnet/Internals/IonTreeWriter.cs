@@ -12,8 +12,6 @@ namespace IonDotnet.Internals
     {
         private IIonContainer _currentContainer;
         private Stack<IIonContainer> _containers = new Stack<IIonContainer>();
-        // Holds pairs of  containers, and their respective parents
-        private IDictionary _containersParents = new Dictionary<IIonValue, IIonContainer>();
 
         public IonTreeWriter(IonContainer root)
         {
@@ -172,7 +170,6 @@ namespace IonDotnet.Internals
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            _containersParents.Add(c, _containers.Peek());
             _containers.Push(c);
             AppendValue(c);
             _currentContainer = c;
@@ -182,9 +179,8 @@ namespace IonDotnet.Internals
         {
             if (_containers.Count > 0)
             {
-                var c = _containers.Pop();
-                _currentContainer = (IIonContainer)_containersParents[c];
-                _containersParents.Remove(c);
+                _containers.Pop();
+                _currentContainer = _containers.Peek();
             }
             else
             {
