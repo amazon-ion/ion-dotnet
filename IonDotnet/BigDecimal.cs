@@ -10,7 +10,7 @@ namespace IonDotnet
 {
     /// <inheritdoc cref="IComparable" />
     /// <summary>
-    /// Represent a decimal-type number. This type extends <see cref="T:System.Decimal" /> to allow for larger number range and 
+    /// Represent a decimal-type number. This type extends <see cref="T:System.Decimal" /> to allow for larger number range and
     /// decimal places up to <see cref="F:IonDotnet.BigDecimal.MaxPrecision" />.
     /// </summary>
     public readonly struct BigDecimal : IComparable<BigDecimal>, IEquatable<BigDecimal>
@@ -411,7 +411,7 @@ namespace IonDotnet
             var sb = new StringBuilder(IntVal.ToString(CultureInfo.InvariantCulture));
             if (Scale == 0)
             {
-                sb.Append(".0");
+                sb.Append("d0");
             }
             else if (Scale < 0)
             {

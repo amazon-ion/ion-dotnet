@@ -90,8 +90,8 @@ namespace IonDotnet.Internals.Binary
 
             if (_annotations.Count > 0)
             {
-                //Since annotations 'wraps' the actual value, we basically won't know the length 
-                //(the upcoming value might be another container) 
+                //Since annotations 'wraps' the actual value, we basically won't know the length
+                //(the upcoming value might be another container)
                 //so we treat this as another container of type 'annotation'
 
                 //add all written segments to the sequence
@@ -545,6 +545,13 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteDecimal(BigDecimal value)
         {
+            decimal valueAsDecimal = value.ToDecimal();
+            if (valueAsDecimal == 0 && value.Scale == 0 && !value.IsNegativeZero)
+            {
+                this.WriteDecimal(valueAsDecimal);
+                return;
+            }
+
             PrepareValue();
 
             //wrapup first
@@ -579,6 +586,10 @@ namespace IonDotnet.Internals.Binary
                     totalLength++;
                     _dataBuffer.WriteUint8(0b1000_0000);
                 }
+            }
+            else if (mag.IsZero)
+            {
+                bytes = new byte[] {};
             }
 
             totalLength += bytes.Length;
