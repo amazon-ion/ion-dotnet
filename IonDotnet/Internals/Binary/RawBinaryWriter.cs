@@ -511,7 +511,7 @@ namespace IonDotnet.Internals.Binary
             PrepareValue();
 
             // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (!_isFloat64BinaryEnabled && value == (float)value)
+            if (!_isFloat64BinaryEnabled && value == (float) value)
             {
                 //TODO requires careful testing
                 _containerStack.IncreaseCurrentContainerLength(5);
