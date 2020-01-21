@@ -72,7 +72,6 @@ namespace IonDotnet.Internals.Binary
             //top-level writing also requires a tracker
             var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
             _dataBuffer.StartStreak(pushedContainer.Sequence);
-
         }
 
         /// <summary>
@@ -511,7 +510,7 @@ namespace IonDotnet.Internals.Binary
         {
             PrepareValue();
 
-            //ReSharper disable once CompareOfFloatsByEqualityOperator
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
             if (!_isFloat64BinaryEnabled && value == (float)value)
             {
                 //TODO requires careful testing
