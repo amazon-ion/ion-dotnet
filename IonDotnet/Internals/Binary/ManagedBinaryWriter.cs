@@ -107,7 +107,7 @@ namespace IonDotnet.Internals.Binary
         public ManagedBinaryWriter(
             Stream outputStream,
             IEnumerable<ISymbolTable> importedTables,
-            bool isFloatBinary64Enabled = false)
+            bool forceFloat64 = false)
         {
             if (!outputStream.CanWrite)
                 throw new ArgumentException("Output stream must be writable", nameof(outputStream));
@@ -120,12 +120,12 @@ namespace IonDotnet.Internals.Binary
                 lengthWriterBuffer,
                 new PagedWriter256Buffer(),
                 lengthSegment,
-                isFloatBinary64Enabled);
+                forceFloat64);
             _userWriter = new RawBinaryWriter(
                 lengthWriterBuffer,
                 new PagedWriter256Buffer(),
                 lengthSegment,
-                isFloatBinary64Enabled);
+                forceFloat64);
 
             _importContext = new ImportedSymbolsContext(importedTables);
             _locals = new Dictionary<string, int>();
