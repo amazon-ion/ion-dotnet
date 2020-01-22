@@ -405,7 +405,7 @@ namespace IonDotnet
             //TODO improve this
             if (IsNegativeZero)
             {
-                return "-0d0";
+                return "-0d" + Scale;
             }
 
             var sb = new StringBuilder(IntVal.ToString(CultureInfo.InvariantCulture));

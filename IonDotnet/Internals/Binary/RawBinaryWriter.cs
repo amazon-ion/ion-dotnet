@@ -563,7 +563,7 @@ namespace IonDotnet.Internals.Binary
 
             _dataBuffer.StartStreak(newContainer.Sequence);
             var totalLength = _dataBuffer.WriteVarInt(-value.Scale);
-            var negative = value.IntVal < 0;
+            var negative = value.IntVal < 0 || value.IsNegativeZero;
             var mag = BigInteger.Abs(value.IntVal);
 
 #if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
@@ -578,7 +578,7 @@ namespace IonDotnet.Internals.Binary
                 if ((bytes[0] & 0b1000_0000) == 0)
                 {
                     //bytes[0] can store the sign bit
-                    bytes[0] &= 0b1000_0000;
+                    bytes[0] |= 0b1000_0000;
                 }
                 else
                 {
