@@ -545,10 +545,9 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteDecimal(BigDecimal value)
         {
-            decimal valueAsDecimal = value.ToDecimal();
-            if (valueAsDecimal == 0 && value.Scale == 0 && !value.IsNegativeZero)
+            if (value.IntVal == 0 && value.Scale == 0 && !value.IsNegativeZero)
             {
-                this.WriteDecimal(valueAsDecimal);
+                this.WriteDecimal(value.ToDecimal());
                 return;
             }
 
