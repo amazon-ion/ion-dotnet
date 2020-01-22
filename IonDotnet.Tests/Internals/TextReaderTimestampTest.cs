@@ -36,19 +36,19 @@ namespace IonDotnet.Tests.Internals
         /// </summary>
         /// <param name="dateString"></param>
         /// <param name="expectedLocalOffset"></param>
-        [DataRow("2010-10-10T03:20+02:12", +(2 * 60 + 12))]
-        [DataRow("2010-10-10T03:20-02:12", -(2 * 60 + 12))]
-        [DataRow("2010-10-10T03:20+00:12", +(0 * 60 + 12))]
-        [DataRow("2010-10-10T03:20+02:00", +(2 * 60 + 00))]
+        [DataRow("2010-10-10T03:20+02:12", +(2 * 60 + 12), "2010-10-10 3:20:00 AM +02:12")]
+        [DataRow("2010-10-10T03:20-02:12", -(2 * 60 + 12), "2010-10-10 3:20:00 AM -02:12")]
+        [DataRow("2010-10-10T03:20+00:12", +(0 * 60 + 12), "2010-10-10 3:20:00 AM +00:12")]
+        [DataRow("2010-10-10T03:20+02:00", +(2 * 60 + 00), "2010-10-10 3:20:00 AM +02:00")]
         [TestMethod]
-        public void TimeZone_Hour_Minute(string dateString, int expectedLocalOffset)
+        public void TimeZone_Hour_Minute(string dateString, int expectedLocalOffset, string expectedDateTimeOffset)
         {
             var date = Timestamp.Parse(dateString);
             var localOffset = date.LocalOffset;
-            var LocalDateTime = date.DateTimeValue.ToString();
+            var LocalDateTime = date.AsDateTimeOffset().ToString();
 
             Assert.AreEqual(expectedLocalOffset, localOffset); 
-            Assert.AreEqual("2010-10-10 3:20:00 AM", LocalDateTime);
+            Assert.AreEqual(expectedDateTimeOffset, LocalDateTime);
         }
     }
 }
