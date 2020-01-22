@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using IonDotnet.Utils;
@@ -348,6 +349,32 @@ namespace IonDotnet.Tests.Internals
             }
 
             reader.StepOut();
+        }
+
+        [TestMethod]
+        [DataRow(2e0)]
+        public void WriteFloatWithForceFloatEnabledAndDisabled(double val)
+        {
+            int array32BitLength = 0;
+            int array64BitLength = 0;
+            using (var writer = new ManagedBinaryWriter(_memoryStream, Symbols.EmptySymbolTablesArray, forceFloat64: false))
+            {
+                writer.WriteFloat(val);
+                writer.Flush();
+                array32BitLength = _memoryStream.GetWrittenBuffer().Length;
+
+                _memoryStream.SetLength(0);
+            }
+
+            using (var writer = new ManagedBinaryWriter(_memoryStream, Symbols.EmptySymbolTablesArray, forceFloat64 : true))
+            {
+                writer.WriteFloat(val);
+                writer.Flush();
+                array64BitLength = _memoryStream.GetWrittenBuffer().Length;
+
+            }
+
+            Assert.AreEqual(array32BitLength + 4, array64BitLength);
         }
 
         /// <summary>

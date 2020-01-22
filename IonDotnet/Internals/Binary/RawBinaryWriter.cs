@@ -59,13 +59,15 @@ namespace IonDotnet.Internals.Binary
         private SymbolToken _currentFieldSymbolToken;
         private readonly ContainerStack _containerStack;
         private readonly List<Memory<byte>> _lengthSegments;
+        private readonly bool _forceFloat64;
 
-        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments)
+        internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments, bool forceFloat64)
         {
             _lengthBuffer = lengthBuffer;
             _dataBuffer = dataBuffer;
             _lengthSegments = lengthSegments;
             _containerStack = new ContainerStack(DefaultContainerStackSize);
+            _forceFloat64 = forceFloat64;
 
             //top-level writing also requires a tracker
             var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
@@ -509,7 +511,7 @@ namespace IonDotnet.Internals.Binary
             PrepareValue();
 
             // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (value == (float) value)
+            if (!_forceFloat64 && value == (float) value)
             {
                 //TODO requires careful testing
                 _containerStack.IncreaseCurrentContainerLength(5);

@@ -104,7 +104,10 @@ namespace IonDotnet.Internals.Binary
         private SymbolState _symbolState;
         private readonly Stream _outputStream;
 
-        public ManagedBinaryWriter(Stream outputStream, IEnumerable<ISymbolTable> importedTables)
+        public ManagedBinaryWriter(
+            Stream outputStream,
+            IEnumerable<ISymbolTable> importedTables,
+            bool forceFloat64 = false)
         {
             if (!outputStream.CanWrite)
                 throw new ArgumentException("Output stream must be writable", nameof(outputStream));
@@ -113,8 +116,16 @@ namespace IonDotnet.Internals.Binary
             //raw writers and their buffers
             var lengthWriterBuffer = new PagedWriter256Buffer();
             var lengthSegment = new List<Memory<byte>>(2);
-            _symbolsWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment);
-            _userWriter = new RawBinaryWriter(lengthWriterBuffer, new PagedWriter256Buffer(), lengthSegment);
+            _symbolsWriter = new RawBinaryWriter(
+                lengthWriterBuffer,
+                new PagedWriter256Buffer(),
+                lengthSegment,
+                forceFloat64);
+            _userWriter = new RawBinaryWriter(
+                lengthWriterBuffer,
+                new PagedWriter256Buffer(),
+                lengthSegment,
+                forceFloat64);
 
             _importContext = new ImportedSymbolsContext(importedTables);
             _locals = new Dictionary<string, int>();
