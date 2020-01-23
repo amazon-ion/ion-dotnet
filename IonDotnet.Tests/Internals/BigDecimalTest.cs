@@ -204,7 +204,7 @@ namespace IonDotnet.Tests.Internals
         [DataRow("123.456d10", "123456d7")]
         [DataRow("-0", "-0d0")]
         [DataRow("0.12345d2", "12.345")]
-        [DataRow("0.12345d5", "12345.0")]
+        [DataRow("0.12345d5", "12345d0")]
         [DataRow("0.12345d4", "1234.5")]
         [DataRow("12345d-5", "1.2345d-1")]
         public void ToString_Simple(string text, string expected)

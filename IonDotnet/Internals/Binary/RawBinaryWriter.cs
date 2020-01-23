@@ -92,8 +92,8 @@ namespace IonDotnet.Internals.Binary
 
             if (_annotations.Count > 0)
             {
-                //Since annotations 'wraps' the actual value, we basically won't know the length 
-                //(the upcoming value might be another container) 
+                //Since annotations 'wraps' the actual value, we basically won't know the length
+                //(the upcoming value might be another container)
                 //so we treat this as another container of type 'annotation'
 
                 //add all written segments to the sequence
@@ -547,6 +547,12 @@ namespace IonDotnet.Internals.Binary
 
         public void WriteDecimal(BigDecimal value)
         {
+            if (value.IntVal == 0 && value.Scale == 0 && !value.IsNegativeZero)
+            {
+                this.WriteDecimal(value.ToDecimal());
+                return;
+            }
+
             PrepareValue();
 
             //wrapup first
@@ -558,7 +564,7 @@ namespace IonDotnet.Internals.Binary
 
             _dataBuffer.StartStreak(newContainer.Sequence);
             var totalLength = _dataBuffer.WriteVarInt(-value.Scale);
-            var negative = value.IntVal < 0;
+            var negative = value.IntVal < 0 || value.IsNegativeZero;
             var mag = BigInteger.Abs(value.IntVal);
 
 #if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
@@ -573,7 +579,7 @@ namespace IonDotnet.Internals.Binary
                 if ((bytes[0] & 0b1000_0000) == 0)
                 {
                     //bytes[0] can store the sign bit
-                    bytes[0] &= 0b1000_0000;
+                    bytes[0] |= 0b1000_0000;
                 }
                 else
                 {
@@ -581,6 +587,10 @@ namespace IonDotnet.Internals.Binary
                     totalLength++;
                     _dataBuffer.WriteUint8(0b1000_0000);
                 }
+            }
+            else if (mag.IsZero)
+            {
+                bytes = new byte[] {};
             }
 
             totalLength += bytes.Length;
