@@ -113,10 +113,7 @@ namespace IonDotnet
             switch (DateTimeValue.Kind)
             {
                 case DateTimeKind.Local:
-                    var hourOffset = LocalOffset / 60;
-                    var minuteOffsetRemainder = LocalOffset % 60;
-                    return new DateTimeOffset(DateTime.SpecifyKind(DateTimeValue, DateTimeKind.Unspecified), TimeSpan.FromHours(hourOffset))
-                           - TimeSpan.FromMinutes(minuteOffsetRemainder);
+                    return new DateTimeOffset(DateTime.SpecifyKind(DateTimeValue, DateTimeKind.Unspecified), TimeSpan.FromMinutes(LocalOffset));
                 case DateTimeKind.Unspecified:
                     throw new InvalidOperationException("Offset is unknown");
                 case DateTimeKind.Utc:
