@@ -244,5 +244,15 @@ namespace IonDotnet.Tests.Internals
 
             ReaderTestCommon.Blob_PartialRead(30, 7, reader);
         }
+
+        [TestMethod]
+        public void NullParentHasNext()
+        {
+            var value = _ionValueFactory.NewInt(123);
+            var reader = new UserTreeReader(value);
+
+            Assert.AreEqual(IonType.Int, reader.MoveNext());
+            Assert.IsFalse(reader.HasNext());
+        }
     }
 }

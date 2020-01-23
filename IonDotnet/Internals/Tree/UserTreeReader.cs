@@ -53,7 +53,7 @@ namespace IonDotnet.Internals.Tree
             {
                 nextType = NextHelperSystem();
 
-                if (_top == 0 && _parent.Type() == IonType.Datagram)
+                if (_top == 0 && _parent != null && _parent.Type() == IonType.Datagram)
                 {
                     if (IonType.Symbol == nextType)
                     {
