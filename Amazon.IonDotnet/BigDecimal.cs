@@ -408,9 +408,13 @@ namespace Amazon.IonDotnet
                 throw newFormatException(text);
             }
 
-            if (intVal == 0 && valNegative)
+            if (intVal == 0)
             {
-                return NegativeZero(scale - exponent);
+                if (valNegative)
+                {
+                    return NegativeZero(scale + exponent);
+                }
+                return new BigDecimal(intVal, scale + exponent);
             }
             return new BigDecimal(intVal, scale - exponent);
         }

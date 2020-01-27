@@ -583,7 +583,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             var newContainer = _containerStack.PushContainer(ContainerType.BigDecimal);
 
             _dataBuffer.StartStreak(newContainer.Sequence);
-            var totalLength = _dataBuffer.WriteVarInt(-value.Scale);
+            var totalLength = value.IsNegativeZero ? _dataBuffer.WriteVarInt(value.Scale) : _dataBuffer.WriteVarInt(-value.Scale);
             var negative = value.IntVal < 0 || value.IsNegativeZero;
             var mag = BigInteger.Abs(value.IntVal);
 
