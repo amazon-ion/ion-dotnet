@@ -58,10 +58,9 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        [DataRow(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x11 })]
-        public void TestCurrentType(byte[] data)
+        public void TestCurrentType()
         {
-            var reader = new UserBinaryReader(new MemoryStream(data));
+            var reader = new UserBinaryReader(new MemoryStream(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x11 }));
             Assert.AreEqual(IonType.None, reader.CurrentType);
 
             reader.MoveNext();
