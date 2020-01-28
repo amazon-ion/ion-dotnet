@@ -87,6 +87,17 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void CurrentTypeTest()
+        {
+            var value = _ionValueFactory.NewBool(true);
+            var reader = new UserTreeReader(value);
+            Assert.AreEqual(IonType.None, reader.CurrentType);
+
+            reader.MoveNext();
+            Assert.AreEqual(IonType.Bool, reader.CurrentType);
+        }
+
+        [TestMethod]
         public void ListOfIntsTest()
         {
             //Must be: [123,456,789]

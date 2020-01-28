@@ -72,6 +72,17 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void CurrentType()
+        {
+            var bin = Encoding.UTF8.GetBytes("true");
+            var reader = new UserTextReader(new MemoryStream(bin));
+            Assert.AreEqual(IonType.None, reader.CurrentType);
+
+            reader.MoveNext();
+            Assert.AreEqual(IonType.Bool, reader.CurrentType);
+        }
+
+        [TestMethod]
         public void OneBoolInStruct()
         {
             //simple datagram: {yolo:true}

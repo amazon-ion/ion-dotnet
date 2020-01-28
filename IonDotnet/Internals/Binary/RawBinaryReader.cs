@@ -81,6 +81,7 @@ namespace IonDotnet.Internals.Binary
             _state = State.BeforeTid;
             _eof = false;
             _moveNextNeeded = true;
+            _valueType = IonType.None;
             _valueIsNull = false;
             _valueIsTrue = false;
             IsInStruct = false;
