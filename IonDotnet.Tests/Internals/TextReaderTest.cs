@@ -71,6 +71,16 @@ namespace IonDotnet.Tests.Internals
             ReaderTestCommon.SingleNumber(reader, value);
         }
 
+        public void CurrentType()
+        {
+            var bin = Encoding.UTF8.GetBytes("test");
+            var reader = new UserTextReader(new MemoryStream(bin));
+            Assert.AreEqual(IonType.None, reader.CurrentType);
+
+            reader.MoveNext();
+            Assert.AreEqual(IonType.String, reader.CurrentType);
+        }
+
         [TestMethod]
         public void OneBoolInStruct()
         {

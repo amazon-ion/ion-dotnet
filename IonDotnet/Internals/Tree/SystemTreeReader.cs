@@ -41,7 +41,7 @@ namespace IonDotnet.Internals.Tree
 
         public int CurrentDepth => _top/2;
 
-        public IonType CurrentType => _current.Type();
+        public IonType CurrentType => (_current == null) ? IonType.None : _current.Type();
 
         public string CurrentFieldName => _current.FieldNameSymbol.Text;
 

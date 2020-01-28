@@ -58,6 +58,17 @@ namespace IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        [DataRow(new byte[] { 0xE0, 0x01, 0x00, 0xEA, 0x11 })]
+        public void TestCurrentType(byte[] data)
+        {
+            var reader = new UserBinaryReader(new MemoryStream(data));
+            Assert.AreEqual(IonType.None, reader.CurrentType);
+
+            reader.MoveNext();
+            Assert.AreEqual(IonType.Bool, reader.CurrentType);
+        }
+
+        [TestMethod]
         public void OneBoolInStruct()
         {
             //simple datagram: {yolo:true}
