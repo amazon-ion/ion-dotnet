@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using IonDotnet.Builders;
 using IonDotnet.Internals.Binary;
 using IonDotnet.Tests.Common;
 using IonDotnet.Utils;
@@ -375,6 +375,34 @@ namespace IonDotnet.Tests.Internals
             }
 
             Assert.AreEqual(array32BitLength + 4, array64BitLength);
+        }
+
+        [TestMethod]
+        [DataRow("[1, 2, 3]", IonType.List)]
+        [DataRow("(1 2 3)", IonType.Sexp)]
+        [DataRow("{a:3}", IonType.Struct)]
+        public void ContainerTypesInWriter(string value, IonType expectedType)
+        {
+            var reader = IonReaderBuilder.Build(value);
+            reader.MoveNext();
+
+            MemoryStream memoryStream = new MemoryStream();
+            var writer = IonBinaryWriterBuilder.Build(memoryStream);
+            writer.StepIn(IonType.Struct);
+            writer.SetFieldName("fieldName");
+            writer.WriteValue(reader);
+            writer.StepOut();
+            writer.Finish();
+
+            memoryStream.Flush();
+            var bytes = memoryStream.ToArray();
+
+            reader = IonReaderBuilder.Build(bytes);
+            reader.MoveNext();
+            reader.StepIn();
+            var actualType = reader.MoveNext();
+
+            Assert.AreEqual(expectedType, actualType);
         }
 
         /// <summary>
