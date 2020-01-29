@@ -19,7 +19,8 @@ namespace IonDotnet.Internals.Binary
     {
         private enum ContainerType
         {
-            Sequence,
+            List,
+            Sexp,
             Struct,
             Annotation,
             Datagram,
@@ -148,8 +149,11 @@ namespace IonDotnet.Internals.Binary
             byte tidByte;
             switch (popped.Type)
             {
-                case ContainerType.Sequence:
+                case ContainerType.List:
                     tidByte = TidListByte;
+                    break;
+                case ContainerType.Sexp:
+                    tidByte = TidSexpByte;
                     break;
                 case ContainerType.Struct:
                     tidByte = TidStructByte;
@@ -315,7 +319,7 @@ namespace IonDotnet.Internals.Binary
                 Debug.Assert(ReferenceEquals(writeList, _containerStack.Peek().Sequence));
             }
 
-            var pushedContainer = _containerStack.PushContainer(type == IonType.Struct ? ContainerType.Struct : ContainerType.Sequence);
+            var pushedContainer = _containerStack.PushContainer(GetContainerType(type));
             _dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
@@ -329,13 +333,14 @@ namespace IonDotnet.Internals.Binary
             //TODO check if this container is actually list or struct
             var currentContainerType = _containerStack.Peek().Type;
 
-            if (currentContainerType != ContainerType.Sequence && currentContainerType != ContainerType.Struct)
+            if (IsNotContainerType(currentContainerType))
                 throw new IonException($"Cannot step out of {currentContainerType}");
 
             PopContainer();
             //clear annotations
             FinishValue();
         }
+
 
         public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek().Type == ContainerType.Struct;
 
@@ -891,6 +896,31 @@ namespace IonDotnet.Internals.Binary
                 //resize
                 Array.Resize(ref _array, _array.Length * 2);
             }
+        }
+
+        private ContainerType GetContainerType(IonType ionType)
+        {
+            switch (ionType)
+            {
+                case IonType.List:
+                    return ContainerType.List;
+                    break;
+                case IonType.Struct:
+                    return ContainerType.Struct;
+                    break;
+                case IonType.Sexp:
+                    return ContainerType.Sexp;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private bool IsNotContainerType(ContainerType currentContainerType)
+        {
+            return currentContainerType != ContainerType.List
+                && currentContainerType != ContainerType.Sexp
+                && currentContainerType != ContainerType.Struct;
         }
     }
 }
