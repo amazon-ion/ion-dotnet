@@ -1,5 +1,5 @@
 language: csharp
-solution: IonDotnet.sln
+solution: Amazon.IonDotnet.sln
 dotnet: 2.1
 mono: none
 
@@ -14,7 +14,7 @@ before_install:
 script:
   - git submodule init
   - git submodule update
-  - cd IonDotnet.Tests
+  - cd Amazon.IonDotnet.Tests
   - dotnet test -c Release
   - dotnet test
   - cd ..
