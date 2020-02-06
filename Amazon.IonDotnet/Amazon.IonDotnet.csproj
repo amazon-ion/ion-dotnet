@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">netstandard2.0;net45;netstandard1.3;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0;netstandard1.3;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">netstandard2.0;net45;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0;netcoreapp2.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>7.3</LangVersion>
     <PackageId>Amazon.IonDotnet</PackageId>
@@ -13,6 +13,8 @@
     <RepositoryType>git</RepositoryType>
     <Description>A .NET implementation of Amazon Ion. http://amzn.github.io/ion-docs/</Description>
     <PackageTags>ion;amazon;json;serialization;parser</PackageTags>
+    <PackageIconUrl>https://avatars0.githubusercontent.com/u/8594673?s=200&amp;v=4</PackageIconUrl>
+    <PackageLicenseUrl>https://github.com/amzn/ion-dotnet/blob/master/LICENSE.md</PackageLicenseUrl>
   </PropertyGroup>
   <Target Name="TestMessage" AfterTargets="Build">
     <Message Text="'$(TargetFramework)'" Importance="high" />
