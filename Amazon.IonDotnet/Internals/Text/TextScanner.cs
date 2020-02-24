@@ -926,6 +926,8 @@ namespace Amazon.IonDotnet.Internals.Text
                         goto Done;
                     case ' ':
                     case '\t':
+                    case '\v':
+                    case '\f':
                     case CharacterSequence.CharSeqNewlineSequence1:
                     case CharacterSequence.CharSeqNewlineSequence2:
                     case CharacterSequence.CharSeqNewlineSequence3:
@@ -1825,7 +1827,7 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             // all forms of numeric need to stop someplace rational
             if (!IsTerminatingCharacter(c))
-                throw new FormatException($"Numeric value followed by invalid character: {numericText}{(char)c}");
+                throw new FormatException($"Numeric value [{numericText}] followed by invalid character: {(int)c}");
 
             // we read off the end of the number, so put back
             // what we don't want, but what ever we have is an int
