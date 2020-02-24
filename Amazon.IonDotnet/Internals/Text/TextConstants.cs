@@ -356,6 +356,8 @@ namespace Amazon.IonDotnet.Internals.Text
                 case '\t':
                 case '\n':
                 case '\r':
+                case '\v':
+                case '\f':
                     // Whitespace
                     // case '/': // we check start of comment in the caller where we
                     //              can peek ahead for the following slash or asterisk
