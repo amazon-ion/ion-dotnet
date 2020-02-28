@@ -10,7 +10,7 @@ This package is based on work from Huy Hoang ([dhhoang](https://github.com/dhhoa
 
 ### Manual read/write
 
-You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default. There are 4 different `reader`s that you can create - examples are as listed below. 
+You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default. There are two different `reader`s that you can create, binary and text. Four `reader` objects are created below with different inputs. 
 ```csharp
 Stream stream;  //input stream
 String text;    //text form
@@ -53,8 +53,7 @@ using (IIonReader reader = IonReaderBuilder.Build(stream))
 }
 ```
 
-Similarly you can create a writer that write to a (output) stream. There are 3 different `writer`s that you can create - examples are as listed below. 
-
+Similarly you can create a writer that write to a (output) stream. There are two different `writer`s that you can create, binary and text. Three `writer` objects are created below with different inputs. 
 ```csharp
 Stream stream; //output stream
 var stringWriter = new StringWriter();
