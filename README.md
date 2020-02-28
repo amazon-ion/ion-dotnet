@@ -10,7 +10,7 @@ This package is based on work from Huy Hoang ([dhhoang](https://github.com/dhhoa
 
 ### Manual read/write
 
-You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default.
+You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default. There are 4 different `reader`s that you can create - examples are as listed below. 
 ```csharp
 Stream stream;  //input stream
 String text;    //text form
@@ -28,8 +28,10 @@ reader = IonReaderBuilder.Build(stream, new ReaderOptions {Format = ReaderFormat
 
 //create a text reader that reads a string and uses a catalog
 reader = IonReaderBuilder.Build(text, new ReaderOptions {Catalog = catalog});
+```
 
-
+Example  of using a  `reader`.
+```csharp
 /*reader semantics for
 {
     number: 1,
@@ -37,7 +39,7 @@ reader = IonReaderBuilder.Build(text, new ReaderOptions {Catalog = catalog});
 }
 */
 
-using (reader)
+using (IIonReader reader = IonReaderBuilder.Build(stream))
 {
     Console.WriteLine(reader.MoveNext()); // Struct
     reader.StepIn();
@@ -51,13 +53,14 @@ using (reader)
 }
 ```
 
-Similarly you can create a writer that write to a (output) stream.
+Similarly you can create a writer that write to a (output) stream. There are 3 different `writer`s that you can create - examples are as listed below. 
 
 ```csharp
 Stream stream; //output stream
 var stringWriter = new StringWriter();
 IIonWriter writer;
 ISymbolTable table1,table2;
+
 
 //create a text writer that write to the stream.
 writer = IonTextWriterBuilder.Build(new StreamWriter(stream));
@@ -68,6 +71,10 @@ writer = IonTextWriterBuilder.Build(stringWriter);
 //create a binary writer using multiple symbol tables
 writer = IonBinaryWriterBuilder.Build(stream, new []{table1,table2});
 
+```
+
+Example  of using a  `writer`.
+```csharp
 /*writer semantics for
 {
     number: 1,
@@ -75,7 +82,7 @@ writer = IonBinaryWriterBuilder.Build(stream, new []{table1,table2});
 }
 */
 
-using (writer)
+using (IIonWriter writer = IonTextWriterBuilder.Build(new StreamWriter(stream)))
 {
     writer.StepIn(IonType.Struct);
     writer.SetFieldName("number");

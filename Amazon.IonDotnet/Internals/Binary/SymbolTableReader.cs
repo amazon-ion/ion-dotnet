@@ -541,9 +541,12 @@ namespace Amazon.IonDotnet.Internals.Binary
             yield break;
         }
 
+        /// <summary>
+        /// Dispose SymbolTableReader. No-op.
+        /// </summary>
         public void Dispose()
         {
-            // Nothing to dispose for now
+            return;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

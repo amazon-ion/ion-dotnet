@@ -858,9 +858,12 @@ namespace Amazon.IonDotnet.Internals.Text
             }
         }
 
+        /// <summary>
+        /// Dispose RawTextReader. No-op.
+        /// </summary>
         public virtual void Dispose()
         {
-            // Nothing to dispose for now
+            return;
         }
 
         private class ContainerStack

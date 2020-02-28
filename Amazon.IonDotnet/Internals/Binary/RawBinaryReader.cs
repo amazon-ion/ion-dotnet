@@ -135,9 +135,12 @@ namespace Amazon.IonDotnet.Internals.Binary
             _hasSymbolTableAnnotation = false;
         }
 
+        /// <summary>
+        /// Dispose RawBinaryReader. No-op.
+        /// </summary>
         public void Dispose()
         {
-            // Nothing to dispose for now
+            return;
         }
 
         private void MoveNextRaw()
