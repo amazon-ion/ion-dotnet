@@ -858,6 +858,11 @@ namespace Amazon.IonDotnet.Internals.Text
             }
         }
 
+        public virtual void Dispose()
+        {
+            // Nothing to dispose for now
+        }
+
         private class ContainerStack
         {
             private readonly RawTextReader _rawTextReader;

@@ -36,15 +36,19 @@ reader = IonReaderBuilder.Build(text, new ReaderOptions {Catalog = catalog});
     text: "hello world"
 }
 */
-Console.WriteLine(reader.MoveNext()); // Struct
-reader.StepIn();
-Console.WriteLine(reader.MoveNext()); // Int
-Console.WriteLine(reader.CurrentFieldName); // "number"
-Console.WriteLine(reader.IntValue());   // 1
-Console.WriteLine(reader.MoveNext()); // String
-Console.WriteLine(reader.CurrentFieldName); // "text"
-Console.WriteLine(reader.StringValue());   // "hello world"
-reader.StepOut();
+
+using (reader)
+{
+    Console.WriteLine(reader.MoveNext()); // Struct
+    reader.StepIn();
+    Console.WriteLine(reader.MoveNext()); // Int
+    Console.WriteLine(reader.CurrentFieldName); // "number"
+    Console.WriteLine(reader.IntValue());   // 1
+    Console.WriteLine(reader.MoveNext()); // String
+    Console.WriteLine(reader.CurrentFieldName); // "text"
+    Console.WriteLine(reader.StringValue());   // "hello world"
+    reader.StepOut();
+}
 ```
 
 Similarly you can create a writer that write to a (output) stream.
@@ -70,13 +74,17 @@ writer = IonBinaryWriterBuilder.Build(stream, new []{table1,table2});
     text: "hello world"
 }
 */
-writer.StepIn(IonType.Struct);
-writer.SetFieldName("number");
-writer.WriteInt(1);
-writer.SetFieldName("text");
-writer.WriteString("hello world");
-writer.StepOut();
-writer.Finish();    //this is important
+
+using (writer)
+{
+    writer.StepIn(IonType.Struct);
+    writer.SetFieldName("number");
+    writer.WriteInt(1);
+    writer.SetFieldName("text");
+    writer.WriteString("hello world");
+    writer.StepOut();
+    writer.Finish();    //this is important
+}
 ```
 
 ### Serialization

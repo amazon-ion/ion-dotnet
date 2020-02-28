@@ -135,6 +135,11 @@ namespace Amazon.IonDotnet.Internals.Binary
             _hasSymbolTableAnnotation = false;
         }
 
+        public void Dispose()
+        {
+            // Nothing to dispose for now
+        }
+
         private void MoveNextRaw()
         {
             ClearValue();

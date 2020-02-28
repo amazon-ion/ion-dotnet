@@ -541,6 +541,11 @@ namespace Amazon.IonDotnet.Internals.Binary
             yield break;
         }
 
+        public void Dispose()
+        {
+            // Nothing to dispose for now
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFlag(int flagBit, bool on)
         {

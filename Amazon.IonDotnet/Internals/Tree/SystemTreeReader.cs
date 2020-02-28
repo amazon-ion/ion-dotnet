@@ -259,6 +259,11 @@ namespace Amazon.IonDotnet.Internals.Tree
             return _current.TimestampValue;
         }
 
+        public virtual void Dispose()
+        {
+            // Nothing to dispose for now
+        }
+
         internal class Children : IEnumerator<IIonValue>
         {
             bool _eof;
