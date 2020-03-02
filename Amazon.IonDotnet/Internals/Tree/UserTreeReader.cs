@@ -116,6 +116,14 @@ namespace Amazon.IonDotnet.Internals.Tree
             return (nextType != IonType.None);
         }
 
+        /// <summary>
+        /// Dispose UserTreeReader.
+        /// </summary>
+        public override void Dispose()
+        {
+            return;
+        }
+
         private void ClearSystemValueStack()
         {
             while (_symbolTableTop > 0)
