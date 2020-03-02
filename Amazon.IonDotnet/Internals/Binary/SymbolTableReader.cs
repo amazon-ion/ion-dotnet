@@ -542,7 +542,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         }
 
         /// <summary>
-        /// Dispose SymbolTableReader. No-op.
+        /// Dispose SymbolTableReader.
         /// </summary>
         public void Dispose()
         {

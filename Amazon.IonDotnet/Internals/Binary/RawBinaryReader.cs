@@ -136,7 +136,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         }
 
         /// <summary>
-        /// Dispose RawBinaryReader. No-op.
+        /// Dispose RawBinaryReader.
         /// </summary>
         public void Dispose()
         {

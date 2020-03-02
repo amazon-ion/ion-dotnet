@@ -859,7 +859,7 @@ namespace Amazon.IonDotnet.Internals.Text
         }
 
         /// <summary>
-        /// Dispose RawTextReader. No-op.
+        /// Dispose RawTextReader.
         /// </summary>
         public virtual void Dispose()
         {

@@ -260,7 +260,7 @@ namespace Amazon.IonDotnet.Internals.Tree
         }
 
         /// <summary>
-        /// Dispose SystemTreeReader. No-op.
+        /// Dispose SystemTreeReader.
         /// </summary>
         public virtual void Dispose()
         {
