@@ -117,7 +117,7 @@ namespace Amazon.IonDotnet.Internals.Tree
         }
 
         /// <summary>
-        /// Dispose UserTreeReader. No-op.
+        /// Dispose UserTreeReader.
         /// </summary>
         public override void Dispose()
         {
