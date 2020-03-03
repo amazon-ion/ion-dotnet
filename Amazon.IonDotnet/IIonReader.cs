@@ -138,6 +138,15 @@ namespace Amazon.IonDotnet
         int GetBytes(Span<byte> buffer);
 
         /// <summary>
+        /// Get the annotations of the current value as an array of strings.
+        /// </summary>
+        /// <returns>
+        /// The (ordered) annotations on the current value, or an empty array
+        /// if there are none.
+        /// </returns>
+        string[] GetTypeAnnotations();
+
+        /// <summary>
         /// Gets the current value's annotations as symbol tokens (text + ID).
         /// </summary>
         /// <returns>

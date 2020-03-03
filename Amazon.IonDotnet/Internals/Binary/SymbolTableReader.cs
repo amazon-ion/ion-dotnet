@@ -536,9 +536,41 @@ namespace Amazon.IonDotnet.Internals.Binary
         public int GetBytes(Span<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
+        public string[] GetTypeAnnotations()
+        {
+            if (_currentState == S_STRUCT)
+            {
+                // Must return a new array each time to prevent user from changing it.
+                if (_symbolTable.IsLocal || _symbolTable.IsSystem)
+                {
+                    return new string[] { SystemSymbols.IonSymbolTable };
+                }
+
+                return new string[] { SystemSymbols.IonSharedSymbolTable };
+            }
+
+            return new string[0];
+        }
+
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
-            yield break;
+            if (_currentState == S_STRUCT)
+            {
+                SymbolToken symbolToken;
+                if (_symbolTable.IsLocal || _symbolTable.IsSystem)
+                {
+                    symbolToken = new SymbolToken(SystemSymbols.IonSymbolTable, SystemSymbols.IonSymbolTableSid);
+                }
+                else
+                {
+                    symbolToken = new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid);
+                }
+
+                // Must return a new array each time to prevent user from changing it.
+                return new SymbolToken[] { symbolToken };
+            }
+
+            return new SymbolToken[0];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

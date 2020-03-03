@@ -735,6 +735,30 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
+        public string[] GetTypeAnnotations()
+        {
+            List<string> annotations = new List<string>();
+            foreach (SymbolToken symbolToken in _annotations)
+            {
+                if (symbolToken.Text is null && symbolToken.ImportLocation != default)
+                {
+                    ISymbolTable symtab = GetSymbolTable();
+                    if (symbolToken.ImportLocation.Sid < -1 || symbolToken.ImportLocation.Sid > symtab.MaxId)
+                    {
+                        throw new UnknownSymbolException(symbolToken.Sid);
+                    }
+
+                    annotations.Add(symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid));
+                }
+                else
+                {
+                    annotations.Add(symbolToken.Text);
+                }
+            }
+
+            return annotations.ToArray();
+        }
+
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
             if (_annotations == null)

@@ -906,6 +906,17 @@ namespace Amazon.IonDotnet.Internals.Binary
             return readBytes;
         }
 
+        public string[] GetTypeAnnotations()
+        {
+            List<string> annotations = new List<string>();
+            foreach (int sid in Annotations)
+            {
+                annotations.Add(GetSymbolTable().FindKnownSymbol(sid));
+            }
+
+            return annotations.ToArray();
+        }
+
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
             foreach (var aid in Annotations)
