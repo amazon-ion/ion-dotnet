@@ -786,6 +786,24 @@ namespace Amazon.IonDotnet.Internals.Text
             }
         }
 
+        public bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            foreach (SymbolToken symbolToken in _annotations)
+            {
+                if (annotation.Equals(symbolToken.Text))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static int GetStateAtContainerStart(IonType container)
         {
             if (container == IonType.None)

@@ -573,6 +573,31 @@ namespace Amazon.IonDotnet.Internals.Binary
             return new SymbolToken[0];
         }
 
+        public bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            if (_currentState == S_STRUCT)
+            {
+                SymbolToken symbolToken;
+                if (_symbolTable.IsLocal || _symbolTable.IsSystem)
+                {
+                    symbolToken = new SymbolToken(SystemSymbols.IonSymbolTable, SystemSymbols.IonSymbolTableSid);
+                }
+                else
+                {
+                    symbolToken = new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid);
+                }
+
+                return annotation.Equals(symbolToken.Text);
+            }
+
+            return false;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFlag(int flagBit, bool on)
         {

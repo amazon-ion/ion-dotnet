@@ -909,9 +909,9 @@ namespace Amazon.IonDotnet.Internals.Binary
         public string[] GetTypeAnnotations()
         {
             List<string> annotations = new List<string>();
-            foreach (int sid in Annotations)
+            foreach (int aid in Annotations)
             {
-                annotations.Add(GetSymbolTable().FindKnownSymbol(sid));
+                annotations.Add(GetSymbolTable().FindKnownSymbol(aid));
             }
 
             return annotations.ToArray();
@@ -925,6 +925,26 @@ namespace Amazon.IonDotnet.Internals.Binary
 
                 yield return new SymbolToken(text, aid);
             }
+        }
+
+        public bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            foreach (int aid in Annotations)
+            {
+                string text = GetSymbolTable().FindKnownSymbol(aid);
+
+                if (annotation.Equals(text))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public IonType CurrentType => _valueType;

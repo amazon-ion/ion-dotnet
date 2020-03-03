@@ -144,6 +144,24 @@ namespace Amazon.IonDotnet.Internals.Tree
             return _current.GetTypeAnnotations();
         }
 
+        public bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            foreach (SymbolToken symbolToken in _current.GetTypeAnnotations())
+            {
+                if (annotation.Equals(symbolToken.Text))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public int IntValue()
         {
             return _current.IntValue;
