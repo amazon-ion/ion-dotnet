@@ -170,7 +170,7 @@ namespace Amazon.IonDotnet.Tests.Common
 
             foreach (var s in symbols)
             {
-                Assert.IsTrue(reader.GetTypeAnnotations().Any(a => a.Text == s));
+                Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == s));
             }
         }
 

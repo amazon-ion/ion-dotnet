@@ -128,7 +128,7 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public virtual ISymbolTable GetSymbolTable() => _systemSymbols;
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
             return _current.GetTypeAnnotations();
         }

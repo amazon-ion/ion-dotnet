@@ -125,7 +125,7 @@ namespace Amazon.IonDotnet.Internals
 
         private void TryWriteAnnotations(IIonReader reader)
         {
-            var annots = reader.GetTypeAnnotations();
+            var annots = reader.GetTypeAnnotationSymbols();
             foreach (var a in annots)
             {
                 AddTypeAnnotationSymbol(a);

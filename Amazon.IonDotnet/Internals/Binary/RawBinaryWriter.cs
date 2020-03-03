@@ -919,13 +919,10 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 case IonType.List:
                     return ContainerType.List;
-                    break;
                 case IonType.Struct:
                     return ContainerType.Struct;
-                    break;
                 case IonType.Sexp:
                     return ContainerType.Sexp;
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

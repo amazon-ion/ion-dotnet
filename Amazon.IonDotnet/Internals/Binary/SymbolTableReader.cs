@@ -536,7 +536,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         public int GetBytes(Span<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
             yield break;
         }

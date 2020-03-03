@@ -735,7 +735,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
             if (_annotations == null)
             {

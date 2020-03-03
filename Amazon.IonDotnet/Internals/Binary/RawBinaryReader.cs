@@ -906,7 +906,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             return readBytes;
         }
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
             foreach (var aid in Annotations)
             {
