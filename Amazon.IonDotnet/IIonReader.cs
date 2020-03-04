@@ -156,10 +156,11 @@ namespace Amazon.IonDotnet
         IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
 
         /// <summary>
-        /// Returns true if the value contains such annotation.
+        /// Returns true if the current value contains such annotation.
         /// </summary>
         /// <param name="annotation">Annotation text.</param>
         /// <exception cref="ArgumentNullException">When annotation is null.</exception>
         bool HasAnnotation(string annotation);
     }
 }
+    

@@ -566,11 +566,10 @@ namespace Amazon.IonDotnet.Internals.Binary
                     symbolToken = new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid);
                 }
 
-                // Must return a new array each time to prevent user from changing it.
-                return new SymbolToken[] { symbolToken };
+                yield return symbolToken;
             }
 
-            return new SymbolToken[0];
+            yield break;
         }
 
         public bool HasAnnotation(string annotation)
@@ -582,17 +581,14 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             if (_currentState == S_STRUCT)
             {
-                SymbolToken symbolToken;
                 if (_symbolTable.IsLocal || _symbolTable.IsSystem)
                 {
-                    symbolToken = new SymbolToken(SystemSymbols.IonSymbolTable, SystemSymbols.IonSymbolTableSid);
+                    return annotation.Equals(SystemSymbols.IonSymbolTable);
                 }
                 else
                 {
-                    symbolToken = new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid);
+                    return annotation.Equals(SystemSymbols.IonSharedSymbolTable);
                 }
-
-                return annotation.Equals(symbolToken.Text);
             }
 
             return false;
