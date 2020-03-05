@@ -155,7 +155,7 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual(0, reader.CurrentDepth);
         }
 
-        public static void ReadAnnotations_SingleField(IIonReader reader)
+        public static void ReadTypeAnnotations_SingleField(IIonReader reader)
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
@@ -168,10 +168,58 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
 
+            string[] annotations = reader.GetTypeAnnotations();
+            Assert.AreEqual(symbols.Count(), annotations.Count());
+            Assert.IsTrue(symbols.SequenceEqual(annotations));
+        }
+
+        public static void ReadTypeAnnotationSymbols_SingleField(IIonReader reader)
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            var symbols = new[] { "years", "months", "days", "hours", "minutes", "seconds" };
+
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+            Assert.AreEqual(IonType.Int, reader.CurrentType);
+            Assert.AreEqual("withannot", reader.CurrentFieldName);
+            Assert.AreEqual(18, reader.IntValue());
+
+            Assert.AreEqual(symbols.Count(), reader.GetTypeAnnotationSymbols().Count());
+
             foreach (var s in symbols)
             {
                 Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == s));
             }
+        }
+
+        public static void HasAnnotationTrue_SingleField(IIonReader reader)
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+            Assert.AreEqual(IonType.Int, reader.CurrentType);
+            Assert.AreEqual("withannot", reader.CurrentFieldName);
+            Assert.AreEqual(18, reader.IntValue());
+
+            Assert.IsTrue(reader.HasAnnotation("days"));
+        }
+
+        public static void HasAnnotationFalse_SingleField(IIonReader reader)
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+            Assert.AreEqual(IonType.Int, reader.CurrentType);
+            Assert.AreEqual("withannot", reader.CurrentFieldName);
+            Assert.AreEqual(18, reader.IntValue());
+
+            Assert.IsFalse(reader.HasAnnotation("Spam Musubi"));
         }
 
         public static void SingleSymbol(IIonReader reader)

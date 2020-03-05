@@ -28,7 +28,7 @@ namespace Amazon.IonDotnet.Tests.Internals
     public class TreeReaderTest
     {
 
-        private IValueFactory _ionValueFactory = new ValueFactory();
+        private readonly IValueFactory _ionValueFactory = new ValueFactory();
 
         [TestMethod]
         public void SingleIntNumberTest()
@@ -227,7 +227,24 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void ValueWithAnnotationTest()
+        public void ValueWithTypeAnnotationsTest()
+        {
+            //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
+            var intValue = _ionValueFactory.NewInt(18);
+            intValue.AddTypeAnnotation("years");
+            intValue.AddTypeAnnotation("months");
+            intValue.AddTypeAnnotation("days");
+            intValue.AddTypeAnnotation("hours");
+            intValue.AddTypeAnnotation("minutes");
+            intValue.AddTypeAnnotation("seconds");
+            var value = new IonStruct { { "withannot", intValue } };
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.ReadTypeAnnotations_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ValueWithTypeAnnotationSymbolsTest()
         {
             //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
             var intValue = _ionValueFactory.NewInt(18);
@@ -240,7 +257,41 @@ namespace Amazon.IonDotnet.Tests.Internals
             var value = new IonStruct {{ "withannot", intValue }};
             var reader = new UserTreeReader(value);
 
-            ReaderTestCommon.ReadAnnotations_SingleField(reader);
+            ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationTrueTest()
+        {
+            //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
+            var intValue = _ionValueFactory.NewInt(18);
+            intValue.AddTypeAnnotation("years");
+            intValue.AddTypeAnnotation("months");
+            intValue.AddTypeAnnotation("days");
+            intValue.AddTypeAnnotation("hours");
+            intValue.AddTypeAnnotation("minutes");
+            intValue.AddTypeAnnotation("seconds");
+            var value = new IonStruct { { "withannot", intValue } };
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.HasAnnotationTrue_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationFalseTest()
+        {
+            //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
+            var intValue = _ionValueFactory.NewInt(18);
+            intValue.AddTypeAnnotation("years");
+            intValue.AddTypeAnnotation("months");
+            intValue.AddTypeAnnotation("days");
+            intValue.AddTypeAnnotation("hours");
+            intValue.AddTypeAnnotation("minutes");
+            intValue.AddTypeAnnotation("seconds");
+            var value = new IonStruct { { "withannot", intValue } };
+            var reader = new UserTreeReader(value);
+
+            ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
         }
 
         [TestMethod]

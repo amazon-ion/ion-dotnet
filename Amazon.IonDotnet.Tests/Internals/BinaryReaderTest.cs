@@ -118,14 +118,47 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void ReadAnnotations_SingleField()
+        public void ReadTypeAnnotations_SingleField()
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
             var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
             var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
 
-            ReaderTestCommon.ReadAnnotations_SingleField(reader);
+            ReaderTestCommon.ReadTypeAnnotations_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationTrue_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+
+            ReaderTestCommon.HasAnnotationTrue_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationFalse_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+
+            ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
         }
 
         [TestMethod]
