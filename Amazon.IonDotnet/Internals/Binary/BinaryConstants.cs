@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Amazon.IonDotnet.Internals.Binary
 {
-    public static class BinaryConstants
+    internal static class BinaryConstants
     {
         public const int BinaryVersionMarkerLength = 4;
 
