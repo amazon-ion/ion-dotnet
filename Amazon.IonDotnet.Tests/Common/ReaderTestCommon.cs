@@ -205,7 +205,13 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
 
+
+            Assert.IsTrue(reader.HasAnnotation("years"));
+            Assert.IsTrue(reader.HasAnnotation("months"));
             Assert.IsTrue(reader.HasAnnotation("days"));
+            Assert.IsTrue(reader.HasAnnotation("hours"));
+            Assert.IsTrue(reader.HasAnnotation("minutes"));
+            Assert.IsTrue(reader.HasAnnotation("seconds"));
         }
 
         public static void HasAnnotationFalse_SingleField(IIonReader reader)

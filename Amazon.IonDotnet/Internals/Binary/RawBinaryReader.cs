@@ -914,47 +914,6 @@ namespace Amazon.IonDotnet.Internals.Binary
             return readBytes;
         }
 
-        public string[] GetTypeAnnotations()
-        {
-            List<string> annotations = new List<string>();
-            foreach (int aid in Annotations)
-            {
-                annotations.Add(GetSymbolTable().FindKnownSymbol(aid));
-            }
-
-            return annotations.ToArray();
-        }
-
-        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
-        {
-            foreach (var aid in Annotations)
-            {
-                var text = GetSymbolTable().FindKnownSymbol(aid);
-
-                yield return new SymbolToken(text, aid);
-            }
-        }
-
-        public bool HasAnnotation(string annotation)
-        {
-            if (annotation == null)
-            {
-                throw new ArgumentNullException(nameof(annotation));
-            }
-
-            foreach (int aid in Annotations)
-            {
-                string text = GetSymbolTable().FindKnownSymbol(aid);
-
-                if (annotation.Equals(text))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         public IonType CurrentType => _valueType;
 
         public bool IsInStruct { get; private set; }
@@ -1077,5 +1036,8 @@ namespace Amazon.IonDotnet.Internals.Binary
         public abstract Timestamp TimestampValue();
         public abstract BigDecimal DecimalValue();
         public abstract double DoubleValue();
+        public abstract string[] GetTypeAnnotations();
+        public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
+        public abstract bool HasAnnotation(string annotation);
     }
 }

@@ -130,13 +130,22 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public string[] GetTypeAnnotations()
         {
-            List<string> annotations = new List<string>();
-            foreach (SymbolToken symbolToken in _current.GetTypeAnnotations())
+            IReadOnlyCollection<SymbolToken> symbolTokens = _current.GetTypeAnnotations();
+
+            string[] annotations = new string[symbolTokens.Count];
+
+            int index = 0;
+            foreach (SymbolToken symbolToken in symbolTokens)
             {
-                annotations.Add(symbolToken.Text);
+                if (symbolToken.Text == null)
+                {
+                    throw new UnknownSymbolException(symbolToken.Sid);
+                }
+                annotations[index] = symbolToken.Text;
+                index++;
             }
 
-            return annotations.ToArray();
+            return annotations;
         }
 
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
@@ -153,7 +162,13 @@ namespace Amazon.IonDotnet.Internals.Tree
 
             foreach (SymbolToken symbolToken in _current.GetTypeAnnotations())
             {
-                if (annotation.Equals(symbolToken.Text))
+                string text = symbolToken.Text;
+                if (text == null)
+                {
+                    throw new UnknownSymbolException(symbolToken.Sid);
+                }
+
+                if (annotation.Equals(text))
                 {
                     return true;
                 }
@@ -300,7 +315,7 @@ namespace Amazon.IonDotnet.Internals.Tree
         {
             bool _eof;
             int _nextIdx;
-            IIonValue _parent;
+            readonly IIonValue _parent;
             IIonValue _curr;
 
             public Children(IIonValue parent)

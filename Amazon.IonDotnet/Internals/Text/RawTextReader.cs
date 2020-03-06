@@ -180,7 +180,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
         // For any container being opened, its closing symbol should come before
         // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
-        private Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
+        private readonly Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
 
         protected RawTextReader(TextStream input)
         {
@@ -735,75 +735,6 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
-        public string[] GetTypeAnnotations()
-        {
-            List<string> annotations = new List<string>();
-            foreach (SymbolToken symbolToken in _annotations)
-            {
-                if (symbolToken.Text is null && symbolToken.ImportLocation != default)
-                {
-                    ISymbolTable symtab = GetSymbolTable();
-                    if (symbolToken.ImportLocation.Sid < -1 || symbolToken.ImportLocation.Sid > symtab.MaxId)
-                    {
-                        throw new UnknownSymbolException(symbolToken.Sid);
-                    }
-
-                    annotations.Add(symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid));
-                }
-                else
-                {
-                    annotations.Add(symbolToken.Text);
-                }
-            }
-
-            return annotations.ToArray();
-        }
-
-        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
-        {
-            if (_annotations == null)
-            {
-                yield break;
-            }
-
-            foreach (var a in _annotations)
-            {
-                if (a.Text is null && a.ImportLocation != default)
-                {
-                    var symtab = GetSymbolTable();
-                    if (a.ImportLocation.Sid < -1 || a.ImportLocation.Sid > symtab.MaxId)
-                    {
-                        throw new UnknownSymbolException(a.Sid);
-                    }
-
-                    var text = symtab.FindKnownSymbol(a.ImportLocation.Sid);
-                    yield return new SymbolToken(text, a.Sid, a.ImportLocation);
-                }
-                else
-                {
-                    yield return a;
-                }
-            }
-        }
-
-        public bool HasAnnotation(string annotation)
-        {
-            if (annotation == null)
-            {
-                throw new ArgumentNullException(nameof(annotation));
-            }
-
-            foreach (SymbolToken symbolToken in _annotations)
-            {
-                if (annotation.Equals(symbolToken.Text))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private static int GetStateAtContainerStart(IonType container)
         {
             if (container == IonType.None)
@@ -907,6 +838,10 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             return;
         }
+
+        public abstract string[] GetTypeAnnotations();
+        public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
+        public abstract bool HasAnnotation(string annotation);
 
         private class ContainerStack
         {

@@ -144,6 +144,7 @@ namespace Amazon.IonDotnet
         /// The (ordered) annotations on the current value, or an empty array
         /// if there are none.
         /// </returns>
+        /// <exception cref="UnknownSymbolException">When annotation text is null.</exception>
         string[] GetTypeAnnotations();
 
         /// <summary>
@@ -156,10 +157,15 @@ namespace Amazon.IonDotnet
         IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
 
         /// <summary>
-        /// Returns true if the current value contains such annotation.
+        /// Determines if the current value contains such annotation.
         /// </summary>
+        /// <returns>
+        /// True if the current value contains such annotation.
+        /// Otherwise, False,
+        /// </returns>
         /// <param name="annotation">Annotation text.</param>
         /// <exception cref="ArgumentNullException">When annotation is null.</exception>
+        /// <exception cref="UnknownSymbolException">When annotation text is null.</exception>
         bool HasAnnotation(string annotation);
     }
 }

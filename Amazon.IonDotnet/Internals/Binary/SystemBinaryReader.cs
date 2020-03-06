@@ -14,6 +14,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
@@ -282,6 +283,57 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             LoadSymbolValue();
             return new SymbolToken(_v.StringValue, _v.IntValue);
+        }
+
+        public override string[] GetTypeAnnotations()
+        {
+            string[] annotations = new string[Annotations.Count];
+            for (int index = 0; index < Annotations.Count; index++)
+            {
+                string annotation = GetSymbolTable().FindKnownSymbol(Annotations[index]);
+                if (annotation == null)
+                {
+                    throw new UnknownSymbolException(Annotations[index]);
+                }
+
+                annotations[index] = GetSymbolTable().FindKnownSymbol(Annotations[index]);
+            }
+
+            return annotations;
+        }
+
+        public override IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
+        {
+            foreach (var aid in Annotations)
+            {
+                var text = GetSymbolTable().FindKnownSymbol(aid);
+
+                yield return new SymbolToken(text, aid);
+            }
+        }
+
+        public override bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            foreach (int aid in Annotations)
+            {
+                string text = GetSymbolTable().FindKnownSymbol(aid);
+                if (text == null)
+                {
+                    throw new UnknownSymbolException(aid);
+                }
+
+                if (annotation.Equals(text))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
