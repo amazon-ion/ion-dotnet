@@ -594,6 +594,14 @@ namespace Amazon.IonDotnet.Internals.Binary
             return false;
         }
 
+        /// <summary>
+        /// Dispose SymbolTableReader.
+        /// </summary>
+        public void Dispose()
+        {
+            return;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFlag(int flagBit, bool on)
         {
