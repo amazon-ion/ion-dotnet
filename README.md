@@ -10,7 +10,7 @@ This package is based on work from Huy Hoang ([dhhoang](https://github.com/dhhoa
 
 ### Manual read/write
 
-You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default.
+You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default. There are two different `reader`s that you can create, binary and text. Four `reader` objects are created below with different inputs. 
 ```csharp
 Stream stream;  //input stream
 String text;    //text form
@@ -28,32 +28,38 @@ reader = IonReaderBuilder.Build(stream, new ReaderOptions {Format = ReaderFormat
 
 //create a text reader that reads a string and uses a catalog
 reader = IonReaderBuilder.Build(text, new ReaderOptions {Catalog = catalog});
+```
 
-
+Example  of using a  `reader`.
+```csharp
 /*reader semantics for
 {
     number: 1,
     text: "hello world"
 }
 */
-Console.WriteLine(reader.MoveNext()); // Struct
-reader.StepIn();
-Console.WriteLine(reader.MoveNext()); // Int
-Console.WriteLine(reader.CurrentFieldName); // "number"
-Console.WriteLine(reader.IntValue());   // 1
-Console.WriteLine(reader.MoveNext()); // String
-Console.WriteLine(reader.CurrentFieldName); // "text"
-Console.WriteLine(reader.StringValue());   // "hello world"
-reader.StepOut();
+
+using (IIonReader reader = IonReaderBuilder.Build(stream))
+{
+    Console.WriteLine(reader.MoveNext()); // Struct
+    reader.StepIn();
+    Console.WriteLine(reader.MoveNext()); // Int
+    Console.WriteLine(reader.CurrentFieldName); // "number"
+    Console.WriteLine(reader.IntValue());   // 1
+    Console.WriteLine(reader.MoveNext()); // String
+    Console.WriteLine(reader.CurrentFieldName); // "text"
+    Console.WriteLine(reader.StringValue());   // "hello world"
+    reader.StepOut();
+}
 ```
 
-Similarly you can create a writer that write to a (output) stream.
-
+Similarly you can create a writer that write to a (output) stream. There are two different `writer`s that you can create, binary and text. Three `writer` objects are created below with different inputs. 
 ```csharp
 Stream stream; //output stream
 var stringWriter = new StringWriter();
 IIonWriter writer;
 ISymbolTable table1,table2;
+
 
 //create a text writer that write to the stream.
 writer = IonTextWriterBuilder.Build(new StreamWriter(stream));
@@ -64,19 +70,27 @@ writer = IonTextWriterBuilder.Build(stringWriter);
 //create a binary writer using multiple symbol tables
 writer = IonBinaryWriterBuilder.Build(stream, new []{table1,table2});
 
+```
+
+Example  of using a  `writer`.
+```csharp
 /*writer semantics for
 {
     number: 1,
     text: "hello world"
 }
 */
-writer.StepIn(IonType.Struct);
-writer.SetFieldName("number");
-writer.WriteInt(1);
-writer.SetFieldName("text");
-writer.WriteString("hello world");
-writer.StepOut();
-writer.Finish();    //this is important
+
+using (IIonWriter writer = IonTextWriterBuilder.Build(new StreamWriter(stream)))
+{
+    writer.StepIn(IonType.Struct);
+    writer.SetFieldName("number");
+    writer.WriteInt(1);
+    writer.SetFieldName("text");
+    writer.WriteString("hello world");
+    writer.StepOut();
+    writer.Finish();    //this is important
+}
 ```
 
 ### Serialization
