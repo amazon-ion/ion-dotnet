@@ -113,15 +113,7 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             if (_options.SymbolAsString)
             {
-                if (_options.Json)
-                {
-                    _textWriter.WriteJsonString(text);
-                }
-                else
-                {
-                    _textWriter.WriteString(text);
-                }
-
+                _textWriter.WriteString(text);
                 return;
             }
 
@@ -516,14 +508,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             //double-quoted
-            if (_options.Json)
-            {
-                _textWriter.WriteJsonString(value);
-            }
-            else
-            {
-                _textWriter.WriteString(value);
-            }
+            _textWriter.WriteString(value);
 
             CloseValue();
         }

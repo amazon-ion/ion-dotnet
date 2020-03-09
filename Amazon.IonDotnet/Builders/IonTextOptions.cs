@@ -37,11 +37,6 @@ namespace Amazon.IonDotnet.Builders
         public bool SymbolAsString { get; set; }
 
         /// <summary>
-        /// Write a JSON text
-        /// </summary>
-        public bool Json { get; set; }
-
-        /// <summary>
         /// Do we skip annotations?
         /// </summary>
         public bool SkipAnnotations { get; set; }
