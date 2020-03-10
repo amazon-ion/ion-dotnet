@@ -579,17 +579,23 @@ namespace Amazon.IonDotnet.Internals.Text
                 throw new ArgumentNullException(nameof(annotation));
             }
 
+            int? annotationId = null;
             foreach (SymbolToken symbolToken in _annotations)
             {
                 if (symbolToken.Text == null)
                 {
-                    throw new UnknownSymbolException(symbolToken.Sid);
+                    annotationId = symbolToken.Sid;
                 }
 
                 if (annotation.Equals(symbolToken.Text))
                 {
                     return true;
                 }
+            }
+
+            if (annotationId.HasValue)
+            {
+                throw new UnknownSymbolException(annotationId.Value);
             }
 
             return false;

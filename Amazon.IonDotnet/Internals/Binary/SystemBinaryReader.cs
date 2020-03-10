@@ -319,18 +319,24 @@ namespace Amazon.IonDotnet.Internals.Binary
                 throw new ArgumentNullException(nameof(annotation));
             }
 
+            int? annotationId = null;
             foreach (int aid in Annotations)
             {
                 string text = GetSymbolTable().FindKnownSymbol(aid);
                 if (text == null)
                 {
-                    throw new UnknownSymbolException(aid);
+                    annotationId = aid;
                 }
 
                 if (annotation.Equals(text))
                 {
                     return true;
                 }
+            }
+
+            if (annotationId.HasValue)
+            {
+                throw new UnknownSymbolException(annotationId.Value);
             }
 
             return false;

@@ -538,60 +538,17 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public string[] GetTypeAnnotations()
         {
-            if (_currentState == S_STRUCT)
-            {
-                // Must return a new array each time to prevent user from changing it.
-                if (_symbolTable.IsLocal || _symbolTable.IsSystem)
-                {
-                    return new string[] { SystemSymbols.IonSymbolTable };
-                }
-
-                return new string[] { SystemSymbols.IonSharedSymbolTable };
-            }
-
-            return new string[0];
+            throw new NotImplementedException();
         }
 
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
-            if (_currentState == S_STRUCT)
-            {
-                SymbolToken symbolToken;
-                if (_symbolTable.IsLocal || _symbolTable.IsSystem)
-                {
-                    symbolToken = new SymbolToken(SystemSymbols.IonSymbolTable, SystemSymbols.IonSymbolTableSid);
-                }
-                else
-                {
-                    symbolToken = new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid);
-                }
-
-                yield return symbolToken;
-            }
-
-            yield break;
+            throw new NotImplementedException();
         }
 
         public bool HasAnnotation(string annotation)
         {
-            if (annotation == null)
-            {
-                throw new ArgumentNullException(nameof(annotation));
-            }
-
-            if (_currentState == S_STRUCT)
-            {
-                if (_symbolTable.IsLocal || _symbolTable.IsSystem)
-                {
-                    return annotation.Equals(SystemSymbols.IonSymbolTable);
-                }
-                else
-                {
-                    return annotation.Equals(SystemSymbols.IonSharedSymbolTable);
-                }
-            }
-
-            return false;
+            throw new NotImplementedException();
         }
 
         /// <summary>

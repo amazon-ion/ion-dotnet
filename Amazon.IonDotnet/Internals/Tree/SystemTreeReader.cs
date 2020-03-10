@@ -160,18 +160,24 @@ namespace Amazon.IonDotnet.Internals.Tree
                 throw new ArgumentNullException(nameof(annotation));
             }
 
+            int? symbolTokenId = null;
             foreach (SymbolToken symbolToken in _current.GetTypeAnnotations())
             {
                 string text = symbolToken.Text;
                 if (text == null)
                 {
-                    throw new UnknownSymbolException(symbolToken.Sid);
+                    symbolTokenId = symbolToken.Sid;
                 }
 
                 if (annotation.Equals(text))
                 {
                     return true;
                 }
+            }
+
+            if (symbolTokenId.HasValue)
+            {
+                throw new UnknownSymbolException(symbolTokenId.Value);
             }
 
             return false;

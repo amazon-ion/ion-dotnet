@@ -144,7 +144,7 @@ namespace Amazon.IonDotnet
         /// The (ordered) annotations on the current value, or an empty array
         /// if there are none.
         /// </returns>
-        /// <exception cref="UnknownSymbolException">When annotation text is null.</exception>
+        /// <exception cref="UnknownSymbolException">If any annotation has unknown text.</exception>
         string[] GetTypeAnnotations();
 
         /// <summary>
@@ -165,8 +165,7 @@ namespace Amazon.IonDotnet
         /// </returns>
         /// <param name="annotation">Annotation text.</param>
         /// <exception cref="ArgumentNullException">When annotation is null.</exception>
-        /// <exception cref="UnknownSymbolException">When annotation text is null.</exception>
+        /// <exception cref="UnknownSymbolException">If a match is not found and any annotation has unknown text.</exception>
         bool HasAnnotation(string annotation);
     }
 }
-    
