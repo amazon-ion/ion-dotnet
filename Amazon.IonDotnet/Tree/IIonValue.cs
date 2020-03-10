@@ -27,7 +27,7 @@ namespace Amazon.IonDotnet.Tree
         void AddTypeAnnotation(string annotation);
         void AddTypeAnnotation(SymbolToken annotation);
         void ClearAnnotations();
-        IReadOnlyCollection<SymbolToken> GetTypeAnnotations();
+        IReadOnlyCollection<SymbolToken> GetTypeAnnotationSymbols();
         bool HasAnnotation(string text);
         bool IsEquivalentTo(IIonValue value);
         void MakeNull();

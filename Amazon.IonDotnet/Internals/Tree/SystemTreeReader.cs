@@ -130,7 +130,7 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public string[] GetTypeAnnotations()
         {
-            IReadOnlyCollection<SymbolToken> symbolTokens = _current.GetTypeAnnotations();
+            IReadOnlyCollection<SymbolToken> symbolTokens = _current.GetTypeAnnotationSymbols();
 
             string[] annotations = new string[symbolTokens.Count];
 
@@ -150,7 +150,7 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
-            return _current.GetTypeAnnotations();
+            return _current.GetTypeAnnotationSymbols();
         }
 
         public bool HasAnnotation(string annotation)
@@ -161,7 +161,7 @@ namespace Amazon.IonDotnet.Internals.Tree
             }
 
             int? symbolTokenId = null;
-            foreach (SymbolToken symbolToken in _current.GetTypeAnnotations())
+            foreach (SymbolToken symbolToken in _current.GetTypeAnnotationSymbols())
             {
                 string text = symbolToken.Text;
                 if (text == null)
