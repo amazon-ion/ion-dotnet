@@ -408,13 +408,9 @@ namespace Amazon.IonDotnet
                 throw newFormatException(text);
             }
 
-            if (intVal == 0)
+            if (intVal == 0 && valNegative)
             {
-                if (valNegative)
-                {
-                    return NegativeZero(scale + exponent);
-                }
-                return new BigDecimal(intVal, scale + exponent);
+                return NegativeZero(scale - exponent);
             }
             return new BigDecimal(intVal, scale - exponent);
         }
@@ -424,7 +420,7 @@ namespace Amazon.IonDotnet
             //TODO improve this
             if (IsNegativeZero)
             {
-                return "-0d" + Scale;
+                return "-0d" + (-Scale);
             }
 
             var sb = new StringBuilder(IntVal.ToString(CultureInfo.InvariantCulture));
