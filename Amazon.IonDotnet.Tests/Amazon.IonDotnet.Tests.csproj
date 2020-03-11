@@ -5,6 +5,8 @@
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <Configurations>Debug;Release;Perf</Configurations>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
