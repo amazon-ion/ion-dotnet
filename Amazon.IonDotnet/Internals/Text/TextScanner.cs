@@ -1051,6 +1051,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         sb.Append((char)c);
                         c = ReadChar();
+                        c = ReadEscapedChar(c, isClob);
                         if (!char.IsLowSurrogate((char)c))
                         {
                             throw new IonException($"Invalid character format {(char)c}");
