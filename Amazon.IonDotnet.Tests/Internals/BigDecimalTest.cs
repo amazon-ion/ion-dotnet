@@ -222,8 +222,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [DataRow("0.12345d5", "12345d0")]
         [DataRow("0.12345d4", "1234.5")]
         [DataRow("12345d-5", "1.2345d-1")]
-        [DataRow("12345d-5", "1.2345d-1")]
         [DataRow("-0d5", "-0d5")]
+        [DataRow("-0d-5", "-0d-5")]
         [DataRow("-0.00d7", "-0d5")]
         public void ToString_Simple(string text, string expected)
         {
