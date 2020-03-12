@@ -417,10 +417,9 @@ namespace Amazon.IonDotnet
 
         public override string ToString()
         {
-            //TODO improve this
             if (IsNegativeZero)
             {
-                return "-0d" + Scale;
+                return "-0d" + (-Scale);
             }
 
             var sb = new StringBuilder(IntVal.ToString(CultureInfo.InvariantCulture));
