@@ -122,8 +122,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotations_SingleField(reader);
         }
@@ -133,8 +133,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
         }
@@ -144,8 +144,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotationTrue_SingleField(reader);
         }
@@ -155,8 +155,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
         }

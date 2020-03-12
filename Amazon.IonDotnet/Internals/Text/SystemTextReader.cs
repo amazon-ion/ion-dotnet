@@ -529,9 +529,11 @@ namespace Amazon.IonDotnet.Internals.Text
                 if (symbolToken.Text is null && symbolToken.ImportLocation != default)
                 {
                     ISymbolTable symtab = GetSymbolTable();
-                    if (symbolToken.ImportLocation.Sid < -1 || symbolToken.ImportLocation.Sid > symtab.MaxId)
+
+                    string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);
+                    if (text == null)
                     {
-                        throw new UnknownSymbolException(symbolToken.Sid);
+                        throw new UnknownSymbolException(symbolToken.ImportLocation.Sid);
                     }
 
                     annotations[index] = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);

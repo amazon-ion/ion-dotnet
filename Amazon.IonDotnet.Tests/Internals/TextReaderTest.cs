@@ -138,16 +138,77 @@ namespace Amazon.IonDotnet.Tests.Internals
             ReaderTestCommon.FlatIntList(reader);
         }
 
-        //        [TestMethod]
-        //        public void ReadAnnotations_SingleField()
-        //        {
-        //            // a singlefield structure with annotations
-        //            // {withannot:years::months::days::hours::minutes::seconds::18}
-        //            var annotSingleField = DirStructure.ReadDataFile("text/annot_singlefield.ion");
-        //            var converter = new SaveAnnotationsReaderRoutine();
-        //            var reader = new UserTextReader(new MemoryStream(annotSingleField), converter);
-        //            ReaderTestCommon.ReadAnnotations_SingleField(reader, converter);
-        //        }
+        [TestMethod]
+        public void ReadTypeAnnotations_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_singlefield.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotations_SingleField(reader);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
+        public void ReadTypeAnnotations_AssertUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            reader.MoveNext();
+            reader.GetTypeAnnotations();
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_singlefield.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            try
+            {
+                reader.MoveNext();
+                reader.GetTypeAnnotationSymbols();
+            }
+            catch (UnknownSymbolException e)
+            {
+                Assert.Fail(e.Message);
+            }
+        }
+
+        [TestMethod]
+        public void HasAnnotationTrue_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_singlefield.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotationTrue_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationFalse_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_singlefield.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
 
         [TestMethod]
         public void SingleSymbol()
