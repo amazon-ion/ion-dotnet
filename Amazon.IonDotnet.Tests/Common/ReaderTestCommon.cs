@@ -173,6 +173,14 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.IsTrue(symbols.SequenceEqual(annotations));
         }
 
+        public static void ReadTypeAnnotations_AssertUnknownSymbolException(IIonReader reader)
+        {
+            // $ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"
+            reader.MoveNext();
+
+            Assert.ThrowsException<UnknownSymbolException>(() => reader.GetTypeAnnotations());
+        }
+
         public static void ReadTypeAnnotationSymbols_SingleField(IIonReader reader)
         {
             // a singlefield structure with annotations
@@ -191,6 +199,20 @@ namespace Amazon.IonDotnet.Tests.Common
             foreach (var s in symbols)
             {
                 Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == s));
+            }
+        }
+
+        public static void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(IIonReader reader)
+        {
+            // $ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"
+            try
+            {
+                reader.MoveNext();
+                reader.GetTypeAnnotationSymbols();
+            }
+            catch (UnknownSymbolException e)
+            {
+                Assert.Fail(e.Message);
             }
         }
 
@@ -226,6 +248,14 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual(18, reader.IntValue());
 
             Assert.IsFalse(reader.HasAnnotation("Spam Musubi"));
+        }
+
+        public static void HasAnnotation_AssertUnknownSymbolException(IIonReader reader)
+        {
+            // $ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"
+            reader.MoveNext();
+
+            Assert.ThrowsException<UnknownSymbolException>(() => reader.HasAnnotation("California Roll"));
         }
 
         public static void SingleSymbol(IIonReader reader)

@@ -150,14 +150,12 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        [ExpectedException(typeof(UnknownSymbolException))]
         public void ReadTypeAnnotations_AssertUnknownSymbolException()
         {
             byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
-            reader.MoveNext();
-            reader.GetTypeAnnotations();
+            ReaderTestCommon.ReadTypeAnnotations_AssertUnknownSymbolException(reader);
         }
 
         [TestMethod]
@@ -177,15 +175,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
-            try
-            {
-                reader.MoveNext();
-                reader.GetTypeAnnotationSymbols();
-            }
-            catch (UnknownSymbolException e)
-            {
-                Assert.Fail(e.Message);
-            }
+            ReaderTestCommon.ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(reader);
         }
 
         [TestMethod]
@@ -208,6 +198,15 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotation_AssertUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotation_AssertUnknownSymbolException(reader);
         }
 
         [TestMethod]

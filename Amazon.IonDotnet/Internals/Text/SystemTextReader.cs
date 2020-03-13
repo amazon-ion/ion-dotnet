@@ -588,8 +588,7 @@ namespace Amazon.IonDotnet.Internals.Text
                 {
                     annotationId = symbolToken.Sid;
                 }
-
-                if (annotation.Equals(symbolToken.Text))
+                else if (annotation.Equals(symbolToken.Text))
                 {
                     return true;
                 }

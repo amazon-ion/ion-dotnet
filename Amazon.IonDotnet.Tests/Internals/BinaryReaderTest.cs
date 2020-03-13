@@ -129,6 +129,19 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
+        public void ReadTypeAnnotations_AssertUnknownSymbolException()
+        {
+            IIonReader reader = IonReaderBuilder.Build("$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"");
+            reader.MoveNext();
+
+            MemoryStream memoryStream = new MemoryStream();
+            IIonWriter writer = IonBinaryWriterBuilder.Build(memoryStream);
+            writer.WriteValue(reader);
+            writer.Finish();
+        }
+
+        [TestMethod]
         public void ReadTypeAnnotationSymbols_SingleField()
         {
             // a singlefield structure with annotations

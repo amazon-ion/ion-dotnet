@@ -168,8 +168,7 @@ namespace Amazon.IonDotnet.Internals.Tree
                 {
                     symbolTokenId = symbolToken.Sid;
                 }
-
-                if (annotation.Equals(text))
+                else if (annotation.Equals(text))
                 {
                     return true;
                 }

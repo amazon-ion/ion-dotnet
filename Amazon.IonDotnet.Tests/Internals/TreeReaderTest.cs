@@ -16,6 +16,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Internals.Tree;
 using Amazon.IonDotnet.Tests.Common;
 using Amazon.IonDotnet.Tree;
@@ -244,6 +245,17 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void ValueWithTypeAnnotationsTest_AssertUnknownSymbolException()
+        {
+            string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
+            IIonValue data = IonLoader.Default.Load(input);
+
+            UserTreeReader reader = new UserTreeReader(data);
+
+            ReaderTestCommon.ReadTypeAnnotations_AssertUnknownSymbolException(reader);
+        }
+
+        [TestMethod]
         public void ValueWithTypeAnnotationSymbolsTest()
         {
             //Must be: {withannot: years::months::days::hours::minutes::seconds::18}
@@ -258,6 +270,17 @@ namespace Amazon.IonDotnet.Tests.Internals
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ValueWithTypeAnnotationSymbolsTest_AssertNoUnknownSymbolException()
+        {
+            string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
+            IIonValue data = IonLoader.Default.Load(input);
+
+            UserTreeReader reader = new UserTreeReader(data);
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(reader);
         }
 
         [TestMethod]
@@ -292,6 +315,17 @@ namespace Amazon.IonDotnet.Tests.Internals
             var reader = new UserTreeReader(value);
 
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotation_AssertUnknownSymbolException()
+        {
+            string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
+            IIonValue data = IonLoader.Default.Load(input);
+
+            UserTreeReader reader = new UserTreeReader(data);
+
+            ReaderTestCommon.HasAnnotation_AssertUnknownSymbolException(reader);
         }
 
         [TestMethod]

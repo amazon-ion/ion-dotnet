@@ -327,8 +327,7 @@ namespace Amazon.IonDotnet.Internals.Binary
                 {
                     annotationId = aid;
                 }
-
-                if (annotation.Equals(text))
+                else if (annotation.Equals(text))
                 {
                     return true;
                 }
