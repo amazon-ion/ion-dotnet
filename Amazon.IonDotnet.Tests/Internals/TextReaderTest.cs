@@ -152,8 +152,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ReadTypeAnnotations_AssertUnknownSymbolException()
         {
-            byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
-            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+            string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
+            UserTextReader reader = new UserTextReader(input);
 
             ReaderTestCommon.ReadTypeAnnotations_AssertUnknownSymbolException(reader);
         }
@@ -172,8 +172,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException()
         {
-            byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
-            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+            string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
+            UserTextReader reader = new UserTextReader(input);
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(reader);
         }
@@ -203,8 +203,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void HasAnnotation_AssertUnknownSymbolException()
         {
-            byte[] data = DirStructure.OwnTestFileAsBytes("text/unknown_symbols.ion");
-            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+            string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
+            UserTextReader reader = new UserTextReader(input);
 
             ReaderTestCommon.HasAnnotation_AssertUnknownSymbolException(reader);
         }

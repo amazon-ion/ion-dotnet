@@ -129,16 +129,12 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        [ExpectedException(typeof(UnknownSymbolException))]
         public void ReadTypeAnnotations_AssertUnknownSymbolException()
         {
-            IIonReader reader = IonReaderBuilder.Build("$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"");
-            reader.MoveNext();
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
-            MemoryStream memoryStream = new MemoryStream();
-            IIonWriter writer = IonBinaryWriterBuilder.Build(memoryStream);
-            writer.WriteValue(reader);
-            writer.Finish();
+            ReaderTestCommon.ReadTypeAnnotations_AssertUnknownSymbolException(reader);
         }
 
         [TestMethod]
@@ -150,6 +146,15 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(reader);
         }
 
         [TestMethod]
@@ -172,6 +177,15 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotation_AssertUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotation_AssertUnknownSymbolException(reader);
         }
 
         [TestMethod]
