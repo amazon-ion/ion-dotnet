@@ -118,14 +118,74 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void ReadAnnotations_SingleField()
+        public void ReadTypeAnnotations_SingleField()
         {
             // a singlefield structure with annotations
             // {withannot:years::months::days::hours::minutes::seconds::18}
-            var annotSingleField = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
-            var reader = new UserBinaryReader(new MemoryStream(annotSingleField));
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
-            ReaderTestCommon.ReadAnnotations_SingleField(reader);
+            ReaderTestCommon.ReadTypeAnnotations_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotations_AssertUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotations_AssertUnknownSymbolException(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationTrue_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotationTrue_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationFalse_SingleField()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_singlefield.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotation_AssertUnknownSymbolException()
+        {
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotation_AssertUnknownSymbolException(reader);
         }
 
         [TestMethod]

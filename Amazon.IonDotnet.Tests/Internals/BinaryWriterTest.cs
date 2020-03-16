@@ -263,9 +263,14 @@ namespace Amazon.IonDotnet.Tests.Internals
             reader.MoveNext();
             reader.StepIn();
             reader.MoveNext();
-            //load the value
+
+            // Load the value.
             reader.StringValue();
-            var annotations = reader.GetTypeAnnotations().ToList();
+
+            var annotations = reader.GetTypeAnnotationSymbols().ToList();
+
+            Assert.AreEqual(annotations.Count, annotationCount);
+
             for (var i = 0; i < annotationCount; i++)
             {
                 Assert.IsTrue(annotations.Any(s => s.Text == $"annot_{i}"));

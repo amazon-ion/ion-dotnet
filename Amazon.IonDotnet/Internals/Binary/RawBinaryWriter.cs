@@ -569,7 +569,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             if (value.IntVal == 0 && value.Scale == 0 && !value.IsNegativeZero)
             {
-                this.WriteDecimal(value.ToDecimal());
+                WriteDecimal(value.ToDecimal());
                 return;
             }
 

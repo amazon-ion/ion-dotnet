@@ -214,7 +214,7 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// Get this value's user type annotations.
         /// </summary>
         /// <returns>Read-only collection of type annotations.</returns>
-        public IReadOnlyCollection<SymbolToken> GetTypeAnnotations()
+        public IReadOnlyCollection<SymbolToken> GetTypeAnnotationSymbols()
         {
             if (_annotations == null)
                 return SymbolToken.EmptyArray;

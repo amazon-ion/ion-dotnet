@@ -914,16 +914,6 @@ namespace Amazon.IonDotnet.Internals.Binary
             return readBytes;
         }
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
-        {
-            foreach (var aid in Annotations)
-            {
-                var text = GetSymbolTable().FindKnownSymbol(aid);
-
-                yield return new SymbolToken(text, aid);
-            }
-        }
-
         public IonType CurrentType => _valueType;
 
         public bool IsInStruct { get; private set; }
@@ -1046,5 +1036,8 @@ namespace Amazon.IonDotnet.Internals.Binary
         public abstract Timestamp TimestampValue();
         public abstract BigDecimal DecimalValue();
         public abstract double DoubleValue();
+        public abstract string[] GetTypeAnnotations();
+        public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
+        public abstract bool HasAnnotation(string annotation);
     }
 }

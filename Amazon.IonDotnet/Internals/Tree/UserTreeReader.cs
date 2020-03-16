@@ -87,7 +87,7 @@ namespace Amazon.IonDotnet.Internals.Tree
                                 sid = _systemSymbols.FindSymbolId(name);
                             }
                         }
-                        if (sid == ION_1_0_SID && _next.GetTypeAnnotations().Count == 0)
+                        if (sid == ION_1_0_SID && _next.GetTypeAnnotationSymbols().Count == 0)
                         {
                             // $ion_1_0 is read as an IVM only if it is not annotated
                             ISymbolTable symbols = _systemSymbols;

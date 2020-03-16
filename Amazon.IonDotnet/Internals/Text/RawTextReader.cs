@@ -180,7 +180,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
         // For any container being opened, its closing symbol should come before
         // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
-        private Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
+        private readonly Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
 
         protected RawTextReader(TextStream input)
         {
@@ -735,33 +735,6 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
-        {
-            if (_annotations == null)
-            {
-                yield break;
-            }
-
-            foreach (var a in _annotations)
-            {
-                if (a.Text is null && a.ImportLocation != default)
-                {
-                    var symtab = GetSymbolTable();
-                    if (a.ImportLocation.Sid < -1 || a.ImportLocation.Sid > symtab.MaxId)
-                    {
-                        throw new UnknownSymbolException(a.Sid);
-                    }
-
-                    var text = symtab.FindKnownSymbol(a.ImportLocation.Sid);
-                    yield return new SymbolToken(text, a.Sid, a.ImportLocation);
-                }
-                else
-                {
-                    yield return a;
-                }
-            }
-        }
-
         private static int GetStateAtContainerStart(IonType container)
         {
             if (container == IonType.None)
@@ -865,6 +838,10 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             return;
         }
+
+        public abstract string[] GetTypeAnnotations();
+        public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
+        public abstract bool HasAnnotation(string annotation);
 
         private class ContainerStack
         {

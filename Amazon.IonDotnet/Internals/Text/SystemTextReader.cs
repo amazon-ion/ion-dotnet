@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 using Amazon.IonDotnet.Internals.Conversions;
 
 namespace Amazon.IonDotnet.Internals.Text
@@ -519,6 +518,88 @@ namespace Amazon.IonDotnet.Internals.Text
 
             LoadLobContent();
             return _lobBuffer.Length;
+        }
+
+        public override string[] GetTypeAnnotations()
+        {
+            string[] annotations = new string[_annotations.Count];
+            for (int index = 0; index < _annotations.Count; index++)
+            {
+                SymbolToken symbolToken = _annotations[index];
+                if (symbolToken.Text is null && symbolToken.ImportLocation != default)
+                {
+                    ISymbolTable symtab = GetSymbolTable();
+
+                    string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);
+                    if (text == null)
+                    {
+                        throw new UnknownSymbolException(symbolToken.ImportLocation.Sid);
+                    }
+
+                    annotations[index] = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);
+                }
+                else
+                {
+                    annotations[index] = symbolToken.Text;
+                }
+            }
+
+            return annotations;
+        }
+
+        public override IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
+        {
+            if (_annotations == null)
+            {
+                yield break;
+            }
+
+            foreach (var a in _annotations)
+            {
+                if (a.Text is null && a.ImportLocation != default)
+                {
+                    var symtab = GetSymbolTable();
+                    if (a.ImportLocation.Sid < -1 || a.ImportLocation.Sid > symtab.MaxId)
+                    {
+                        throw new UnknownSymbolException(a.Sid);
+                    }
+
+                    var text = symtab.FindKnownSymbol(a.ImportLocation.Sid);
+                    yield return new SymbolToken(text, a.Sid, a.ImportLocation);
+                }
+                else
+                {
+                    yield return a;
+                }
+            }
+        }
+
+        public override bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            int? annotationId = null;
+            foreach (SymbolToken symbolToken in _annotations)
+            {
+                if (symbolToken.Text == null)
+                {
+                    annotationId = symbolToken.Sid;
+                }
+                else if (annotation.Equals(symbolToken.Text))
+                {
+                    return true;
+                }
+            }
+
+            if (annotationId.HasValue)
+            {
+                throw new UnknownSymbolException(annotationId.Value);
+            }
+
+            return false;
         }
     }
 }

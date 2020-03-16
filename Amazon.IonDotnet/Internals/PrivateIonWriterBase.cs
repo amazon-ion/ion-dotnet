@@ -37,7 +37,7 @@ namespace Amazon.IonDotnet.Internals
         private void WriteValueRecursively(IonType type, IIonReader reader)
         {
             TryWriteFieldName(reader);
-            TryWriteAnnotations(reader);
+            TryWriteAnnotationSymbols(reader);
 
             if (reader.CurrentIsNull)
             {
@@ -123,9 +123,9 @@ namespace Amazon.IonDotnet.Internals
             SetFieldNameSymbol(tok);
         }
 
-        private void TryWriteAnnotations(IIonReader reader)
+        private void TryWriteAnnotationSymbols(IIonReader reader)
         {
-            var annots = reader.GetTypeAnnotations();
+            var annots = reader.GetTypeAnnotationSymbols();
             foreach (var a in annots)
             {
                 AddTypeAnnotationSymbol(a);

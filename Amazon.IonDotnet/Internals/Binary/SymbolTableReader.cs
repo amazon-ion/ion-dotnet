@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
@@ -536,9 +536,19 @@ namespace Amazon.IonDotnet.Internals.Binary
         public int GetBytes(Span<byte> buffer)
             => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        public string[] GetTypeAnnotations()
         {
-            yield break;
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool HasAnnotation(string annotation)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>

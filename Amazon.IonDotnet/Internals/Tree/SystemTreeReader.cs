@@ -128,9 +128,58 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public virtual ISymbolTable GetSymbolTable() => _systemSymbols;
 
-        public IEnumerable<SymbolToken> GetTypeAnnotations()
+        public string[] GetTypeAnnotations()
         {
-            return _current.GetTypeAnnotations();
+            IReadOnlyCollection<SymbolToken> symbolTokens = _current.GetTypeAnnotationSymbols();
+
+            string[] annotations = new string[symbolTokens.Count];
+
+            int index = 0;
+            foreach (SymbolToken symbolToken in symbolTokens)
+            {
+                if (symbolToken.Text == null)
+                {
+                    throw new UnknownSymbolException(symbolToken.Sid);
+                }
+                annotations[index] = symbolToken.Text;
+                index++;
+            }
+
+            return annotations;
+        }
+
+        public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
+        {
+            return _current.GetTypeAnnotationSymbols();
+        }
+
+        public bool HasAnnotation(string annotation)
+        {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
+            int? symbolTokenId = null;
+            foreach (SymbolToken symbolToken in _current.GetTypeAnnotationSymbols())
+            {
+                string text = symbolToken.Text;
+                if (text == null)
+                {
+                    symbolTokenId = symbolToken.Sid;
+                }
+                else if (annotation.Equals(text))
+                {
+                    return true;
+                }
+            }
+
+            if (symbolTokenId.HasValue)
+            {
+                throw new UnknownSymbolException(symbolTokenId.Value);
+            }
+
+            return false;
         }
 
         public int IntValue()
@@ -271,7 +320,7 @@ namespace Amazon.IonDotnet.Internals.Tree
         {
             bool _eof;
             int _nextIdx;
-            IIonValue _parent;
+            readonly IIonValue _parent;
             IIonValue _curr;
 
             public Children(IIonValue parent)

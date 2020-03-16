@@ -31,16 +31,16 @@ namespace Amazon.IonDotnet.Tests.Tree
         public void AddAnnotations(string[] annotations)
         {
             var v = MakeMutableValue();
-            Assert.AreEqual(0, v.GetTypeAnnotations().Count);
+            Assert.AreEqual(0, v.GetTypeAnnotationSymbols().Count);
 
             foreach (var annotation in annotations)
             {
                 v.AddTypeAnnotation(annotation);
             }
 
-            Assert.AreEqual(annotations.Length, v.GetTypeAnnotations().Count);
+            Assert.AreEqual(annotations.Length, v.GetTypeAnnotationSymbols().Count);
 
-            var annotReturns = v.GetTypeAnnotations();
+            var annotReturns = v.GetTypeAnnotationSymbols();
             foreach (var annotation in annotations)
             {
                 Assert.IsTrue(v.HasAnnotation(annotation));

@@ -138,8 +138,34 @@ namespace Amazon.IonDotnet
         int GetBytes(Span<byte> buffer);
 
         /// <summary>
-        /// Get the list of type annotations of the current value.
+        /// Get the annotations of the current value as an array of strings.
         /// </summary>
-        IEnumerable<SymbolToken> GetTypeAnnotations();
+        /// <returns>
+        /// The (ordered) annotations on the current value, or an empty array
+        /// if there are none.
+        /// </returns>
+        /// <exception cref="UnknownSymbolException">If any annotation has unknown text.</exception>
+        string[] GetTypeAnnotations();
+
+        /// <summary>
+        /// Gets the current value's annotations as symbol tokens (text + ID).
+        /// </summary>
+        /// <returns>
+        /// The (ordered) annotations on the current value, or an empty array
+        /// if there are none.
+        /// </returns>
+        IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
+
+        /// <summary>
+        /// Determines if the current value contains such annotation.
+        /// </summary>
+        /// <returns>
+        /// True if the current value contains such annotation.
+        /// Otherwise, False,
+        /// </returns>
+        /// <param name="annotation">Annotation text.</param>
+        /// <exception cref="ArgumentNullException">When annotation is null.</exception>
+        /// <exception cref="UnknownSymbolException">If a match is not found and any annotation has unknown text.</exception>
+        bool HasAnnotation(string annotation);
     }
 }
