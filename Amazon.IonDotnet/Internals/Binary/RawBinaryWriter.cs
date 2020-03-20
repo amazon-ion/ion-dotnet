@@ -547,7 +547,7 @@ namespace Amazon.IonDotnet.Internals.Binary
                 {
                     // Double.NaN is different between C# and Java
                     // For consistency, map NaN to the long value for NaN in Java
-                    _dataBuffer.WriteUint64(9221120237041090560);
+                    _dataBuffer.WriteUint64(0x7ff8000000000000L);
                 }
                 else
                 {
