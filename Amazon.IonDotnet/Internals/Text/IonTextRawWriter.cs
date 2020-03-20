@@ -228,9 +228,19 @@ namespace Amazon.IonDotnet.Internals.Text
                 return;
             }
 
-            //TODO find a better way
-            var str = d.ToString(CultureInfo.InvariantCulture);
-            _writer.Write(str);
+            String str;
+
+            // Differentiate between negative zero and zero.
+            if (d == 0 && BitConverter.DoubleToInt64Bits(d) < 0)
+            {
+                str = "-0e0";
+                _writer.Write(str);
+            }
+            else
+            {
+                str = d.ToString("R");
+                _writer.Write(str);
+            }
 
             foreach (var c in str)
             {

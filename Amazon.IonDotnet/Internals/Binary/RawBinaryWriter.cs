@@ -542,7 +542,17 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 _containerStack.IncreaseCurrentContainerLength(9);
                 _dataBuffer.WriteByte(TidFloatByte | 8);
-                _dataBuffer.WriteUint64(BitConverterEx.DoubleToInt64Bits(value));
+
+                if (double.IsNaN(value))
+                {
+                    // Double.NaN is different between C# and Java
+                    // For consistency, map NaN to the long value for NaN in Java
+                    _dataBuffer.WriteUint64(9221120237041090560);
+                }
+                else
+                {
+                    _dataBuffer.WriteUint64(BitConverter.DoubleToInt64Bits(value));
+                }
             }
 
             FinishValue();
