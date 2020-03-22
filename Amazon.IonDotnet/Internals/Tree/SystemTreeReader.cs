@@ -137,7 +137,7 @@ namespace Amazon.IonDotnet.Internals.Tree
             int index = 0;
             foreach (SymbolToken symbolToken in symbolTokens)
             {
-                if (symbolToken.Text == null)
+                if (symbolToken.Text == null && symbolToken.Sid != 0)
                 {
                     throw new UnknownSymbolException(symbolToken.Sid);
                 }
@@ -155,16 +155,17 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public bool HasAnnotation(string annotation)
         {
-            if (annotation == null)
-            {
-                throw new ArgumentNullException(nameof(annotation));
-            }
-
             int? symbolTokenId = null;
             foreach (SymbolToken symbolToken in _current.GetTypeAnnotationSymbols())
             {
                 string text = symbolToken.Text;
-                if (text == null)
+
+                //zero symbol scenario
+                if (annotation == null && text == null && symbolToken.Sid == 0)
+                {
+                    return true;   
+                }
+                else if (text == null)
                 {
                     symbolTokenId = symbolToken.Sid;
                 }
