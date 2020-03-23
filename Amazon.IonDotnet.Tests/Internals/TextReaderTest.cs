@@ -152,8 +152,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ReadTypeAnnotations_ZeroSymbol()
         {
-            // a struct with zero symbol annotation
-            // {withannot:$0::18}
+            // an int with zero symbol annotation
+            // $0::18
             byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
@@ -183,8 +183,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ReadTypeAnnotationSymbols_ZeroSymbol()
         {
-            // a struct with zero symbol annotation
-            // {withannot:$0::18}
+            // an int with zero symbol annotation
+            // $0::18
             byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
@@ -225,8 +225,8 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void HasAnnotationTrue_ZeroSymbol()
         {
-            // a singlefield structure with annotations
-            // {withannot:years::months::days::hours::minutes::seconds::18}
+            // an int with zero symbol annotation
+            // $0::18
             byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
