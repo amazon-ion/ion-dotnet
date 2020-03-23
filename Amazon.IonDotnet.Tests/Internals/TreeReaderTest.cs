@@ -247,11 +247,10 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ValueWithTypeAnnotationsTest_ZeroSymbol()
         {
-            //Must be: {withannot: $0::18}
+            //Must be: $0::18
             var intValue = _ionValueFactory.NewInt(18);
             intValue.AddTypeAnnotation(null);
-            var value = new IonStruct { { "withannot", intValue } };
-            var reader = new UserTreeReader(value);
+            var reader = new UserTreeReader(intValue);
 
             ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
         }
@@ -287,11 +286,10 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ValueWithTypeAnnotationSymbolsTest_ZeroSymbol()
         {
-            //Must be: {withannot: $0::18}
+            //Must be: $0::18
             var intValue = _ionValueFactory.NewInt(18);
             intValue.AddTypeAnnotation(null);
-            var value = new IonStruct { { "withannot", intValue } };
-            var reader = new UserTreeReader(value);
+            var reader = new UserTreeReader(intValue);
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);
         }
@@ -355,11 +353,10 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void HasAnnotationTrueTest_ZeroSymbol()
         {
-            //Must be: {withannot: $0::18}
+            //Must be: $0::18
             var intValue = _ionValueFactory.NewInt(18);
             intValue.AddTypeAnnotation(null);
-            var value = new IonStruct { { "withannot", intValue } };
-            var reader = new UserTreeReader(value);
+            var reader = new UserTreeReader(intValue);
 
             ReaderTestCommon.HasAnnotationTrue_ZeroSymbol(reader);
         }

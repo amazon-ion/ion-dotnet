@@ -175,14 +175,11 @@ namespace Amazon.IonDotnet.Tests.Common
 
         public static void ReadTypeAnnotations_ZeroSymbol(IIonReader reader)
         {
-            // a singlefield structure with zero symbol annotation
-            // {withannot:$0::18}
-            reader.MoveNext();
-            reader.StepIn();
+            // an int with zero symbol annotation
+            // $0::18
             reader.MoveNext();
 
             Assert.AreEqual(IonType.Int, reader.CurrentType);
-            Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
 
             string[] annotations = reader.GetTypeAnnotations();
@@ -221,14 +218,11 @@ namespace Amazon.IonDotnet.Tests.Common
 
         public static void ReadTypeAnnotationSymbols_ZeroSymbol(IIonReader reader)
         {
-            // a singlefield structure with zero symbol annotation
-            // {withannot:$0::18}
-            reader.MoveNext();
-            reader.StepIn();
+            // an int with zero symbol annotation
+            // $0::18
             reader.MoveNext();
 
             Assert.AreEqual(IonType.Int, reader.CurrentType);
-            Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
 
             Assert.AreEqual(1, reader.GetTypeAnnotationSymbols().Count());
@@ -286,10 +280,8 @@ namespace Amazon.IonDotnet.Tests.Common
 
         public static void HasAnnotationTrue_ZeroSymbol(IIonReader reader)
         {
-            // a singlefield structure with zero symbol annotation
-            // {withannot:$0::18}
-            reader.MoveNext();
-            reader.StepIn();
+            // an int with zero symbol annotation
+            // $0::18
             reader.MoveNext();
             Assert.IsTrue(reader.HasAnnotation(null));
         }
