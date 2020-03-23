@@ -150,6 +150,17 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void ReadTypeAnnotations_ZeroSymbol()
+        {
+            // a struct with zero symbol annotation
+            // {withannot:$0::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
+        }
+
+        [TestMethod]
         public void ReadTypeAnnotations_AssertUnknownSymbolException()
         {
             string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
@@ -167,6 +178,17 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_ZeroSymbol()
+        {
+            // a struct with zero symbol annotation
+            // {withannot:$0::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);
         }
 
         [TestMethod]
@@ -198,6 +220,17 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotationTrue_ZeroSymbol()
+        {
+            // a singlefield structure with annotations
+            // {withannot:years::months::days::hours::minutes::seconds::18}
+            byte[] data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
+            UserTextReader reader = new UserTextReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotationTrue_ZeroSymbol(reader);
         }
 
         [TestMethod]

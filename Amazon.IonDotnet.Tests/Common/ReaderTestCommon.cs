@@ -173,6 +173,23 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.IsTrue(symbols.SequenceEqual(annotations));
         }
 
+        public static void ReadTypeAnnotations_ZeroSymbol(IIonReader reader)
+        {
+            // a singlefield structure with zero symbol annotation
+            // {withannot:$0::18}
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+
+            Assert.AreEqual(IonType.Int, reader.CurrentType);
+            Assert.AreEqual("withannot", reader.CurrentFieldName);
+            Assert.AreEqual(18, reader.IntValue());
+
+            string[] annotations = reader.GetTypeAnnotations();
+            Assert.AreEqual(1, annotations.Count());
+            Assert.IsNull(annotations[0]);
+        }
+
         public static void ReadTypeAnnotations_AssertUnknownSymbolException(IIonReader reader)
         {
             // $ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"
@@ -200,6 +217,23 @@ namespace Amazon.IonDotnet.Tests.Common
             {
                 Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == s));
             }
+        }
+
+        public static void ReadTypeAnnotationSymbols_ZeroSymbol(IIonReader reader)
+        {
+            // a singlefield structure with zero symbol annotation
+            // {withannot:$0::18}
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+
+            Assert.AreEqual(IonType.Int, reader.CurrentType);
+            Assert.AreEqual("withannot", reader.CurrentFieldName);
+            Assert.AreEqual(18, reader.IntValue());
+
+            Assert.AreEqual(1, reader.GetTypeAnnotationSymbols().Count());
+
+            Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null));
         }
 
         public static void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(IIonReader reader)
@@ -248,6 +282,16 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual(18, reader.IntValue());
 
             Assert.IsFalse(reader.HasAnnotation("Spam Musubi"));
+        }
+
+        public static void HasAnnotationTrue_ZeroSymbol(IIonReader reader)
+        {
+            // a singlefield structure with zero symbol annotation
+            // {withannot:$0::18}
+            reader.MoveNext();
+            reader.StepIn();
+            reader.MoveNext();
+            Assert.IsTrue(reader.HasAnnotation(null));
         }
 
         public static void HasAnnotation_AssertUnknownSymbolException(IIonReader reader)
