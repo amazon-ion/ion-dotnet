@@ -228,7 +228,13 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <param name="annotation">Annotation text.</param>
         public void AddTypeAnnotation(string annotation)
         {
-            AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
+            if (annotation == null)
+            {
+                AddTypeAnnotation(new SymbolToken(annotation, 0));
+            } else
+            {
+                AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
+            }
         }
 
         /// <summary>
@@ -268,7 +274,7 @@ namespace Amazon.IonDotnet.Tree.Impl
         public bool HasAnnotation(string text)
         {
             return _annotations != null &&
-                (_annotations.Any(a => text.Equals(a.Text) || a.Text == null && text == null ));
+                (_annotations.Any(a => text.Equals(a.Text) || (a.Text == null && text == null)));
         }
 
         /// <summary>
