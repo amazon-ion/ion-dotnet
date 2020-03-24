@@ -131,7 +131,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ReadTypeAnnotations_ZeroSymbol()
         {
-            // an int with annotation
+            // an int with zero symbol annotation
             // $0::18
             byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
             UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
@@ -162,7 +162,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void ReadTypeAnnotationSymbols_ZeroSymbol()
         {
-            // an int with annotation
+            // an int with zero symbol annotation
             // $0::18
             byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
             UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
@@ -204,7 +204,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void HasAnnotationTrue_ZeroSymbol()
         {
-            // an int with annotation
+            // an int with zero symbol annotation
             // $0::18
             byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
             UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
