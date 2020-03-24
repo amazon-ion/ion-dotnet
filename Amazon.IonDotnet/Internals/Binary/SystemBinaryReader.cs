@@ -318,12 +318,13 @@ namespace Amazon.IonDotnet.Internals.Binary
             foreach (int aid in Annotations)
             {
                 string text = GetSymbolTable().FindKnownSymbol(aid);
-                if (annotation == null && text == null && aid == 0)
+                if (text == null)
                 {
-                    return true;
-                }
-                else if (text == null)
-                {
+                    //zero symbol scenario
+                    if (annotation == null && aid == 0)
+                    {
+                        return true;
+                    }
                     annotationId = aid;
                 }
                 else if (annotation.Equals(text))

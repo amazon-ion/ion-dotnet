@@ -160,13 +160,13 @@ namespace Amazon.IonDotnet.Internals.Tree
             {
                 string text = symbolToken.Text;
 
-                //zero symbol scenario
-                if (annotation == null && text == null && symbolToken.Sid == 0)
+                if (text == null)
                 {
-                    return true;   
-                }
-                else if (text == null)
-                {
+                    //zero symbol scenario
+                    if (annotation == null && symbolToken.Sid == 0)
+                    {
+                        return true;
+                    }
                     symbolTokenId = symbolToken.Sid;
                 }
                 else if (annotation.Equals(text))

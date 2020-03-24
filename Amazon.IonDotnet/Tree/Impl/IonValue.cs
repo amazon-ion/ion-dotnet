@@ -275,7 +275,8 @@ namespace Amazon.IonDotnet.Tree.Impl
         public bool HasAnnotation(string text)
         {
             return _annotations != null &&
-                (_annotations.Any(a => (a.Text == null && text == null) || text.Equals(a.Text)));
+                (_annotations.Any(annotation => (annotation.Text == null && text == null)
+                || annotation.Text.Equals(text)));
         }
 
         /// <summary>

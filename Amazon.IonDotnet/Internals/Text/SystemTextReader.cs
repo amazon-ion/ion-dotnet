@@ -579,13 +579,13 @@ namespace Amazon.IonDotnet.Internals.Text
             int? annotationId = null;
             foreach (SymbolToken symbolToken in _annotations)
             {
-                //zero symbol scenario
-                if (annotation == null && symbolToken.Text == null && symbolToken.Sid == 0)
+                if (symbolToken.Text == null)
                 {
-                    return true;
-                }
-                else if (symbolToken.Text == null)
-                {
+                    //zero symbol scenario
+                    if (annotation == null && symbolToken.Sid == 0)
+                    {
+                        return true;
+                    }
                     annotationId = symbolToken.Sid;
                 }
                 else if (annotation.Equals(symbolToken.Text))
