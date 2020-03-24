@@ -129,6 +129,17 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void ReadTypeAnnotations_ZeroSymbol()
+        {
+            // an int with annotation
+            // $0::18
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
+        }
+
+        [TestMethod]
         public void ReadTypeAnnotations_AssertUnknownSymbolException()
         {
             byte[] data = DirStructure.OwnTestFileAsBytes("binary/unknown_symbols.bindat");
@@ -146,6 +157,17 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_ZeroSymbol()
+        {
+            // an int with annotation
+            // $0::18
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);
         }
 
         [TestMethod]
@@ -179,6 +201,16 @@ namespace Amazon.IonDotnet.Tests.Internals
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
         }
 
+        [TestMethod]
+        public void HasAnnotationTrue_ZeroSymbol()
+        {
+            // an int with annotation
+            // $0::18
+            byte[] data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
+            UserBinaryReader reader = new UserBinaryReader(new MemoryStream(data));
+
+            ReaderTestCommon.HasAnnotationTrue_ZeroSymbol(reader);
+        }
         [TestMethod]
         public void HasAnnotation_AssertUnknownSymbolException()
         {
