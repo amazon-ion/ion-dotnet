@@ -168,7 +168,7 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
 
-            string[] annotations = reader.GetTypeAnnotations();
+            var annotations = reader.GetTypeAnnotations();
             Assert.AreEqual(symbols.Count(), annotations.Count());
             Assert.IsTrue(symbols.SequenceEqual(annotations));
         }
