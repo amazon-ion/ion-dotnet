@@ -231,7 +231,8 @@ namespace Amazon.IonDotnet.Tree.Impl
             if (annotation == null)
             {
                 AddTypeAnnotation(new SymbolToken(annotation, 0));
-            } else
+            }
+            else
             {
                 AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
             }
@@ -274,7 +275,7 @@ namespace Amazon.IonDotnet.Tree.Impl
         public bool HasAnnotation(string text)
         {
             return _annotations != null &&
-                (_annotations.Any(a => text.Equals(a.Text) || (a.Text == null && text == null)));
+                (_annotations.Any(a => (a.Text == null && text == null) || text.Equals(a.Text)));
         }
 
         /// <summary>
