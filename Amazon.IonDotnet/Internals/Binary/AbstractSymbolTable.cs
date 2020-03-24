@@ -31,17 +31,17 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public int FindSymbolId(string text)
         {
-            var token = Find(text);
+            SymbolToken token = Find(text);
             return token == default ? SymbolToken.UnknownSid : token.Sid;
         }
 
         public abstract string FindKnownSymbol(int sid);
 
+        public abstract IEnumerable<string> GetDeclaredSymbolNames();
+
         public void WriteTo(IIonWriter writer)
         {
             throw new NotImplementedException();
         }
-
-        public abstract IEnumerable<string> GetDeclaredSymbolNames();
     }
 }
