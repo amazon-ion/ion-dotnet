@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -230,7 +232,12 @@ namespace Amazon.IonDotnet.Tests.Integration
                 0.00022250738585072012e-304,
                 2.225073858507201200000e-308,
                 2.2250738585072012e-00308,
-                2.2250738585072012997800001e-308
+                2.2250738585072012997800001e-308,
+                2.2250738585072014e-308,
+                2.2250738585072009e-308,
+                1.7976931348623157e308,
+                1.0000000000000002e0,
+                -1.0000000000000002e0
             };
 
             void assertReader(IIonReader reader)
@@ -316,11 +323,28 @@ namespace Amazon.IonDotnet.Tests.Integration
         {
             var file = DirStructure.IonTestFile("good/float_zeros.ion");
             var reader = ReaderFromFile(file, InputStyle.FileStream);
+
             while (reader.MoveNext() != IonType.None)
             {
                 Assert.AreEqual(IonType.Float, reader.CurrentType);
                 Assert.AreEqual(0d, reader.DoubleValue());
+
+                using (var memoryStream = new MemoryStream())
+                {
+                    using (var writer = IonBinaryWriterBuilder.Build(memoryStream, forceFloat64: true))
+                    {
+                        writer.WriteFloat(reader.DoubleValue());
+                        writer.Finish();
+                    }
+
+                    var readerByte = BitConverter.GetBytes(reader.DoubleValue());
+                    Array.Reverse(readerByte);
+                    var writerByte = memoryStream.ToArray().Skip(5).ToArray();
+
+                    Assert.IsTrue(Enumerable.SequenceEqual(writerByte, readerByte));
+                }
             }
+
         }
 
         [TestMethod]
