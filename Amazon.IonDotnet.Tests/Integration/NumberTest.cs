@@ -223,6 +223,18 @@ namespace Amazon.IonDotnet.Tests.Integration
         }
 
         [TestMethod]
+        public void FloatDblMax()
+        {
+            var file = DirStructure.IonTestFile("good/floatDblMax.ion");
+            var floats = new[]
+            {
+                1.7976931348623157e308
+            };
+
+            AssertReaderWriterPrescision(file, floats);
+        }
+
+        [TestMethod]
         public void FloatDblMin()
         {
             var file = DirStructure.IonTestFile("good/floatDblMin.ion");
@@ -234,37 +246,10 @@ namespace Amazon.IonDotnet.Tests.Integration
                 2.2250738585072012e-00308,
                 2.2250738585072012997800001e-308,
                 2.2250738585072014e-308,
-                2.2250738585072009e-308,
-                1.7976931348623157e308,
-                1.0000000000000002e0,
-                -1.0000000000000002e0
+                2.2250738585072009e-308
             };
 
-            void assertReader(IIonReader reader)
-            {
-                foreach (var f in floats)
-                {
-                    Assert.AreEqual(IonType.Float, reader.MoveNext());
-                    ReaderTestCommon.AssertFloatEqual(f, reader.DoubleValue());
-                }
-
-                Assert.AreEqual(IonType.None, reader.MoveNext());
-            }
-
-            void writerFunc(IIonWriter writer)
-            {
-                foreach (var f in floats)
-                {
-                    writer.WriteFloat(f);
-                }
-
-                writer.Finish();
-            }
-
-            var r = ReaderFromFile(file, InputStyle.FileStream);
-            assertReader(r);
-
-            AssertReaderWriter(assertReader, writerFunc);
+            AssertReaderWriterPrescision(file, floats);
         }
 
         [TestMethod]
@@ -337,6 +322,7 @@ namespace Amazon.IonDotnet.Tests.Integration
                         writer.Finish();
                     }
 
+                    // Confirm the reader's and writer's byte presentations are the same
                     var readerByte = BitConverter.GetBytes(reader.DoubleValue());
                     Array.Reverse(readerByte);
                     var writerByte = memoryStream.ToArray().Skip(5).ToArray();
@@ -345,6 +331,19 @@ namespace Amazon.IonDotnet.Tests.Integration
                 }
             }
 
+        }
+
+        [TestMethod]
+        public void FloatTrappedZeros()
+        {
+            var file = DirStructure.IonTestFile("good/float_trapped_zeros.ion");
+            var floats = new[]
+            {
+                1.0000000000000002e0,
+                -1.0000000000000002e0
+            };
+
+            AssertReaderWriterPrescision(file, floats);
         }
 
         [TestMethod]
@@ -420,6 +419,35 @@ namespace Amazon.IonDotnet.Tests.Integration
             }
 
             return co;
+        }
+
+        private void AssertReaderWriterPrescision(FileInfo file, double[] floats)
+        {
+            void assertReader(IIonReader reader)
+            {
+                foreach (var f in floats)
+                {
+                    Assert.AreEqual(IonType.Float, reader.MoveNext());
+                    ReaderTestCommon.AssertFloatEqual(f, reader.DoubleValue());
+                }
+
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+            }
+
+            void writerFunc(IIonWriter writer)
+            {
+                foreach (var f in floats)
+                {
+                    writer.WriteFloat(f);
+                }
+
+                writer.Finish();
+            }
+
+            var r = ReaderFromFile(file, InputStyle.FileStream);
+            assertReader(r);
+
+            AssertReaderWriter(assertReader, writerFunc);
         }
     }
 }
