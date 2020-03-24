@@ -291,7 +291,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             for (int index = 0; index < Annotations.Count; index++)
             {
                 string annotation = GetSymbolTable().FindKnownSymbol(Annotations[index]);
-                if (annotation == null && Annotations[index] != 0)
+                if (annotation == null)
                 {
                     throw new UnknownSymbolException(Annotations[index]);
                 }
@@ -314,17 +314,17 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public override bool HasAnnotation(string annotation)
         {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
             int? annotationId = null;
             foreach (int aid in Annotations)
             {
                 string text = GetSymbolTable().FindKnownSymbol(aid);
                 if (text == null)
                 {
-                    //zero symbol scenario
-                    if (annotation == null && aid == 0)
-                    {
-                        return true;
-                    }
                     annotationId = aid;
                 }
                 else if (annotation.Equals(text))

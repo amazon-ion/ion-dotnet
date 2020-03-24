@@ -272,11 +272,13 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// Returns true if the value contains such annotation.
         /// </summary>
         /// <param name="text">Annotation text.</param>
+        /// <exception cref="ArgumentNullException">When text is null.</exception>
         public bool HasAnnotation(string text)
         {
-            return _annotations != null &&
-                (_annotations.Any(annotation => (annotation.Text == null && text == null)
-                || annotation.Text.Equals(text)));
+            if (text == null)
+                throw new ArgumentNullException(nameof(text));
+
+            return _annotations != null && _annotations.Any(a => text.Equals(a.Text));
         }
 
         /// <summary>

@@ -531,7 +531,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     ISymbolTable symtab = GetSymbolTable();
 
                     string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);
-                    if (text == null && symbolToken.ImportLocation.Sid != 0)
+                    if (text == null)
                     {
                         throw new UnknownSymbolException(symbolToken.ImportLocation.Sid);
                     }
@@ -576,16 +576,16 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override bool HasAnnotation(string annotation)
         {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
+
             int? annotationId = null;
             foreach (SymbolToken symbolToken in _annotations)
             {
                 if (symbolToken.Text == null)
                 {
-                    //zero symbol scenario
-                    if (annotation == null && symbolToken.Sid == 0)
-                    {
-                        return true;
-                    }
                     annotationId = symbolToken.Sid;
                 }
                 else if (annotation.Equals(symbolToken.Text))
