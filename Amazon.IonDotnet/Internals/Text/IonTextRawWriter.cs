@@ -238,6 +238,8 @@ namespace Amazon.IonDotnet.Internals.Text
             }
             else
             {
+                // Using "R" round-trip format specifier.
+                // Ensures the converted string can be parse back into the same numeric value.
                 str = d.ToString("R");
                 _writer.Write(str);
             }
