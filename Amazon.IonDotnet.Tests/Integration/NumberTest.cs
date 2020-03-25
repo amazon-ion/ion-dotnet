@@ -325,6 +325,7 @@ namespace Amazon.IonDotnet.Tests.Integration
                     // Confirm the reader's and writer's byte presentations are the same
                     var readerByte = BitConverter.GetBytes(reader.DoubleValue());
                     Array.Reverse(readerByte);
+                    // Get byte reprsentation of value from the stream
                     var writerByte = memoryStream.ToArray().Skip(5).ToArray();
 
                     Assert.IsTrue(Enumerable.SequenceEqual(writerByte, readerByte));
