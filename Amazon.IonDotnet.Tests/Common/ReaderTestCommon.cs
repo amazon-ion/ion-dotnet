@@ -179,7 +179,6 @@ namespace Amazon.IonDotnet.Tests.Common
             // $0::18
             reader.MoveNext();
 
-
             Assert.ThrowsException<UnknownSymbolException>(() => reader.GetTypeAnnotations());
         }
 
@@ -220,9 +219,7 @@ namespace Amazon.IonDotnet.Tests.Common
 
             Assert.AreEqual(IonType.Int, reader.CurrentType);
             Assert.AreEqual(18, reader.IntValue());
-
             Assert.AreEqual(1, reader.GetTypeAnnotationSymbols().Count());
-
             Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null && a.Sid == 0));
         }
 

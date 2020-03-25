@@ -164,7 +164,6 @@ namespace Amazon.IonDotnet.Internals.Tree
             foreach (SymbolToken symbolToken in _current.GetTypeAnnotationSymbols())
             {
                 string text = symbolToken.Text;
-
                 if (text == null)
                 {
                     symbolTokenId = symbolToken.Sid;

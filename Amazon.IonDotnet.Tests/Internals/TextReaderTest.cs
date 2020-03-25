@@ -155,6 +155,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             // an int with zero symbol annotation
             // $0::18
             var reader = new UserTextReader("$0::18");
+
             ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
         }
 
