@@ -237,6 +237,9 @@ namespace Amazon.IonDotnet.Internals
                 symbolList.RemoveRange(0, oldLocalSymbolCount);
             }
 
+            // TODO-BQ: ???
+            ReaderLocalTableImports imports = new ReaderLocalTableImports(importList);
+
             table.Refresh();
             return table;
         }

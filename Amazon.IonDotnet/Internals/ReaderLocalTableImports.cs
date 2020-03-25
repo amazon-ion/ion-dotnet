@@ -77,8 +77,18 @@ namespace Amazon.IonDotnet.Internals
                 ISymbolTable symbolTable = importTables[i];
                 if (symbolTable.IsLocal)
                 {
-                    // TODO-BQ: What does this adapter do?
-                    // imports[i] = LocalSymbolTableImportAdapter.of((LocalSymbolTable)symbolTable);
+                    // TODO-BQ: The adapter seems to provide a shallow or deep copy? Do we even need it?
+                    ISymbolTable tableDelegate;
+                    if (symbolTable.IsReadOnly)
+                    {
+                        tableDelegate = symbolTable;
+                    }
+                    else
+                    {
+                        tableDelegate = new ReaderLocalTable(symbolTable);
+                    }
+
+                    imports[i] = tableDelegate;
                 }
                 else
                 {
