@@ -127,7 +127,7 @@ namespace Amazon.IonDotnet.Internals
                 offset += import.MaxId;
             }
 
-            // we should never get here
+            // We should never get here.
             throw new IonException($"Sid={sid}");
         }
 
@@ -141,20 +141,29 @@ namespace Amazon.IonDotnet.Internals
             var importList = table.Imports;
             var symbolList = table._ownSymbols;
             var oldLocalSymbolCount = symbolList.Count;
+
             if (!isOnStruct)
             {
                 reader.MoveNext();
             }
 
-            Debug.Assert(reader.CurrentType == IonType.Struct);
+            Debug.Assert(
+                reader.CurrentType == IonType.Struct,
+                "Invalid symbol table image passed in reader "
+                    + reader.CurrentType
+                    + " encountered when a struct was expected.");
 
-            // assume that we're standing before a struct
+            Debug.Assert(
+                SystemSymbols.IonSymbolTable.Equals(reader.GetTypeAnnotations()[0]),
+                "Local symbol tables must be annotated by "
+                    + SystemSymbols.IonSymbolTable + ".");
+
+            // Assume that we're standing before a struct.
             reader.StepIn();
 
+            IonType fieldType;
             bool foundImport = false;
             bool foundLocals = false;
-
-            IonType fieldType;
             while ((fieldType = reader.MoveNext()) != IonType.None)
             {
                 if (reader.CurrentIsNull)
@@ -165,14 +174,15 @@ namespace Amazon.IonDotnet.Internals
                 var sid = reader.GetFieldNameSymbol().Sid;
                 if (sid == SymbolToken.UnknownSid)
                 {
-                    // user-level symtab
+                    // This is a user-defined IonReader or a pure DOM, fall
+                    // back to text.
                     sid = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
                 }
 
                 switch (sid)
                 {
                     case SystemSymbols.SymbolsSid:
-                        // as per the spec, other field types are treated as
+                        // As per the spec, other field types are treated as
                         // empty lists.
                         if (foundLocals)
                         {
@@ -196,23 +206,25 @@ namespace Amazon.IonDotnet.Internals
                         foundImport = true;
                         if (fieldType == IonType.List)
                         {
-                            // list of symbol tables to imports
+                            // List of symbol tables to imports.
                             ReadImportList(reader, catalog, importList);
                         }
-                        // trying to import the current table
+                        // Trying to import the current table.
                         else if (fieldType == IonType.Symbol
                                  && reader.GetSymbolTable().IsLocal
                                  && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid))
                                  
                         {
-                            // TODO-BQ: LocalSymbolTable.java Line 296
-                            // https://github.com/amzn/ion-java/blob/10d467a6a4086819900c9aa636e331ff6fb227db/src/software/amazon/ion/impl/LocalSymbolTable.java
+                            importList.Add(reader.GetSymbolTable());
                         }
                         else
                         {
                             throw new IonException("Invalid import format.");
                         }
 
+                        break;
+                    default:
+                        // As per the spec, any other field is ignored.
                         break;
                 }
             }
@@ -221,7 +233,7 @@ namespace Amazon.IonDotnet.Internals
 
             if (!foundImport)
             {
-                // no import field found, remove old symbols
+                // No import field found, remove old symbols.
                 symbolList.RemoveRange(0, oldLocalSymbolCount);
             }
 
@@ -342,13 +354,13 @@ namespace Amazon.IonDotnet.Internals
 
             if (table == null)
             {
-                // cannot find table with that name, create an empty substitute symtab
+                // Cannot find table with that name, create an empty substitute symtab.
                 table = new SubstituteSymbolTable(name, version, maxId);
             }
 
             if (table.Version != version || table.MaxId != maxId)
             {
-                // a table with the name is found but version doesn't match
+                // A table with the name is found but version doesn't match.
                 table = new SubstituteSymbolTable(table, version, maxId);
             }
 
