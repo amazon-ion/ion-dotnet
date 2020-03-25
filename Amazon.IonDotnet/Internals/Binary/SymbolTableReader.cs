@@ -13,29 +13,21 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-
-// ReSharper disable InconsistentNaming
-
 namespace Amazon.IonDotnet.Internals.Binary
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Numerics;
+    using System.Runtime.CompilerServices;
+
     /// <inheritdoc />
     /// <summary>
-    /// Implements a state machine for reading a symbol table
+    /// Implements a state machine for reading a symbol table.
     /// </summary>
     internal class SymbolTableReader : IIonReader
     {
-        private enum Op
-        {
-            Next,
-            StepOut
-        }
-
         private const int S_BOF = 0;
         private const int S_STRUCT = 1;
         private const int S_IN_STRUCT = 2;
@@ -65,277 +57,72 @@ namespace Amazon.IonDotnet.Internals.Binary
         private const int HAS_IMPORT_LIST = 0x08;
         private const int HAS_SYMBOL_LIST = 0x10;
 
-        private readonly ISymbolTable _symbolTable;
-        private readonly int _maxId;
+        private readonly ISymbolTable symbolTable;
+        private readonly int maxId;
+        private readonly ISymbolTable[] importedTables;
+        private readonly IEnumerator<string> localSymbolsEnumerator;
 
-        private int _currentState = S_BOF;
-        private int _flags;
-        private string _stringValue;
-        private int _intValue;
-        private readonly ISymbolTable[] _importedTables;
-        private int _importTablesIdx = -1;
-        private ISymbolTable _currentImportTable;
-        private readonly IEnumerator<string> _localSymbolsEnumerator;
-
+        private int currentState = S_BOF;
+        private int flags;
+        private string stringValue;
+        private int intValue;
+        private int importTablesIdx = -1;
+        private ISymbolTable currentImportTable;
 
         public SymbolTableReader(ISymbolTable symbolTable)
         {
-            _symbolTable = symbolTable ?? throw new ArgumentNullException(nameof(symbolTable));
+            this.symbolTable = symbolTable ?? throw new ArgumentNullException(nameof(symbolTable));
 
-            lock (_symbolTable)
+            lock (this.symbolTable)
             {
-                _maxId = _symbolTable.MaxId;
-                _localSymbolsEnumerator = _symbolTable.GetDeclaredSymbolNames().GetEnumerator();
+                this.maxId = this.symbolTable.MaxId;
+                this.localSymbolsEnumerator = this.symbolTable.GetDeclaredSymbolNames().GetEnumerator();
             }
 
-            if (!_symbolTable.IsLocal)
+            if (!this.symbolTable.IsLocal)
             {
-                SetFlag(HAS_NAME, true);
-                SetFlag(HAS_VERSION, true);
+                this.SetFlag(HAS_NAME, true);
+                this.SetFlag(HAS_VERSION, true);
             }
 
-            //what is this???
-            if (_maxId > 0)
+            if (this.maxId > 0)
             {
-                // FIXME: is this ever true?
-                SetFlag(HAS_MAX_ID, true);
+                this.SetFlag(HAS_MAX_ID, true);
             }
 
-            _importedTables = _symbolTable.GetImportedTables().ToArray();
-            if (_importedTables != null && _importedTables.Length > 0)
+            this.importedTables = symbolTable.GetImportedTables().ToArray();
+            if (this.importedTables != null && this.importedTables.Length > 0)
             {
-                SetFlag(HAS_IMPORT_LIST, true);
+                this.SetFlag(HAS_IMPORT_LIST, true);
             }
 
-            if (_symbolTable.GetImportedMaxId() < _maxId)
+            if (this.symbolTable.GetImportedMaxId() < this.maxId)
             {
-                SetFlag(HAS_SYMBOL_LIST, true);
+                this.SetFlag(HAS_SYMBOL_LIST, true);
             }
         }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// this computes the actual move to the next state and
-        /// update the current read value accordingly
-        /// </summary>
-        public IonType MoveNext()
+        // TODO: Revisit Finalize
+        ~SymbolTableReader()
         {
-            if (!HasNext())
-                return IonType.None;
-            var newState = _currentState;
-            switch (_currentState)
-            {
-                default:
-                    ThrowUnrecognizedState(_currentState);
-                    newState = -1;
-                    break;
-                case S_BOF:
-                    newState = S_STRUCT;
-                    break;
-                case S_STRUCT:
-                    //jump to the end if next() is called at S_STRUCT
-                    //call stepin() to get into the struct
-                    newState = S_EOF;
-                    break;
-                case S_IN_STRUCT:
-                    newState = StateFirstInStruct();
-                    LoadStateData(newState);
-                    break;
-                case S_NAME:
-                    Debug.Assert(HasVersion());
-                    newState = S_VERSION;
-                    LoadStateData(newState);
-                    break;
-                case S_VERSION:
-                    if (HasMaxId())
-                    {
-                        newState = S_MAX_ID;
-                        LoadStateData(newState);
-                        break;
-                    }
-
-                    newState = StateFollowingMaxId();
-                    break;
-                case S_MAX_ID:
-                    newState = StateFollowingMaxId();
-                    break;
-                case S_IMPORT_LIST:
-                    newState = StateFollowingImportList(Op.Next);
-                    break;
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                    // we only need to get the import list once, which we
-                    // do as we step into the import list, so it should
-                    // be waiting for us here.
-                    newState = NextImport();
-                    break;
-                case S_IN_IMPORT_STRUCT:
-                    // shared tables have to have a name
-                    newState = S_IMPORT_NAME;
-                    LoadStateData(newState);
-                    break;
-                case S_IMPORT_NAME:
-                    // shared tables have to have a version
-                    newState = S_IMPORT_VERSION;
-                    LoadStateData(newState);
-                    break;
-                case S_IMPORT_VERSION:
-                    // and they also always have a max id - so we set up
-                    // for it
-                    newState = S_IMPORT_MAX_ID;
-                    LoadStateData(newState);
-                    break;
-                case S_IMPORT_MAX_ID:
-                    newState = S_IMPORT_STRUCT_CLOSE;
-                    break;
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
-                    // no change here - we just bump up against this local eof
-                    break;
-                case S_AFTER_IMPORT_LIST:
-                    Debug.Assert(_symbolTable.GetImportedMaxId() < _maxId);
-                    newState = S_SYMBOL_LIST;
-                    break;
-                case S_SYMBOL_LIST:
-                    Debug.Assert(_symbolTable.GetImportedMaxId() < _maxId);
-                    newState = StateFollowingLocalSymbols();
-                    break;
-                case S_IN_SYMBOLS:
-                // we have some symbols - so we'll set up to read them, which we *have* to do once and *need* to do only once.
-                // since we only get into the symbol list if there are some symbols - our next state
-                // is at the first symbol so we just fall through to and let the S_SYMBOL
-                // state do it's thing (which it will do every time we move to the next symbol)             
-                case S_SYMBOL:
-                    Debug.Assert(_localSymbolsEnumerator != null);
-                    if (_localSymbolsEnumerator.MoveNext())
-                    {
-                        _stringValue = _localSymbolsEnumerator.Current;
-                        // null means this symbol isn't defined
-                        newState = S_SYMBOL;
-                        break;
-                    }
-
-                    newState = S_SYMBOL_LIST_CLOSE;
-                    break;
-                case S_SYMBOL_LIST_CLOSE:
-                    // no change here - we just bump up against this local eof
-                    newState = S_SYMBOL_LIST_CLOSE;
-                    break;
-                case S_STRUCT_CLOSE:
-                case S_EOF:
-                    // no change here - we just bump up against this local eof
-                    break;
-            }
-
-            _currentState = newState;
-            return StateType(_currentState);
+            this.localSymbolsEnumerator?.Dispose();
         }
 
-        private int NextImport()
+        private enum Op
         {
-            if (_importTablesIdx < _importedTables.Length - 1)
-            {
-                _currentImportTable = _importedTables[++_importTablesIdx];
-                return S_IMPORT_STRUCT;
-            }
-
-            // the import list is empty, so we jump to
-            // the close list and null out our current
-            _currentImportTable = null;
-            return S_IMPORT_LIST_CLOSE;
+            Next,
+            StepOut,
         }
 
-        private int StateFollowingImportList(Op op)
-        {
-            if (!HasLocalSymbols()) return S_STRUCT_CLOSE;
-            return op == Op.Next ? S_SYMBOL_LIST : S_AFTER_IMPORT_LIST;
-        }
+        public int CurrentDepth => StateDepth(this.currentState);
 
-        public void StepIn()
-        {
-            switch (_currentState)
-            {
-                case S_STRUCT:
-                    _currentState = S_IN_STRUCT;
-                    break;
-                case S_IMPORT_LIST:
-                    _currentState = S_IN_IMPORTS;
-                    break;
-                case S_IMPORT_STRUCT:
-                    Debug.Assert(_currentImportTable != null);
-                    _currentState = S_IN_IMPORT_STRUCT;
-                    break;
-                case S_SYMBOL_LIST:
-                    _currentState = S_IN_SYMBOLS;
-                    break;
-                default:
-                    throw new InvalidOperationException("current value is not a container");
-            }
-        }
-
-        public void StepOut()
-        {
-            int newState;
-
-            switch (_currentState)
-            {
-                default:
-                    throw new InvalidOperationException("current value is not in a container");
-                case S_IN_STRUCT:
-                case S_NAME:
-                case S_VERSION:
-                case S_MAX_ID:
-                case S_IMPORT_LIST:
-                case S_AFTER_IMPORT_LIST:
-                case S_SYMBOL_LIST:
-                case S_STRUCT_CLOSE:
-                    // these are all top level so stepOut() ends up at the end of our data
-                    newState = S_EOF;
-                    break;
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                case S_IMPORT_LIST_CLOSE:
-                    // if we're outside a struct, and we're in the import list stepOut will be whatever follows the import list
-                    // close and we're done with these
-                    _currentImportTable = null;
-                    newState = StateFollowingImportList(Op.StepOut);
-                    break;
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_NAME:
-                case S_IMPORT_VERSION:
-                case S_IMPORT_MAX_ID:
-                case S_IMPORT_STRUCT_CLOSE:
-                    // if there is a next import the next state will be its struct open
-                    // otherwise next will be the list close
-                    newState = _importTablesIdx < _importedTables.Length - 1 ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
-                    break;
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                case S_SYMBOL_LIST_CLOSE:
-                    // I think this is just S_EOF, but if we ever put anything after the symbol list this
-                    // will need to be updated. And we're done with our local symbol references.
-                    _stringValue = null;
-                    _localSymbolsEnumerator.Dispose();
-                    newState = StateFollowingLocalSymbols();
-                    break;
-            }
-
-            _currentState = newState;
-        }
-
-        public int CurrentDepth => StateDepth(_currentState);
-
-        public ISymbolTable GetSymbolTable() => _symbolTable;
-
-        public IonType CurrentType => StateType(_currentState);
-
-        public IntegerSize GetIntegerSize() => StateType(_currentState) == IonType.Int ? IntegerSize.Int : IntegerSize.Unknown;
+        public IonType CurrentType => StateType(this.currentState);
 
         public string CurrentFieldName
         {
             get
             {
-                switch (_currentState)
+                switch (this.currentState)
                 {
                     case S_STRUCT:
                     case S_IN_STRUCT:
@@ -371,14 +158,287 @@ namespace Amazon.IonDotnet.Internals.Binary
                         return SystemSymbols.Symbols;
 
                     default:
-                        throw new IonException($"Internal error: {nameof(SymbolTableReader)} is in an unrecognized state: {_currentState}");
+                        throw new IonException($"Internal error: {nameof(SymbolTableReader)} is in an unrecognized state: {this.currentState}");
                 }
             }
         }
 
+        public bool CurrentIsNull
+        {
+            get
+            {
+                switch (this.currentState)
+                {
+                    case S_STRUCT:
+                    case S_IN_STRUCT:
+                    case S_NAME:
+                    case S_VERSION:
+                    case S_MAX_ID:
+                    case S_IMPORT_LIST:
+                    case S_IN_IMPORTS:
+                    case S_IMPORT_STRUCT:
+                    case S_IN_IMPORT_STRUCT:
+                    case S_IMPORT_NAME:
+                    case S_IMPORT_VERSION:
+                    case S_IMPORT_MAX_ID:
+                    case S_IN_SYMBOLS:
+                    case S_SYMBOL:
+                        // These values are either present and non-null or entirely absent
+                        return false;
+                    case S_IMPORT_STRUCT_CLOSE:
+                    case S_IMPORT_LIST_CLOSE:
+                    case S_AFTER_IMPORT_LIST:
+                    case S_SYMBOL_LIST:
+                    case S_SYMBOL_LIST_CLOSE:
+                    case S_STRUCT_CLOSE:
+                    case S_EOF:
+                        // Here we're not really on a value, so we're not on a value that is a null
+                        return false;
+                    default:
+                        throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {this.currentState}");
+                }
+            }
+        }
+
+        public bool IsInStruct
+        {
+            get
+            {
+                switch (this.currentState)
+                {
+                    case S_STRUCT:
+                    case S_IN_IMPORTS:
+                    case S_IMPORT_STRUCT:
+                    case S_IN_SYMBOLS:
+                    case S_SYMBOL:
+                        // These values are either not contained, or contained in a list
+                        return false;
+                    case S_IN_STRUCT:
+                    case S_NAME:
+                    case S_VERSION:
+                    case S_MAX_ID:
+                    case S_IMPORT_LIST:
+                    case S_IN_IMPORT_STRUCT:
+                    case S_IMPORT_NAME:
+                    case S_IMPORT_VERSION:
+                    case S_IMPORT_MAX_ID:
+                    case S_AFTER_IMPORT_LIST:
+                    case S_SYMBOL_LIST:
+                        // The values above are all members of a struct
+                        return true;
+                    case S_IMPORT_STRUCT_CLOSE:
+                    case S_STRUCT_CLOSE:
+                        // If we're closing a struct we're in a struct
+                        return true;
+                    case S_IMPORT_LIST_CLOSE:
+                    case S_SYMBOL_LIST_CLOSE:
+                    case S_EOF:
+                        // If we're closing a list we in a list, not a struct
+                        // and EOF is not in a struct
+                        return false;
+                    default:
+                        throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {this.currentState}");
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        /// <summary>
+        /// Compute the actual move to the next state and
+        /// update the current read value accordingly.
+        /// </summary>
+        public IonType MoveNext()
+        {
+            if (!this.HasNext())
+            {
+                return IonType.None;
+            }
+
+            var newState = this.currentState;
+            switch (this.currentState)
+            {
+                default:
+                    ThrowUnrecognizedState(this.currentState);
+                    newState = -1;
+                    break;
+                case S_BOF:
+                    newState = S_STRUCT;
+                    break;
+                case S_STRUCT:
+                    newState = S_EOF;
+                    break;
+                case S_IN_STRUCT:
+                    newState = this.StateFirstInStruct();
+                    this.LoadStateData(newState);
+                    break;
+                case S_NAME:
+                    Debug.Assert(this.HasVersion(), "No version found");
+                    newState = S_VERSION;
+                    this.LoadStateData(newState);
+                    break;
+                case S_VERSION:
+                    if (this.HasMaxId())
+                    {
+                        newState = S_MAX_ID;
+                        this.LoadStateData(newState);
+                        break;
+                    }
+
+                    newState = this.StateFollowingMaxId();
+                    break;
+                case S_MAX_ID:
+                    newState = this.StateFollowingMaxId();
+                    break;
+                case S_IMPORT_LIST:
+                    newState = this.StateFollowingImportList(Op.Next);
+                    break;
+                case S_IN_IMPORTS:
+                case S_IMPORT_STRUCT:
+                    // We only need to get the import list once, which we
+                    // do as we step into the import list, so it should
+                    // be waiting for us here.
+                    newState = this.NextImport();
+                    break;
+                case S_IN_IMPORT_STRUCT:
+                    // Shared tables have to have a name
+                    newState = S_IMPORT_NAME;
+                    this.LoadStateData(newState);
+                    break;
+                case S_IMPORT_NAME:
+                    // Shared tables have to have a version
+                    newState = S_IMPORT_VERSION;
+                    this.LoadStateData(newState);
+                    break;
+                case S_IMPORT_VERSION:
+                    // And they also always have a max id, so we set up for it
+                    newState = S_IMPORT_MAX_ID;
+                    this.LoadStateData(newState);
+                    break;
+                case S_IMPORT_MAX_ID:
+                    newState = S_IMPORT_STRUCT_CLOSE;
+                    break;
+                case S_IMPORT_STRUCT_CLOSE:
+                case S_IMPORT_LIST_CLOSE:
+                    // No change here - we just bump up against this local eof
+                    break;
+                case S_AFTER_IMPORT_LIST:
+                    Debug.Assert(this.symbolTable.GetImportedMaxId() < this.maxId, "maxId exceeded");
+                    newState = S_SYMBOL_LIST;
+                    break;
+                case S_SYMBOL_LIST:
+                    Debug.Assert(this.symbolTable.GetImportedMaxId() < this.maxId, "maxId exceeded");
+                    newState = StateFollowingLocalSymbols();
+                    break;
+                case S_IN_SYMBOLS:
+                // We have some symbols - so we'll set up to read them, which we *have* to do once and *need* to do only once.
+                // Since we only get into the symbol list if there are some symbols, our next state
+                // is at the first symbol so we just fall through to and let the S_SYMBOL
+                // state do it's thing (which it will do every time we move to the next symbol)
+                case S_SYMBOL:
+                    Debug.Assert(this.localSymbolsEnumerator != null, "localSymbolsEnumerator is null");
+                    if (this.localSymbolsEnumerator.MoveNext())
+                    {
+                        this.stringValue = this.localSymbolsEnumerator.Current;
+
+                        // null means this symbol isn't defined
+                        newState = S_SYMBOL;
+                        break;
+                    }
+
+                    newState = S_SYMBOL_LIST_CLOSE;
+                    break;
+                case S_SYMBOL_LIST_CLOSE:
+                    // No change here - we just bump up against this local eof
+                    newState = S_SYMBOL_LIST_CLOSE;
+                    break;
+                case S_STRUCT_CLOSE:
+                case S_EOF:
+                    // No change here - we just bump up against this local eof
+                    break;
+            }
+
+            this.currentState = newState;
+            return StateType(this.currentState);
+        }
+
+        public void StepIn()
+        {
+            switch (this.currentState)
+            {
+                case S_STRUCT:
+                    this.currentState = S_IN_STRUCT;
+                    break;
+                case S_IMPORT_LIST:
+                    this.currentState = S_IN_IMPORTS;
+                    break;
+                case S_IMPORT_STRUCT:
+                    Debug.Assert(this.currentImportTable != null, "currentImportTable is null");
+                    this.currentState = S_IN_IMPORT_STRUCT;
+                    break;
+                case S_SYMBOL_LIST:
+                    this.currentState = S_IN_SYMBOLS;
+                    break;
+                default:
+                    throw new InvalidOperationException("Current value is not a container");
+            }
+        }
+
+        public void StepOut()
+        {
+            int newState;
+
+            switch (this.currentState)
+            {
+                default:
+                    throw new InvalidOperationException("Current value is not in a container");
+                case S_IN_STRUCT:
+                case S_NAME:
+                case S_VERSION:
+                case S_MAX_ID:
+                case S_IMPORT_LIST:
+                case S_AFTER_IMPORT_LIST:
+                case S_SYMBOL_LIST:
+                case S_STRUCT_CLOSE:
+                    // These are all top level so StepOut() ends up at the end of our data
+                    newState = S_EOF;
+                    break;
+                case S_IN_IMPORTS:
+                case S_IMPORT_STRUCT:
+                case S_IMPORT_LIST_CLOSE:
+                    // If we're outside a struct, and we're in the import list StepOut() will be whatever follows the import list
+                    // Close and we're done with these
+                    this.currentImportTable = null;
+                    newState = this.StateFollowingImportList(Op.StepOut);
+                    break;
+                case S_IN_IMPORT_STRUCT:
+                case S_IMPORT_NAME:
+                case S_IMPORT_VERSION:
+                case S_IMPORT_MAX_ID:
+                case S_IMPORT_STRUCT_CLOSE:
+                    // If there is a next import the next state will be its struct open
+                    // Otherwise next will be the list close
+                    newState = this.importTablesIdx < this.importedTables.Length - 1 ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
+                    break;
+                case S_IN_SYMBOLS:
+                case S_SYMBOL:
+                case S_SYMBOL_LIST_CLOSE:
+                    // Done with our local symbol references.
+                    this.stringValue = null;
+                    this.localSymbolsEnumerator.Dispose();
+                    newState = StateFollowingLocalSymbols();
+                    break;
+            }
+
+            this.currentState = newState;
+        }
+
+        public ISymbolTable GetSymbolTable() => this.symbolTable;
+
+        public IntegerSize GetIntegerSize() => StateType(this.currentState) == IonType.Int ? IntegerSize.Int : IntegerSize.Unknown;
+
         public SymbolToken GetFieldNameSymbol()
         {
-            switch (_currentState)
+            switch (this.currentState)
             {
                 case S_STRUCT:
                 case S_IN_STRUCT:
@@ -414,127 +474,34 @@ namespace Amazon.IonDotnet.Internals.Binary
                     return new SymbolToken(SystemSymbols.Symbols, SystemSymbols.SymbolsSid);
 
                 default:
-                    throw new IonException($"Internal error: {nameof(SymbolTableReader)} is in an unrecognized state: {_currentState}");
+                    throw new IonException($"Internal error: {nameof(SymbolTableReader)} is in an unrecognized state: {this.currentState}");
             }
         }
 
-        public bool CurrentIsNull
-        {
-            get
-            {
-                switch (_currentState)
-                {
-                    case S_STRUCT:
-                    case S_IN_STRUCT:
-                    case S_NAME:
-                    case S_VERSION:
-                    case S_MAX_ID:
-                    case S_IMPORT_LIST:
-                    case S_IN_IMPORTS:
-                    case S_IMPORT_STRUCT:
-                    case S_IN_IMPORT_STRUCT:
-                    case S_IMPORT_NAME:
-                    case S_IMPORT_VERSION:
-                    case S_IMPORT_MAX_ID:
-                    case S_IN_SYMBOLS:
-                    case S_SYMBOL:
-                        // these values are either present and non-null
-                        // or entirely absent (in which case they will
-                        // have been skipped and we won't be in a state
-                        // to return them).
-                        return false;
+        public bool BoolValue() => throw new InvalidOperationException("Only valid if the value is a boolean");
 
-                    case S_IMPORT_STRUCT_CLOSE:
-                    case S_IMPORT_LIST_CLOSE:
-                    case S_AFTER_IMPORT_LIST:
-                    case S_SYMBOL_LIST:
-                    case S_SYMBOL_LIST_CLOSE:
-                    case S_STRUCT_CLOSE:
-                    case S_EOF:
-                        // here we're not really on a value, so we're not
-                        // on a value that is a null - so false again.
-                        return false;
+        public int IntValue() => this.intValue;
 
-                    default:
-                        throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {_currentState}");
-                }
-            }
-        }
+        public long LongValue() => this.intValue;
 
-        public bool IsInStruct
-        {
-            get
-            {
-                switch (_currentState)
-                {
-                    case S_STRUCT:
-                    case S_IN_IMPORTS:
-                    case S_IMPORT_STRUCT:
-                    case S_IN_SYMBOLS:
-                    case S_SYMBOL:
-                        // these values are either not contained, or
-                        // contained in a list. So we aren't in a
-                        // struct if they're pending.
-                        return false;
+        public BigInteger BigIntegerValue() => new BigInteger(this.intValue);
 
-                    case S_IN_STRUCT:
-                    case S_NAME:
-                    case S_VERSION:
-                    case S_MAX_ID:
-                    case S_IMPORT_LIST:
-                    case S_IN_IMPORT_STRUCT:
-                    case S_IMPORT_NAME:
-                    case S_IMPORT_VERSION:
-                    case S_IMPORT_MAX_ID:
-                    case S_AFTER_IMPORT_LIST:
-                    case S_SYMBOL_LIST:
-                        // the values above are all members
-                        // of a struct, so we must be in a
-                        // struct to have them pending
-                        return true;
+        public double DoubleValue() => throw new InvalidOperationException("Only valid if the value is a double");
 
-                    case S_IMPORT_STRUCT_CLOSE:
-                    case S_STRUCT_CLOSE:
-                        // if we're closing a struct we're in a struct
-                        return true;
+        public BigDecimal DecimalValue() => throw new InvalidOperationException("Only valid if the value is a decimal");
 
-                    case S_IMPORT_LIST_CLOSE:
-                    case S_SYMBOL_LIST_CLOSE:
-                    case S_EOF:
-                        // if we're closing a list we in a list, not a struct
-                        // and EOF is not in a struct
-                        return false;
+        public Timestamp TimestampValue() => throw new InvalidOperationException("Only valid if the value is a DateTime");
 
-                    default:
-                        throw new IonException($"Internal error: UnifiedSymbolTableReader is in an unrecognized state: {_currentState}");
-                }
-            }
-        }
+        public string StringValue() => this.stringValue;
 
-        public bool BoolValue() => throw new InvalidOperationException("only valid if the value is a boolean");
+        public SymbolToken SymbolValue() => throw new InvalidOperationException("Only valid if the value is a Symbol");
 
-        public int IntValue() => _intValue;
+        public int GetLobByteSize() => throw new InvalidOperationException($"Only valid if the value is a Lob, not {StateType(this.currentState)}");
 
-        public long LongValue() => _intValue;
-
-        public BigInteger BigIntegerValue() => new BigInteger(_intValue);
-
-        public double DoubleValue() => throw new InvalidOperationException("only valid if the value is a double");
-
-        public BigDecimal DecimalValue() => throw new InvalidOperationException("only valid if the value is a decimal");
-
-        public Timestamp TimestampValue() => throw new InvalidOperationException("only valid if the value is a DateTime");
-
-        public string StringValue() => _stringValue;
-
-        public SymbolToken SymbolValue() => throw new InvalidOperationException("only valid if the value is a Symbol");
-
-        public int GetLobByteSize() => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
-
-        public byte[] NewByteArray() => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
+        public byte[] NewByteArray() => throw new InvalidOperationException($"Only valid if the value is a Lob, not {StateType(this.currentState)}");
 
         public int GetBytes(Span<byte> buffer)
-            => throw new InvalidOperationException($"only valid if the value is a Lob, not {StateType(_currentState)}");
+            => throw new InvalidOperationException($"Only valid if the value is a Lob, not {StateType(this.currentState)}");
 
         public string[] GetTypeAnnotations()
         {
@@ -560,154 +527,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SetFlag(int flagBit, bool on)
-        {
-            if (on)
-            {
-                _flags |= flagBit;
-                return;
-            }
-
-            _flags &= ~flagBit;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TestFlag(int flagBit) => (_flags & flagBit) != 0;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasName() => TestFlag(HAS_NAME);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasVersion() => TestFlag(HAS_VERSION);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasMaxId() => TestFlag(HAS_MAX_ID);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasImports() => TestFlag(HAS_IMPORT_LIST);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasLocalSymbols() => TestFlag(HAS_SYMBOL_LIST);
-
-        /// <summary>
-        /// this just tells us whether or not we have more value coming at our current scanning depth
-        /// </summary>
-        /// <returns></returns>
-        private bool HasNext()
-        {
-            switch (_currentState)
-            {
-                default:
-                    ThrowUnrecognizedState(_currentState);
-                    return false;
-                case S_BOF:
-                    return true;
-                case S_STRUCT:
-                    //only on top-level value
-                    return false;
-                case S_IN_STRUCT:
-                    return StateFirstInStruct() != S_STRUCT_CLOSE;
-                case S_NAME:
-                    return true;
-                case S_VERSION:
-                    if (HasMaxId()) return true;
-                    return StateFollowingMaxId() != S_STRUCT_CLOSE;
-                case S_IMPORT_LIST:
-                    return HasLocalSymbols();
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                    // we have more if there is
-                    return _importTablesIdx < _importedTables.Length - 1;
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_NAME:
-                    // we always have a name and version
-                    return true;
-                case S_IMPORT_VERSION:
-                    // we always have a max_id on imports
-                    return true;
-                case S_IMPORT_MAX_ID:
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
-                    return false;
-                case S_AFTER_IMPORT_LIST:
-                    // locals are the only thing that might follow imports
-                    return HasLocalSymbols();
-                case S_SYMBOL_LIST:
-                    // the symbol list is the last member, so it has no "next sibling"
-                    // but ... just in case we put something after the local symbol list
-                    Debug.Assert(StateFollowingLocalSymbols() == S_STRUCT_CLOSE);
-                    return false;
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                    //let's return true here, and MoveNext() will figure out whether we still have symbols.
-                    return true;
-                case S_SYMBOL_LIST_CLOSE:
-                case S_STRUCT_CLOSE:
-                case S_EOF:
-                    // these are all at the end of their respective containers
-                    return false;
-            }
-        }
-
-        /// <summary>
-        /// Update stringValue and intValue
-        /// </summary>
-        private void LoadStateData(int newState)
-        {
-            switch (newState)
-            {
-                default:
-                    throw new IonException($"{nameof(SymbolTableReader)} in state {GetStateName(newState)} has no state to load");
-                case S_NAME:
-                    Debug.Assert(HasName());
-                    _stringValue = _symbolTable.Name;
-                    Debug.Assert(_stringValue != null);
-                    break;
-                case S_VERSION:
-                    _intValue = _symbolTable.Version;
-                    Debug.Assert(_intValue != 0);
-                    break;
-                case S_MAX_ID:
-                    _intValue = _maxId;
-                    break;
-                case S_IMPORT_LIST:
-                case S_SYMBOL_LIST:
-                    // no op to simplify the initial fields logic in next()
-                    break;
-                case S_IMPORT_NAME:
-                    Debug.Assert(_currentImportTable != null);
-                    _stringValue = _currentImportTable.Name;
-                    break;
-                case S_IMPORT_VERSION:
-                    // shared tables have to have a version
-                    _stringValue = null;
-                    _intValue = _currentImportTable.Version;
-                    break;
-                case S_IMPORT_MAX_ID:
-                    // and they also always have a max id - so we set up
-                    // for it
-                    _intValue = _currentImportTable.MaxId;
-                    break;
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int StateFollowingLocalSymbols() => S_STRUCT_CLOSE;
-
-        private int StateFollowingMaxId()
-        {
-            if (HasImports()) return S_IMPORT_LIST;
-            if (HasLocalSymbols()) return S_SYMBOL_LIST;
-            return S_STRUCT_CLOSE;
-        }
-
-        private int StateFirstInStruct()
-        {
-            if (HasName()) return S_NAME;
-            if (HasMaxId()) return S_MAX_ID;
-            if (HasImports()) return S_IMPORT_LIST;
-            return HasLocalSymbols() ? S_SYMBOL_LIST : S_STRUCT_CLOSE;
-        }
 
         private static string GetStateName(int state)
         {
@@ -806,10 +626,192 @@ namespace Amazon.IonDotnet.Internals.Binary
         private static void ThrowUnrecognizedState(int state)
             => throw new IonException($"SymbolTableReader is in an unrecognize state: {state}");
 
-        //TODO is this something we want?
-        ~SymbolTableReader()
+        private int NextImport()
         {
-            _localSymbolsEnumerator?.Dispose();
+            if (this.importTablesIdx < this.importedTables.Length - 1)
+            {
+                this.currentImportTable = this.importedTables[++this.importTablesIdx];
+                return S_IMPORT_STRUCT;
+            }
+
+            // The import list is empty, so we jump to the close list and null out our current
+            this.currentImportTable = null;
+            return S_IMPORT_LIST_CLOSE;
+        }
+
+        private int StateFollowingImportList(Op op)
+        {
+            if (!this.HasLocalSymbols())
+            {
+                return S_STRUCT_CLOSE;
+            }
+
+            return op == Op.Next ? S_SYMBOL_LIST : S_AFTER_IMPORT_LIST;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetFlag(int flagBit, bool on)
+        {
+            if (on)
+            {
+                this.flags |= flagBit;
+                return;
+            }
+
+            this.flags &= ~flagBit;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TestFlag(int flagBit) => (this.flags & flagBit) != 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasName() => this.TestFlag(HAS_NAME);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasVersion() => this.TestFlag(HAS_VERSION);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasMaxId() => this.TestFlag(HAS_MAX_ID);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasImports() => this.TestFlag(HAS_IMPORT_LIST);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasLocalSymbols() => this.TestFlag(HAS_SYMBOL_LIST);
+
+        /// <summary>
+        /// Determine whether or not more values are coming at the current scanning depth.
+        /// </summary>
+        /// <returns>True if there are more values at the current depth.</returns>
+        private bool HasNext()
+        {
+            switch (this.currentState)
+            {
+                default:
+                    ThrowUnrecognizedState(this.currentState);
+                    return false;
+                case S_BOF:
+                    return true;
+                case S_STRUCT:
+                    return false;
+                case S_IN_STRUCT:
+                    return this.StateFirstInStruct() != S_STRUCT_CLOSE;
+                case S_NAME:
+                    return true;
+                case S_VERSION:
+                    if (this.HasMaxId())
+                    {
+                        return true;
+                    }
+
+                    return this.StateFollowingMaxId() != S_STRUCT_CLOSE;
+                case S_IMPORT_LIST:
+                    return this.HasLocalSymbols();
+                case S_IN_IMPORTS:
+                case S_IMPORT_STRUCT:
+                    // We have more if there is
+                    return this.importTablesIdx < this.importedTables.Length - 1;
+                case S_IN_IMPORT_STRUCT:
+                case S_IMPORT_NAME:
+                    // We always have a name and version
+                    return true;
+                case S_IMPORT_VERSION:
+                    // We always have a max_id on imports
+                    return true;
+                case S_IMPORT_MAX_ID:
+                case S_IMPORT_STRUCT_CLOSE:
+                case S_IMPORT_LIST_CLOSE:
+                    return false;
+                case S_AFTER_IMPORT_LIST:
+                    // LocalSymbols are the only thing that might follow imports
+                    return this.HasLocalSymbols();
+                case S_SYMBOL_LIST:
+                    // The symbol list is the last member, so it has no "next sibling",
+                    // but just in case we put something after the local symbol list
+                    Debug.Assert(StateFollowingLocalSymbols() == S_STRUCT_CLOSE, "Symbol list is not the last member");
+                    return false;
+                case S_IN_SYMBOLS:
+                case S_SYMBOL:
+                    // Return true here, and MoveNext() will figure out whether we still have symbols
+                    return true;
+                case S_SYMBOL_LIST_CLOSE:
+                case S_STRUCT_CLOSE:
+                case S_EOF:
+                    // These are all at the end of their respective containers
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Update stringValue and intValue.
+        /// </summary>
+        private void LoadStateData(int newState)
+        {
+            switch (newState)
+            {
+                default:
+                    throw new IonException($"{nameof(SymbolTableReader)} in state {GetStateName(newState)} has no state to load");
+                case S_NAME:
+                    Debug.Assert(this.HasName(), "No name found");
+                    this.stringValue = this.symbolTable.Name;
+                    Debug.Assert(this.stringValue != null, "stringValue is null");
+                    break;
+                case S_VERSION:
+                    this.intValue = this.symbolTable.Version;
+                    Debug.Assert(this.intValue != 0, "intValue is 0");
+                    break;
+                case S_MAX_ID:
+                    this.intValue = this.maxId;
+                    break;
+                case S_IMPORT_LIST:
+                case S_SYMBOL_LIST:
+                    // no op to simplify the initial fields logic in next()
+                    break;
+                case S_IMPORT_NAME:
+                    Debug.Assert(this.currentImportTable != null, "currentImporTable is null");
+                    this.stringValue = this.currentImportTable.Name;
+                    break;
+                case S_IMPORT_VERSION:
+                    // shared tables have to have a version
+                    this.stringValue = null;
+                    this.intValue = this.currentImportTable.Version;
+                    break;
+                case S_IMPORT_MAX_ID:
+                    // and they also always have a max id - so we set up
+                    // for it
+                    this.intValue = this.currentImportTable.MaxId;
+                    break;
+            }
+        }
+
+        private int StateFollowingMaxId()
+        {
+            if (this.HasImports())
+            {
+                return S_IMPORT_LIST;
+            }
+
+            if (this.HasLocalSymbols())
+            {
+                return S_SYMBOL_LIST;
+            }
+
+            return S_STRUCT_CLOSE;
+        }
+
+        private int StateFirstInStruct()
+        {
+            if (this.HasName())
+            {
+                return S_NAME;
+            }
+
+            if (this.HasImports())
+            {
+                return S_IMPORT_LIST;
+            }
+
+            return this.HasLocalSymbols() ? S_SYMBOL_LIST : S_STRUCT_CLOSE;
         }
     }
 }

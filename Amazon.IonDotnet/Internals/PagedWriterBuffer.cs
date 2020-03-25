@@ -1,13 +1,28 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using Amazon.IonDotnet.Internals.Binary;
+﻿/*
+ * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 
 namespace Amazon.IonDotnet.Internals
 {
+    using System;
+    using System.Buffers;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using Amazon.IonDotnet.Internals.Binary;
+
     internal abstract class PagedWriterBuffer : IWriterBuffer
     {
         private const int Shift1Byte = 8;
@@ -18,307 +33,8 @@ namespace Amazon.IonDotnet.Internals
         private const int Shift6Byte = 8 * 6;
         private const int Shift7Byte = 8 * 7;
 
-        private readonly List<byte[]> _bufferBlocks;
-        private byte[] _currentBlock;
-        private IList<Memory<byte>> _currentSequence;
-
-        /// <summary>
-        /// This is only a reference to the 'estimated' primary block size
-        /// </summary>
-        private readonly int _blockSize;
-
-        /// <summary>
-        /// The smallest unwritten index of the <see cref="_currentBlock"/>
-        /// <para>If this equals block size, that means current block is full</para>
-        /// </summary>
-        private int _runningIndex;
-
-        /// <summary>
-        /// Total bytes written since the last <see cref="Wrapup"/>
-        /// </summary>
-        private long _writtenSoFar;
-
-        protected PagedWriterBuffer(int intendedBlockSize)
-        {
-            //4 is just too small!
-            Debug.Assert(intendedBlockSize >= 4);
-
-            //TODO should we do early alloc?
-            _currentBlock = ArrayPool<byte>.Shared.Rent(intendedBlockSize);
-            _bufferBlocks = new List<byte[]> {_currentBlock};
-            _blockSize = _currentBlock.Length;
-        }
-
-        /// <summary>
-        /// The slow path, write with allocations
-        /// </summary>
-        /// <param name="chars">Char sequence</param>
-        /// <param name="bytesToWrite">Total bytes needed to utf8-encode the string</param>
-        private void WriteCharsSlow(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
-        {
-            if (bytesToWrite <= BinaryConstants.ShortStringLength)
-            {
-                WriteShortChars(chars, bytesToWrite, alloc);
-            }
-            else
-            {
-                WriteLongChars(chars, bytesToWrite);
-            }
-        }
-
-        private void WriteShortChars(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
-        {
-            var length = Encoding.UTF8.GetBytes(chars, alloc);
-            Debug.Assert(length == bytesToWrite);
-            WriteBytes(alloc.Slice(0, bytesToWrite));
-        }
-
-        private void WriteLongChars(ReadOnlySpan<char> chars, int bytesToWrite)
-        {
-            //TODO is there a better way?
-            Span<byte> alloc = new byte[bytesToWrite];
-            Encoding.UTF8.GetBytes(chars, alloc);
-            WriteBytes(alloc);
-        }
-
-        /// <summary>
-        /// Allocate new memory block and update related fields
-        /// </summary>
-        private void AllocateNewBlock()
-        {
-            // First we gotta add the end segment to the list of current segment sequence
-            Debug.Assert(_currentSequence != null);
-            if (_runningIndex < _writtenSoFar)
-            {
-                // _writtenSoFar > BlockSize means this whole block is to be added
-                _currentSequence.Add(_currentBlock);
-            }
-            else if (_runningIndex > 0)
-            {
-                //this means that all the bytes written since the last wrapup() fits in one block
-                _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
-            }
-
-            _runningIndex = 0;
-            if (_currentBlock == null && _bufferBlocks.Count > 0)
-            {
-                _currentBlock = _bufferBlocks[0];
-                return;
-            }
-
-            var newBlock = ArrayPool<byte>.Shared.Rent(_blockSize);
-            _bufferBlocks.Add(newBlock);
-            _currentBlock = newBlock;
-        }
-
-        public int WriteUtf8(ReadOnlySpan<char> chars, int length)
-        {
-            //get the bytecount first
-            var byteCount = length == -1 ? Encoding.UTF8.GetByteCount(chars) : length;
-            Debug.Assert(length == -1 || length == Encoding.UTF8.GetByteCount(chars));
-            Span<byte> alloc = stackalloc byte[BinaryConstants.ShortStringLength];
-            if (byteCount > _currentBlock.Length - _runningIndex)
-            {
-                WriteCharsSlow(chars, byteCount, alloc);
-                return byteCount;
-            }
-
-            // we fit!!!
-            Encoding.UTF8.GetBytes(chars, new Span<byte>(_currentBlock, _runningIndex, byteCount));
-            _runningIndex += byteCount;
-            _writtenSoFar += byteCount;
-            return byteCount;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteByte(byte octet)
-        {
-            if (_runningIndex == _currentBlock.Length)
-            {
-                AllocateNewBlock();
-            }
-
-            _currentBlock[_runningIndex++] = octet;
-            _writtenSoFar++;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteUint8(long value) => WriteByte((byte) value);
-
-        public void WriteUint16(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 2)
-            {
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 2;
-        }
-
-        public void WriteUint24(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 3)
-            {
-                WriteByte((byte) (value >> Shift2Byte));
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 3;
-        }
-
-        public void WriteUint32(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 4)
-            {
-                WriteByte((byte) (value >> Shift3Byte));
-                WriteByte((byte) (value >> Shift2Byte));
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift3Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 4;
-        }
-
-        public void WriteUint40(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 5)
-            {
-                WriteByte((byte) (value >> Shift4Byte));
-                WriteByte((byte) (value >> Shift3Byte));
-                WriteByte((byte) (value >> Shift2Byte));
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift4Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift3Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 5;
-        }
-
-        public void WriteUint48(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 6)
-            {
-                WriteByte((byte) (value >> Shift5Byte));
-                WriteByte((byte) (value >> Shift4Byte));
-                WriteByte((byte) (value >> Shift3Byte));
-                WriteByte((byte) (value >> Shift2Byte));
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift5Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift4Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift3Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 6;
-        }
-
-        public void WriteUint56(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 7)
-            {
-                WriteByte((byte) (value >> Shift6Byte));
-                WriteByte((byte) (value >> Shift5Byte));
-                WriteByte((byte) (value >> Shift4Byte));
-                WriteByte((byte) (value >> Shift3Byte));
-                WriteByte((byte) (value >> Shift2Byte));
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift6Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift5Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift4Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift3Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 7;
-        }
-
-        public void WriteUint64(long value)
-        {
-            if (_currentBlock.Length - _runningIndex < 8)
-            {
-                WriteByte((byte) (value >> Shift7Byte));
-                WriteByte((byte) (value >> Shift6Byte));
-                WriteByte((byte) (value >> Shift5Byte));
-                WriteByte((byte) (value >> Shift4Byte));
-                WriteByte((byte) (value >> Shift3Byte));
-                WriteByte((byte) (value >> Shift2Byte));
-                WriteByte((byte) (value >> Shift1Byte));
-                WriteByte((byte) value);
-                return;
-            }
-
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift7Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift6Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift5Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift4Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift3Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift2Byte);
-            _currentBlock[_runningIndex++] = (byte) (value >> Shift1Byte);
-            _currentBlock[_runningIndex++] = (byte) value;
-            _writtenSoFar += 8;
-        }
-
-        public void WriteBytes(ReadOnlySpan<byte> bytes)
-        {
-            var bytesToWrite = bytes.Length;
-            while (bytesToWrite > 0)
-            {
-                // first, write what we can
-                var left = _blockSize - _runningIndex;
-                var bytesWritten = bytesToWrite > left ? left : bytesToWrite;
-                bytes.Slice(0, bytesWritten).CopyTo(new Span<byte>(_currentBlock, _runningIndex, bytesWritten));
-                _runningIndex += bytesWritten;
-                _writtenSoFar += bytesWritten;
-                bytesToWrite -= bytesWritten;
-
-                Debug.Assert(_runningIndex <= _blockSize);
-                if (bytesToWrite == 0) break;
-
-                Debug.Assert(_runningIndex == _blockSize);
-                // new allocation needed
-                AllocateNewBlock();
-                bytes = bytes.Slice(bytesWritten);
-            }
-        }
-
-        /**
-         * Ok, here's the logic for writing self-delimited int
-         * Each byte uses (up to) 7 (lower) bits to store the value and 1 (highest) bit for the 'stop' flag
-         * (1 if the value stops, 0 if not). So IntBitsPerOctet is the shift unit.
-         * So if the value is larger than VarUintShift{X}UnitMinValue, we need to shift VarUintShift{X}Unit, then
-         * bitwise-and VarUintUnitFlag to write that unit.
-         * The final octet has to has the 'stop' flag set to 1 so x-or it with VarIntFinalOctetMask
-         */
-
         private const int IntBitsPerOctet = 7;
-        private const int VarUintUnitFlag = 0b_0111_1111; //0x7f
+        private const int VarUintUnitFlag = 0b_0111_1111; // 0x7f
         private const int VarUintShift8Unit = 8 * IntBitsPerOctet;
         private const int VarUintShift7Unit = 7 * IntBitsPerOctet;
         private const int VarUintShift6Unit = 6 * IntBitsPerOctet;
@@ -336,164 +52,7 @@ namespace Amazon.IonDotnet.Internals
         private const long VarUintShift2UnitMinValue = 1L << VarUintShift2Unit;
         private const long VarUintShift1UnitMinValue = 1L << VarUintShift1Unit;
 
-        private const int VarIntFinalOctetMask = 0b_1000_0000; //0x80
-
-        public int WriteVarUint(long value)
-        {
-            if (value < VarUintShift1UnitMinValue)
-            {
-                //fits in 1 byte
-                WriteUint8((value & VarUintUnitFlag) | VarIntFinalOctetMask);
-                return 1;
-            }
-
-            if (value < VarUintShift2UnitMinValue)
-                return _currentBlock.Length - _runningIndex > 2
-                    ? WriteVarUIntDirect2(value)
-                    : WriteVarUIntSlow(value);
-
-            if (value < VarUintShift3UnitMinValue)
-                return _currentBlock.Length - _runningIndex > 3
-                    ? WriteVarUIntDirect3(value)
-                    : WriteVarUIntSlow(value);
-
-            if (value < VarUintShift4UnitMinValue)
-                return _currentBlock.Length - _runningIndex > 4
-                    ? WriteVarUIntDirect4(value)
-                    : WriteVarUIntSlow(value);
-
-            if (value < VarUintShift5UnitMinValue)
-                return _currentBlock.Length - _runningIndex > 5
-                    ? WriteVarUIntDirect5(value)
-                    : WriteVarUIntSlow(value);
-
-            return WriteVarUIntSlow(value);
-        }
-
-        public int WriteAnnotationsWithLength(IList<SymbolToken> annotations)
-        {
-            //remember the current position to write the length
-            //annotation length MUST fit in 1 byte
-            if (_runningIndex == _currentBlock.Length)
-            {
-                AllocateNewBlock();
-            }
-
-            var lengthPosIdx = _runningIndex++;
-            var lengthPosBlock = _currentBlock;
-            var annotLength = 0;
-
-            //this accounts for the tid|length byte
-            _writtenSoFar++;
-
-            for (int i = 0, l = annotations.Count; i < l; i++)
-            {
-                annotLength += WriteVarUint(annotations[i].Sid);
-                if (annotLength > BinaryConstants.MaxAnnotationSize)
-                    throw new IonException($"Annotation size too large: {annotLength} bytes");
-            }
-
-            lengthPosBlock[lengthPosIdx] = (byte) ((annotLength & VarUintUnitFlag) | VarIntFinalOctetMask);
-            return annotLength + 1;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int WriteVarUIntDirect2(long value)
-        {
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift1Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value & VarUintUnitFlag) | VarIntFinalOctetMask);
-            _writtenSoFar += 2;
-            return 2;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int WriteVarUIntDirect3(long value)
-        {
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift2Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift1Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value & VarUintUnitFlag) | VarIntFinalOctetMask);
-            _writtenSoFar += 3;
-            return 3;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int WriteVarUIntDirect4(long value)
-        {
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift3Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift2Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift1Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value & VarUintUnitFlag) | VarIntFinalOctetMask);
-            _writtenSoFar += 4;
-            return 4;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int WriteVarUIntDirect5(long value)
-        {
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift4Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift3Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift2Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value >> VarUintShift1Unit) & VarUintUnitFlag);
-            _currentBlock[_runningIndex++] = (byte) ((value & VarUintUnitFlag) | VarIntFinalOctetMask);
-            _writtenSoFar += 5;
-            return 5;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int WriteVarUIntSlow(long value)
-        {
-            var size = 1;
-            if (value >= VarUintShift8UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift8Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift7UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift7Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift6UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift6Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift5UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift5Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift4UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift4Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift3UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift3Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift2UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift2Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            if (value >= VarUintShift1UnitMinValue)
-            {
-                WriteUint8((value >> VarUintShift1Unit) & VarUintUnitFlag);
-                size++;
-            }
-
-            WriteUint8((value & VarUintUnitFlag) | VarIntFinalOctetMask);
-            return size;
-        }
+        private const int VarIntFinalOctetMask = 0b_1000_0000; // 0x80
 
         private const byte VarIntSignedOctetMask = 0x3F;
 
@@ -508,137 +67,421 @@ namespace Amazon.IonDotnet.Internals
         private const long VarInt3OctetMinValue = VarUintShift2UnitMinValue >> 1;
         private const long VarInt2OctetMinValue = VarUintShift1UnitMinValue >> 1;
 
+        private readonly List<byte[]> bufferBlocks;
+
+        /// <summary>
+        /// This is only a reference to the 'estimated' primary block size.
+        /// </summary>
+        private readonly int blockSize;
+
+        private byte[] currentBlock;
+        private IList<Memory<byte>> currentSequence;
+
+        /// <summary>
+        /// The smallest unwritten index of the <see cref="currentBlock"/>.
+        /// <para>If this equals block size, that means current block is full.</para>
+        /// </summary>
+        private int runningIndex;
+
+        /// <summary>
+        /// Total bytes written since the last <see cref="Wrapup"/>.
+        /// </summary>
+        private long writtenSoFar;
+
+        protected PagedWriterBuffer(int intendedBlockSize)
+        {
+            // Less than 4 is too small
+            Debug.Assert(intendedBlockSize >= 4, "intendedBlockSize is less than 4");
+
+            this.currentBlock = ArrayPool<byte>.Shared.Rent(intendedBlockSize);
+            this.bufferBlocks = new List<byte[]> { this.currentBlock };
+            this.blockSize = this.currentBlock.Length;
+        }
+
+        public int WriteUtf8(ReadOnlySpan<char> chars, int length)
+        {
+            // get the byteCount first
+            var byteCount = length == -1 ? Encoding.UTF8.GetByteCount(chars) : length;
+            Debug.Assert(length == -1 || length == Encoding.UTF8.GetByteCount(chars), "length is not -1 or matches chars ByteCount");
+            Span<byte> alloc = stackalloc byte[BinaryConstants.ShortStringLength];
+            if (byteCount > this.currentBlock.Length - this.runningIndex)
+            {
+                this.WriteCharsSlow(chars, byteCount, alloc);
+                return byteCount;
+            }
+
+            Encoding.UTF8.GetBytes(chars, new Span<byte>(this.currentBlock, this.runningIndex, byteCount));
+            this.runningIndex += byteCount;
+            this.writtenSoFar += byteCount;
+            return byteCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteByte(byte octet)
+        {
+            if (this.runningIndex == this.currentBlock.Length)
+            {
+                this.AllocateNewBlock();
+            }
+
+            this.currentBlock[this.runningIndex++] = octet;
+            this.writtenSoFar++;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUint8(long value) => this.WriteByte((byte)value);
+
+        public void WriteUint16(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 2)
+            {
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 2;
+        }
+
+        public void WriteUint24(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 3)
+            {
+                this.WriteByte((byte)(value >> Shift2Byte));
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift2Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 3;
+        }
+
+        public void WriteUint32(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 4)
+            {
+                this.WriteByte((byte)(value >> Shift3Byte));
+                this.WriteByte((byte)(value >> Shift2Byte));
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift3Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift2Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 4;
+        }
+
+        public void WriteUint40(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 5)
+            {
+                this.WriteByte((byte)(value >> Shift4Byte));
+                this.WriteByte((byte)(value >> Shift3Byte));
+                this.WriteByte((byte)(value >> Shift2Byte));
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift4Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift3Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift2Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 5;
+        }
+
+        public void WriteUint48(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 6)
+            {
+                this.WriteByte((byte)(value >> Shift5Byte));
+                this.WriteByte((byte)(value >> Shift4Byte));
+                this.WriteByte((byte)(value >> Shift3Byte));
+                this.WriteByte((byte)(value >> Shift2Byte));
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift5Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift4Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift3Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift2Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 6;
+        }
+
+        public void WriteUint56(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 7)
+            {
+                this.WriteByte((byte)(value >> Shift6Byte));
+                this.WriteByte((byte)(value >> Shift5Byte));
+                this.WriteByte((byte)(value >> Shift4Byte));
+                this.WriteByte((byte)(value >> Shift3Byte));
+                this.WriteByte((byte)(value >> Shift2Byte));
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift6Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift5Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift4Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift3Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift2Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 7;
+        }
+
+        public void WriteUint64(long value)
+        {
+            if (this.currentBlock.Length - this.runningIndex < 8)
+            {
+                this.WriteByte((byte)(value >> Shift7Byte));
+                this.WriteByte((byte)(value >> Shift6Byte));
+                this.WriteByte((byte)(value >> Shift5Byte));
+                this.WriteByte((byte)(value >> Shift4Byte));
+                this.WriteByte((byte)(value >> Shift3Byte));
+                this.WriteByte((byte)(value >> Shift2Byte));
+                this.WriteByte((byte)(value >> Shift1Byte));
+                this.WriteByte((byte)value);
+                return;
+            }
+
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift7Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift6Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift5Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift4Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift3Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift2Byte);
+            this.currentBlock[this.runningIndex++] = (byte)(value >> Shift1Byte);
+            this.currentBlock[this.runningIndex++] = (byte)value;
+            this.writtenSoFar += 8;
+        }
+
+        public void WriteBytes(ReadOnlySpan<byte> bytes)
+        {
+            var bytesToWrite = bytes.Length;
+            while (bytesToWrite > 0)
+            {
+                // first, write what we can
+                var left = this.blockSize - this.runningIndex;
+                var bytesWritten = bytesToWrite > left ? left : bytesToWrite;
+                bytes.Slice(0, bytesWritten).CopyTo(new Span<byte>(this.currentBlock, this.runningIndex, bytesWritten));
+                this.runningIndex += bytesWritten;
+                this.writtenSoFar += bytesWritten;
+                bytesToWrite -= bytesWritten;
+
+                Debug.Assert(this.runningIndex <= this.blockSize, "runningIndex is greater than blockSize");
+                if (bytesToWrite == 0)
+                {
+                    break;
+                }
+
+                Debug.Assert(this.runningIndex == this.blockSize, "runningIndex does not match blockSize");
+
+                // new allocation needed
+                this.AllocateNewBlock();
+                bytes = bytes.Slice(bytesWritten);
+            }
+        }
+
+        public int WriteVarUint(long value)
+        {
+            if (value < VarUintShift1UnitMinValue)
+            {
+                // fits in 1 byte
+                this.WriteUint8((value & VarUintUnitFlag) | VarIntFinalOctetMask);
+                return 1;
+            }
+
+            if (value < VarUintShift2UnitMinValue)
+            {
+                return this.currentBlock.Length - this.runningIndex > 2
+                    ? this.WriteVarUIntDirect2(value)
+                    : this.WriteVarUIntSlow(value);
+            }
+
+            if (value < VarUintShift3UnitMinValue)
+            {
+                return this.currentBlock.Length - this.runningIndex > 3
+                    ? this.WriteVarUIntDirect3(value)
+                    : this.WriteVarUIntSlow(value);
+            }
+
+            if (value < VarUintShift4UnitMinValue)
+            {
+                return this.currentBlock.Length - this.runningIndex > 4
+                    ? this.WriteVarUIntDirect4(value)
+                    : this.WriteVarUIntSlow(value);
+            }
+
+            if (value < VarUintShift5UnitMinValue)
+            {
+                return this.currentBlock.Length - this.runningIndex > 5
+                    ? this.WriteVarUIntDirect5(value)
+                    : this.WriteVarUIntSlow(value);
+            }
+
+            return this.WriteVarUIntSlow(value);
+        }
+
+        public int WriteAnnotationsWithLength(IList<SymbolToken> annotations)
+        {
+            // remember the current position to write the length
+            // annotation length MUST fit in 1 byte
+            if (this.runningIndex == this.currentBlock.Length)
+            {
+                this.AllocateNewBlock();
+            }
+
+            var lengthPosIdx = this.runningIndex++;
+            var lengthPosBlock = this.currentBlock;
+            var annotLength = 0;
+
+            // this accounts for the tid|length byte
+            this.writtenSoFar++;
+
+            for (int i = 0, l = annotations.Count; i < l; i++)
+            {
+                annotLength += this.WriteVarUint(annotations[i].Sid);
+                if (annotLength > BinaryConstants.MaxAnnotationSize)
+                {
+                    throw new IonException($"Annotation size too large: {annotLength} bytes");
+                }
+            }
+
+            lengthPosBlock[lengthPosIdx] = (byte)((annotLength & VarUintUnitFlag) | VarIntFinalOctetMask);
+            return annotLength + 1;
+        }
+
         /// <summary>
         /// Write the number in the form of var-int, meaning that the last byte contains the sign bit.
         /// </summary>
+        /// <param name="value">Number to write as a long.</param>
         /// <returns>Number of bytes written.</returns>
         public int WriteVarInt(long value)
         {
-            Debug.Assert(value != long.MinValue);
+            Debug.Assert(value != long.MinValue, "value is long.MinValue");
 
             const int varIntBitsPerSignedOctet = 6;
-            const int varSint2OctetShift = varIntBitsPerSignedOctet + 1 * IntBitsPerOctet;
-            const int varSint3OctetShift = varIntBitsPerSignedOctet + 2 * IntBitsPerOctet;
-            const int varSint4OctetShift = varIntBitsPerSignedOctet + 3 * IntBitsPerOctet;
-            const int varSint5OctetShift = varIntBitsPerSignedOctet + 4 * IntBitsPerOctet;
+            const int varSint2OctetShift = varIntBitsPerSignedOctet + (1 * IntBitsPerOctet);
+            const int varSint3OctetShift = varIntBitsPerSignedOctet + (2 * IntBitsPerOctet);
+            const int varSint4OctetShift = varIntBitsPerSignedOctet + (3 * IntBitsPerOctet);
+            const int varSint5OctetShift = varIntBitsPerSignedOctet + (4 * IntBitsPerOctet);
 
-            var signMask = (byte) (value < 0 ? 0b0100_0000 : 0);
+            var signMask = (byte)(value < 0 ? 0b0100_0000 : 0);
             var magnitude = value < 0 ? -value : value;
             if (magnitude < VarInt2OctetMinValue)
             {
-                WriteUint8((magnitude & VarIntSignedOctetMask) | VarIntFinalOctetMask | signMask);
+                this.WriteUint8((magnitude & VarIntSignedOctetMask) | VarIntFinalOctetMask | signMask);
                 return 1;
             }
 
             long signBit = value < 0 ? 1 : 0;
-            var remaining = _currentBlock.Length - _runningIndex;
+            var remaining = this.currentBlock.Length - this.runningIndex;
 
             if (magnitude < VarInt3OctetMinValue && remaining >= 2)
-                return WriteVarUIntDirect2(magnitude | (signBit << varSint2OctetShift));
+            {
+                return this.WriteVarUIntDirect2(magnitude | (signBit << varSint2OctetShift));
+            }
 
             if (magnitude < VarInt4OctetMinValue && remaining >= 3)
-                return WriteVarUIntDirect3(magnitude | (signBit << varSint3OctetShift));
+            {
+                return this.WriteVarUIntDirect3(magnitude | (signBit << varSint3OctetShift));
+            }
 
             if (magnitude < VarInt5OctetMinValue && remaining >= 4)
-                return WriteVarUIntDirect4(magnitude | (signBit << varSint4OctetShift));
+            {
+                return this.WriteVarUIntDirect4(magnitude | (signBit << varSint4OctetShift));
+            }
 
             if (magnitude < VarInt6OctetMinValue && remaining >= 5)
-                return WriteVarUIntDirect5(magnitude | (signBit << varSint5OctetShift));
+            {
+                return this.WriteVarUIntDirect5(magnitude | (signBit << varSint5OctetShift));
+            }
 
-            return WriteVarIntSlow(magnitude, signMask);
+            return this.WriteVarIntSlow(magnitude, signMask);
         }
 
-        private int WriteVarIntSlow(long magnitude, byte signMask)
+        public void StartStreak(IList<Memory<byte>> sequence)
         {
-            var size = 1;
-            byte b;
-            if (magnitude >= VarInt10OctetMinValue)
+            this.currentSequence = sequence;
+            if (this.currentBlock == null)
             {
-                b = (byte) (magnitude >> VarInt10OctetShift);
-                b &= VarIntSignedOctetMask;
-                b |= signMask;
-                WriteByte(b);
-                size++;
+                this.AllocateNewBlock();
+            }
+        }
+
+        public IList<Memory<byte>> Wrapup()
+        {
+            Debug.Assert(this.currentSequence != null, "currentSequence is null");
+
+            if (this.writtenSoFar == 0)
+            {
+                return this.currentSequence;
             }
 
-            if (magnitude >= VarInt9OctetMinValue)
+            if (this.runningIndex >= this.writtenSoFar)
             {
-                b = (byte) (magnitude >> VarUintShift8Unit);
-                b = TransformVarIntOctet(b, size, signMask);
+                // this means that all the bytes written since the last wrapup() fits in one block
+                // so just need to return that segment
+                // make sure that we are conservative in array here
+                if (this.runningIndex > 0)
+                {
+                    this.currentSequence.Add(new Memory<byte>(this.currentBlock, this.runningIndex - (int)this.writtenSoFar, (int)this.writtenSoFar));
+                }
 
-                WriteByte(b);
-                size++;
+                this.writtenSoFar = 0;
+            }
+            else
+            {
+                // this means we have reached a new block since last wrapup(), and all previous segments have been added
+                // we just need to add the current segment
+                this.currentSequence.Add(new Memory<byte>(this.currentBlock, 0, this.runningIndex));
+                this.writtenSoFar = 0;
             }
 
-            if (magnitude >= VarInt8OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift7Unit);
-                b = TransformVarIntOctet(b, size, signMask);
+            return this.currentSequence;
+        }
 
-                WriteByte(b);
-                size++;
+        public void Reset()
+        {
+            this.currentBlock = null;
+            this.writtenSoFar = 0;
+            this.runningIndex = 0;
+            this.currentSequence = null;
+
+            // keep 1 block
+            while (this.bufferBlocks.Count > 1)
+            {
+                var idx = this.bufferBlocks.Count - 1;
+                ArrayPool<byte>.Shared.Return(this.bufferBlocks[idx]);
+                this.bufferBlocks.RemoveAt(idx);
+            }
+        }
+
+        public void Dispose()
+        {
+            this.currentBlock = null;
+            foreach (var block in this.bufferBlocks)
+            {
+                ArrayPool<byte>.Shared.Return(block);
             }
 
-            if (magnitude >= VarInt7OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift6Unit);
-                b = TransformVarIntOctet(b, size, signMask);
-
-                WriteByte(b);
-                size++;
-            }
-
-            if (magnitude >= VarInt6OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift5Unit);
-                b = TransformVarIntOctet(b, size, signMask);
-
-                WriteByte(b);
-                size++;
-            }
-
-            if (magnitude >= VarInt5OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift4Unit);
-                b = TransformVarIntOctet(b, size, signMask);
-
-                WriteByte(b);
-                size++;
-            }
-
-            if (magnitude >= VarInt4OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift3Unit);
-                b = TransformVarIntOctet(b, size, signMask);
-
-                WriteByte(b);
-                size++;
-            }
-
-            if (magnitude >= VarInt3OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift2Unit);
-                b = TransformVarIntOctet(b, size, signMask);
-
-                WriteByte(b);
-                size++;
-            }
-
-            if (magnitude >= VarInt2OctetMinValue)
-            {
-                b = (byte) (magnitude >> VarUintShift1Unit);
-                b = TransformVarIntOctet(b, size, signMask);
-
-                WriteByte(b);
-                size++;
-            }
-
-            b = (byte) magnitude;
-            b = TransformVarIntOctet(b, size, signMask);
-
-            b |= VarIntFinalOctetMask;
-            WriteByte(b);
-            return size;
+            this.bufferBlocks.Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -657,76 +500,256 @@ namespace Amazon.IonDotnet.Internals
             return b;
         }
 
-        public void StartStreak(IList<Memory<byte>> sequence)
+        /// <summary>
+        /// The slow path, write with allocations.
+        /// </summary>
+        /// <param name="chars">Char sequence.</param>
+        /// <param name="bytesToWrite">Total bytes needed to utf8-encode the string.</param>
+        private void WriteCharsSlow(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
         {
-            _currentSequence = sequence;
-            if (_currentBlock == null)
+            if (bytesToWrite <= BinaryConstants.ShortStringLength)
             {
-                AllocateNewBlock();
-            }
-        }
-
-        public IList<Memory<byte>> Wrapup()
-        {
-            Debug.Assert(_currentSequence != null);
-
-            if (_writtenSoFar == 0)
-                return _currentSequence;
-            if (_runningIndex >= _writtenSoFar)
-            {
-                //this means that all the bytes written since the last wrapup() fits in one block
-                //so just need to return that segment
-                //make sure that we are conservative in array here
-                if (_runningIndex > 0)
-                {
-                    _currentSequence.Add(new Memory<byte>(_currentBlock, _runningIndex - (int) _writtenSoFar, (int) _writtenSoFar));
-                }
-
-                _writtenSoFar = 0;
+                this.WriteShortChars(chars, bytesToWrite, alloc);
             }
             else
             {
-                //this means we have reached a new block since last wrapup(), and all previous segments have been added
-                //we just need to add the current segment
-                _currentSequence.Add(new Memory<byte>(_currentBlock, 0, _runningIndex));
-                _writtenSoFar = 0;
-            }
-
-            return _currentSequence;
-        }
-
-        public void Reset()
-        {
-            _currentBlock = null;
-            _writtenSoFar = 0;
-            _runningIndex = 0;
-            _currentSequence = null;
-//            //TODO should we return all rented buffers and just trust arraypool to do the right thing?
-//            foreach (var block in _bufferBlocks)
-//            {
-//                ArrayPool<byte>.Shared.Return(block);
-//            }
-//
-//            _bufferBlocks.Clear();
-
-            //temporary solution: keep 1 block
-            while (_bufferBlocks.Count > 1)
-            {
-                var idx = _bufferBlocks.Count - 1;
-                ArrayPool<byte>.Shared.Return(_bufferBlocks[idx]);
-                _bufferBlocks.RemoveAt(idx);
+                this.WriteLongChars(chars, bytesToWrite);
             }
         }
 
-        public void Dispose()
+        private void WriteShortChars(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
         {
-            _currentBlock = null;
-            foreach (var block in _bufferBlocks)
+            var length = Encoding.UTF8.GetBytes(chars, alloc);
+            Debug.Assert(length == bytesToWrite, "length does not equal bytesToWrite");
+            this.WriteBytes(alloc.Slice(0, bytesToWrite));
+        }
+
+        private void WriteLongChars(ReadOnlySpan<char> chars, int bytesToWrite)
+        {
+            Span<byte> alloc = new byte[bytesToWrite];
+            Encoding.UTF8.GetBytes(chars, alloc);
+            this.WriteBytes(alloc);
+        }
+
+        /// <summary>
+        /// Allocate new memory block and update related fields.
+        /// </summary>
+        private void AllocateNewBlock()
+        {
+            // First we gotta add the end segment to the list of current segment sequence
+            Debug.Assert(this.currentSequence != null, "currentSequence is null");
+            if (this.runningIndex < this.writtenSoFar)
             {
-                ArrayPool<byte>.Shared.Return(block);
+                // writtenSoFar > BlockSize means this whole block is to be added
+                this.currentSequence.Add(this.currentBlock);
+            }
+            else if (this.runningIndex > 0)
+            {
+                // this means that all the bytes written since the last wrapup() fits in one block
+                this.currentSequence.Add(new Memory<byte>(this.currentBlock, this.runningIndex - (int)this.writtenSoFar, (int)this.writtenSoFar));
             }
 
-            _bufferBlocks.Clear();
+            this.runningIndex = 0;
+            if (this.currentBlock == null && this.bufferBlocks.Count > 0)
+            {
+                this.currentBlock = this.bufferBlocks[0];
+                return;
+            }
+
+            var newBlock = ArrayPool<byte>.Shared.Rent(this.blockSize);
+            this.bufferBlocks.Add(newBlock);
+            this.currentBlock = newBlock;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WriteVarUIntDirect2(long value)
+        {
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift1Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value & VarUintUnitFlag) | VarIntFinalOctetMask);
+            this.writtenSoFar += 2;
+            return 2;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WriteVarUIntDirect3(long value)
+        {
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift2Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift1Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value & VarUintUnitFlag) | VarIntFinalOctetMask);
+            this.writtenSoFar += 3;
+            return 3;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WriteVarUIntDirect4(long value)
+        {
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift3Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift2Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift1Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value & VarUintUnitFlag) | VarIntFinalOctetMask);
+            this.writtenSoFar += 4;
+            return 4;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WriteVarUIntDirect5(long value)
+        {
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift4Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift3Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift2Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value >> VarUintShift1Unit) & VarUintUnitFlag);
+            this.currentBlock[this.runningIndex++] = (byte)((value & VarUintUnitFlag) | VarIntFinalOctetMask);
+            this.writtenSoFar += 5;
+            return 5;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WriteVarUIntSlow(long value)
+        {
+            var size = 1;
+            if (value >= VarUintShift8UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift8Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift7UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift7Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift6UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift6Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift5UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift5Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift4UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift4Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift3UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift3Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift2UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift2Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            if (value >= VarUintShift1UnitMinValue)
+            {
+                this.WriteUint8((value >> VarUintShift1Unit) & VarUintUnitFlag);
+                size++;
+            }
+
+            this.WriteUint8((value & VarUintUnitFlag) | VarIntFinalOctetMask);
+            return size;
+        }
+
+        private int WriteVarIntSlow(long magnitude, byte signMask)
+        {
+            var size = 1;
+            byte b;
+            if (magnitude >= VarInt10OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarInt10OctetShift);
+                b &= VarIntSignedOctetMask;
+                b |= signMask;
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt9OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift8Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt8OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift7Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt7OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift6Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt6OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift5Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt5OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift4Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt4OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift3Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt3OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift2Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            if (magnitude >= VarInt2OctetMinValue)
+            {
+                b = (byte)(magnitude >> VarUintShift1Unit);
+                b = TransformVarIntOctet(b, size, signMask);
+
+                this.WriteByte(b);
+                size++;
+            }
+
+            b = (byte)magnitude;
+            b = TransformVarIntOctet(b, size, signMask);
+
+            b |= VarIntFinalOctetMask;
+            this.WriteByte(b);
+            return size;
         }
     }
 }

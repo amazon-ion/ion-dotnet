@@ -13,13 +13,13 @@
  * permissions and limitations under the License.
  */
 
-using System.IO;
-using Amazon.IonDotnet.Internals;
-using Amazon.IonDotnet.Tree;
-using Amazon.IonDotnet.Tree.Impl;
-
 namespace Amazon.IonDotnet.Builders
 {
+    using System.IO;
+    using Amazon.IonDotnet.Internals;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
+
     public class IonLoader
     {
         /// <summary>
@@ -27,26 +27,26 @@ namespace Amazon.IonDotnet.Builders
         /// </summary>
         public static readonly IonLoader Default = new IonLoader(default);
 
-        private readonly ReaderOptions _readerOptions;
+        private readonly ReaderOptions readerOptions;
+
+        private IonLoader(ReaderOptions options)
+        {
+            this.readerOptions = options;
+        }
 
         public static IonLoader WithReaderOptions(in ReaderOptions readerOptions)
         {
             return new IonLoader(readerOptions);
         }
 
-        private IonLoader(ReaderOptions options)
-        {
-            _readerOptions = options;
-        }
-
         /// <summary>
         /// Load a string of Ion text.
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(string ionText)
         {
-            var reader = IonReaderBuilder.Build(ionText, _readerOptions);
+            var reader = IonReaderBuilder.Build(ionText, this.readerOptions);
             return WriteDatagram(reader);
         }
 
@@ -55,33 +55,23 @@ namespace Amazon.IonDotnet.Builders
         /// </summary>
         /// <param name="ionText">Ion text string.</param>
         /// <param name="readerTable">Reader's local symbol table.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(string ionText, out ISymbolTable readerTable)
         {
-            var reader = IonReaderBuilder.Build(ionText, _readerOptions);
+            var reader = IonReaderBuilder.Build(ionText, this.readerOptions);
             var dg = WriteDatagram(reader);
             readerTable = reader.GetSymbolTable();
             return dg;
         }
 
-        //        /// <summary>
-        //        /// Load Ion data from a byte buffer. Detecting whether it's binary or Unicode text Ion.
-        //        /// </summary>
-        //        /// <param name="data">Byte buffer.</param>
-        //        /// <returns>An <see cref="IonDatagram"/> tree view.</returns>
-        //        public IonDatagram Load(Span<byte> data)
-        //        {
-        //            throw new NotImplementedException();
-        //        }
-
         /// <summary>
         /// Load Ion data from stream.
         /// </summary>
-        /// <param name="stream">Stream</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <param name="stream">Stream.</param>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(Stream stream)
         {
-            var reader = IonReaderBuilder.Build(stream, _readerOptions);
+            var reader = IonReaderBuilder.Build(stream, this.readerOptions);
             var dg = WriteDatagram(reader);
             return dg;
         }
@@ -89,12 +79,12 @@ namespace Amazon.IonDotnet.Builders
         /// <summary>
         /// Load Ion data from stream.
         /// </summary>
-        /// <param name="stream">Stream</param>
+        /// <param name="stream">Stream.</param>
         /// <param name="readerTable">Reader's local symbol table.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(Stream stream, out ISymbolTable readerTable)
         {
-            var reader = IonReaderBuilder.Build(stream, _readerOptions);
+            var reader = IonReaderBuilder.Build(stream, this.readerOptions);
             var dg = WriteDatagram(reader);
             readerTable = reader.GetSymbolTable();
             return dg;
@@ -104,7 +94,7 @@ namespace Amazon.IonDotnet.Builders
         /// Load Ion data from a file. Detecting whether it's binary or Unicode text Ion.
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(FileInfo ionFile)
         {
             if (!ionFile.Exists)
@@ -114,7 +104,7 @@ namespace Amazon.IonDotnet.Builders
 
             using (var stream = ionFile.OpenRead())
             {
-                var datagram = Load(stream);
+                var datagram = this.Load(stream);
                 return datagram;
             }
         }
@@ -124,12 +114,12 @@ namespace Amazon.IonDotnet.Builders
         /// </summary>
         /// <param name="ionFile">Ion file.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(FileInfo ionFile, out ISymbolTable readerTable)
         {
             using (var stream = ionFile.OpenRead())
             {
-                var datagram = Load(stream, out readerTable);
+                var datagram = this.Load(stream, out readerTable);
                 return datagram;
             }
         }
@@ -138,12 +128,12 @@ namespace Amazon.IonDotnet.Builders
         /// Load Ion data from a byte array.
         /// </summary>
         /// <param name="data">Ion data.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(byte[] data)
         {
             using (var stream = new MemoryStream(data))
             {
-                var datagram = Load(stream);
+                var datagram = this.Load(stream);
                 return datagram;
             }
         }
@@ -153,12 +143,12 @@ namespace Amazon.IonDotnet.Builders
         /// </summary>
         /// <param name="data">Ion data.</param>
         /// <param name="readerTable">The local table used by the reader.</param>
-        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram</returns>
+        /// <returns>An <see cref="IIonValue"/> tree view, which is an instance of IIonDatagram.</returns>
         public IIonValue Load(byte[] data, out ISymbolTable readerTable)
         {
             using (var stream = new MemoryStream(data))
             {
-                var datagram = Load(stream, out readerTable);
+                var datagram = this.Load(stream, out readerTable);
                 return datagram;
             }
         }

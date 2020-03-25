@@ -60,7 +60,7 @@ namespace Amazon.IonDotnet.Internals.Text
             : base(textStream)
         {
             _catalog = catalog;
-            _currentSymtab = _systemSymbols;
+            _currentSymtab = systemSymbols;
         }
 
         protected override bool HasNext()
@@ -104,7 +104,7 @@ namespace Amazon.IonDotnet.Internals.Text
                                 // cause the symbol tables to be reset.
                                 if (_v.AuthoritativeType == ScalarType.String && _scanner.Token != TextConstants.TokenSymbolQuoted)
                                 {
-                                    _currentSymtab = _systemSymbols;
+                                    _currentSymtab = systemSymbols;
                                 }
 
                                 // Even if that's not the case we still skip the IVM.

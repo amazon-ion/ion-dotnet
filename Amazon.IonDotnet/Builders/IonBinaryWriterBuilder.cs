@@ -13,13 +13,13 @@
  * permissions and limitations under the License.
  */
 
-using System.Collections.Generic;
-using System.IO;
-using Amazon.IonDotnet.Internals.Binary;
-using Amazon.IonDotnet.Utils;
-
 namespace Amazon.IonDotnet.Builders
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using Amazon.IonDotnet.Internals.Binary;
+    using Amazon.IonDotnet.Utils;
+
     public static class IonBinaryWriterBuilder
     {
         /// <summary>

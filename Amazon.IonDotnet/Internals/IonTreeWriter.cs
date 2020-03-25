@@ -225,15 +225,15 @@ namespace Amazon.IonDotnet.Internals
         /// </summary>
         private void AppendValue(IonValue value)
         {
-            if (_annotations.Count > 0)
+            if (annotations.Count > 0)
             {
                 value.ClearAnnotations();
-                foreach (var annotation in _annotations)
+                foreach (var annotation in annotations)
                 {
                     value.AddTypeAnnotation(annotation);
                 }
 
-                _annotations.Clear();
+                annotations.Clear();
             }
 
             if (IsInStruct)

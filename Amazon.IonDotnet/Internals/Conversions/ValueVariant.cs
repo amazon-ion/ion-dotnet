@@ -13,180 +13,126 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Numerics;
-
 namespace Amazon.IonDotnet.Internals.Conversions
 {
+    using System.Numerics;
+
     /// <summary>
-    /// Structure that holds the loaded scalar value from IonReader
+    /// Structure that holds the loaded scalar value from IonReader.
     /// </summary>
     internal struct ValueVariant
     {
-        private int _intValue;
-        private long _longValue;
-        private double _doubleValue;
-        private string _stringValue;
-        private BigInteger _bigIntegerValue;
-        private BigDecimal _decimalValue;
-        private Timestamp _timestampValue;
-        private bool _boolValue;
+        private int intValue;
+        private long longValue;
+        private double doubleValue;
+        private string stringValue;
+        private BigInteger bigIntegerValue;
+        private BigDecimal decimalValue;
+        private Timestamp timestampValue;
+        private bool boolValue;
 
         public bool BoolValue
         {
-            get => _boolValue;
+            get => this.boolValue;
             internal set
             {
-                _boolValue = value;
-                AuthoritativeType = ScalarType.Bool;
-                TypeSet = ScalarType.Bool;
+                this.boolValue = value;
+                this.AuthoritativeType = ScalarType.Bool;
+                this.TypeSet = ScalarType.Bool;
             }
         }
 
         public int IntValue
         {
-            get => _intValue;
+            get => this.intValue;
             internal set
             {
-                _intValue = value;
-                _longValue = value;
-                _bigIntegerValue = value;
-                AuthoritativeType = ScalarType.Int;
-                TypeSet = ScalarType.Int;
+                this.intValue = value;
+                this.longValue = value;
+                this.bigIntegerValue = value;
+                this.AuthoritativeType = ScalarType.Int;
+                this.TypeSet = ScalarType.Int;
             }
         }
 
         public long LongValue
         {
-            get => _longValue;
+            get => this.longValue;
             internal set
             {
-                _longValue = value;
-                _bigIntegerValue = value;
-                AuthoritativeType = ScalarType.Long;
-                TypeSet = ScalarType.Long;
+                this.longValue = value;
+                this.bigIntegerValue = value;
+                this.AuthoritativeType = ScalarType.Long;
+                this.TypeSet = ScalarType.Long;
             }
         }
 
         public double DoubleValue
         {
-            get => _doubleValue;
+            get => this.doubleValue;
             internal set
             {
-                _doubleValue = value;
-                AuthoritativeType = ScalarType.Double;
-                TypeSet = ScalarType.Double;
+                this.doubleValue = value;
+                this.AuthoritativeType = ScalarType.Double;
+                this.TypeSet = ScalarType.Double;
             }
         }
 
         public string StringValue
         {
-            get => _stringValue;
+            get => this.stringValue;
             internal set
             {
-                _stringValue = value;
-                AuthoritativeType = ScalarType.String;
-                TypeSet = ScalarType.String;
+                this.stringValue = value;
+                this.AuthoritativeType = ScalarType.String;
+                this.TypeSet = ScalarType.String;
             }
         }
 
         public BigInteger BigIntegerValue
         {
-            get => _bigIntegerValue;
+            get => this.bigIntegerValue;
             internal set
             {
-                _bigIntegerValue = value;
-                AuthoritativeType = ScalarType.BigInteger;
-                TypeSet = ScalarType.BigInteger;
+                this.bigIntegerValue = value;
+                this.AuthoritativeType = ScalarType.BigInteger;
+                this.TypeSet = ScalarType.BigInteger;
             }
         }
 
         public BigDecimal DecimalValue
         {
-            get => _decimalValue;
+            get => this.decimalValue;
             internal set
             {
-                _decimalValue = value;
-//                _doubleValue = Convert.ToDouble(value);
-                AuthoritativeType = ScalarType.Decimal;
-                TypeSet = ScalarType.Decimal;
+                this.decimalValue = value;
+                this.AuthoritativeType = ScalarType.Decimal;
+                this.TypeSet = ScalarType.Decimal;
             }
         }
 
         public Timestamp TimestampValue
         {
-            get => _timestampValue;
+            get => this.timestampValue;
             internal set
             {
-                _timestampValue = value;
-                AuthoritativeType = ScalarType.Timestamp;
-                TypeSet = ScalarType.Timestamp;
+                this.timestampValue = value;
+                this.AuthoritativeType = ScalarType.Timestamp;
+                this.TypeSet = ScalarType.Timestamp;
             }
         }
 
-        public bool IsEmpty => AuthoritativeType == ScalarType.Nothing;
+        public bool IsEmpty => this.AuthoritativeType == ScalarType.Nothing;
+
         public ScalarType TypeSet { get; private set; }
+
         public ScalarType AuthoritativeType { get; internal set; }
-
-        public void Clear()
-        {
-            AuthoritativeType = ScalarType.Nothing;
-            TypeSet = ScalarType.Nothing;
-            _stringValue = null;
-        }
-
-        internal void SetNull(IonType ionType)
-        {
-            switch (ionType)
-            {
-                case IonType.Int:
-                    AuthoritativeType = ScalarType.Int;
-                    break;
-                case IonType.Decimal:
-                    AuthoritativeType = ScalarType.Decimal;
-                    break;
-                case IonType.Null:
-                    AuthoritativeType = ScalarType.Null;
-                    break;
-                case IonType.Bool:
-                    AuthoritativeType = ScalarType.Bool;
-                    break;
-                case IonType.String:
-                    AuthoritativeType = ScalarType.String;
-                    break;
-                case IonType.Timestamp:
-                    AuthoritativeType = ScalarType.Timestamp;
-                    break;
-                case IonType.Symbol:
-                    AuthoritativeType = ScalarType.Int;
-                    break;
-                case IonType.Float:
-                    AuthoritativeType = ScalarType.Double;
-                    break;
-            }
-
-            TypeSet = ScalarType.Null | AuthoritativeType;
-        }
-
-        internal void AddString(string value)
-        {
-            _stringValue = value;
-            TypeSet |= ScalarType.String;
-        }
-
-        internal void AddInt(int value)
-        {
-            _intValue = value;
-            _longValue = value;
-            _bigIntegerValue = value;
-            TypeSet |= ScalarType.Int;
-        }
 
         public IntegerSize IntegerSize
         {
             get
             {
-                switch (AuthoritativeType)
+                switch (this.AuthoritativeType)
                 {
                     default:
                         return IntegerSize.Unknown;
@@ -198,6 +144,60 @@ namespace Amazon.IonDotnet.Internals.Conversions
                         return IntegerSize.BigInteger;
                 }
             }
+        }
+
+        public void Clear()
+        {
+            this.AuthoritativeType = ScalarType.Nothing;
+            this.TypeSet = ScalarType.Nothing;
+            this.stringValue = null;
+        }
+
+        internal void SetNull(IonType ionType)
+        {
+            switch (ionType)
+            {
+                case IonType.Int:
+                    this.AuthoritativeType = ScalarType.Int;
+                    break;
+                case IonType.Decimal:
+                    this.AuthoritativeType = ScalarType.Decimal;
+                    break;
+                case IonType.Null:
+                    this.AuthoritativeType = ScalarType.Null;
+                    break;
+                case IonType.Bool:
+                    this.AuthoritativeType = ScalarType.Bool;
+                    break;
+                case IonType.String:
+                    this.AuthoritativeType = ScalarType.String;
+                    break;
+                case IonType.Timestamp:
+                    this.AuthoritativeType = ScalarType.Timestamp;
+                    break;
+                case IonType.Symbol:
+                    this.AuthoritativeType = ScalarType.Int;
+                    break;
+                case IonType.Float:
+                    this.AuthoritativeType = ScalarType.Double;
+                    break;
+            }
+
+            this.TypeSet = ScalarType.Null | this.AuthoritativeType;
+        }
+
+        internal void AddString(string value)
+        {
+            this.stringValue = value;
+            this.TypeSet |= ScalarType.String;
+        }
+
+        internal void AddInt(int value)
+        {
+            this.intValue = value;
+            this.longValue = value;
+            this.bigIntegerValue = value;
+            this.TypeSet |= ScalarType.Int;
         }
     }
 }

@@ -13,30 +13,19 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Diagnostics;
-
 namespace Amazon.IonDotnet
 {
+    using System;
+    using System.Diagnostics;
+
     /// <inheritdoc cref="IEquatable{T}" />
     /// <summary>
     /// This structure represents a timestamp value.
     /// </summary>
     public readonly struct Timestamp : IEquatable<Timestamp>
     {
-        public enum Precision : byte
-        {
-            Year = 1,
-            Month = 2,
-            Day = 3,
-            Minute = 4,
-            Second = 5
-        }
-
-        private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
-
         /// <summary>
-        /// Date time value
+        /// Date time value.
         /// </summary>
         public readonly DateTime DateTimeValue;
 
@@ -50,56 +39,95 @@ namespace Amazon.IonDotnet
         /// </summary>
         public readonly Precision TimestampPrecision;
 
-        /// <summary>
-        /// Fractional seconds (milliseconds).
-        /// </summary>
-        public readonly decimal FractionalSecond;
+        private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
         /// <summary>
-        /// Initialize a new Timestamp structure
+        /// Initializes a new instance of the <see cref="Timestamp"/> struct.
         /// </summary>
-        public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            in decimal frac, Precision precision = Precision.Second)
-        {
-            TimestampPrecision = precision;
-
-            //offset unknown
-            if (frac >= 1)
-                throw new ArgumentException("Fraction must be < 1", nameof(frac));
-            FractionalSecond = frac;
-            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified)
-                            .AddSeconds(Decimal.ToDouble(frac));
-            LocalOffset = 0;
-        }
-
-        public Timestamp(int year, int month, int day, int hour, int minute, int second,
+        /// <param name="year">The year.</param>
+        /// <param name="month">The month.</param>
+        /// <param name="day">The day.</param>
+        /// <param name="hour">The hour.</param>
+        /// <param name="minute">The minute.</param>
+        /// <param name="second">The second.</param>
+        /// <param name="frac">The fractional seconds.</param>
+        /// <param name="precision">The precision of the Timestamp.</param>
+        public Timestamp(
+            int year,
+            int month,
+            int day,
+            int hour,
+            int minute,
+            int second,
+            in decimal frac,
             Precision precision = Precision.Second)
         {
-            TimestampPrecision = precision;
-            FractionalSecond = 0;
-            //no frag, no perf lost
-            //offset known
-            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
-            LocalOffset = 0;
-        }
+            this.TimestampPrecision = precision;
 
-        public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            int offset, Precision precision = Precision.Second) :
-            this(year, month, day, hour, minute, second, offset, 0, precision)
-        {
-        }
-
-        public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            int offset, in decimal frac, Precision precision = Precision.Second)
-        {
-            TimestampPrecision = precision;
-
-            //offset known
+            // offset unknown
             if (frac >= 1)
+            {
+                throw new ArgumentException("Fraction must be < 1", nameof(frac));
+            }
+
+            var ticks = (int)(frac * TimeSpan.TicksPerSecond);
+            this.DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified)
+                .Add(TimeSpan.FromTicks(ticks));
+            this.LocalOffset = 0;
+        }
+
+        public Timestamp(
+            int year,
+            int month,
+            int day,
+            int hour,
+            int minute,
+            int second,
+            Precision precision = Precision.Second)
+        {
+            this.TimestampPrecision = precision;
+
+            // offset known
+            this.DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
+            this.LocalOffset = 0;
+        }
+
+        public Timestamp(
+            int year,
+            int month,
+            int day,
+            int hour,
+            int minute,
+            int second,
+            int offset,
+            Precision precision = Precision.Second)
+            : this(year, month, day, hour, minute, second, offset, 0, precision)
+        {
+        }
+
+        public Timestamp(
+            int year,
+            int month,
+            int day,
+            int hour,
+            int minute,
+            int second,
+            int offset,
+            in decimal frac,
+            Precision precision = Precision.Second)
+        {
+            this.TimestampPrecision = precision;
+
+            // offset known
+            if (frac >= 1)
+            {
                 throw new ArgumentException($"Fraction must be < 1: {frac}", nameof(frac));
-            FractionalSecond = frac;
+            }
+
+            var ticks = (int)(frac * TimeSpan.TicksPerSecond);
             var kind = DateTimeKind.Unspecified;
-            //offset only makes sense if precision >= Minute
+
+            // offset only makes sense if precision >= Minute
             if (precision < Precision.Minute)
             {
                 offset = 0;
@@ -110,120 +138,113 @@ namespace Amazon.IonDotnet
             }
 
             const int maxOffset = 14 * 60;
-            var shift = TimeSpan.FromSeconds(Decimal.ToDouble(frac));
+            var shift = TimeSpan.FromTicks(ticks);
             if (offset > maxOffset || offset < -maxOffset)
             {
                 var minuteShift = (offset / maxOffset) * maxOffset;
-                offset = offset % maxOffset;
+                offset %= maxOffset;
                 shift -= TimeSpan.FromMinutes(minuteShift);
             }
 
-            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
+            this.DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
                 .Add(shift);
-            LocalOffset = offset;
-        }
 
-        public DateTimeOffset AsDateTimeOffset()
-        {
-            switch (DateTimeValue.Kind)
-            {
-                case DateTimeKind.Local:
-                    return new DateTimeOffset(DateTime.SpecifyKind(DateTimeValue, DateTimeKind.Unspecified), TimeSpan.FromMinutes(LocalOffset));
-                case DateTimeKind.Unspecified:
-                    throw new InvalidOperationException("Offset is unknown");
-                case DateTimeKind.Utc:
-                    Debug.Assert(LocalOffset == 0);
-                    return new DateTimeOffset(DateTimeValue, TimeSpan.Zero);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            this.LocalOffset = offset;
         }
 
         /// <summary>
-        /// Initialize the timestamp with a local DateTime value, UTC offset is set to unknown
+        /// Initializes a new instance of the <see cref="Timestamp"/> struct,
+        /// with a local DateTime value, UTC offset is set to unknown.
         /// </summary>
-        /// <param name="dateTimeValue">Local datetime value</param>
+        /// <param name="dateTimeValue">Local datetime value.</param>
         public Timestamp(DateTime dateTimeValue)
         {
-            TimestampPrecision = Precision.Second;
-            FractionalSecond = 0;
-            DateTimeValue = DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified);
-            //we have no idea about the local offset except when it's 0, so no change here
-            LocalOffset = 0;
+            this.TimestampPrecision = Precision.Second;
+
+            this.DateTimeValue = DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified);
+
+            // we have no idea about the local offset except when it's 0, so no change here
+            this.LocalOffset = 0;
         }
 
         /// <summary>
-        /// Initialize the timestamp with a <see cref="DateTimeOffset"/> value
+        /// Initializes a new instance of the <see cref="Timestamp"/> struct,
+        /// with a <see cref="DateTimeOffset"/> value.
         /// </summary>
-        /// <param name="dateTimeOffset"></param>
+        /// <param name="dateTimeOffset">The DateTimeOffset value.</param>
         public Timestamp(DateTimeOffset dateTimeOffset)
         {
-            TimestampPrecision = Precision.Second;
-            FractionalSecond = 0;
-            LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
-            DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0
-                ? DateTimeKind.Utc
-                : DateTimeKind.Local);
+            this.TimestampPrecision = Precision.Second;
+            this.LocalOffset = (int)dateTimeOffset.Offset.TotalMinutes;
+            this.DateTimeValue = DateTime.SpecifyKind(
+                dateTimeOffset.DateTime,
+                this.LocalOffset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
         }
 
-        /// <summary>
-        /// Initialize the timestamp with different components, offset and fractional second. Timestamps in the
-        /// binary encoding are always in UTC, while in the text encoding are in the local time. This means transcoding
-        /// requires a conversion between UTC and local time, ergo we add the offset and fractional seconds to this value.
-        /// </summary>
-        /// <param name="year">Year</param>
-        /// <param name="month">Month</param>
-        /// <param name="day">Day</param>
-        /// <param name="hour">Hour</param>
-        /// <param name="minute">Minute</param>
-        /// <param name="second">Second</param>
-        /// <param name="offset">Offset value</param>
-        /// <param name="frac">Fractional second value</param>
-        /// <param name="precision">The precision of the value</param>
-        /// <param name="kind">DateTimeKind</param>
-        internal Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac,
-            Precision precision, DateTimeKind kind)
+        public enum Precision : byte
         {
-            TimestampPrecision = precision;
-            if (frac >= 1)
-                throw new ArgumentException("Fraction must be < 1", nameof(frac));
-            FractionalSecond = frac;
-            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
-                .AddMinutes(offset)
-                .AddSeconds(Decimal.ToDouble(frac));
-            LocalOffset = offset;
+            Year = 1,
+            Month = 2,
+            Day = 3,
+            Minute = 4,
+            Second = 5,
         }
 
         /// <summary>
-        /// Get the milliseconds since epoch
+        /// Gets the milliseconds since epoch.
         /// </summary>
         public long Milliseconds
         {
             get
             {
-                switch (DateTimeValue.Kind)
+                switch (this.DateTimeValue.Kind)
                 {
                     case DateTimeKind.Unspecified:
-                        return (long) (DateTimeValue - EpochLocal).TotalMilliseconds;
+                        return (long)(this.DateTimeValue - EpochLocal).TotalMilliseconds;
                     case DateTimeKind.Local:
                     case DateTimeKind.Utc:
-                        return AsDateTimeOffset().ToUnixTimeMilliseconds();
+                        return this.AsDateTimeOffset().ToUnixTimeMilliseconds();
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
         }
 
+        public bool OffsetKnown => this.DateTimeValue.Kind != DateTimeKind.Unspecified;
+
+        private long Ticks
+        {
+            get
+            {
+                var ticks = this.DateTimeValue.Ticks;
+                if (this.DateTimeValue.Kind == DateTimeKind.Local)
+                {
+                    ticks -= TimeSpan.FromMinutes(this.LocalOffset).Ticks;
+                }
+
+                return ticks;
+            }
+        }
+
+        public static bool operator ==(Timestamp x, Timestamp y)
+        {
+            return x.Equals(y);
+        }
+
+        public static bool operator !=(Timestamp x, Timestamp y) => !(x == y);
+
         /// <summary>
-        /// Parse an ISO-8601 Datetime format to the Timestamp
+        /// Parse an ISO-8601 Datetime format to the Timestamp.
         /// </summary>
-        /// <param name="s">ISO-8601 Datetime string</param>
-        /// <returns>Timestamp object</returns>
-        /// <exception cref="FormatException">Parameter is not a correct ISO-8601 string format</exception>
+        /// <param name="s">ISO-8601 Datetime string.</param>
+        /// <returns>Timestamp object.</returns>
+        /// <exception cref="FormatException">Parameter is not a correct ISO-8601 string format.</exception>
         public static Timestamp Parse(string s)
         {
             if (s.Length < 5)
+            {
                 throw new FormatException();
+            }
 
             if (!IntTryParseSubString(s, 0, 4, true, out var year))
             {
@@ -270,7 +291,7 @@ namespace Amazon.IonDotnet
                 return new Timestamp(year, month, day, 0, 0, 0, Precision.Day);
             }
 
-            //must have hour and minute now
+            // must have hour and minute now
             if (s.Length < 17 || s[13] != ':')
             {
                 throw new FormatException(s);
@@ -288,7 +309,6 @@ namespace Amazon.IonDotnet
                     throw new FormatException(s);
                 }
 
-//                return new Timestamp(new DateTime(year, month, day, hour, minute, 0, DateTimeKind.Utc));
                 return new Timestamp(year, month, day, hour, minute, 0, 0, Precision.Minute);
             }
 
@@ -302,7 +322,7 @@ namespace Amazon.IonDotnet
                     offset = GetOffsetMinutes(s, 17);
                     if (offset == 0)
                     {
-                        //unknown
+                        // unknown
                         return new Timestamp(year, month, day, hour, minute, 0, Precision.Minute);
                     }
 
@@ -314,9 +334,14 @@ namespace Amazon.IonDotnet
                 throw new FormatException(s);
             }
 
-            if (s.Length < 20 || !IntTryParseSubString(s, 17, 2, false, out var second))
+            if (s.Length < 19 || !IntTryParseSubString(s, 17, 2, false, out var second))
             {
                 throw new FormatException(s);
+            }
+
+            if (s.Length == 19)
+            {
+                return new Timestamp(year, month, day, hour, minute, second);
             }
 
             switch (s[19])
@@ -330,7 +355,7 @@ namespace Amazon.IonDotnet
                     offset = GetOffsetMinutes(s, 20);
                     if (offset == 0)
                     {
-                        //unknown offset
+                        // unknown offset
                         return new Timestamp(year, month, day, hour, minute, second);
                     }
 
@@ -354,15 +379,14 @@ namespace Amazon.IonDotnet
 
             if (fracLength == 0 || !DecimalTryParseSubString(s, 19, fracLength + 1, out var frac))
             {
-                //this cover the case where s.Length<21
+                // this cover the case where s.Length < 21
                 throw new FormatException(s);
             }
 
             var idxNext = 20 + fracLength;
-            if (idxNext == s.Length)
+            if (idxNext >= s.Length)
             {
-                //this cover the case where offset is missing after fractional seconds 
-                throw new FormatException(s + " requires an offset.");
+                return new Timestamp(year, month, day, hour, minute, second, frac);
             }
 
             switch (s[idxNext])
@@ -378,11 +402,74 @@ namespace Amazon.IonDotnet
                     offset = GetOffsetMinutes(s, idxNext + 1);
                     if (offset == 0)
                     {
-                        //unknown offset
+                        // unknown offset
                         return new Timestamp(year, month, day, hour, minute, second, frac);
                     }
 
                     return new Timestamp(year, month, day, hour, minute, second, -offset, frac);
+            }
+        }
+
+        public DateTimeOffset AsDateTimeOffset()
+        {
+            switch (this.DateTimeValue.Kind)
+            {
+                case DateTimeKind.Local:
+                    return new DateTimeOffset(DateTime.SpecifyKind(this.DateTimeValue, DateTimeKind.Unspecified), TimeSpan.FromMinutes(this.LocalOffset));
+                case DateTimeKind.Unspecified:
+                    throw new InvalidOperationException("Offset is unknown");
+                case DateTimeKind.Utc:
+                    Debug.Assert(this.LocalOffset == 0, "LocalOffset is not 0");
+                    return new DateTimeOffset(this.DateTimeValue, TimeSpan.Zero);
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public override string ToString()
+        {
+            return this.DateTimeValue.Kind == DateTimeKind.Unspecified
+                ? this.DateTimeValue.ToString("O") + "-00:00"
+                : this.AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        public bool Equals(Timestamp other)
+        {
+            if (this.TimestampPrecision != other.TimestampPrecision)
+            {
+                return false;
+            }
+
+            if (this.DateTimeValue.Kind == DateTimeKind.Unspecified)
+            {
+                // unknown offset
+                return other.DateTimeValue.Kind == DateTimeKind.Unspecified && other.DateTimeValue == this.DateTimeValue;
+            }
+
+            if (other.DateTimeValue.Kind == DateTimeKind.Unspecified)
+            {
+                return false;
+            }
+
+            // both must now be convertible to ticks
+            return this.Ticks == other.Ticks;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            return obj is Timestamp other && this.Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (this.DateTimeValue.GetHashCode() * 397) ^ this.LocalOffset;
             }
         }
 
@@ -398,7 +485,7 @@ namespace Amazon.IonDotnet
                 throw new FormatException(s);
             }
 
-            int offset = hour * 60 + minute;
+            int offset = (hour * 60) + minute;
 
             if (hour > 23 || minute > 59)
             {
@@ -409,7 +496,7 @@ namespace Amazon.IonDotnet
         }
 
         /// <summary>
-        /// Parse a substring to decimal
+        /// Parse a substring to decimal.
         /// </summary>
         private static bool DecimalTryParseSubString(string s, int offset, int length, out decimal output)
         {
@@ -426,7 +513,7 @@ namespace Amazon.IonDotnet
         }
 
         /// <summary>
-        /// Parse a substring to integer
+        /// Parse a substring to integer.
         /// </summary>
         private static bool IntTryParseSubString(string s, int offset, int length, bool largerThanZero, out int output)
         {
@@ -442,77 +529,16 @@ namespace Amazon.IonDotnet
             for (var i = 0; i < length; i++)
             {
                 if (!char.IsDigit(s[offset]))
+                {
                     return false;
-                output = output * 10 + s[offset] - '0';
+                }
+
+                output = (output * 10) + s[offset] - '0';
                 offset++;
             }
 
             return !largerThanZero || output > 0;
 #endif
-        }
-
-        public override string ToString()
-        {
-            return DateTimeValue.Kind == DateTimeKind.Unspecified
-                ? DateTimeValue.ToString("O") + "-00:00"
-                : AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
-        }
-
-        public bool OffsetKnown => DateTimeValue.Kind != DateTimeKind.Unspecified;
-
-        private long Ticks
-        {
-            get
-            {
-                var ticks = DateTimeValue.Ticks;
-                if (DateTimeValue.Kind == DateTimeKind.Local)
-                {
-                    ticks -= TimeSpan.FromMinutes(LocalOffset).Ticks;
-                }
-
-                return ticks;
-            }
-        }
-
-        //override stuffs
-
-        public static bool operator ==(Timestamp x, Timestamp y)
-        {
-            return x.Equals(y);
-        }
-
-        public static bool operator !=(Timestamp x, Timestamp y) => !(x == y);
-
-        public bool Equals(Timestamp other)
-        {
-            if (TimestampPrecision != other.TimestampPrecision)
-                return false;
-            if (DateTimeValue.Kind == DateTimeKind.Unspecified)
-            {
-                //unknown offset
-                return other.DateTimeValue.Kind == DateTimeKind.Unspecified && other.DateTimeValue == DateTimeValue;
-            }
-
-            if (other.DateTimeValue.Kind == DateTimeKind.Unspecified)
-                return false;
-
-            //both must now be convertible to ticks
-            return Ticks == other.Ticks;
-        }
-
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj is Timestamp other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return (DateTimeValue.GetHashCode() * 397) ^ LocalOffset;
-            }
         }
     }
 }

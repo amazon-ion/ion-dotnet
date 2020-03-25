@@ -13,122 +13,126 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using Amazon.IonDotnet.Utils;
-using Amazon.IonDotnet.Builders;
-
 namespace Amazon.IonDotnet.Internals
 {
+    using System;
+    using System.Collections.Generic;
+    using Amazon.IonDotnet.Utils;
+
     /// <inheritdoc />
     /// <summary>
     /// Base class for text and tree writer.
     /// </summary>
     internal abstract class IonSystemWriter : PrivateIonWriterBase
     {
-        private string _fieldName;
-        private int _fieldNameSid = SymbolToken.UnknownSid;
-        protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
+        protected readonly List<SymbolToken> annotations = new List<SymbolToken>();
+        protected readonly ReaderLocalTable symbolTable;
 
-        protected readonly ReaderLocalTable _symbolTable;
-        private readonly ISymbolTable _systemSymtab;
+        private readonly ISymbolTable systemSymtab;
+        private string fieldName;
+        private int fieldNameSid = SymbolToken.UnknownSid;
 
         protected IonSystemWriter()
         {
-            _systemSymtab = SharedSymbolTable.GetSystem(1);
-            _symbolTable = new ReaderLocalTable(_systemSymtab);
+            this.systemSymtab = SharedSymbolTable.GetSystem(1);
+            this.symbolTable = new ReaderLocalTable(this.systemSymtab);
         }
 
-        public override ISymbolTable SymbolTable => _symbolTable;
+        public override ISymbolTable SymbolTable => this.symbolTable;
 
         public override void SetFieldName(string name)
         {
-            _fieldName = name;
-            _fieldNameSid = SymbolToken.UnknownSid;
+            this.fieldName = name;
+            this.fieldNameSid = SymbolToken.UnknownSid;
         }
 
         public override void SetFieldNameSymbol(SymbolToken symbol)
         {
             if (symbol.Text is null)
             {
-                symbol = Symbols.Localize(_symbolTable, symbol);
+                symbol = Symbols.Localize(this.symbolTable, symbol);
             }
 
-            _fieldName = symbol.Text;
-            _fieldNameSid = symbol.Sid;
+            this.fieldName = symbol.Text;
+            this.fieldNameSid = symbol.Sid;
         }
 
-        public override void ClearTypeAnnotations() => _annotations.Clear();
+        public override void ClearTypeAnnotations() => this.annotations.Clear();
 
         public override void AddTypeAnnotation(string annotation)
         {
             if (annotation is null)
             {
-                //treat this as the $0 symbol
-                AddTypeAnnotationSymbol(new SymbolToken(null, 0));
+                // treat this as the $0 symbol
+                this.AddTypeAnnotationSymbol(new SymbolToken(null, 0));
                 return;
             }
 
-            AddTypeAnnotationSymbol(new SymbolToken(annotation, SymbolToken.UnknownSid));
+            this.AddTypeAnnotationSymbol(new SymbolToken(annotation, SymbolToken.UnknownSid));
         }
 
         public override void AddTypeAnnotationSymbol(SymbolToken annotation)
         {
             if (annotation.Text is null)
             {
-                //no text, check if sid is sth we know 
-                annotation = Symbols.Localize(_symbolTable, annotation);
+                // no text, check if sid is sth we know
+                annotation = Symbols.Localize(this.symbolTable, annotation);
             }
 
             if (annotation == default)
             {
                 throw new UnknownSymbolException(annotation.Sid);
             }
-            _annotations.Add(annotation);
+
+            this.annotations.Add(annotation);
         }
 
         public override void SetTypeAnnotations(IEnumerable<string> annotations)
         {
-            _annotations.Clear();
+            this.annotations.Clear();
             foreach (var annotation in annotations)
             {
-                AddTypeAnnotationSymbol(new SymbolToken(annotation, SymbolToken.UnknownSid));
+                this.AddTypeAnnotationSymbol(new SymbolToken(annotation, SymbolToken.UnknownSid));
             }
         }
 
-        public override bool IsFieldNameSet() => _fieldName != null || _fieldNameSid > 0;
+        public override bool IsFieldNameSet() => this.fieldName != null || this.fieldNameSid > 0;
 
         public override void WriteIonVersionMarker()
         {
-            if (GetDepth() != 0)
-                throw new InvalidOperationException($"Cannot write Ivm at depth {GetDepth()}");
+            if (this.GetDepth() != 0)
+            {
+                throw new InvalidOperationException($"Cannot write Ivm at depth {this.GetDepth()}");
+            }
 
-            if (_systemSymtab.IonVersionId != SystemSymbols.Ion10)
-                throw new UnsupportedIonVersionException(_symbolTable.IonVersionId);
+            if (this.systemSymtab.IonVersionId != SystemSymbols.Ion10)
+            {
+                throw new UnsupportedIonVersionException(this.symbolTable.IonVersionId);
+            }
 
-            WriteIonVersionMarker(_systemSymtab);
+            this.WriteIonVersionMarker(this.systemSymtab);
         }
 
         public override void WriteSymbol(string symbol)
         {
-            if (SystemSymbols.Ion10 == symbol && GetDepth() == 0 && _annotations.Count == 0)
+            if (symbol == SystemSymbols.Ion10 && this.GetDepth() == 0 && this.annotations.Count == 0)
             {
-                WriteIonVersionMarker();
+                this.WriteIonVersionMarker();
                 return;
             }
 
-            WriteSymbolAsIs(new SymbolToken(symbol, SymbolToken.UnknownSid));
+            this.WriteSymbolAsIs(new SymbolToken(symbol, SymbolToken.UnknownSid));
         }
 
         public override void WriteSymbolToken(SymbolToken symbolToken)
         {
-            if (SystemSymbols.Ion10 == symbolToken.Text && GetDepth() == 0 && _annotations.Count == 0)
+            if (symbolToken.Text == SystemSymbols.Ion10 && this.GetDepth() == 0 && this.annotations.Count == 0)
             {
-                WriteIonVersionMarker();
+                this.WriteIonVersionMarker();
                 return;
             }
 
-            WriteSymbolAsIs(symbolToken);
+            this.WriteSymbolAsIs(symbolToken);
         }
 
         protected abstract void WriteSymbolAsIs(SymbolToken symbolToken);
@@ -138,20 +142,22 @@ namespace Amazon.IonDotnet.Internals
         /// <summary>
         /// Assume that we have a field name text or sid set.
         /// </summary>
-        /// <returns>Field name as <see cref="SymbolToken"/></returns>
+        /// <returns>Field name as <see cref="SymbolToken"/>.</returns>
         /// <exception cref="InvalidOperationException">When field name is not set.</exception>
         protected SymbolToken AssumeFieldNameSymbol()
         {
-            if (_fieldName == null && _fieldNameSid < 0)
+            if (this.fieldName == null && this.fieldNameSid < 0)
+            {
                 throw new InvalidOperationException("Field name is missing");
+            }
 
-            return new SymbolToken(_fieldName, _fieldNameSid);
+            return new SymbolToken(this.fieldName, this.fieldNameSid);
         }
 
         protected void ClearFieldName()
         {
-            _fieldName = null;
-            _fieldNameSid = SymbolToken.UnknownSid;
+            this.fieldName = null;
+            this.fieldNameSid = SymbolToken.UnknownSid;
         }
     }
 }

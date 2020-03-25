@@ -30,7 +30,7 @@ namespace Amazon.IonDotnet.Internals.Tree
         public UserTreeReader(IIonValue value, ICatalog catalog = null) : base(value)
         {
             _catalog = catalog;
-            _currentSymtab = _systemSymbols;
+            _currentSymtab = systemSymbols;
         }
 
         public override ISymbolTable GetSymbolTable() => throw new InvalidOperationException("This operation is not supported.");
@@ -44,18 +44,18 @@ namespace Amazon.IonDotnet.Internals.Tree
         {
             if (!NextHelperUser())
             {
-                _current = null;
+                current = null;
                 return IonType.None;
             }
-            _current = _next;
-            _next = null;
-            return _current.Type();
+            current = next;
+            next = null;
+            return current.Type();
         }
 
         bool NextHelperUser()
         {
-            if (_eof) return false;
-            if (_next != null) return true;
+            if (eof) return false;
+            if (next != null) return true;
 
             ClearSystemValueStack();
 
@@ -68,11 +68,11 @@ namespace Amazon.IonDotnet.Internals.Tree
             {
                 nextType = NextHelperSystem();
 
-                if (_top == 0 && _parent != null && _parent.Type() == IonType.Datagram)
+                if (top == 0 && parent != null && parent.Type() == IonType.Datagram)
                 {
                     if (IonType.Symbol == nextType)
                     {
-                        var sym = _next;
+                        var sym = next;
                         if (sym.IsNull)
                         {
                             // there are no null values we will consume here
@@ -84,27 +84,27 @@ namespace Amazon.IonDotnet.Internals.Tree
                             String name = sym.SymbolValue.Text;
                             if (name != null)
                             {
-                                sid = _systemSymbols.FindSymbolId(name);
+                                sid = systemSymbols.FindSymbolId(name);
                             }
                         }
-                        if (sid == ION_1_0_SID && _next.GetTypeAnnotationSymbols().Count == 0)
+                        if (sid == ION_1_0_SID && next.GetTypeAnnotationSymbols().Count == 0)
                         {
                             // $ion_1_0 is read as an IVM only if it is not annotated
-                            ISymbolTable symbols = _systemSymbols;
+                            ISymbolTable symbols = systemSymbols;
                             _currentSymtab = symbols;
                             PushSymbolTable(symbols);
-                            _next = null;
+                            next = null;
                             continue;
                         }
                     }
-                    else if (IonType.Struct == nextType && _next.HasAnnotation("$ion_symbol_table"))
+                    else if (IonType.Struct == nextType && next.HasAnnotation("$ion_symbol_table"))
                     {
                         // read a local symbol table
-                        IIonReader reader = new UserTreeReader(_next, _catalog);
+                        IIonReader reader = new UserTreeReader(next, _catalog);
                         ISymbolTable symtab = ReaderLocalTable.ImportReaderTable(this, _catalog, true);
                         _currentSymtab = symtab;
                         PushSymbolTable(symtab);
-                        _next = null;
+                        next = null;
                         continue;
                     }
                 }

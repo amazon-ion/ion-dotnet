@@ -17,14 +17,13 @@ namespace Amazon.IonDotnet
 {
     public readonly struct ImportLocation
     {
-
         /// <summary>
-        /// The default ImportName, which is unknown
+        /// The default ImportName, which is unknown.
         /// </summary>
         public const string UnknownImportName = default;
 
         /// <summary>
-        /// The default value, corresponds to not_found/unknown
+        /// The default value, corresponds to not_found/unknown.
         /// </summary>
         public static readonly ImportLocation None = default;
 
@@ -39,26 +38,27 @@ namespace Amazon.IonDotnet
         public readonly int Sid;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="ImportLocation"/> struct.
         /// Create a new ImportLocation struct.
         /// </summary>
-        /// <param name="importName">ImportName</param>
-        /// <param name="sid">Sid</param>
+        /// <param name="importName">ImportName.</param>
+        /// <param name="sid">Sid.</param>
         public ImportLocation(string importName, int sid)
         {
-            ImportName = importName;
-            Sid = sid;
+            this.ImportName = importName;
+            this.Sid = sid;
         }
-
-        public override string ToString() => $"ImportLocation::{{importName:{ImportName}, id:{Sid}}}";
 
         public static bool operator ==(ImportLocation x, ImportLocation y) => x.ImportName == y.ImportName && x.Sid == y.Sid;
 
         public static bool operator !=(ImportLocation x, ImportLocation y) => !(x == y);
 
-        public override bool Equals(object that) => that is ImportLocation token && Equals(token);
+        public override string ToString() => $"ImportLocation::{{importName:{this.ImportName}, id:{this.Sid}}}";
+
+        public override bool Equals(object that) => that is ImportLocation token && this.Equals(token);
 
         public bool Equals(ImportLocation other) => this == other;
 
-        public override int GetHashCode() => ImportName?.GetHashCode() ?? Sid;
+        public override int GetHashCode() => this.ImportName?.GetHashCode() ?? this.Sid;
     }
 }

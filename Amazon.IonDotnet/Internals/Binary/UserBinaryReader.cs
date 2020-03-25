@@ -37,59 +37,59 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             GetSymbolTable();
             if (!HasNext()) return IonType.None;
-            _moveNextNeeded = true;
-            return _valueType;
+            moveNextNeeded = true;
+            return valueType;
         }
 
         protected override bool HasNext()
         {
-            if (_eof || !_moveNextNeeded)
-                return !_eof;
+            if (eof || !moveNextNeeded)
+                return !eof;
 
-            while (!_eof && _moveNextNeeded)
+            while (!eof && moveNextNeeded)
             {
                 MoveNextUser();
             }
 
-            return !_eof;
+            return !eof;
         }
 
         private void MoveNextUser()
         {
             base.HasNext();
 
-            // If we're not at the top (datagram) level or the next value is null.
-            if (CurrentDepth != 0 || _valueIsNull) 
+            // if we're not at the top (datagram) level or the next value is null
+            if (CurrentDepth != 0 || valueIsNull) 
                 return;
-            Debug.Assert(_valueTid != BinaryConstants.TidTypedecl);
+            Debug.Assert(valueTid != BinaryConstants.TidTypedecl);
 
-            if (_valueTid == BinaryConstants.TidSymbol)
+            if (valueTid == BinaryConstants.TidSymbol)
             {
-                // Trying to read a symbol here
+                // trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
-                // we already count the number of annotations.
+                // we already count the number of annotations
                 if (Annotations.Count != 0)
                     return;
 
                 LoadOnce();
 
-                // Just get it straight from the holder, no conversion needed.
-                var sid = _v.IntValue;
+                // just get it straight from the holder, no conversion needed
+                var sid = valueVariant.IntValue;
                 if (sid != SystemSymbols.Ion10Sid)
                     return;
 
-                _symbolTable = SharedSymbolTable.GetSystem(1);
-                // User don't need to see this symbol so continue here.
-                _moveNextNeeded = true;
+                SymbolTable = SharedSymbolTable.GetSystem(1);
+                //user don't need to see this symbol so continue here
+                moveNextNeeded = true;
             }
-            else if (_valueTid == BinaryConstants.TidStruct)
+            else if (valueTid == BinaryConstants.TidStruct)
             {
-                // Trying to read the local symboltable here.
-                if (_hasSymbolTableAnnotation)
+                //trying to read the local symboltable here
+                if (hasSymbolTableAnnotation)
                 {
-                    _symbolTable = ReaderLocalTable.ImportReaderTable(this, _catalog, false);
+                    SymbolTable = ReaderLocalTable.ImportReaderTable(this, _catalog, false);
                     //user don't need to read the localsymboltable so continue
-                    _moveNextNeeded = true;
+                    moveNextNeeded = true;
                 }
             }
         }

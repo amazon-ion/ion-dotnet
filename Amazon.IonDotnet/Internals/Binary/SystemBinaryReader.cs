@@ -13,290 +13,207 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Numerics;
-using Amazon.IonDotnet.Internals.Conversions;
-
 namespace Amazon.IonDotnet.Internals.Binary
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Numerics;
+    using Amazon.IonDotnet.Internals.Conversions;
+
     /// <inheritdoc />
     /// <summary>
-    /// This class handles the reading and conversion of scalar values (value-type fields)
+    /// This class handles the reading and conversion of scalar values (value-type fields).
     /// </summary>
     internal class SystemBinaryReader : RawBinaryReader
     {
-        private static readonly BigInteger TwoPow63 = BigInteger.Multiply((long) 1 << 62, 2);
-
-        protected ISymbolTable _symbolTable;
+        private static readonly BigInteger TwoPow63 = BigInteger.Multiply(1L << 62, 2);
 
         internal SystemBinaryReader(Stream input)
             : this(input, SharedSymbolTable.GetSystem(1))
         {
         }
 
-        private SystemBinaryReader(Stream input, ISymbolTable symboltable) : base(input)
+        private SystemBinaryReader(Stream input, ISymbolTable symboltable)
+            : base(input)
         {
-            _symbolTable = symboltable;
-        }
-
-        private void PrepareValue()
-        {
-            LoadOnce();
-            //we don't allow casting here, so this should end
-        }
-
-        protected void LoadOnce()
-        {
-            //load only once
-            if (!_v.IsEmpty) return;
-            LoadScalarValue();
-        }
-
-        private void LoadScalarValue()
-        {
-            // make sure we're trying to load a scalar value here
-            if (!_valueType.IsScalar()) return;
-
-            if (_valueIsNull)
-            {
-                _v.SetNull(_valueType);
-                return;
-            }
-
-            switch (_valueType)
-            {
-                default:
-                    return;
-                case IonType.Bool:
-                    _v.BoolValue = _valueIsTrue;
-                    break;
-                case IonType.Int:
-                    if (_valueLength == 0)
-                    {
-                        _v.IntValue = 0;
-                        break;
-                    }
-
-                    var isNegative = _valueTid == BinaryConstants.TidNegInt;
-                    if (_valueLength <= sizeof(long))
-                    {
-                        //long might be enough
-                        var longVal = ReadUlong(_valueLength);
-                        if (longVal < 0)
-                        {
-                            //this might not fit in a long
-                            longVal = (longVal << 1) >> 1;
-                            var big = BigInteger.Add(TwoPow63, longVal);
-                            _v.BigIntegerValue = big;
-                        }
-                        else
-                        {
-                            if (isNegative)
-                            {
-                                longVal = -longVal;
-                            }
-
-                            if (longVal < int.MinValue || longVal > int.MaxValue)
-                            {
-                                _v.LongValue = longVal;
-                            }
-                            else
-                            {
-                                _v.IntValue = (int) longVal;
-                            }
-                        }
-
-                        break;
-                    }
-
-                    //here means the int value has to be in bigInt
-                    var bigInt = ReadBigInteger(_valueLength, isNegative);
-                    _v.BigIntegerValue = bigInt;
-                    break;
-                case IonType.Float:
-                    var d = ReadFloat(_valueLength);
-                    _v.DoubleValue = d;
-                    break;
-                case IonType.Symbol:
-                    //treat the symbol as int32, since it's cheap and there's no lookup
-                    //until the text is required
-                    var sid = ReadUlong(_valueLength);
-                    if (sid < 0 || sid > int.MaxValue)
-                        throw new IonException("Sid is not an uint32");
-                    _v.IntValue = (int) sid;
-                    break;
-                case IonType.Decimal:
-                    _v.DecimalValue = ReadBigDecimal(_valueLength);
-                    break;
-                case IonType.Timestamp:
-                    if (_valueLength == 0)
-                    {
-                        _v.SetNull(IonType.Timestamp);
-                        break;
-                    }
-
-                    _v.TimestampValue = ReadTimeStamp(_valueLength);
-                    break;
-                case IonType.String:
-                    _v.StringValue = ReadString(_valueLength);
-                    _v.AuthoritativeType = ScalarType.String;
-                    break;
-            }
-
-            _state = State.AfterValue;
-        }
-
-        /// <summary>
-        /// Load the symbol string from the symbol table to _v
-        /// </summary>
-        /// <remarks>This assumes LoadOnce() has been called and _v already has the sid as Int</remarks>
-        /// <exception cref="UnknownSymbolException">The Sid does not exist in the table</exception>
-        private void LoadSymbolValue()
-        {
-            PrepareValue();
-            Debug.Assert(_v.TypeSet.HasFlag(ScalarType.Int));
-            Debug.Assert(_v.AuthoritativeType == ScalarType.Int, $"AuthType is ${_v.AuthoritativeType}");
-
-            if (_v.TypeSet.HasFlag(ScalarType.String))
-                return;
-
-            var text = _symbolTable.FindKnownSymbol(_v.IntValue);
-            _v.AddString(text);
-        }
-
-        public override BigInteger BigIntegerValue()
-        {
-            if (_valueIsNull)
-                throw new NullValueException();
-
-            PrepareValue();
-            return _v.BigIntegerValue;
-        }
-
-        public override bool BoolValue()
-        {
-            if (_valueIsNull)
-                throw new NullValueException();
-            PrepareValue();
-            return _v.BoolValue;
-        }
-
-        public override Timestamp TimestampValue()
-        {
-            if (_valueIsNull)
-                throw new NullValueException();
-            PrepareValue();
-            return _v.TimestampValue;
-        }
-
-        public override BigDecimal DecimalValue()
-        {
-            if (_valueIsNull)
-                throw new NullValueException();
-            PrepareValue();
-            return _v.DecimalValue;
-        }
-
-        public override double DoubleValue()
-        {
-            if (_valueIsNull)
-                throw new NullValueException();
-            PrepareValue();
-            return _v.DoubleValue;
+            this.SymbolTable = symboltable;
         }
 
         public override string CurrentFieldName
         {
             get
             {
-                if (_valueFieldId == SymbolToken.UnknownSid)
+                if (this.valueFieldId == SymbolToken.UnknownSid)
+                {
                     return null;
+                }
 
-                var name = _symbolTable.FindKnownSymbol(_valueFieldId);
+                var name = this.SymbolTable.FindKnownSymbol(this.valueFieldId);
                 if (name == null)
-                    throw new UnknownSymbolException(_valueFieldId);
+                {
+                    throw new UnknownSymbolException(this.valueFieldId);
+                }
 
                 return name;
             }
         }
 
+        protected ISymbolTable SymbolTable { get; set; }
+
+        public override BigInteger BigIntegerValue()
+        {
+            if (this.valueIsNull)
+            {
+                throw new NullValueException();
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.BigIntegerValue;
+        }
+
+        public override bool BoolValue()
+        {
+            if (this.valueIsNull)
+            {
+                throw new NullValueException();
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.BoolValue;
+        }
+
+        public override Timestamp TimestampValue()
+        {
+            if (this.valueIsNull)
+            {
+                throw new NullValueException();
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.TimestampValue;
+        }
+
+        public override BigDecimal DecimalValue()
+        {
+            if (this.valueIsNull)
+            {
+                throw new NullValueException();
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.DecimalValue;
+        }
+
+        public override double DoubleValue()
+        {
+            if (this.valueIsNull)
+            {
+                throw new NullValueException();
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.DoubleValue;
+        }
+
         public override SymbolToken GetFieldNameSymbol()
         {
-            if (_valueFieldId == SymbolToken.UnknownSid)
+            if (this.valueFieldId == SymbolToken.UnknownSid)
+            {
                 return default;
-            var text = _symbolTable.FindKnownSymbol(_valueFieldId);
+            }
 
-            return new SymbolToken(text, _valueFieldId);
+            var text = this.SymbolTable.FindKnownSymbol(this.valueFieldId);
+
+            return new SymbolToken(text, this.valueFieldId);
         }
 
         public override IntegerSize GetIntegerSize()
         {
-            LoadOnce();
-            if (_valueType != IonType.Int || _valueIsNull) return IntegerSize.Unknown;
+            this.LoadOnce();
+            if (this.valueType != IonType.Int || this.valueIsNull)
+            {
+                return IntegerSize.Unknown;
+            }
 
-            return _v.IntegerSize;
+            return this.valueVariant.IntegerSize;
         }
 
-        public override ISymbolTable GetSymbolTable() => _symbolTable;
+        public override ISymbolTable GetSymbolTable() => this.SymbolTable;
 
         public override int IntValue()
         {
-            if (_valueIsNull)
+            if (this.valueIsNull)
+            {
                 throw new NullValueException();
-            PrepareValue();
-            return _v.IntValue;
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.IntValue;
         }
 
         public override long LongValue()
         {
-            if (_valueIsNull)
+            if (this.valueIsNull)
+            {
                 throw new NullValueException();
-            PrepareValue();
-            return _v.LongValue;
+            }
+
+            this.PrepareValue();
+            return this.valueVariant.LongValue;
         }
 
         public override string StringValue()
         {
-            if (!_valueType.IsText())
-                throw new InvalidOperationException($"Current value is not text, type {_valueType}");
-            if (_valueIsNull)
-                return null;
-            PrepareValue();
-
-            if (_valueType == IonType.Symbol)
+            if (!this.valueType.IsText())
             {
-                LoadSymbolValue();
+                throw new InvalidOperationException($"Current value is not text, type {this.valueType}");
             }
 
-            return _v.StringValue;
+            if (this.valueIsNull)
+            {
+                return null;
+            }
+
+            this.PrepareValue();
+
+            if (this.valueType == IonType.Symbol)
+            {
+                this.LoadSymbolValue();
+            }
+
+            return this.valueVariant.StringValue;
         }
 
         public override SymbolToken SymbolValue()
         {
-            if (_valueType != IonType.Symbol)
-                throw new InvalidOperationException($"Current value is of type {_valueType}");
-            if (_valueIsNull)
-                return SymbolToken.None;
+            if (this.valueType != IonType.Symbol)
+            {
+                throw new InvalidOperationException($"Current value is of type {this.valueType}");
+            }
 
-            LoadSymbolValue();
-            return new SymbolToken(_v.StringValue, _v.IntValue);
+            if (this.valueIsNull)
+            {
+                return SymbolToken.None;
+            }
+
+            this.LoadSymbolValue();
+            return new SymbolToken(this.valueVariant.StringValue, this.valueVariant.IntValue);
         }
 
         public override string[] GetTypeAnnotations()
         {
-            string[] annotations = new string[Annotations.Count];
-            for (int index = 0; index < Annotations.Count; index++)
+            string[] annotations = new string[this.Annotations.Count];
+            for (int index = 0; index < this.Annotations.Count; index++)
             {
-                string annotation = GetSymbolTable().FindKnownSymbol(Annotations[index]);
+                string annotation = this.GetSymbolTable().FindKnownSymbol(this.Annotations[index]);
                 if (annotation == null)
                 {
-                    throw new UnknownSymbolException(Annotations[index]);
+                    throw new UnknownSymbolException(this.Annotations[index]);
                 }
 
-                annotations[index] = GetSymbolTable().FindKnownSymbol(Annotations[index]);
+                annotations[index] = this.GetSymbolTable().FindKnownSymbol(this.Annotations[index]);
             }
 
             return annotations;
@@ -304,9 +221,9 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public override IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
-            foreach (var aid in Annotations)
+            foreach (var aid in this.Annotations)
             {
-                var text = GetSymbolTable().FindKnownSymbol(aid);
+                var text = this.GetSymbolTable().FindKnownSymbol(aid);
 
                 yield return new SymbolToken(text, aid);
             }
@@ -320,9 +237,9 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
 
             int? annotationId = null;
-            foreach (int aid in Annotations)
+            foreach (int aid in this.Annotations)
             {
-                string text = GetSymbolTable().FindKnownSymbol(aid);
+                string text = this.GetSymbolTable().FindKnownSymbol(aid);
                 if (text == null)
                 {
                     annotationId = aid;
@@ -339,6 +256,144 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
 
             return false;
+        }
+
+        protected void LoadOnce()
+        {
+            // load only once
+            if (!this.valueVariant.IsEmpty)
+            {
+                return;
+            }
+
+            this.LoadScalarValue();
+        }
+
+        private void PrepareValue()
+        {
+            this.LoadOnce();
+
+            // we don't allow casting here, so this should end
+        }
+
+        private void LoadScalarValue()
+        {
+            // make sure we're trying to load a scalar value here
+            if (!this.valueType.IsScalar())
+            {
+                return;
+            }
+
+            if (this.valueIsNull)
+            {
+                this.valueVariant.SetNull(this.valueType);
+                return;
+            }
+
+            switch (this.valueType)
+            {
+                default:
+                    return;
+                case IonType.Bool:
+                    this.valueVariant.BoolValue = this.valueIsTrue;
+                    break;
+                case IonType.Int:
+                    if (this.valueLength == 0)
+                    {
+                        this.valueVariant.IntValue = 0;
+                        break;
+                    }
+
+                    var isNegative = this.valueTid == BinaryConstants.TidNegInt;
+                    if (this.valueLength <= sizeof(long))
+                    {
+                        // long might be enough
+                        var longVal = this.ReadUlong(this.valueLength);
+                        if (longVal < 0)
+                        {
+                            // this might not fit in a long
+                            longVal = (longVal << 1) >> 1;
+                            var big = BigInteger.Add(TwoPow63, longVal);
+                            this.valueVariant.BigIntegerValue = big;
+                        }
+                        else
+                        {
+                            if (isNegative)
+                            {
+                                longVal = -longVal;
+                            }
+
+                            if (longVal < int.MinValue || longVal > int.MaxValue)
+                            {
+                                this.valueVariant.LongValue = longVal;
+                            }
+                            else
+                            {
+                                this.valueVariant.IntValue = (int)longVal;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    // here means the int value has to be in bigInt
+                    var bigInt = this.ReadBigInteger(this.valueLength, isNegative);
+                    this.valueVariant.BigIntegerValue = bigInt;
+                    break;
+                case IonType.Float:
+                    var d = this.ReadFloat(this.valueLength);
+                    this.valueVariant.DoubleValue = d;
+                    break;
+                case IonType.Symbol:
+                    // treat the symbol as int32, since it's cheap and there's no lookup
+                    // until the text is required
+                    var sid = this.ReadUlong(this.valueLength);
+                    if (sid < 0 || sid > int.MaxValue)
+                    {
+                        throw new IonException("Sid is not an uint32");
+                    }
+
+                    this.valueVariant.IntValue = (int)sid;
+                    break;
+                case IonType.Decimal:
+                    this.valueVariant.DecimalValue = this.ReadBigDecimal(this.valueLength);
+                    break;
+                case IonType.Timestamp:
+                    if (this.valueLength == 0)
+                    {
+                        this.valueVariant.SetNull(IonType.Timestamp);
+                        break;
+                    }
+
+                    this.valueVariant.TimestampValue = this.ReadTimeStamp(this.valueLength);
+                    break;
+                case IonType.String:
+                    this.valueVariant.StringValue = this.ReadString(this.valueLength);
+                    this.valueVariant.AuthoritativeType = ScalarType.String;
+                    break;
+            }
+
+            this.state = State.AfterValue;
+        }
+
+        /// <summary>
+        /// Load the symbol string from the symbol table to valueVariant.
+        /// </summary>
+        /// <remarks>This assumes LoadOnce() has been called and valueVariant already has the sid as Int.</remarks>
+        /// <exception cref="UnknownSymbolException">The Sid does not exist in the table.</exception>
+        private void LoadSymbolValue()
+        {
+            this.PrepareValue();
+            Debug.Assert(this.valueVariant.TypeSet.HasFlag(ScalarType.Int), "Flag is not Int");
+            Debug.Assert(this.valueVariant.AuthoritativeType == ScalarType.Int, $"AuthType is ${this.valueVariant.AuthoritativeType}");
+
+            if (this.valueVariant.TypeSet.HasFlag(ScalarType.String))
+            {
+                return;
+            }
+
+            var text = this.SymbolTable.FindKnownSymbol(this.valueVariant.IntValue);
+            this.valueVariant.AddString(text);
         }
     }
 }

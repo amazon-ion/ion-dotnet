@@ -13,24 +13,26 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.IO;
-using System.Text;
-using Amazon.IonDotnet.Internals.Binary;
-using Amazon.IonDotnet.Internals.Text;
-using Amazon.IonDotnet.Internals.Tree;
-using Amazon.IonDotnet.Tree;
-
 namespace Amazon.IonDotnet.Builders
 {
+    using System;
+    using System.IO;
+    using System.Text;
+    using Amazon.IonDotnet.Internals.Binary;
+    using Amazon.IonDotnet.Internals.Text;
+    using Amazon.IonDotnet.Internals.Tree;
+    using Amazon.IonDotnet.Tree;
+
     public enum ReaderFormat
     {
         Detect,
         Binary,
-        Text
+        Text,
     }
 
+#pragma warning disable SA1649 // File name should match first type name
     public struct ReaderOptions
+#pragma warning restore SA1649 // File name should match first type name
     {
         public ReaderFormat Format;
         public Encoding Encoding;
@@ -38,20 +40,20 @@ namespace Amazon.IonDotnet.Builders
     }
 
     /// <summary>
-    /// Builder that can generate <see cref="IIonReader"/> instances for different types of input. 
+    /// Builder that can generate <see cref="IIonReader"/> instances for different types of input.
     /// </summary>
     /// <remarks>
     /// Note that Ion readers work with pre-created input streams, so there is no method that accept a byte[]. Callers are
-    /// responsible for creating the stream and disposing them. 
+    /// responsible for creating the stream and disposing them.
     /// </remarks>
     public static class IonReaderBuilder
     {
         /// <summary>
         /// Build a text reader for the string with a catalog.
         /// </summary>
-        /// <param name="text">Ion text</param>
+        /// <param name="text">Ion text.</param>
         /// <param name="options">Reader options.</param>
-        /// <returns>Ion text reader</returns>
+        /// <returns>Ion text reader.</returns>
         public static IIonReader Build(string text, ReaderOptions options = default)
         {
             return new UserTextReader(text, options.Catalog);
@@ -70,7 +72,9 @@ namespace Amazon.IonDotnet.Builders
         public static IIonReader Build(Stream stream, ReaderOptions options = default)
         {
             if (!stream.CanRead)
+            {
                 throw new ArgumentException("Stream must be readable", nameof(stream));
+            }
 
             if (options.Encoding is null)
             {
@@ -93,15 +97,15 @@ namespace Amazon.IonDotnet.Builders
         private static IIonReader DetectFormatAndBuild(Stream stream, in ReaderOptions options)
         {
             /* Notes about implementation
-               The stream can contain text or binary ion. The ion reader should figure it out. Since we don't want this call to block 
+               The stream can contain text or binary ion. The ion reader should figure it out. Since we don't want this call to block
                in case the stream is a network stream or file stream, it can (and should )
                return a wrapper which peeks the stream and check for Bvm, and delegate the rest to the approriate reader.
                Special case is when the stream is a memory stream which can be read directly, in which case we can do the Bvm checking right away.
-               Also the Bvm might not be neccessary for the binary reader (except maybe for checking Ion version) so we might end up passing the 
-               already-read stream to the binary reader. 
+               Also the Bvm might not be neccessary for the binary reader (except maybe for checking Ion version) so we might end up passing the
+               already-read stream to the binary reader.
             */
 
-            //this is the dumbed down implementation
+            // This is the dumbed down implementation
             Span<byte> initialBytes = stackalloc byte[BinaryConstants.BinaryVersionMarkerLength];
             var bytesRead = stream.Read(initialBytes);
             var didSeek = stream.CanSeek;
@@ -119,7 +123,7 @@ namespace Amazon.IonDotnet.Builders
 
             if (IsBinaryData(initialBytes.Slice(0, bytesRead)))
             {
-                //skipping the version marker should be fine for binary reader
+                // skipping the version marker should be fine for binary reader
                 return new UserBinaryReader(stream, options.Catalog);
             }
 
@@ -130,7 +134,7 @@ namespace Amazon.IonDotnet.Builders
 
         private static bool IsBinaryData(Span<byte> initialByte)
         {
-            //progressively check the binary version marker
+            // progressively check the binary version marker
             return initialByte.Length >= 4
                    && initialByte[0] == 0xE0
                    && initialByte[1] == 0x01
