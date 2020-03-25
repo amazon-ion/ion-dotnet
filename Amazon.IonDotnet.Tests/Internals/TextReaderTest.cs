@@ -154,9 +154,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // an int with zero symbol annotation
             // $0::18
-            var data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
-            var reader = new UserTextReader(new MemoryStream(data));
-
+            var reader = new UserTextReader("$0::18");
             ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
         }
 
@@ -185,8 +183,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // an int with zero symbol annotation
             // $0::18
-            var data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
-            var reader = new UserTextReader(new MemoryStream(data));
+            var reader = new UserTextReader("$0::18");
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);
         }
@@ -227,8 +224,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // an int with zero symbol annotation
             // $0::18
-            var data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
-            var reader = new UserTextReader(new MemoryStream(data));
+            var reader = new UserTextReader("$0::18");
 
             ReaderTestCommon.HasAnnotation_ZeroSymbol(reader);
         }

@@ -133,7 +133,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // an int with zero symbol annotation
             // $0::18
-            var data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
+            var data = new byte[] { 0xE4, 0x81, 0x80, 0x21, 0x12 };
             var reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
@@ -164,7 +164,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // an int with zero symbol annotation
             // $0::18
-            var data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
+            var data = new byte[] { 0xE4, 0x81, 0x80, 0x21, 0x12 };
             var reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);
@@ -206,7 +206,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             // an int with sannotation
             // $0::18
-            var data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
+            var data = new byte[] { 0xE4, 0x81, 0x80, 0x21, 0x12 };
             var reader = new UserBinaryReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotation_ZeroSymbol(reader);
