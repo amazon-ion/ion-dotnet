@@ -288,7 +288,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             //Must be: $0::18
             var intValue = _ionValueFactory.NewInt(18);
-            intValue.AddTypeAnnotation(null);
+            intValue.AddTypeAnnotation(new SymbolToken(null, 0));
             var reader = new UserTreeReader(intValue);
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);

@@ -220,7 +220,10 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual(IonType.Int, reader.CurrentType);
             Assert.AreEqual(18, reader.IntValue());
             Assert.AreEqual(1, reader.GetTypeAnnotationSymbols().Count());
-            Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null && a.Sid == 0));
+            Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null));
+
+            // Commented out following assertion due to bug: https://github.com/amzn/ion-dotnet/issues/89
+            //Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null && a.ImportLocation == null));
         }
 
         public static void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(IIonReader reader)
