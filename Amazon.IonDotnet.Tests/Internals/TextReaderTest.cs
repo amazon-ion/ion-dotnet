@@ -150,6 +150,16 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void ReadTypeAnnotations_ZeroSymbol()
+        {
+            // an int with zero symbol annotation
+            // $0::18
+            var reader = new UserTextReader("$0::18");
+
+            ReaderTestCommon.ReadTypeAnnotations_ZeroSymbol(reader);
+        }
+
+        [TestMethod]
         public void ReadTypeAnnotations_AssertUnknownSymbolException()
         {
             string input = "$ion_symbol_table::{ imports:[{ name: \"abc\", version: 1, max_id: 1}],symbols: [\"foo\"]}$10::$11::\"value\"";
@@ -167,6 +177,16 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
             ReaderTestCommon.ReadTypeAnnotationSymbols_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void ReadTypeAnnotationSymbols_ZeroSymbol()
+        {
+            // an int with zero symbol annotation
+            // $0::18
+            var reader = new UserTextReader("$0::18");
+
+            ReaderTestCommon.ReadTypeAnnotationSymbols_ZeroSymbol(reader);
         }
 
         [TestMethod]
@@ -198,6 +218,16 @@ namespace Amazon.IonDotnet.Tests.Internals
             UserTextReader reader = new UserTextReader(new MemoryStream(data));
 
             ReaderTestCommon.HasAnnotationFalse_SingleField(reader);
+        }
+
+        [TestMethod]
+        public void HasAnnotation_ZeroSymbol()
+        {
+            // an int with zero symbol annotation
+            // $0::18
+            var reader = new UserTextReader("$0::18");
+
+            ReaderTestCommon.HasAnnotation_ZeroSymbol(reader);
         }
 
         [TestMethod]
