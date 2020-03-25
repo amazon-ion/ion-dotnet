@@ -223,14 +223,14 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void HasAnnotationTrue_ZeroSymbol()
+        public void HasAnnotation_ZeroSymbol()
         {
             // an int with zero symbol annotation
             // $0::18
             var data = DirStructure.OwnTestFileAsBytes("text/annot_zerosymbol.ion");
             var reader = new UserTextReader(new MemoryStream(data));
 
-            ReaderTestCommon.HasAnnotationTrue_ZeroSymbol(reader);
+            ReaderTestCommon.HasAnnotation_ZeroSymbol(reader);
         }
 
         [TestMethod]

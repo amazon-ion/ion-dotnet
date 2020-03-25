@@ -358,7 +358,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             intValue.AddTypeAnnotation(null);
             var reader = new UserTreeReader(intValue);
 
-            ReaderTestCommon.HasAnnotationTrue_ZeroSymbol(reader);
+            ReaderTestCommon.HasAnnotation_ZeroSymbol(reader);
         }
 
         [TestMethod]

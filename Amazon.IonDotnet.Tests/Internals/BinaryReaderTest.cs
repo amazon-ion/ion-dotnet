@@ -202,14 +202,14 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
-        public void HasAnnotationTrue_ZeroSymbol()
+        public void HasAnnotation_ZeroSymbol()
         {
             // an int with sannotation
             // $0::18
             var data = DirStructure.OwnTestFileAsBytes("binary/annot_zerosymbol.bindat");
             var reader = new UserBinaryReader(new MemoryStream(data));
 
-            ReaderTestCommon.HasAnnotationTrue_ZeroSymbol(reader);
+            ReaderTestCommon.HasAnnotation_ZeroSymbol(reader);
         }
         [TestMethod]
         public void HasAnnotation_AssertUnknownSymbolException()

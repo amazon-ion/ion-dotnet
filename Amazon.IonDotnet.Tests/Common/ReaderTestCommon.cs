@@ -179,12 +179,8 @@ namespace Amazon.IonDotnet.Tests.Common
             // $0::18
             reader.MoveNext();
 
-            Assert.AreEqual(IonType.Int, reader.CurrentType);
-            Assert.AreEqual(18, reader.IntValue());
 
-            string[] annotations = reader.GetTypeAnnotations();
-            Assert.AreEqual(1, annotations.Count());
-            Assert.IsNull(annotations[0]);
+            Assert.ThrowsException<UnknownSymbolException>(() => reader.GetTypeAnnotations());
         }
 
         public static void ReadTypeAnnotations_AssertUnknownSymbolException(IIonReader reader)
@@ -227,7 +223,7 @@ namespace Amazon.IonDotnet.Tests.Common
 
             Assert.AreEqual(1, reader.GetTypeAnnotationSymbols().Count());
 
-            Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null));
+            Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null && a.Sid == 0));
         }
 
         public static void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(IIonReader reader)
@@ -278,12 +274,12 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.IsFalse(reader.HasAnnotation("Spam Musubi"));
         }
 
-        public static void HasAnnotationTrue_ZeroSymbol(IIonReader reader)
+        public static void HasAnnotation_ZeroSymbol(IIonReader reader)
         {
             // an int with zero symbol annotation
             // $0::18
             reader.MoveNext();
-            Assert.IsTrue(reader.HasAnnotation(null));
+            Assert.ThrowsException<ArgumentNullException>(() => reader.HasAnnotation(null));
         }
 
         public static void HasAnnotation_AssertUnknownSymbolException(IIonReader reader)
