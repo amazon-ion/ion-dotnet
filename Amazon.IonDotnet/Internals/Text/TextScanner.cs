@@ -960,7 +960,7 @@ namespace Amazon.IonDotnet.Internals.Text
         /// <returns></returns>
         //        private int ReadLargeCharSequence(int c1)
         //        {
-        //            if (_input.IsByteStream)
+        //            if (input.IsByteStream)
         //                return ReadUtf8Sequence(c1);
         //
         //            if (char.IsHighSurrogate((char) c1))

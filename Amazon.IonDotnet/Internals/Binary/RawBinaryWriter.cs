@@ -13,41 +13,29 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Amazon.IonDotnet.Utils;
-
-#if !(NETSTANDARD2_0 || NET45 || NETSTANDARD1_3)
-using BitConverterEx = System.BitConverter;
-
-#endif
-
 namespace Amazon.IonDotnet.Internals.Binary
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Numerics;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using System.Threading.Tasks;
+    using Amazon.IonDotnet.Utils;
+
+#if !(NETSTANDARD2_0 || NET45)
+    using BitConverterEx = System.BitConverter;
+#endif
+
     internal class RawBinaryWriter : IPrivateWriter
     {
-        private enum ContainerType
-        {
-            List,
-            Sexp,
-            Struct,
-            Annotation,
-            Datagram,
-
-            //to be used in the case where a value is treated as a container
-            Timestamp,
-            BigDecimal
-        }
+        internal readonly List<SymbolToken> Annotations = new List<SymbolToken>();
 
         private const int IntZeroByte = 0x20;
 
-        //high-bits of different value types
+        // High-bits of different value types
         private const byte TidPosIntByte = 0x20;
         private const byte TidNegIntByte = 0x30;
         private const byte TidListByte = 0xB0;
@@ -67,100 +55,624 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         private const int DefaultContainerStackSize = 6;
 
+        private readonly IWriterBuffer lengthBuffer;
+        private readonly IWriterBuffer dataBuffer;
 
-        private readonly IWriterBuffer _lengthBuffer;
-        private readonly IWriterBuffer _dataBuffer;
-        internal readonly List<SymbolToken> _annotations = new List<SymbolToken>();
+        private readonly ContainerStack containerStack;
+        private readonly List<Memory<byte>> lengthSegments;
+        private readonly bool forceFloat64;
 
-        private SymbolToken _currentFieldSymbolToken;
-        private readonly ContainerStack _containerStack;
-        private readonly List<Memory<byte>> _lengthSegments;
-        private readonly bool _forceFloat64;
+        private SymbolToken currentFieldSymbolToken;
 
         internal RawBinaryWriter(IWriterBuffer lengthBuffer, IWriterBuffer dataBuffer, List<Memory<byte>> lengthSegments, bool forceFloat64)
         {
-            _lengthBuffer = lengthBuffer;
-            _dataBuffer = dataBuffer;
-            _lengthSegments = lengthSegments;
-            _containerStack = new ContainerStack(DefaultContainerStackSize);
-            _forceFloat64 = forceFloat64;
+            this.lengthBuffer = lengthBuffer;
+            this.dataBuffer = dataBuffer;
+            this.lengthSegments = lengthSegments;
+            this.containerStack = new ContainerStack(DefaultContainerStackSize);
+            this.forceFloat64 = forceFloat64;
 
-            //top-level writing also requires a tracker
-            var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
-            _dataBuffer.StartStreak(pushedContainer.Sequence);
+            // Top-level writing also requires a tracker
+            var pushedContainer = this.containerStack.PushContainer(ContainerType.Datagram);
+            this.dataBuffer.StartStreak(pushedContainer.Sequence);
+        }
+
+        private enum ContainerType
+        {
+            List,
+            Sexp,
+            Struct,
+            Annotation,
+            Datagram,
+
+            // To be used in the case where a value is treated as a container
+            Timestamp,
+            BigDecimal,
+        }
+
+        public ISymbolTable SymbolTable => SharedSymbolTable.GetSystem(1);
+
+        public bool IsInStruct => this.containerStack.Count > 0 && this.containerStack.Peek().Type == ContainerType.Struct;
+
+        /// <summary>
+        /// Simply write the buffers (async), <see cref="PrepareFlush"/> should be called first.
+        /// </summary>
+        /// <param name="outputStream">Stream to flush to.</param>
+        /// <returns>Task for FlushAsync.</returns>
+        public async Task FlushAsync(Stream outputStream)
+        {
+            Debug.Assert(this.containerStack.Count == 1, $"{this.containerStack.Count}");
+            Debug.Assert(outputStream?.CanWrite == true, "CanWrite is false");
+            var currentSequence = this.containerStack.Peek().Sequence;
+
+            // Now write
+            foreach (var segment in currentSequence)
+            {
+                await outputStream.WriteAsync(segment);
+            }
+
+            outputStream.Flush();
         }
 
         /// <summary>
-        /// Prepare the field name and annotations (if any)
+        /// Simply write the buffers (blocking), <see cref="PrepareFlush"/> should be called first.
         /// </summary>
-        /// <remarks>This method should implemented in a way that it can be called multiple times and still remains the correct state</remarks>
+        /// <param name="outputStream">Stream to flush to.</param>
+        public void Flush(Stream outputStream)
+        {
+            Debug.Assert(this.containerStack.Count == 1, $"{this.containerStack.Count}");
+            Debug.Assert(outputStream?.CanWrite == true, "CanWrite is false");
+            var currentSequence = this.containerStack.Peek().Sequence;
+
+            // Now write
+            foreach (var segment in currentSequence)
+            {
+                outputStream.Write(segment.Span);
+            }
+
+            outputStream.Flush();
+        }
+
+        void IIonWriter.Flush()
+        {
+        }
+
+        public void Finish()
+        {
+            // TODO: Implement writing again after finish
+        }
+
+        public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
+
+        public void SetFieldNameSymbol(SymbolToken symbol)
+        {
+            if (!this.IsInStruct)
+            {
+                throw new IonException("Has to be in a struct to set a field name");
+            }
+
+            this.currentFieldSymbolToken = symbol;
+        }
+
+        public void StepIn(IonType type)
+        {
+            if (!type.IsContainer())
+            {
+                throw new IonException($"Cannot step into {type}");
+            }
+
+            this.PrepareValue();
+
+            // Wrapup the current writes
+            if (this.containerStack.Count > 0)
+            {
+                var writeList = this.dataBuffer.Wrapup();
+                Debug.Assert(ReferenceEquals(writeList, this.containerStack.Peek().Sequence), "writeList does not equal Sequence");
+            }
+
+            var pushedContainer = this.containerStack.PushContainer(this.GetContainerType(type));
+            this.dataBuffer.StartStreak(pushedContainer.Sequence);
+        }
+
+        public void StepOut()
+        {
+            if (this.currentFieldSymbolToken != default)
+            {
+                throw new IonException("Cannot step out with field name set");
+            }
+
+            if (this.Annotations.Count > 0)
+            {
+                throw new IonException("Cannot step out with Annotations set");
+            }
+
+            // TODO: Check if this container is actually list or struct
+            var currentContainerType = this.containerStack.Peek().Type;
+
+            if (this.IsNotContainerType(currentContainerType))
+            {
+                throw new IonException($"Cannot step out of {currentContainerType}");
+            }
+
+            this.PopContainer();
+
+            // Clear annotations
+            this.FinishValue();
+        }
+
+        void IIonWriter.WriteValue(IIonReader reader) => throw new NotSupportedException();
+
+        void IIonWriter.WriteValues(IIonReader reader) => throw new NotSupportedException();
+
+        void IIonWriter.SetTypeAnnotations(IEnumerable<string> annotations) => throw new NotSupportedException();
+
+        public void WriteNull()
+        {
+            const byte nullNull = 0x0F;
+            this.PrepareValue();
+            this.containerStack.IncreaseCurrentContainerLength(1);
+            this.dataBuffer.WriteByte(nullNull);
+            this.FinishValue();
+        }
+
+        public void WriteNull(IonType type)
+        {
+            var nullByte = BinaryConstants.GetNullByte(type);
+            this.PrepareValue();
+            this.containerStack.IncreaseCurrentContainerLength(1);
+            this.dataBuffer.WriteByte(nullByte);
+            this.FinishValue();
+        }
+
+        public void WriteBool(bool value)
+        {
+            this.PrepareValue();
+            this.containerStack.IncreaseCurrentContainerLength(1);
+            this.dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
+        }
+
+        public void WriteInt(long value)
+        {
+            this.PrepareValue();
+            if (value == 0)
+            {
+                this.containerStack.IncreaseCurrentContainerLength(1);
+                this.dataBuffer.WriteByte(IntZeroByte);
+            }
+            else if (value < 0)
+            {
+                if (value == long.MinValue)
+                {
+                    // XXX special case for min_value which will not play nice with signed
+                    // arithmetic and fit into the positive space
+                    // XXX we keep 2's complement of Long.MIN_VALUE because it encodes to unsigned 2
+                    // ** 63 (0x8000000000000000L)
+                    // XXX WriteBuffer.writeUInt64() never looks at sign
+                    this.dataBuffer.WriteByte(TidNegIntByte | 0x8);
+                    this.dataBuffer.WriteUint64(value);
+                    this.containerStack.IncreaseCurrentContainerLength(9);
+                }
+                else
+                {
+                    this.WriteTypedUInt(TidNegIntByte, -value);
+                }
+            }
+            else
+            {
+                this.WriteTypedUInt(TidPosIntByte, value);
+            }
+
+            this.FinishValue();
+        }
+
+        public void WriteInt(BigInteger value)
+        {
+            if (value >= long.MinValue && value <= long.MaxValue)
+            {
+                this.WriteInt((long)value);
+                return;
+            }
+
+            this.PrepareValue();
+
+            var type = TidPosIntByte;
+            if (value < 0)
+            {
+                type = TidNegIntByte;
+                value = BigInteger.Negate(value);
+            }
+
+            // TODO: Is there a no-alloc way?
+#if NET45 || NETSTANDARD2_0
+            var buffer = value.ToByteArray();
+            Array.Reverse(buffer);
+#else
+            var buffer = value.ToByteArray(isBigEndian: true);
+#endif
+            this.WriteTypedBytes(type, buffer);
+
+            this.FinishValue();
+        }
+
+        public void WriteFloat(double value)
+        {
+            this.PrepareValue();
+
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (!this.forceFloat64 && value == (float)value)
+            {
+                // TODO: Increase testing coverage
+                this.containerStack.IncreaseCurrentContainerLength(5);
+                this.dataBuffer.WriteByte(TidFloatByte | 4);
+                this.dataBuffer.WriteUint32(BitConverterEx.SingleToInt32Bits((float)value));
+            }
+            else
+            {
+                this.containerStack.IncreaseCurrentContainerLength(9);
+                this.dataBuffer.WriteByte(TidFloatByte | 8);
+
+                if (double.IsNaN(value))
+                {
+                    // Double.NaN is different between C# and Java
+                    // For consistency, map NaN to the long value for NaN in Java
+                    this.dataBuffer.WriteUint64(0x7ff8000000000000L);
+                }
+                else
+                {
+                    this.dataBuffer.WriteUint64(BitConverter.DoubleToInt64Bits(value));
+                }
+            }
+
+            this.FinishValue();
+        }
+
+        public void WriteDecimal(decimal value)
+        {
+            this.PrepareValue();
+
+            if (value == 0)
+            {
+                this.containerStack.IncreaseCurrentContainerLength(1);
+                this.dataBuffer.WriteUint8(TidDecimalByte);
+            }
+            else
+            {
+                this.WriteDecimalNumber(value, true);
+            }
+
+            this.FinishValue();
+        }
+
+        public void WriteDecimal(BigDecimal value)
+        {
+            if (value.IntVal == 0 && value.Scale == 0 && !value.IsNegativeZero)
+            {
+                this.WriteDecimal(value.ToDecimal());
+                return;
+            }
+
+            this.PrepareValue();
+
+            // Wrapup first
+            // Add all written segments to the sequence
+            this.dataBuffer.Wrapup();
+
+            // Set a new container
+            var newContainer = this.containerStack.PushContainer(ContainerType.BigDecimal);
+
+            this.dataBuffer.StartStreak(newContainer.Sequence);
+            var totalLength = this.dataBuffer.WriteVarInt(-value.Scale);
+            var negative = value.IntVal < 0 || value.IsNegativeZero;
+            var mag = BigInteger.Abs(value.IntVal);
+
+#if NET45 || NETSTANDARD2_0
+            var bytes = mag.ToByteArray();
+            Array.Reverse(bytes);
+#else
+            var bytes = mag.ToByteArray(isBigEndian: true);
+#endif
+
+            if (negative)
+            {
+                if ((bytes[0] & 0b1000_0000) == 0)
+                {
+                    // bytes[0] can store the sign bit
+                    bytes[0] |= 0b1000_0000;
+                }
+                else
+                {
+                    // Use an extra sign byte
+                    totalLength++;
+                    this.dataBuffer.WriteUint8(0b1000_0000);
+                }
+            }
+            else if (mag.IsZero)
+            {
+                bytes = new byte[] { };
+            }
+
+            totalLength += bytes.Length;
+            this.dataBuffer.WriteBytes(bytes);
+            this.containerStack.IncreaseCurrentContainerLength(totalLength);
+
+            // Finish up
+            this.PopContainer();
+            this.FinishValue();
+        }
+
+        public void WriteTimestamp(Timestamp value)
+        {
+            const byte varintNegZero = 0xC0;
+            const short minutePrecision = 3;
+            const short secondPrecision = 4;
+            const short fracPrecision = 5;
+
+            this.PrepareValue();
+
+            // Wrapup first
+            // Add all written segments to the sequence
+            this.dataBuffer.Wrapup();
+
+            // Set a new container
+            var newContainer = this.containerStack.PushContainer(ContainerType.Timestamp);
+            var totalLength = 0;
+            this.dataBuffer.StartStreak(newContainer.Sequence);
+            if (value.DateTimeValue.Kind == DateTimeKind.Unspecified || value.DateTimeValue.Kind == DateTimeKind.Local)
+            {
+                // Unknown offset
+                totalLength++;
+                this.dataBuffer.WriteByte(varintNegZero);
+            }
+            else
+            {
+                totalLength += this.dataBuffer.WriteVarUint(value.LocalOffset);
+            }
+
+            this.containerStack.IncreaseCurrentContainerLength(totalLength);
+
+            // Don't update totallength here
+            this.WriteVarUint(value.DateTimeValue.Year);
+            this.WriteVarUint(value.DateTimeValue.Month);
+            this.WriteVarUint(value.DateTimeValue.Day);
+
+            short precision = 0;
+
+            // We support up to ticks precision
+            decimal tickRemainder = value.DateTimeValue.Ticks % TimeSpan.TicksPerSecond;
+            if (tickRemainder != 0)
+            {
+                precision = fracPrecision;
+            }
+            else if (value.DateTimeValue.Second != 0)
+            {
+                precision = secondPrecision;
+            }
+            else if (value.DateTimeValue.Hour != 0 || value.DateTimeValue.Minute != 0)
+            {
+                precision = minutePrecision;
+            }
+
+            if (precision >= minutePrecision)
+            {
+                this.WriteVarUint(value.DateTimeValue.Hour);
+                this.WriteVarUint(value.DateTimeValue.Minute);
+            }
+
+            if (precision >= secondPrecision)
+            {
+                this.WriteVarUint(value.DateTimeValue.Second);
+            }
+
+            if (precision == fracPrecision)
+            {
+                tickRemainder /= TimeSpan.TicksPerSecond;
+                this.WriteDecimalNumber(tickRemainder, false);
+            }
+
+            this.PopContainer();
+
+            this.FinishValue();
+        }
+
+        public void WriteSymbol(string symbol)
+            => throw new UnsupportedIonVersionException($"Writing text symbol is not supported at raw level");
+
+        public void WriteSymbolToken(SymbolToken token)
+        {
+            if (token == default)
+            {
+                this.WriteNull(IonType.Symbol);
+                return;
+            }
+
+            Debug.Assert(token.Sid >= 0, "Sid is greater than 0");
+            this.PrepareValue();
+            this.WriteTypedUInt(TidSymbolType, token.Sid);
+            this.FinishValue();
+        }
+
+        public void WriteString(string value)
+        {
+            if (value == null)
+            {
+                this.WriteNull(IonType.String);
+                return;
+            }
+
+            this.PrepareValue();
+
+            var stringByteSize = Encoding.UTF8.GetByteCount(value);
+
+            // Since we know the length of the string upfront, we can just write the length right here
+            var tidByte = TidStringByte;
+            var totalSize = stringByteSize;
+            if (stringByteSize <= 0x0D)
+            {
+                tidByte |= (byte)stringByteSize;
+                this.dataBuffer.WriteByte(tidByte);
+                totalSize += 1;
+            }
+            else
+            {
+                tidByte |= BinaryConstants.LnIsVarLen;
+                this.dataBuffer.WriteByte(tidByte);
+                totalSize += 1 + this.dataBuffer.WriteVarUint(stringByteSize);
+            }
+
+            this.dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
+            this.containerStack.IncreaseCurrentContainerLength(totalSize);
+
+            this.FinishValue();
+        }
+
+        public void WriteBlob(ReadOnlySpan<byte> value)
+        {
+            this.PrepareValue();
+            this.WriteTypedBytes(TidBlobByte, value);
+            this.FinishValue();
+        }
+
+        public void WriteClob(ReadOnlySpan<byte> value)
+        {
+            this.PrepareValue();
+            this.WriteTypedBytes(TidClobType, value);
+            this.FinishValue();
+        }
+
+        public void AddTypeAnnotationSymbol(SymbolToken annotation) => this.Annotations.Add(annotation);
+
+        public void ClearTypeAnnotations() => this.Annotations.Clear();
+
+        public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding Annotations");
+
+        public void Dispose()
+        {
+            this.dataBuffer.Dispose();
+        }
+
+        public bool IsFieldNameSet() => this.currentFieldSymbolToken != default;
+
+        public int GetDepth() => this.containerStack.Count - 1;
+
+        public void WriteIonVersionMarker()
+        {
+            this.dataBuffer.WriteUint32(0xE0_01_00_EA);
+            this.containerStack.IncreaseCurrentContainerLength(4);
+        }
+
+        /// <summary>
+        /// This will stage the remaining writes in the buffer to be flushed, should be called before 'Flush()'.
+        /// </summary>
+        /// <returns>Total size of the bytes to be flushed.</returns>
+        internal int PrepareFlush()
+        {
+            var topContainer = this.containerStack.Peek();
+
+            // Wrapup to append all data to the sequence,
+            // but first, remember the previous position so we can update the length
+            var currIdx = topContainer.Sequence.Count;
+            this.dataBuffer.Wrapup();
+            var increased = 0;
+            for (var i = currIdx; i < topContainer.Sequence.Count; i++)
+            {
+                increased += topContainer.Sequence[i].Length;
+            }
+
+            this.containerStack.IncreaseCurrentContainerLength(increased);
+            return (int)topContainer.Length;
+        }
+
+        internal void Reset()
+        {
+            // Reset the states
+            this.dataBuffer.Reset();
+
+            // Double calls to Reset() should be fine
+            this.lengthBuffer.Reset();
+            this.containerStack.Clear();
+
+            // Set the top-level container
+            var pushedContainer = this.containerStack.PushContainer(ContainerType.Datagram);
+            this.dataBuffer.StartStreak(pushedContainer.Sequence);
+        }
+
+        internal IWriterBuffer GetLengthBuffer() => this.lengthBuffer;
+
+        internal IWriterBuffer GetDataBuffer() => this.dataBuffer;
+
+        /// <summary>
+        /// Prepare the field name and annotations (if any).
+        /// </summary>
+        /// <remarks>This method should handle being called multiple times and remain in the correct state.</remarks>
         private void PrepareValue()
         {
-            if (IsInStruct && _currentFieldSymbolToken == default)
-                throw new InvalidOperationException("In a struct but field name is not set");
-
-            if (_currentFieldSymbolToken != default)
+            if (this.IsInStruct && this.currentFieldSymbolToken == default)
             {
-                //write field name id
-                WriteVarUint(_currentFieldSymbolToken.Sid);
-                _currentFieldSymbolToken = default;
+                throw new InvalidOperationException("In a struct but field name is not set");
             }
 
-            if (_annotations.Count > 0)
+            if (this.currentFieldSymbolToken != default)
             {
-                //Since annotations 'wraps' the actual value, we basically won't know the length
-                //(the upcoming value might be another container)
-                //so we treat this as another container of type 'annotation'
+                // Write field name id
+                this.WriteVarUint(this.currentFieldSymbolToken.Sid);
+                this.currentFieldSymbolToken = default;
+            }
 
-                //add all written segments to the sequence
-                _dataBuffer.Wrapup();
+            if (this.Annotations.Count > 0)
+            {
+                // Since annotations 'wraps' the actual value, we don't know the length,
+                // (the upcoming value might be another container)
+                // so we treat this as another container of type 'annotation'
 
-                //set a new container
-                var newContainer = _containerStack.PushContainer(ContainerType.Annotation);
-                _dataBuffer.StartStreak(newContainer.Sequence);
+                // Add all written segments to the sequence
+                this.dataBuffer.Wrapup();
 
-                var annotLength = _dataBuffer.WriteAnnotationsWithLength(_annotations);
-                _containerStack.IncreaseCurrentContainerLength(annotLength);
+                // Set a new container
+                var newContainer = this.containerStack.PushContainer(ContainerType.Annotation);
+                this.dataBuffer.StartStreak(newContainer.Sequence);
 
-                _annotations.Clear();
+                var annotLength = this.dataBuffer.WriteAnnotationsWithLength(this.Annotations);
+                this.containerStack.IncreaseCurrentContainerLength(annotLength);
+
+                this.Annotations.Clear();
             }
         }
 
         /// <summary>
-        /// This is called after the value is written, and will check if the written value is wrapped within annotations
+        /// This is called after the value is written, and will check if the written value is wrapped within annotations.
         /// </summary>
         private void FinishValue()
         {
-            if (_containerStack.Count > 0)
+            if (this.containerStack.Count > 0)
             {
-                var containerInfo = _containerStack.Peek();
+                var containerInfo = this.containerStack.Peek();
                 if (containerInfo.Type == ContainerType.Annotation)
                 {
-                    PopContainer();
+                    this.PopContainer();
                 }
             }
         }
 
         /// <summary>
         /// Pop a container from the container stack and link the previous container sequence with the length
-        /// and sequence of the popped container
+        /// and sequence of the popped container.
         /// </summary>
         private void PopContainer()
         {
-            var popped = _containerStack.Pop();
-            if (_containerStack.Count == 0)
+            var popped = this.containerStack.Pop();
+            if (this.containerStack.Count == 0)
+            {
                 return;
+            }
 
+            var wrappedList = this.dataBuffer.Wrapup();
+            Debug.Assert(ReferenceEquals(wrappedList, popped.Sequence), "wrappedList does not equal popped.Sequence");
 
-            var wrappedList = _dataBuffer.Wrapup();
-            Debug.Assert(ReferenceEquals(wrappedList, popped.Sequence));
+            var outer = this.containerStack.Peek();
 
-            var outer = _containerStack.Peek();
-
-            //write the tid|len byte and (maybe) the length into the length buffer
-            //clear the length segments, no worry
-            _lengthSegments.Clear();
-            _lengthBuffer.StartStreak(_lengthSegments);
+            // Write the tid|len byte and (maybe) the length into the length buffer
+            this.lengthSegments.Clear();
+            this.lengthBuffer.StartStreak(this.lengthSegments);
             byte tidByte;
             switch (popped.Type)
             {
@@ -189,447 +701,107 @@ namespace Amazon.IonDotnet.Internals.Binary
             var wholeContainerLength = popped.Length;
             if (wholeContainerLength <= 0xD)
             {
-                //fit in the tid byte
-                tidByte |= (byte) wholeContainerLength;
-                _containerStack.IncreaseCurrentContainerLength(1 + wholeContainerLength);
-                _lengthBuffer.WriteByte(tidByte);
+                // Fit in the tid byte
+                tidByte |= (byte)wholeContainerLength;
+                this.containerStack.IncreaseCurrentContainerLength(1 + wholeContainerLength);
+                this.lengthBuffer.WriteByte(tidByte);
             }
             else
             {
                 tidByte |= BinaryConstants.LnIsVarLen;
-                _lengthBuffer.WriteByte(tidByte);
-                var lengthBytes = _lengthBuffer.WriteVarUint(popped.Length);
-                _containerStack.IncreaseCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
+                this.lengthBuffer.WriteByte(tidByte);
+                var lengthBytes = this.lengthBuffer.WriteVarUint(popped.Length);
+                this.containerStack.IncreaseCurrentContainerLength(1 + lengthBytes + wholeContainerLength);
             }
 
-            _lengthBuffer.Wrapup();
-            foreach (var t in _lengthSegments)
+            this.lengthBuffer.Wrapup();
+            foreach (var t in this.lengthSegments)
             {
                 outer.Sequence.Add(t);
             }
 
             outer.Sequence.AddRange(wrappedList);
-            _dataBuffer.StartStreak(outer.Sequence);
+            this.dataBuffer.StartStreak(outer.Sequence);
         }
 
         private void WriteVarUint(long value)
         {
-            Debug.Assert(value >= 0);
-            var written = _dataBuffer.WriteVarUint(value);
-            _containerStack.IncreaseCurrentContainerLength(written);
-        }
-
-        //this is not supposed to be called ever
-        public ISymbolTable SymbolTable => SharedSymbolTable.GetSystem(1);
-
-        /// <summary>
-        /// Simply write the buffers (async), <see cref="PrepareFlush"/> should be called first
-        /// </summary>
-        /// <param name="outputStream">Stream to flush to</param>
-        public async Task FlushAsync(Stream outputStream)
-        {
-            Debug.Assert(_containerStack.Count == 1, $"{_containerStack.Count}");
-            Debug.Assert(outputStream?.CanWrite == true);
-            var currentSequence = _containerStack.Peek().Sequence;
-
-            //now write
-            foreach (var segment in currentSequence)
-            {
-                await outputStream.WriteAsync(segment);
-            }
-
-            outputStream.Flush();
-        }
-
-        /// <summary>
-        /// Simply write the buffers (blocking), <see cref="PrepareFlush"/> should be called first
-        /// </summary>
-        /// <param name="outputStream">Stream to flush to</param>
-        public void Flush(Stream outputStream)
-        {
-            Debug.Assert(_containerStack.Count == 1, $"{_containerStack.Count}");
-            Debug.Assert(outputStream?.CanWrite == true);
-            var currentSequence = _containerStack.Peek().Sequence;
-
-            //now write
-            foreach (var segment in currentSequence)
-            {
-                outputStream.Write(segment.Span);
-            }
-
-            outputStream.Flush();
-        }
-
-        //these won't be called at this level
-//        Task IIonWriter.FlushAsync() => TaskEx.CompletedTask;
-
-        void IIonWriter.Flush()
-        {
-        }
-
-        /// <summary>
-        /// This will stage the remaining writes in the buffer to be flushed, should be called before 'flush()'
-        /// </summary>
-        /// <returns>Total size of the bytes to be flushed</returns>
-        internal int PrepareFlush()
-        {
-            var topContainer = _containerStack.Peek();
-            //wrapup to append all data to the sequence
-            //but first, remember the previous position so we can update the length
-            var currIdx = topContainer.Sequence.Count;
-            _dataBuffer.Wrapup();
-            var increased = 0;
-            for (var i = currIdx; i < topContainer.Sequence.Count; i++)
-            {
-                increased += topContainer.Sequence[i].Length;
-            }
-
-            _containerStack.IncreaseCurrentContainerLength(increased);
-            return (int) topContainer.Length;
-        }
-
-        public void Finish()
-        {
-            //TODO implement writing again after finish
-        }
-
-        internal void Reset()
-        {
-            //reset the states
-            _dataBuffer.Reset();
-            //double calls to Reset() should be fine
-            _lengthBuffer.Reset();
-            _containerStack.Clear();
-
-            //set the top-level container
-            var pushedContainer = _containerStack.PushContainer(ContainerType.Datagram);
-            _dataBuffer.StartStreak(pushedContainer.Sequence);
-        }
-
-//        public Task FinishAsync()
-//        {
-//            throw new NotImplementedException();
-//        }
-
-        public void SetFieldName(string name) => throw new NotSupportedException("Cannot set a field name here");
-
-        public void SetFieldNameSymbol(SymbolToken symbol)
-        {
-            if (!IsInStruct)
-                throw new IonException("Has to be in a struct to set a field name");
-            _currentFieldSymbolToken = symbol;
-        }
-
-        public void StepIn(IonType type)
-        {
-            if (!type.IsContainer())
-                throw new IonException($"Cannot step into {type}");
-
-            PrepareValue();
-            //wrapup the current writes
-
-            if (_containerStack.Count > 0)
-            {
-                var writeList = _dataBuffer.Wrapup();
-                Debug.Assert(ReferenceEquals(writeList, _containerStack.Peek().Sequence));
-            }
-
-            var pushedContainer = _containerStack.PushContainer(GetContainerType(type));
-            _dataBuffer.StartStreak(pushedContainer.Sequence);
-        }
-
-        public void StepOut()
-        {
-            if (_currentFieldSymbolToken != default)
-                throw new IonException("Cannot step out with field name set");
-            if (_annotations.Count > 0)
-                throw new IonException("Cannot step out with annotations set");
-
-            //TODO check if this container is actually list or struct
-            var currentContainerType = _containerStack.Peek().Type;
-
-            if (IsNotContainerType(currentContainerType))
-                throw new IonException($"Cannot step out of {currentContainerType}");
-
-            PopContainer();
-            //clear annotations
-            FinishValue();
-        }
-
-
-        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek().Type == ContainerType.Struct;
-
-        void IIonWriter.WriteValue(IIonReader reader) => throw new NotSupportedException();
-
-        void IIonWriter.WriteValues(IIonReader reader) => throw new NotSupportedException();
-
-        void IIonWriter.SetTypeAnnotations(IEnumerable<string> annotations) => throw new NotSupportedException();
-
-        public void WriteNull()
-        {
-            const byte nullNull = 0x0F;
-            PrepareValue();
-            _containerStack.IncreaseCurrentContainerLength(1);
-            _dataBuffer.WriteByte(nullNull);
-            FinishValue();
-        }
-
-        public void WriteNull(IonType type)
-        {
-            var nullByte = BinaryConstants.GetNullByte(type);
-            PrepareValue();
-            _containerStack.IncreaseCurrentContainerLength(1);
-            _dataBuffer.WriteByte(nullByte);
-            FinishValue();
-        }
-
-        public void WriteBool(bool value)
-        {
-            PrepareValue();
-            _containerStack.IncreaseCurrentContainerLength(1);
-            _dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
-        }
-
-        public void WriteInt(long value)
-        {
-            PrepareValue();
-            if (value == 0)
-            {
-                _containerStack.IncreaseCurrentContainerLength(1);
-                _dataBuffer.WriteByte(IntZeroByte);
-            }
-            else if (value < 0)
-            {
-                if (value == long.MinValue)
-                {
-                    // XXX special case for min_value which will not play nice with signed
-                    // arithmetic and fit into the positive space
-                    // XXX we keep 2's complement of Long.MIN_VALUE because it encodes to unsigned 2
-                    // ** 63 (0x8000000000000000L)
-                    // XXX WriteBuffer.writeUInt64() never looks at sign
-                    _dataBuffer.WriteByte(TidNegIntByte | 0x8);
-                    _dataBuffer.WriteUint64(value);
-                    _containerStack.IncreaseCurrentContainerLength(9);
-                }
-                else
-                {
-                    WriteTypedUInt(TidNegIntByte, -value);
-                }
-            }
-            else
-            {
-                WriteTypedUInt(TidPosIntByte, value);
-            }
-
-            FinishValue();
+            Debug.Assert(value >= 0, "value is greater than 0");
+            var written = this.dataBuffer.WriteVarUint(value);
+            this.containerStack.IncreaseCurrentContainerLength(written);
         }
 
         private void WriteTypedUInt(byte type, long value)
         {
             if (value <= 0xFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(2);
-                _dataBuffer.WriteUint8(type | 0x01);
-                _dataBuffer.WriteUint8(value);
+                this.containerStack.IncreaseCurrentContainerLength(2);
+                this.dataBuffer.WriteUint8(type | 0x01);
+                this.dataBuffer.WriteUint8(value);
             }
             else if (value <= 0xFFFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(3);
-                _dataBuffer.WriteUint8(type | 0x02);
-                _dataBuffer.WriteUint16(value);
+                this.containerStack.IncreaseCurrentContainerLength(3);
+                this.dataBuffer.WriteUint8(type | 0x02);
+                this.dataBuffer.WriteUint16(value);
             }
             else if (value <= 0xFFFFFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(4);
-                _dataBuffer.WriteUint8(type | 0x03);
-                _dataBuffer.WriteUint24(value);
+                this.containerStack.IncreaseCurrentContainerLength(4);
+                this.dataBuffer.WriteUint8(type | 0x03);
+                this.dataBuffer.WriteUint24(value);
             }
             else if (value <= 0xFFFFFFFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(5);
-                _dataBuffer.WriteUint8(type | 0x04);
-                _dataBuffer.WriteUint32(value);
+                this.containerStack.IncreaseCurrentContainerLength(5);
+                this.dataBuffer.WriteUint8(type | 0x04);
+                this.dataBuffer.WriteUint32(value);
             }
             else if (value <= 0xFFFFFFFFFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(6);
-                _dataBuffer.WriteUint8(type | 0x05);
-                _dataBuffer.WriteUint40(value);
+                this.containerStack.IncreaseCurrentContainerLength(6);
+                this.dataBuffer.WriteUint8(type | 0x05);
+                this.dataBuffer.WriteUint40(value);
             }
             else if (value <= 0xFFFFFFFFFFFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(7);
-                _dataBuffer.WriteUint8(type | 0x06);
-                _dataBuffer.WriteUint48(value);
+                this.containerStack.IncreaseCurrentContainerLength(7);
+                this.dataBuffer.WriteUint8(type | 0x06);
+                this.dataBuffer.WriteUint48(value);
             }
             else if (value <= 0xFFFFFFFFFFFFFFL)
             {
-                _containerStack.IncreaseCurrentContainerLength(8);
-                _dataBuffer.WriteUint8(type | 0x07);
-                _dataBuffer.WriteUint56(value);
+                this.containerStack.IncreaseCurrentContainerLength(8);
+                this.dataBuffer.WriteUint8(type | 0x07);
+                this.dataBuffer.WriteUint56(value);
             }
             else
             {
-                _containerStack.IncreaseCurrentContainerLength(9);
-                _dataBuffer.WriteUint8(type | 0x08);
-                _dataBuffer.WriteUint64(value);
+                this.containerStack.IncreaseCurrentContainerLength(9);
+                this.dataBuffer.WriteUint8(type | 0x08);
+                this.dataBuffer.WriteUint64(value);
             }
-        }
-
-        public void WriteInt(BigInteger value)
-        {
-            if (value >= long.MinValue && value <= long.MaxValue)
-            {
-                WriteInt((long) value);
-                return;
-            }
-
-            PrepareValue();
-
-            var type = TidPosIntByte;
-            if (value < 0)
-            {
-                type = TidNegIntByte;
-                value = BigInteger.Negate(value);
-            }
-
-            //TODO is this different than java, is there a no-alloc way?
-#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
-            var buffer = value.ToByteArray();
-            Array.Reverse(buffer);
-#else
-            var buffer = value.ToByteArray(isBigEndian: true);
-#endif
-            WriteTypedBytes(type, buffer);
-
-            FinishValue();
         }
 
         /// <summary>
         /// Write raw bytes with a type.
         /// </summary>
-        /// <remarks>This does not do <see cref="PrepareValue"/></remarks> or <see cref="FinishValue"/>
+        /// <remarks>This does not do <see cref="PrepareValue"/>.</remarks> or <see cref="FinishValue"/>
         private void WriteTypedBytes(byte type, ReadOnlySpan<byte> data)
         {
             var totalLength = 1;
             if (data.Length <= 0xD)
             {
-                _dataBuffer.WriteUint8(type | (byte) data.Length);
+                this.dataBuffer.WriteUint8(type | (byte)data.Length);
             }
             else
             {
-                _dataBuffer.WriteUint8(type | BinaryConstants.LnIsVarLen);
-                totalLength += _dataBuffer.WriteVarUint(data.Length);
+                this.dataBuffer.WriteUint8(type | BinaryConstants.LnIsVarLen);
+                totalLength += this.dataBuffer.WriteVarUint(data.Length);
             }
 
-            _dataBuffer.WriteBytes(data);
-            _containerStack.IncreaseCurrentContainerLength(totalLength + data.Length);
-        }
-
-        public void WriteFloat(double value)
-        {
-            PrepareValue();
-
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (!_forceFloat64 && value == (float) value)
-            {
-                //TODO requires careful testing
-                _containerStack.IncreaseCurrentContainerLength(5);
-                _dataBuffer.WriteByte(TidFloatByte | 4);
-                _dataBuffer.WriteUint32(BitConverterEx.SingleToInt32Bits((float) value));
-            }
-            else
-            {
-                _containerStack.IncreaseCurrentContainerLength(9);
-                _dataBuffer.WriteByte(TidFloatByte | 8);
-
-                if (double.IsNaN(value))
-                {
-                    // Double.NaN is different between C# and Java
-                    // For consistency, map NaN to the long value for NaN in Java
-                    _dataBuffer.WriteUint64(0x7ff8000000000000L);
-                }
-                else
-                {
-                    _dataBuffer.WriteUint64(BitConverter.DoubleToInt64Bits(value));
-                }
-            }
-
-            FinishValue();
-        }
-
-        public void WriteDecimal(decimal value)
-        {
-            PrepareValue();
-
-            if (value == 0)
-            {
-                _containerStack.IncreaseCurrentContainerLength(1);
-                _dataBuffer.WriteUint8(TidDecimalByte);
-            }
-            else
-            {
-                WriteDecimalNumber(value, true);
-            }
-
-            FinishValue();
-        }
-
-        public void WriteDecimal(BigDecimal value)
-        {
-            if (value.IntVal == 0 && value.Scale == 0 && !value.IsNegativeZero)
-            {
-                WriteDecimal(value.ToDecimal());
-                return;
-            }
-
-            PrepareValue();
-
-            //wrapup first
-            //add all written segments to the sequence
-            _dataBuffer.Wrapup();
-
-            //set a new container
-            var newContainer = _containerStack.PushContainer(ContainerType.BigDecimal);
-
-            _dataBuffer.StartStreak(newContainer.Sequence);
-            var totalLength = _dataBuffer.WriteVarInt(-value.Scale);
-            var negative = value.IntVal < 0 || value.IsNegativeZero;
-            var mag = BigInteger.Abs(value.IntVal);
-
-#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
-            var bytes = mag.ToByteArray();
-            Array.Reverse(bytes);
-#else
-            var bytes = mag.ToByteArray(isBigEndian: true);
-#endif
-
-            if (negative)
-            {
-                if ((bytes[0] & 0b1000_0000) == 0)
-                {
-                    //bytes[0] can store the sign bit
-                    bytes[0] |= 0b1000_0000;
-                }
-                else
-                {
-                    //use an extra sign byte
-                    totalLength++;
-                    _dataBuffer.WriteUint8(0b1000_0000);
-                }
-            }
-            else if (mag.IsZero)
-            {
-                bytes = new byte[] {};
-            }
-
-            totalLength += bytes.Length;
-            _dataBuffer.WriteBytes(bytes);
-            _containerStack.IncreaseCurrentContainerLength(totalLength);
-
-            //finish up
-            PopContainer();
-            FinishValue();
+            this.dataBuffer.WriteBytes(data);
+            this.containerStack.IncreaseCurrentContainerLength(totalLength + data.Length);
         }
 
         private void WriteDecimalNumber(decimal value, bool writeTid)
@@ -638,10 +810,9 @@ namespace Amazon.IonDotnet.Internals.Binary
             var maxIdx = DecimalHelper.CopyDecimalBigEndian(bytes, value);
 
             var negative = value < 0;
-            Debug.Assert(!negative || (bytes[0] & 0b1000_0000) <= 0);
-            Debug.Assert(negative || (bytes[0] ^ 0b1000_0000) > 0);
+            Debug.Assert(!negative || (bytes[0] & 0b1000_0000) <= 0, "Value is <= 0 but has positive flag");
+            Debug.Assert(negative || (bytes[0] ^ 0b1000_0000) > 0, "Value is > 0 but has negative flag");
 
-            //len = maxid - (last index of flag=3) + (exponent byte=1)
             var totalLength = maxIdx - 2;
             var needExtraByte = (bytes[4] & 0b_1000_0000) > 0;
             if (needExtraByte)
@@ -654,263 +825,36 @@ namespace Amazon.IonDotnet.Internals.Binary
                 var tidByte = TidDecimalByte;
                 if (totalLength <= 0x0D)
                 {
-                    tidByte |= (byte) totalLength;
-                    _dataBuffer.WriteByte(tidByte);
+                    tidByte |= (byte)totalLength;
+                    this.dataBuffer.WriteByte(tidByte);
                     totalLength++;
                 }
                 else
                 {
                     tidByte |= BinaryConstants.LnIsVarLen;
-                    _dataBuffer.WriteByte(tidByte);
-                    totalLength += 1 + _dataBuffer.WriteVarUint(totalLength);
+                    this.dataBuffer.WriteByte(tidByte);
+                    totalLength += 1 + this.dataBuffer.WriteVarUint(totalLength);
                 }
             }
 
             const byte isNegativeAndDone = 0b_1100_0000;
-            //byte[2] is enough to store the 28 decimal places (255>28)
-            _dataBuffer.WriteByte((byte) (bytes[2] | isNegativeAndDone));
 
-            //write the 'sign' byte
+            // byte[2] is enough to store the 28 decimal places (255>28)
+            this.dataBuffer.WriteByte((byte)(bytes[2] | isNegativeAndDone));
+
+            // Write the 'sign' byte
             if (needExtraByte)
             {
-                _dataBuffer.WriteByte((byte) (negative ? 0b_1000_0000 : 0b_0000_000));
+                this.dataBuffer.WriteByte((byte)(negative ? 0b_1000_0000 : 0b_0000_000));
             }
             else if (negative)
             {
                 bytes[4] |= 0b_1000_0000;
             }
 
-            _dataBuffer.WriteBytes(bytes.Slice(4, maxIdx - 3));
+            this.dataBuffer.WriteBytes(bytes.Slice(4, maxIdx - 3));
 
-            _containerStack.IncreaseCurrentContainerLength(totalLength);
-        }
-
-
-        public void WriteTimestamp(Timestamp value)
-        {
-            const byte varintNegZero = 0xC0;
-
-            DateTime dateTimeValue = value.DateTimeValue.Kind == DateTimeKind.Local
-                ? value.DateTimeValue.AddMinutes(-value.LocalOffset)
-                : value.DateTimeValue;
-
-            PrepareValue();
-
-            //wrapup first
-            //add all written segments to the sequence
-            _dataBuffer.Wrapup();
-
-            //set a new container
-            var newContainer = _containerStack.PushContainer(ContainerType.Timestamp);
-            var totalLength = 0;
-            _dataBuffer.StartStreak(newContainer.Sequence);
-            if (value.DateTimeValue.Kind == DateTimeKind.Unspecified)
-            {
-                //unknown offset
-                totalLength++;
-                _dataBuffer.WriteByte(varintNegZero);
-            }
-            else
-            {
-                totalLength += _dataBuffer.WriteVarInt(value.LocalOffset);
-            }
-
-            _containerStack.IncreaseCurrentContainerLength(totalLength);
-
-            //don't update totallength here
-            WriteVarUint(dateTimeValue.Year);
-            if (value.TimestampPrecision >= Timestamp.Precision.Month)
-            {
-                WriteVarUint(dateTimeValue.Month);
-            }
-            if (value.TimestampPrecision >= Timestamp.Precision.Day)
-            {
-                WriteVarUint(dateTimeValue.Day);
-            }
-            //The hour and minute is considered as a single component
-            if (value.TimestampPrecision >= Timestamp.Precision.Minute)
-            {
-                WriteVarUint(dateTimeValue.Hour);
-                WriteVarUint(dateTimeValue.Minute);
-            }
-
-            if (value.TimestampPrecision >= Timestamp.Precision.Second)
-            {
-                WriteVarUint(dateTimeValue.Second);
-            }
-
-            if (value.TimestampPrecision >= Timestamp.Precision.Second && !value.FractionalSecond.ToString().Equals("0"))
-            {
-                WriteDecimalNumber(value.FractionalSecond, false);
-            }
-
-            PopContainer();
-
-            FinishValue();
-        }
-
-        public void WriteSymbol(string symbol)
-            => throw new UnsupportedIonVersionException($"Writing text symbol is not supported at raw level");
-
-        public void WriteSymbolToken(SymbolToken token)
-        {
-            if (token == default)
-            {
-                //does this ever happen?
-                WriteNull(IonType.Symbol);
-                return;
-            }
-
-            Debug.Assert(token.Sid >= 0);
-            PrepareValue();
-            WriteTypedUInt(TidSymbolType, token.Sid);
-            FinishValue();
-        }
-
-        public void WriteString(string value)
-        {
-            if (value == null)
-            {
-                WriteNull(IonType.String);
-                return;
-            }
-
-            PrepareValue();
-            //TODO what's the performance implication of this?
-            var stringByteSize = Encoding.UTF8.GetByteCount(value);
-            //since we know the length of the string upfront, we can just write the length right here
-            var tidByte = TidStringByte;
-            var totalSize = stringByteSize;
-            if (stringByteSize <= 0x0D)
-            {
-                tidByte |= (byte) stringByteSize;
-                _dataBuffer.WriteByte(tidByte);
-                totalSize += 1;
-            }
-            else
-            {
-                tidByte |= BinaryConstants.LnIsVarLen;
-                _dataBuffer.WriteByte(tidByte);
-                totalSize += 1 + _dataBuffer.WriteVarUint(stringByteSize);
-            }
-
-            _dataBuffer.WriteUtf8(value.AsSpan(), stringByteSize);
-            _containerStack.IncreaseCurrentContainerLength(totalSize);
-
-            FinishValue();
-        }
-
-        public void WriteBlob(ReadOnlySpan<byte> value)
-        {
-            PrepareValue();
-            WriteTypedBytes(TidBlobByte, value);
-            FinishValue();
-        }
-
-        public void WriteClob(ReadOnlySpan<byte> value)
-        {
-            PrepareValue();
-            WriteTypedBytes(TidClobType, value);
-            FinishValue();
-        }
-
-        public void AddTypeAnnotationSymbol(SymbolToken annotation) => _annotations.Add(annotation);
-
-        public void ClearTypeAnnotations() => _annotations.Clear();
-
-        public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding annotations");
-
-        public void Dispose()
-        {
-            _dataBuffer.Dispose();
-        }
-
-        public bool IsFieldNameSet() => _currentFieldSymbolToken != default;
-
-        public int GetDepth() => _containerStack.Count - 1;
-
-        public void WriteIonVersionMarker()
-        {
-            _dataBuffer.WriteUint32(0xE0_01_00_EA);
-            _containerStack.IncreaseCurrentContainerLength(4);
-        }
-
-        internal IWriterBuffer GetLengthBuffer() => _lengthBuffer;
-        internal IWriterBuffer GetDataBuffer() => _dataBuffer;
-
-        private class ContainerInfo
-        {
-            public List<Memory<byte>> Sequence;
-            public ContainerType Type;
-            public long Length;
-        }
-
-        private class ContainerStack
-        {
-            private ContainerInfo[] _array;
-
-            public ContainerStack(int initialCapacity)
-            {
-                Debug.Assert(initialCapacity > 0);
-                _array = new ContainerInfo[initialCapacity];
-            }
-
-            public ContainerInfo PushContainer(ContainerType containerType)
-            {
-                EnsureCapacity(Count);
-                if (_array[Count] == null)
-                {
-                    _array[Count] = new ContainerInfo
-                    {
-                        Sequence = new List<Memory<byte>>(2),
-                        Type = containerType
-                    };
-                    return _array[Count++];
-                }
-
-                var entry = _array[Count];
-                entry.Sequence.Clear();
-                entry.Length = 0;
-                entry.Type = containerType;
-                return _array[Count++];
-            }
-
-            public void IncreaseCurrentContainerLength(long increase)
-            {
-                _array[Count - 1].Length += increase;
-            }
-
-            public ContainerInfo Peek()
-            {
-                if (Count == 0)
-                    throw new IndexOutOfRangeException();
-                return _array[Count - 1];
-            }
-
-            public ContainerInfo Pop()
-            {
-                if (Count == 0)
-                    throw new IndexOutOfRangeException();
-                var ret = _array[--Count];
-                return ret;
-            }
-
-            public void Clear()
-            {
-                //don't dispose of the lists
-                Count = 0;
-            }
-
-            public int Count { get; private set; }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void EnsureCapacity(int forIndex)
-            {
-                if (forIndex < _array.Length)
-                    return;
-                //resize
-                Array.Resize(ref _array, _array.Length * 2);
-            }
+            this.containerStack.IncreaseCurrentContainerLength(totalLength);
         }
 
         private ContainerType GetContainerType(IonType ionType)
@@ -933,6 +877,90 @@ namespace Amazon.IonDotnet.Internals.Binary
             return currentContainerType != ContainerType.List
                 && currentContainerType != ContainerType.Sexp
                 && currentContainerType != ContainerType.Struct;
+        }
+
+        private class ContainerInfo
+        {
+            public List<Memory<byte>> Sequence;
+            public ContainerType Type;
+            public long Length;
+        }
+
+        private class ContainerStack
+        {
+            private ContainerInfo[] array;
+
+            public ContainerStack(int initialCapacity)
+            {
+                Debug.Assert(initialCapacity > 0, "initialCapacity > 0");
+                this.array = new ContainerInfo[initialCapacity];
+            }
+
+            public int Count { get; private set; }
+
+            public ContainerInfo PushContainer(ContainerType containerType)
+            {
+                this.EnsureCapacity(this.Count);
+                if (this.array[this.Count] == null)
+                {
+                    this.array[this.Count] = new ContainerInfo
+                    {
+                        Sequence = new List<Memory<byte>>(2),
+                        Type = containerType,
+                    };
+                    return this.array[this.Count++];
+                }
+
+                var entry = this.array[this.Count];
+                entry.Sequence.Clear();
+                entry.Length = 0;
+                entry.Type = containerType;
+                return this.array[this.Count++];
+            }
+
+            public void IncreaseCurrentContainerLength(long increase)
+            {
+                this.array[this.Count - 1].Length += increase;
+            }
+
+            public ContainerInfo Peek()
+            {
+                if (this.Count == 0)
+                {
+                    throw new IndexOutOfRangeException();
+                }
+
+                return this.array[this.Count - 1];
+            }
+
+            public ContainerInfo Pop()
+            {
+                if (this.Count == 0)
+                {
+                    throw new IndexOutOfRangeException();
+                }
+
+                var ret = this.array[--this.Count];
+                return ret;
+            }
+
+            public void Clear()
+            {
+                // Don't dispose of the lists
+                this.Count = 0;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void EnsureCapacity(int forIndex)
+            {
+                if (forIndex < this.array.Length)
+                {
+                    return;
+                }
+
+                // Resize
+                Array.Resize(ref this.array, this.array.Length * 2);
+            }
         }
     }
 }

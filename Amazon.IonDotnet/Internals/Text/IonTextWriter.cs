@@ -79,10 +79,10 @@ namespace Amazon.IonDotnet.Internals.Text
                     continue;
                 }
 
-                _symbolTable.Imports.Add(table);
+                symbolTable.Imports.Add(table);
             }
 
-            _symbolTable.Refresh();
+            symbolTable.Refresh();
         }
 
         private void WriteLeadingWhiteSpace()
@@ -155,7 +155,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private void WriteAnnotations()
         {
-            foreach (var annotation in _annotations)
+            foreach (var annotation in annotations)
             {
                 WriteAnnotationToken(annotation);
                 _textWriter.Write("::");
@@ -284,7 +284,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             // write annotations only if they exist and we're not currently writing an IVM
-            if (_annotations.Count > 0 && !_isWritingIvm)
+            if (annotations.Count > 0 && !_isWritingIvm)
             {
                 if (!_options.SkipAnnotations)
                 {
@@ -292,7 +292,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     followingLongString = false;
                 }
 
-                _annotations.Clear();
+                annotations.Clear();
             }
 
             _followingLongString = followingLongString;
@@ -305,7 +305,7 @@ namespace Amazon.IonDotnet.Internals.Text
         private void WriteImports()
         {
             //only write local symtab if we import sth more than just system table
-            if (_symbolTable.Imports.Count <= 1)
+            if (symbolTable.Imports.Count <= 1)
             {
                 return;
             }
@@ -315,7 +315,7 @@ namespace Amazon.IonDotnet.Internals.Text
             SetFieldName(SystemSymbols.Imports);
             StepIn(IonType.List);
 
-            foreach (var importedTable in _symbolTable.Imports)
+            foreach (var importedTable in symbolTable.Imports)
             {
                 if (importedTable.IsSystem)
                 {

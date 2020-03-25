@@ -13,30 +13,26 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-
-// ReSharper disable UnusedMemberInSuper.Global
-
 namespace Amazon.IonDotnet
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Numerics;
+
     /// <summary>
     /// Contains all functions to write to an Ion stream.
     /// </summary>
     public interface IIonWriter : IDisposable
     {
         /// <summary>
-        /// Get the current symbol table being used by the writer.
+        /// Gets the current symbol table being used by the writer.
         /// </summary>
         ISymbolTable SymbolTable { get; }
 
-//        /// <summary>
-//        /// Flush all the pending written data (including symbol tables) to the output stream asynchronously.
-//        /// </summary>
-//        /// <returns>The task representing flush operation.</returns>
-//        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
-//        Task FlushAsync();
+        /// <summary>
+        /// Gets a value indicating whether values are being written as fields of a struct.
+        /// </summary>
+        bool IsInStruct { get; }
 
         /// <summary>
         /// Flush all the pending written data (including symbol tables) to the output stream (blocking).
@@ -45,7 +41,7 @@ namespace Amazon.IonDotnet
         void Flush();
 
         /// <summary>
-        /// Mark the end of a datagram, all written values will be flushed (blocking). 
+        /// Mark the end of a datagram, all written values will be flushed (blocking).
         /// </summary>
         /// <remarks>
         /// This method WILL flush the data (including symbol tables) to the output stream. The writer will then be reset to
@@ -54,32 +50,22 @@ namespace Amazon.IonDotnet
         /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
         void Finish();
 
-//        /// <summary>
-//        /// Mark the end of a datagram, all written values will be flushed (asynchronously). 
-//        /// </summary>
-//        /// <remarks>
-//        /// This method WILL flush the data (including symbol tables) to the output stream. The writer will then be reset to
-//        /// the initial state.
-//        /// </remarks>
-//        /// <exception cref="System.IO.IOException">I/O error on flushing.</exception>
-//        Task FinishAsync();
-
         /// <summary>
-        /// Set the field name, must be called when in a Struct
+        /// Set the field name, must be called when in a Struct.
         /// </summary>
-        /// <param name="name">Field name</param>
+        /// <param name="name">Field name.</param>
         void SetFieldName(string name);
 
         /// <summary>
-        /// Set the field name, but as a <see cref="SymbolToken"/>
+        /// Set the field name, but as a <see cref="SymbolToken"/>.
         /// </summary>
-        /// <param name="symbol">Symbol token</param>
+        /// <param name="symbol">Symbol token.</param>
         void SetFieldNameSymbol(SymbolToken symbol);
 
         /// <summary>
         /// Step in a container.
         /// </summary>
-        /// <param name="type">Container type</param>
+        /// <param name="type">Container type.</param>
         void StepIn(IonType type);
 
         /// <summary>
@@ -88,33 +74,28 @@ namespace Amazon.IonDotnet
         void StepOut();
 
         /// <summary>
-        /// Whether values are being written as fields of a struct
-        /// </summary>
-        bool IsInStruct { get; }
-
-        /// <summary>
         /// Write the current value from the reader.
         /// </summary>
-        /// <param name="reader">Ion reader</param>
+        /// <param name="reader">Ion reader.</param>
         void WriteValue(IIonReader reader);
 
         /// <summary>
         /// Writes a reader's current value, and all following values until the end of the current container.
         /// If there's no current value then this method calls {@link IonReader#next()} to get going.
         /// </summary>
-        /// <param name="reader">Ion reader</param>
-        /// <remarks>This method iterates until <see cref="IIonReader.MoveNext"/> returns null and does not Step out</remarks>
+        /// <param name="reader">Ion reader.</param>
+        /// <remarks>This method iterates until <see cref="IIonReader.MoveNext"/> returns null and does not Step out.</remarks>
         void WriteValues(IIonReader reader);
 
         /// <summary>
-        /// Write a null.null
+        /// Write a null.null.
         /// </summary>
         void WriteNull();
 
         /// <summary>
-        /// Write a <see cref="type" /> null value of a certain type
+        /// Write a <see cref="type" /> null value of a certain type.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="type">The IonType.</param>
         void WriteNull(IonType type);
 
         /// <summary>
@@ -132,7 +113,7 @@ namespace Amazon.IonDotnet
         /// <summary>
         /// Write a big integer value.
         /// </summary>
-        /// <param name="value">Big integer value/</param>
+        /// <param name="value">Big integer value/.</param>
         void WriteInt(BigInteger value);
 
         /// <summary>

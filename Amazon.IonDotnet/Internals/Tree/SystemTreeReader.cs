@@ -13,80 +13,81 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Numerics;
-using Amazon.IonDotnet.Tree;
-using Amazon.IonDotnet.Tree.Impl;
-
 namespace Amazon.IonDotnet.Internals.Tree
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Numerics;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
+
     internal class SystemTreeReader : IIonReader
     {
-        protected readonly ISymbolTable _systemSymbols;
-        protected IEnumerator<IIonValue> _iter;
-        protected IIonValue _parent;
-        protected IIonValue _next;
-        protected IIonValue _current;
-        protected bool _eof;
-        protected int _top;
-        // Holds pairs: IonValue parent (_parent), Iterator<IIonValue> cursor (_iter)
-        private Object[] _stack = new Object[10];
+        protected readonly ISymbolTable systemSymbols;
+        protected IEnumerator<IIonValue> iter;
+        protected IIonValue parent;
+        protected IIonValue next;
+        protected IIonValue current;
+        protected bool eof;
+        protected int top;
+
+        // Holds pairs: IonValue parent (parent), Iterator<IIonValue> cursor (iter)
+        private object[] stack = new object[10];
         private int pos = 0;
 
         protected SystemTreeReader(IIonValue value)
         {
-            _systemSymbols = SharedSymbolTable.GetSystem(1);
-            _current = null;
-            _eof = false;
-            _top = 0;
+            this.systemSymbols = SharedSymbolTable.GetSystem(1);
+            this.current = null;
+            this.eof = false;
+            this.top = 0;
             if (value.Type() == IonType.Datagram)
             {
-                _parent = value;
-                _next = null;
-                _iter = value.GetEnumerator();
+                this.parent = value;
+                this.next = null;
+                this.iter = value.GetEnumerator();
             }
             else
             {
-                _parent = null;
-                _next = value;
+                this.parent = null;
+                this.next = value;
             }
         }
 
-        public int CurrentDepth => _top/2;
+        public int CurrentDepth => this.top / 2;
 
-        public IonType CurrentType => (_current == null) ? IonType.None : _current.Type();
+        public IonType CurrentType => (this.current == null) ? IonType.None : this.current.Type();
 
-        public string CurrentFieldName => _current.FieldNameSymbol.Text;
+        public string CurrentFieldName => this.current.FieldNameSymbol.Text;
 
-        public bool CurrentIsNull => _current.IsNull;
+        public bool CurrentIsNull => this.current.IsNull;
 
-        public bool IsInStruct => CurrentDepth > 0 && _parent != null && _parent.Type() == IonType.Struct;
+        public bool IsInStruct => this.CurrentDepth > 0 && this.parent != null && this.parent.Type() == IonType.Struct;
 
         public BigInteger BigIntegerValue()
         {
-            return _current.BigIntegerValue;
+            return this.current.BigIntegerValue;
         }
 
         public bool BoolValue()
         {
-            return _current.BoolValue;
+            return this.current.BoolValue;
         }
 
         public BigDecimal DecimalValue()
         {
-            return _current.BigDecimalValue;
+            return this.current.BigDecimalValue;
         }
 
         public double DoubleValue()
         {
-            return _current.DoubleValue;
+            return this.current.DoubleValue;
         }
 
         public int GetBytes(Span<byte> buffer)
         {
-            var lobSize = GetLobByteSize();
+            var lobSize = this.GetLobByteSize();
             var bufSize = buffer.Length;
 
             if (lobSize < 0 || bufSize < 0)
@@ -95,16 +96,16 @@ namespace Amazon.IonDotnet.Internals.Tree
             }
             else if (lobSize <= bufSize)
             {
-                _current.Bytes().CopyTo(buffer);
-                pos += lobSize;
+                this.current.Bytes().CopyTo(buffer);
+                this.pos += lobSize;
                 return lobSize;
             }
-            else if (lobSize > bufSize && pos <= lobSize)
+            else if (lobSize > bufSize && this.pos <= lobSize)
             {
-                _current.Bytes()
-                    .Slice(pos, bufSize)
+                this.current.Bytes()
+                    .Slice(this.pos, bufSize)
                     .CopyTo(buffer);
-                pos += bufSize;
+                this.pos += bufSize;
                 return bufSize;
             }
 
@@ -113,24 +114,24 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public SymbolToken GetFieldNameSymbol()
         {
-            return _current.FieldNameSymbol;
+            return this.current.FieldNameSymbol;
         }
 
         public IntegerSize GetIntegerSize()
         {
-            return _current.IntegerSize;
+            return this.current.IntegerSize;
         }
 
         public int GetLobByteSize()
         {
-            return _current.ByteSize();
+            return this.current.ByteSize();
         }
 
-        public virtual ISymbolTable GetSymbolTable() => _systemSymbols;
+        public virtual ISymbolTable GetSymbolTable() => this.systemSymbols;
 
         public string[] GetTypeAnnotations()
         {
-            IReadOnlyCollection<SymbolToken> symbolTokens = _current.GetTypeAnnotationSymbols();
+            IReadOnlyCollection<SymbolToken> symbolTokens = this.current.GetTypeAnnotationSymbols();
 
             string[] annotations = new string[symbolTokens.Count];
 
@@ -141,6 +142,7 @@ namespace Amazon.IonDotnet.Internals.Tree
                 {
                     throw new UnknownSymbolException(symbolToken.Sid);
                 }
+
                 annotations[index] = symbolToken.Text;
                 index++;
             }
@@ -150,7 +152,7 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
-            return _current.GetTypeAnnotationSymbols();
+            return this.current.GetTypeAnnotationSymbols();
         }
 
         public bool HasAnnotation(string annotation)
@@ -161,7 +163,7 @@ namespace Amazon.IonDotnet.Internals.Tree
             }
 
             int? symbolTokenId = null;
-            foreach (SymbolToken symbolToken in _current.GetTypeAnnotationSymbols())
+            foreach (SymbolToken symbolToken in this.current.GetTypeAnnotationSymbols())
             {
                 string text = symbolToken.Text;
                 if (text == null)
@@ -184,128 +186,76 @@ namespace Amazon.IonDotnet.Internals.Tree
 
         public int IntValue()
         {
-            return _current.IntValue;
+            return this.current.IntValue;
         }
 
         public long LongValue()
         {
-            return _current.LongValue;
+            return this.current.LongValue;
         }
 
         public virtual IonType MoveNext()
         {
-            if (_next == null && !HasNext())
+            if (this.next == null && !this.HasNext())
             {
-                _current = null;
+                this.current = null;
                 return IonType.None;
             }
-            _current = _next;
-            _next = null;
 
-            return ((IonValue)_current).Type();
+            this.current = this.next;
+            this.next = null;
+
+            return ((IonValue)this.current).Type();
         }
 
         public byte[] NewByteArray()
         {
-            return _current.Bytes().ToArray();
+            return this.current.Bytes().ToArray();
         }
 
         public void StepIn()
         {
-            if (!IsContainer())
+            if (!this.IsContainer())
             {
                 throw new IonException("current value must be a container");
             }
 
-            Push();
-            _parent = _current;
-            _iter = new Children(_current);
-            _current = null;
-        }
-
-        private bool IsContainer()
-        {
-            return _current.Type() == IonType.Struct
-                || _current.Type() == IonType.List
-                || _current.Type() == IonType.Sexp
-                || _current.Type() == IonType.Datagram;
-        }
-
-        private void Push()
-        {
-            int oldLen = _stack.Length;
-            if (_top + 1 >= oldLen)
-            {
-                // we're going to do a "+2" on top so we need extra space
-                int newLen = oldLen * 2;
-                Object[] temp = new Object[newLen];
-                Array.Copy(_stack, 0, temp, 0, oldLen);
-                _stack = temp;
-            }
-            _stack[_top++] = _parent;
-            _stack[_top++] = _iter;
-        }
-
-        private void Pop()
-        {
-            _top--;
-            _iter = (IEnumerator<IIonValue>)_stack[_top];
-            _stack[_top] = null;  // Allow iterator to be garbage collected!
-
-            _top--;
-            _parent = (IIonValue)_stack[_top];
-            _stack[_top] = null;
-
-            // We don't know if we're at the end of the container, so check again.
-            _eof = false;
+            this.Push();
+            this.parent = this.current;
+            this.iter = new Children(this.current);
+            this.current = null;
         }
 
         public virtual bool HasNext()
         {
-            IonType nextType = NextHelperSystem();
-            return (nextType != IonType.None);
-        }
-
-        protected IonType NextHelperSystem()
-        {
-            if (_eof) return IonType.None;
-            if (_next != null) return _next.Type();
-
-            if(_iter != null && _iter.MoveNext())
-            {
-                _next = _iter.Current;
-            }
-
-            if ((_eof = (_next == null)))
-            {
-                return IonType.None;
-            }
-            return _next.Type();
+            IonType nextType = this.NextHelperSystem();
+            return nextType != IonType.None;
         }
 
         public void StepOut()
         {
-            if (_top < 1)
+            if (this.top < 1)
             {
                 throw new IonException("Cannot stepOut any further, already at top level.");
             }
-            Pop();
-            _current = null;
+
+            this.Pop();
+            this.current = null;
         }
 
         public string StringValue()
         {
-            return _current.StringValue;
+            return this.current.StringValue;
         }
 
         public SymbolToken SymbolValue()
         {
-            return _current.SymbolValue;
+            return this.current.SymbolValue;
         }
 
         public Timestamp TimestampValue()
         {
-            return _current.TimestampValue;
+            return this.current.TimestampValue;
         }
 
         /// <summary>
@@ -316,22 +266,85 @@ namespace Amazon.IonDotnet.Internals.Tree
             return;
         }
 
+        protected IonType NextHelperSystem()
+        {
+            if (this.eof)
+            {
+                return IonType.None;
+            }
+
+            if (this.next != null)
+            {
+                return this.next.Type();
+            }
+
+            if (this.iter != null && this.iter.MoveNext())
+            {
+                this.next = this.iter.Current;
+            }
+
+            if (this.eof = this.next == null)
+            {
+                return IonType.None;
+            }
+
+            return this.next.Type();
+        }
+
+        private bool IsContainer()
+        {
+            return this.current.Type() == IonType.Struct
+                || this.current.Type() == IonType.List
+                || this.current.Type() == IonType.Sexp
+                || this.current.Type() == IonType.Datagram;
+        }
+
+        private void Push()
+        {
+            int oldLen = this.stack.Length;
+            if (this.top + 1 >= oldLen)
+            {
+                // we're going to do a "+2" on top so we need extra space
+                int newLen = oldLen * 2;
+                object[] temp = new object[newLen];
+                Array.Copy(this.stack, 0, temp, 0, oldLen);
+                this.stack = temp;
+            }
+
+            this.stack[this.top++] = this.parent;
+            this.stack[this.top++] = this.iter;
+        }
+
+        private void Pop()
+        {
+            this.top--;
+            this.iter = (IEnumerator<IIonValue>)this.stack[this.top];
+            this.stack[this.top] = null;  // Allow iterator to be garbage collected
+
+            this.top--;
+            this.parent = (IIonValue)this.stack[this.top];
+            this.stack[this.top] = null;
+
+            // We don't know if we're at the end of the container, so check again.
+            this.eof = false;
+        }
+
         internal class Children : IEnumerator<IIonValue>
         {
-            bool _eof;
-            int _nextIdx;
-            readonly IIonValue _parent;
-            IIonValue _curr;
+            private readonly IIonValue parent;
+            private bool eof;
+            private int nextIdx;
+            private IIonValue curr;
 
             public Children(IIonValue parent)
             {
-                _parent = parent;
-                _nextIdx = -1;
-                _curr = null;
-                if (_parent.IsNull)
+                this.parent = parent;
+                this.nextIdx = -1;
+                this.curr = null;
+                if (this.parent.IsNull)
                 {
                     // otherwise the empty contents member will cause trouble
-                    _eof = true;
+                    this.eof = true;
                 }
             }
 
@@ -341,7 +354,7 @@ namespace Amazon.IonDotnet.Internals.Tree
                 {
                     try
                     {
-                        return _parent.GetElementAt(_nextIdx);
+                        return this.parent.GetElementAt(this.nextIdx);
                     }
                     catch (IndexOutOfRangeException)
                     {
@@ -350,7 +363,7 @@ namespace Amazon.IonDotnet.Internals.Tree
                 }
             }
 
-            object IEnumerator.Current => _curr;
+            object IEnumerator.Current => this.curr;
 
             public void Dispose()
             {
@@ -359,21 +372,22 @@ namespace Amazon.IonDotnet.Internals.Tree
 
             public bool MoveNext()
             {
-                if (_eof)
+                if (this.eof)
                 {
-                    _curr = null;
+                    this.curr = null;
                     return false;
                 }
 
-                if (_nextIdx >= _parent.Count - 1)
+                if (this.nextIdx >= this.parent.Count - 1)
                 {
-                    _eof = true;
+                    this.eof = true;
                 }
                 else
                 {
-                    _curr = _parent.GetElementAt(++_nextIdx);
+                    this.curr = this.parent.GetElementAt(++this.nextIdx);
                 }
-                return !_eof;
+
+                return !this.eof;
             }
 
             public void Reset()

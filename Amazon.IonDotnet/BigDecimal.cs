@@ -13,16 +13,14 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Globalization;
-using System.Numerics;
-using System.Text;
-using Amazon.IonDotnet.Utils;
-
-// ReSharper disable ImpureMethodCallOnReadonlyValueField
-
 namespace Amazon.IonDotnet
 {
+    using System;
+    using System.Globalization;
+    using System.Numerics;
+    using System.Text;
+    using Amazon.IonDotnet.Utils;
+
     /// <inheritdoc cref="IComparable" />
     /// <summary>
     /// Represent a decimal-type number. This type extends <see cref="T:System.Decimal" /> to allow for larger number range and
@@ -32,9 +30,11 @@ namespace Amazon.IonDotnet
     {
         public const int MaxPrecision = 1000;
 
+        public readonly bool IsNegativeZero;
         internal readonly BigInteger IntVal;
         internal readonly int Scale;
-        public readonly bool IsNegativeZero;
+
+        private static readonly BigInteger DecimalMaxValue = new BigInteger(decimal.MaxValue);
 
         public BigDecimal(BigInteger intVal, int scale, bool negate = false)
         {
@@ -43,16 +43,16 @@ namespace Amazon.IonDotnet
                 throw new ArgumentException($"Maximum scale is {MaxPrecision}", nameof(scale));
             }
 
-            IntVal = negate ? BigInteger.Negate(intVal) : intVal;
-            Scale = scale;
-            IsNegativeZero = negate && intVal == 0;
+            this.IntVal = negate ? BigInteger.Negate(intVal) : intVal;
+            this.Scale = scale;
+            this.IsNegativeZero = negate && intVal == 0;
         }
 
         public BigDecimal(decimal dec)
         {
             Span<byte> dBytes = stackalloc byte[sizeof(decimal)];
             var maxId = DecimalHelper.CopyDecimalBigEndian(dBytes, dec);
-            Scale = dBytes[2];
+            this.Scale = dBytes[2];
 
             var bi = BigInteger.Zero;
             for (var idx = 4; idx <= maxId; idx++)
@@ -62,84 +62,8 @@ namespace Amazon.IonDotnet
             }
 
             var negative = (dBytes[3] & 0x80) > 0;
-            IntVal = negative ? BigInteger.Negate(bi) : bi;
-            IsNegativeZero = negative && IntVal == 0;
-        }
-
-        public int CompareTo(BigDecimal other)
-        {
-            var sdiff = Scale - other.Scale;
-            if (sdiff == 0)
-            {
-                return BigInteger.Compare(IntVal, other.IntVal);
-            }
-
-            if (sdiff < 0)
-            {
-                var aValMultiplied = BigInteger.Multiply(IntVal, BigInteger.Pow(10, -sdiff));
-                return aValMultiplied.CompareTo(other.IntVal);
-            }
-
-            //sdiff>0
-            var bValMultiplied = BigInteger.Multiply(other.IntVal, BigInteger.Pow(10, sdiff));
-            return BigInteger.Compare(IntVal, bValMultiplied);
-        }
-
-        public bool Equals(BigDecimal other) => CompareTo(other) == 0;
-
-        private static readonly BigInteger DecimalMaxValue = new BigInteger(decimal.MaxValue);
-
-        public decimal ToDecimal()
-        {
-            var intVal = IntVal;
-            var scale = Scale;
-            while (BigInteger.Abs(intVal) > DecimalMaxValue && scale > 0)
-            {
-                intVal /= 10;
-                scale--;
-            }
-
-            //this will check for overflowing if |intVal|>DecimalMaxValue
-            var dec = (decimal)intVal;
-
-            //this will account for the case where scale<0
-            if (scale < 0)
-            {
-                dec *= (decimal)Math.Pow(10, -scale);
-                scale = 0;
-            }
-
-            while (scale > 0)
-            {
-                var step = scale > 28 ? 28 : scale;
-                dec /= (decimal)Math.Pow(10, step);
-                scale -= step;
-            }
-
-            return dec;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-                return false;
-            return obj is BigDecimal other && Equals(other);
-        }
-
-        public override int GetHashCode() => (int)((Scale + 31 * (long)IntVal.GetHashCode()) % 2147483647);
-
-        public static bool CheckNegativeZero(decimal dec)
-        {
-            if (dec != 0)
-            {
-                return false;
-            }
-
-            unsafe
-            {
-                var p = (byte*)&dec;
-                return (p[3] & 0b_1000_0000) > 0;
-            }
+            this.IntVal = negative ? BigInteger.Negate(bi) : bi;
+            this.IsNegativeZero = negative && this.IntVal == 0;
         }
 
         public static bool operator >(BigDecimal a, BigDecimal b)
@@ -202,22 +126,23 @@ namespace Amazon.IonDotnet
             var preferredScale = Math.Max(a.Scale, b.Scale);
             var aMag = a.IntVal;
             var bMag = b.IntVal;
-            //round a and b to the same preferredScale
+
+            // Round a and b to the same preferredScale
             if (a.Scale < preferredScale)
             {
-                aMag = aMag * BigInteger.Pow(10, preferredScale - a.Scale);
+                aMag *= BigInteger.Pow(10, preferredScale - a.Scale);
             }
 
             if (b.Scale < preferredScale)
             {
-                bMag = bMag * BigInteger.Pow(10, preferredScale - b.Scale);
+                bMag *= BigInteger.Pow(10, preferredScale - b.Scale);
             }
 
             var outIntVal = BigInteger.DivRem(aMag, bMag, out var remainder);
             var scale = 0;
             while (remainder != 0 && scale < preferredScale)
             {
-                //increase the output scale
+                // increase the output scale
                 while (BigInteger.Abs(remainder) < BigInteger.Abs(bMag))
                 {
                     remainder *= 10;
@@ -225,7 +150,7 @@ namespace Amazon.IonDotnet
                     outIntVal *= 10;
                 }
 
-                outIntVal = outIntVal + BigInteger.DivRem(remainder, bMag, out remainder);
+                outIntVal += BigInteger.DivRem(remainder, bMag, out remainder);
             }
 
             return new BigDecimal(outIntVal, scale);
@@ -236,6 +161,19 @@ namespace Amazon.IonDotnet
             return new BigDecimal(BigInteger.Negate(a.IntVal), a.Scale);
         }
 
+        public static bool CheckNegativeZero(decimal dec)
+        {
+            if (dec != 0)
+            {
+                return false;
+            }
+
+            unsafe
+            {
+                var p = (byte*)&dec;
+                return (p[3] & 0b_1000_0000) > 0;
+            }
+        }
 
         /// <summary>
         /// Try to parse a text representation.
@@ -288,7 +226,7 @@ namespace Amazon.IonDotnet
         /// <exception cref="OverflowException">If the text value is too large.</exception>
         public static BigDecimal Parse(ReadOnlySpan<char> text)
         {
-            FormatException newFormatException(ReadOnlySpan<char> t) => new FormatException($"Invalid decimal: {t.ToString()}");
+            FormatException NewFormatException(ReadOnlySpan<char> t) => new FormatException($"Invalid decimal: {t.ToString()}");
             const short sValStart = 0, sValInt = 1, sValDecimal = 2, sExpStart = 3, sExp = 4;
 
             var valNegative = false;
@@ -303,14 +241,14 @@ namespace Amazon.IonDotnet
                 switch (state)
                 {
                     default:
-                        //should never happen
-                        throw new Exception();
+                        // should never happen
+                        throw new InvalidOperationException("Parse failed unexpectedly");
                     case sValStart:
                         if (c == '-')
                         {
                             if (started)
                             {
-                                throw newFormatException(text);
+                                throw NewFormatException(text);
                             }
 
                             started = true;
@@ -321,7 +259,7 @@ namespace Amazon.IonDotnet
                         {
                             if (started)
                             {
-                                throw newFormatException(text);
+                                throw NewFormatException(text);
                             }
 
                             started = true;
@@ -346,10 +284,10 @@ namespace Amazon.IonDotnet
 
                         if (!char.IsDigit(c))
                         {
-                            throw newFormatException(text);
+                            throw NewFormatException(text);
                         }
 
-                        intVal = intVal * 10 + (valNegative ? '0' - c : c - '0');
+                        intVal = (intVal * 10) + (valNegative ? '0' - c : c - '0');
                         break;
                     case sValDecimal:
                         if (c == 'd' || c == 'D')
@@ -361,10 +299,10 @@ namespace Amazon.IonDotnet
 
                         if (!char.IsDigit(c))
                         {
-                            throw newFormatException(text);
+                            throw NewFormatException(text);
                         }
 
-                        intVal = intVal * 10 + (valNegative ? '0' - c : c - '0');
+                        intVal = (intVal * 10) + (valNegative ? '0' - c : c - '0');
                         scale++;
                         break;
                     case sExpStart:
@@ -372,7 +310,7 @@ namespace Amazon.IonDotnet
                         {
                             if (started)
                             {
-                                throw newFormatException(text);
+                                throw NewFormatException(text);
                             }
 
                             started = true;
@@ -384,7 +322,7 @@ namespace Amazon.IonDotnet
                         {
                             if (started)
                             {
-                                throw newFormatException(text);
+                                throw NewFormatException(text);
                             }
 
                             started = true;
@@ -396,53 +334,122 @@ namespace Amazon.IonDotnet
                     case sExp:
                         if (!char.IsDigit(c))
                         {
-                            throw newFormatException(text);
+                            throw NewFormatException(text);
                         }
-                        exponent = exponent * 10 + (expNegative ? '0' - c : c - '0');
+
+                        exponent = (exponent * 10) + (expNegative ? '0' - c : c - '0');
                         break;
                 }
             }
 
             if (state == sValStart || state == sExpStart)
             {
-                throw newFormatException(text);
+                throw NewFormatException(text);
             }
 
             if (intVal == 0 && valNegative)
             {
                 return NegativeZero(scale - exponent);
             }
+
             return new BigDecimal(intVal, scale - exponent);
         }
 
-        public override string ToString()
+        public static BigDecimal NegativeZero(int scale = 0) => new BigDecimal(0, scale, true);
+
+        public static BigDecimal Zero(int scale = 0) => new BigDecimal(0, scale);
+
+        public int CompareTo(BigDecimal other)
         {
-            if (IsNegativeZero)
+            var sdiff = this.Scale - other.Scale;
+            if (sdiff == 0)
             {
-                return "-0d" + (-Scale);
+                return BigInteger.Compare(this.IntVal, other.IntVal);
             }
 
-            var sb = new StringBuilder(IntVal.ToString(CultureInfo.InvariantCulture));
-            if (Scale == 0)
+            if (sdiff < 0)
+            {
+                var aValMultiplied = BigInteger.Multiply(this.IntVal, BigInteger.Pow(10, -sdiff));
+                return aValMultiplied.CompareTo(other.IntVal);
+            }
+
+            // sdiff > 0
+            var bValMultiplied = BigInteger.Multiply(other.IntVal, BigInteger.Pow(10, sdiff));
+            return BigInteger.Compare(this.IntVal, bValMultiplied);
+        }
+
+        public bool Equals(BigDecimal other) => this.CompareTo(other) == 0;
+
+        public decimal ToDecimal()
+        {
+            var intVal = this.IntVal;
+            var scale = this.Scale;
+            while (BigInteger.Abs(intVal) > DecimalMaxValue && scale > 0)
+            {
+                intVal /= 10;
+                scale--;
+            }
+
+            // this will check for overflowing if |intVal| > DecimalMaxValue
+            var dec = (decimal)intVal;
+
+            // this will account for the case where scale < 0
+            if (scale < 0)
+            {
+                dec *= (decimal)Math.Pow(10, -scale);
+                scale = 0;
+            }
+
+            while (scale > 0)
+            {
+                var step = scale > 28 ? 28 : scale;
+                dec /= (decimal)Math.Pow(10, step);
+                scale -= step;
+            }
+
+            return dec;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            return obj is BigDecimal other && this.Equals(other);
+        }
+
+        public override int GetHashCode() => (int)((this.Scale + (31 * (long)this.IntVal.GetHashCode())) % 2147483647);
+
+        public override string ToString()
+        {
+            if (this.IsNegativeZero)
+            {
+                return "-0d" + (-this.Scale);
+            }
+
+            var sb = new StringBuilder(this.IntVal.ToString(CultureInfo.InvariantCulture));
+            if (this.Scale == 0)
             {
                 sb.Append("d0");
             }
-            else if (Scale < 0)
+            else if (this.Scale < 0)
             {
-                //write the string as {mag}d{-scale}
+                // write the string as {mag}d{-scale}
                 sb.Append('d');
-                sb.Append(-Scale);
+                sb.Append(-this.Scale);
             }
             else
             {
                 var smallestDotIdx = sb[0] == '-' ? 2 : 1;
-                if (sb.Length - Scale >= smallestDotIdx)
+                if (sb.Length - this.Scale >= smallestDotIdx)
                 {
-                    sb.Insert(sb.Length - Scale, '.');
+                    sb.Insert(sb.Length - this.Scale, '.');
                 }
                 else
                 {
-                    var d = Scale - (sb.Length - smallestDotIdx);
+                    var d = this.Scale - (sb.Length - smallestDotIdx);
                     sb.Insert(smallestDotIdx, '.');
                     sb.Append('d');
                     sb.Append(-d);
@@ -451,9 +458,5 @@ namespace Amazon.IonDotnet
 
             return sb.ToString();
         }
-
-        public static BigDecimal NegativeZero(int scale = 0) => new BigDecimal(0, scale, true);
-
-        public static BigDecimal Zero(int scale = 0) => new BigDecimal(0, scale);
     }
 }

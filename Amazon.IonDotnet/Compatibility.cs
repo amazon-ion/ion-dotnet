@@ -1,6 +1,22 @@
-﻿using System.Runtime.CompilerServices;
+﻿/*
+ * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 
-#if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
+#pragma warning disable SA1402 // File may only contain a single type
+#pragma warning disable SA1403 // File may only contain a single namespace
+#pragma warning disable SA1649 // File name should match first type name
+#if NETSTANDARD2_0 || NET45
 namespace System.Collections.Generic
 {
     internal static class DictionaryExtensions
@@ -19,6 +35,7 @@ namespace System.Collections.Generic
         }
     }
 }
+
 #if NET45
 namespace System
 {
@@ -64,7 +81,7 @@ namespace System.IO
 }
 #endif
 
-#if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
+#if NETSTANDARD2_0 || NET45
 namespace System.Text
 {
     internal static class EncodingExtensions
@@ -122,37 +139,37 @@ namespace System.Text
         }
     }
 }
-
 #endif
 
-#if NETSTANDARD2_0 || NET45 || NETSTANDARD1_3
+#if NETSTANDARD2_0 || NET45
 namespace System
 {
+    using System.Runtime.CompilerServices;
+
     internal static class BitConverterEx
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe int SingleToInt32Bits(float value)
         {
-            return *((int*) &value);
+            return *((int*)&value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe float Int32BitsToSingle(int value)
         {
-            return *((float*) &value);
+            return *((float*)&value);
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe long DoubleToInt64Bits(double value)
         {
-            return *((long*) &value);
+            return *((long*)&value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe double Int64BitsToDouble(long value)
         {
-            return *((double*) &value);
+            return *((double*)&value);
         }
     }
 }
@@ -163,9 +180,12 @@ namespace System.Threading.Tasks
     public static class TaskEx
     {
 #if NET45
-        public static Task CompletedTask {get;} = Task.FromResult(false);
+        public static Task CompletedTask { get; } = Task.FromResult(false);
 #else
         public static Task CompletedTask => Task.CompletedTask;
 #endif
     }
 }
+#pragma warning restore SA1649 // File name should match first type name
+#pragma warning restore SA1403 // File may only contain a single namespace
+#pragma warning restore SA1402 // File may only contain a single type

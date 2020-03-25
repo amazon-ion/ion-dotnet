@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-using System.Collections.Generic;
-using System.IO;
-using Amazon.IonDotnet.Internals.Text;
-
 namespace Amazon.IonDotnet.Builders
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using Amazon.IonDotnet.Internals.Text;
+
     public static class IonTextWriterBuilder
     {
         /// <summary>

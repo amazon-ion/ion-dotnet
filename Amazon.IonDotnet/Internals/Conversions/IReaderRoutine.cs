@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-using System;
-
 namespace Amazon.IonDotnet.Internals.Conversions
 {
+    using System;
+
     /// <summary>
-    /// List of C# types that the ion value translates to
+    /// List of C# types that the ion value translates to.
     /// </summary>
     [Flags]
     internal enum ScalarType
@@ -32,6 +32,6 @@ namespace Amazon.IonDotnet.Internals.Conversions
         Decimal = 1 << 5,
         Double = 1 << 6,
         String = 1 << 7,
-        Timestamp = 1 << 8
+        Timestamp = 1 << 8,
     }
 }

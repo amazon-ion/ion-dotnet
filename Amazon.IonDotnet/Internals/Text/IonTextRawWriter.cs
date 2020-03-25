@@ -1,38 +1,47 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+﻿/*
+ * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 
 namespace Amazon.IonDotnet.Internals.Text
 {
+    using System;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.IO;
+    using System.Runtime.CompilerServices;
+
     /// <summary>
-    /// Extends .NET <see cref="System.IO.StreamWriter"/> to include some writing functions
+    /// Extends .NET <see cref="System.IO.StreamWriter"/> to include some writing functions.
     /// </summary>
     internal class IonTextRawWriter
     {
-        private readonly TextWriter _writer;
-
-        #region Escapes
-
-        private static readonly string[] ZeroPadding = {"", "0", "00", "000", "0000", "00000", "000000", "0000000",};
+        private static readonly string[] ZeroPadding = { string.Empty, "0", "00", "000", "0000", "00000", "000000", "0000000" };
 
         /// <summary>
         /// Escapes for U+00 through U+FF, for use in double-quoted Ion strings. This includes escapes
         /// for all LATIN-1 code points U+80 through U+FF.
         /// </summary>
         private static readonly string[] StringEscapeCodes = new string[256];
-
         private static readonly string[] LongStringEscapeCodes = new string[256];
-
         private static readonly string[] SymbolEscapeCodes = new string[256];
-
         private static readonly string[] JsonEscapeCodes = new string[256];
+
+        private readonly TextWriter writer;
 
         static IonTextRawWriter()
         {
-            //short string
+            // short string
             StringEscapeCodes[0x00] = "\\0";
             StringEscapeCodes[0x07] = "\\a";
             StringEscapeCodes[0x08] = "\\b";
@@ -46,7 +55,10 @@ namespace Amazon.IonDotnet.Internals.Text
             for (var i = 1; i < 0x20; ++i)
             {
                 if (StringEscapeCodes[i] != null)
+                {
                     continue;
+                }
+
                 var s = $"{i:x}";
                 StringEscapeCodes[i] = "\\x" + ZeroPadding[2 - s.Length] + s;
             }
@@ -62,7 +74,7 @@ namespace Amazon.IonDotnet.Internals.Text
                 LongStringEscapeCodes[i] = StringEscapeCodes[i];
             }
 
-            //long string
+            // long string
             LongStringEscapeCodes['\n'] = null;
             LongStringEscapeCodes['\''] = "\\\'";
             LongStringEscapeCodes['\"'] = null; // Treat as normal code point for long string
@@ -72,11 +84,11 @@ namespace Amazon.IonDotnet.Internals.Text
                 SymbolEscapeCodes[i] = StringEscapeCodes[i];
             }
 
-            //symbols
+            // symbols
             SymbolEscapeCodes['\''] = "\\\'";
             SymbolEscapeCodes['\"'] = null; // Treat as normal code point for symbol.
 
-            //json
+            // json
             JsonEscapeCodes[0x08] = "\\b";
             JsonEscapeCodes['\t'] = "\\t";
             JsonEscapeCodes['\n'] = "\\n";
@@ -88,7 +100,10 @@ namespace Amazon.IonDotnet.Internals.Text
             // JSON requires all of these characters to be escaped.
             for (var i = 0; i < 0x20; ++i)
             {
-                if (JsonEscapeCodes[i] != null) continue;
+                if (JsonEscapeCodes[i] != null)
+                {
+                    continue;
+                }
 
                 var s = $"{i:x}";
                 JsonEscapeCodes[i] = "\\u" + ZeroPadding[4 - s.Length] + s;
@@ -101,147 +116,142 @@ namespace Amazon.IonDotnet.Internals.Text
             }
         }
 
-        #endregion
-
-
         public IonTextRawWriter(TextWriter writer)
         {
-            _writer = writer;
+            this.writer = writer;
         }
 
         public void WriteJsonString(string text)
         {
             if (text == null)
             {
-                _writer.Write("null");
+                this.writer.Write("null");
                 return;
             }
 
-            _writer.Write('"');
-            WriteStringWithEscapes(text, JsonEscapeCodes);
-            _writer.Write('"');
+            this.writer.Write('"');
+            this.WriteStringWithEscapes(text, JsonEscapeCodes);
+            this.writer.Write('"');
         }
 
         public void WriteString(string text)
         {
             if (text == null)
             {
-                _writer.Write("null.string");
+                this.writer.Write("null.string");
                 return;
             }
 
-            _writer.Write('"');
-            WriteStringWithEscapes(text, StringEscapeCodes);
-            _writer.Write('"');
+            this.writer.Write('"');
+            this.WriteStringWithEscapes(text, StringEscapeCodes);
+            this.writer.Write('"');
         }
 
         public void WriteSingleQuotedSymbol(string text)
         {
             if (text == null)
             {
-                _writer.Write("null.symbol");
+                this.writer.Write("null.symbol");
                 return;
             }
 
-            _writer.Write('\'');
-            WriteStringWithEscapes(text, SymbolEscapeCodes);
-            _writer.Write('\'');
+            this.writer.Write('\'');
+            this.WriteStringWithEscapes(text, SymbolEscapeCodes);
+            this.writer.Write('\'');
         }
 
         /// <summary>
-        /// Write symbol without any quotes
+        /// Write symbol without any quotes.
         /// </summary>
-        /// <param name="text"></param>
+        /// <param name="text">symbol text to write.</param>
         public void WriteSymbol(string text)
         {
             if (text is null)
             {
-                _writer.Write("null.symbol");
+                this.writer.Write("null.symbol");
                 return;
             }
 
-            WriteStringWithEscapes(text, SymbolEscapeCodes);
+            this.WriteStringWithEscapes(text, SymbolEscapeCodes);
         }
 
         public void WriteLongString(string text)
         {
             if (text == null)
             {
-                _writer.Write("null.string");
+                this.writer.Write("null.string");
                 return;
             }
 
-            _writer.Write("'''");
-            WriteStringWithEscapes(text, LongStringEscapeCodes);
-            _writer.Write("'''");
+            this.writer.Write("'''");
+            this.WriteStringWithEscapes(text, LongStringEscapeCodes);
+            this.writer.Write("'''");
         }
 
         public void WriteClobAsString(ReadOnlySpan<byte> clobBytes)
         {
-            _writer.Write('"');
+            this.writer.Write('"');
             foreach (var b in clobBytes)
             {
-                var c = (char) (b & 0xff);
+                var c = (char)(b & 0xff);
                 var escapedByte = StringEscapeCodes[c];
                 if (escapedByte != null)
                 {
-                    _writer.Write(escapedByte);
+                    this.writer.Write(escapedByte);
                 }
                 else
                 {
-                    _writer.Write(c);
+                    this.writer.Write(c);
                 }
             }
 
-            _writer.Write('"');
+            this.writer.Write('"');
         }
 
-        public void Write(char c) => _writer.Write(c);
+        public void Write(char c) => this.writer.Write(c);
 
-        public void Write(int i) => _writer.Write(i);
+        public void Write(int i) => this.writer.Write(i);
 
-        public void Write(string s) => _writer.Write(s);
+        public void Write(string s) => this.writer.Write(s);
 
-//        public Task FlushAsync() => _writer.FlushAsync();
+        public void Flush() => this.writer.Flush();
 
-        public void Flush() => _writer.Flush();
-
-        public void Write(long l) => _writer.Write(l);
+        public void Write(long l) => this.writer.Write(l);
 
         public void Write(double d)
         {
             if (double.IsNaN(d))
             {
-                _writer.Write("nan");
+                this.writer.Write("nan");
                 return;
             }
 
             if (double.IsPositiveInfinity(d))
             {
-                _writer.Write("+inf");
+                this.writer.Write("+inf");
                 return;
             }
 
             if (double.IsNegativeInfinity(d))
             {
-                _writer.Write("-inf");
+                this.writer.Write("-inf");
                 return;
             }
 
-            String str;
+            string str;
 
             // Differentiate between negative zero and zero.
             if (d == 0 && BitConverter.DoubleToInt64Bits(d) < 0)
             {
                 str = "-0e0";
-                _writer.Write(str);
+                this.writer.Write(str);
             }
             else
             {
                 // Using "R" round-trip format specifier.
                 // Ensures the converted string can be parse back into the same numeric value.
                 str = d.ToString("R");
-                _writer.Write(str);
+                this.writer.Write(str);
             }
 
             foreach (var c in str)
@@ -252,13 +262,13 @@ namespace Amazon.IonDotnet.Internals.Text
                 }
             }
 
-            _writer.Write("e0");
+            this.writer.Write("e0");
         }
 
         public void Write(decimal d)
         {
             var dString = d.ToString(CultureInfo.InvariantCulture);
-            _writer.Write(dString);
+            this.writer.Write(dString);
             foreach (var c in dString)
             {
                 if (c == '.')
@@ -267,69 +277,18 @@ namespace Amazon.IonDotnet.Internals.Text
                 }
             }
 
-            _writer.Write('d');
-            _writer.Write('0');
+            this.writer.Write('d');
+            this.writer.Write('0');
         }
 
         public void Write(in BigDecimal bd)
         {
-            _writer.Write(bd.ToString());
-        }
-
-        private void WriteStringWithEscapes(string text, string[] escapeTable)
-        {
-            for (int i = 0, l = text.Length; i < l; i++)
-            {
-                //find a span of non-escaped characters
-                int j;
-                var c = '\0';
-                for (j = i; j < l; j++)
-                {
-                    c = text[j];
-                    if (char.IsHighSurrogate(c))
-                    {
-                        //we found the high of a surrogate pair, just skip through the next char
-                        j++;
-                        continue;
-                    }
-
-                    if (c >= 0x100 || escapeTable[c] != null)
-                    {
-                        //we have a potential escaped sequence here, so skip
-                        WriteSubstring(_writer, text, i, j - i);
-                        i = j;
-                        break;
-                    }
-                }
-
-                //the end, just write and exit
-                if (j == l)
-                {
-                    WriteSubstring(_writer, text, i, j - i);
-                    break;
-                }
-
-                if (c < 0x80)
-                {
-                    // An escaped ASCII character.
-                    Debug.Assert(escapeTable[c] != null);
-                    _writer.Write(escapeTable[c]);
-                }
-                else if (char.IsControl(c))
-                {
-                    //escape control sequence
-                    _writer.Write(escapeTable[c]);
-                }
-                else
-                {
-                    _writer.Write(c);
-                }
-            }
+            this.writer.Write(bd.ToString());
         }
 
         /// <summary>
         /// Write the substring as-is, meaning that no escaped sequence is written.
-        /// This is for quickly writting a substring
+        /// This is for quickly writting a substring.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteSubstring(TextWriter writer, string s, int start, int length)
@@ -341,13 +300,63 @@ namespace Amazon.IonDotnet.Internals.Text
 #if NETCOREAPP2_1
             writer.Write(s.AsSpan().Slice(start, length));
 #else
-//this is weird but better than just writting a sub string 
             var end = start + length;
             for (var i = start; i < end; i++)
             {
                 writer.Write(s[i]);
             }
 #endif
+        }
+
+        private void WriteStringWithEscapes(string text, string[] escapeTable)
+        {
+            for (int i = 0, l = text.Length; i < l; i++)
+            {
+                // find a span of non-escaped characters
+                int j;
+                var c = '\0';
+                for (j = i; j < l; j++)
+                {
+                    c = text[j];
+                    if (char.IsHighSurrogate(c))
+                    {
+                        // we found the high of a surrogate pair, just skip through the next char
+                        j++;
+                        continue;
+                    }
+
+                    if (c >= 0x100 || escapeTable[c] != null)
+                    {
+                        // we have a potential escaped sequence here, so skip
+                        WriteSubstring(this.writer, text, i, j - i);
+                        i = j;
+                        break;
+                    }
+                }
+
+                // the end, just write and exit
+                if (j == l)
+                {
+                    WriteSubstring(this.writer, text, i, j - i);
+                    break;
+                }
+
+                if (c < 0x80)
+                {
+                    // An escaped ASCII character.
+                    Debug.Assert(escapeTable[c] != null, "escapeTable[c] is null");
+                    this.writer.Write(escapeTable[c]);
+                }
+                else if (char.IsControl(c))
+                {
+                    // escape control sequence
+                    this.writer.Write(escapeTable[c]);
+                }
+                else
+                {
+                    this.writer.Write(c);
+                }
+            }
         }
     }
 }

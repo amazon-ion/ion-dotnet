@@ -1,8 +1,23 @@
-using System;
-using System.Diagnostics;
+/*
+ * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
 
 namespace Amazon.IonDotnet.Utils
 {
+    using System;
+    using System.Diagnostics;
+
     internal static class DecimalHelper
     {
         /// <summary>
@@ -13,17 +28,17 @@ namespace Amazon.IonDotnet.Utils
         /// <returns>The end index of the buffer segment that contains meaningful data.</returns>
         public static unsafe int CopyDecimalBigEndian(Span<byte> bytes, decimal value)
         {
-            Debug.Assert(bytes.Length >= sizeof(decimal));
+            Debug.Assert(bytes.Length >= sizeof(decimal), "bytes.Length is less than sizeof(decimal)");
 
-            var p = (byte*) &value;
+            var p = (byte*)&value;
 
-            //keep the flag the same
+            // keep the flag the same
             bytes[0] = p[0];
             bytes[1] = p[1];
             bytes[2] = p[2];
             bytes[3] = p[3];
 
-            //high
+            // high
             var i = 7;
             while (i > 3 && p[i] == 0)
             {
@@ -37,7 +52,7 @@ namespace Amazon.IonDotnet.Utils
                 bytes[++j] = p[i--];
             }
 
-            //mid
+            // mid
             i = 15;
             bool hasMid;
             if (!hasHigh)
@@ -59,7 +74,7 @@ namespace Amazon.IonDotnet.Utils
                 bytes[++j] = p[i--];
             }
 
-            //lo
+            // lo
             i = 11;
             if (!hasMid)
             {

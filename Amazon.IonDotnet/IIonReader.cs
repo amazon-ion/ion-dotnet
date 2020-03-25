@@ -13,27 +13,63 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-
 namespace Amazon.IonDotnet
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Numerics;
+
     /// <summary>
     /// Provides stream-based access to Ion data independent of its underlying representation (text, binary, or {@link IonValue} tree).
     /// </summary>
     public interface IIonReader : IDisposable
     {
         /// <summary>
-        /// Positions this reader on the next sibling after the current value
+        /// Gets the depth into the Ion value that this reader has traversed. At top level the depth is 0, and it increases
+        /// by 1 by each call to <see cref="StepIn"/>.
         /// </summary>
-        /// <returns>Type of the current value</returns>
+        int CurrentDepth { get; }
+
+        /// <summary>
+        /// Gets the type of the current value, or null if there is no current value.
+        /// </summary>
+        /// <returns>Type of current value.</returns>
+        IonType CurrentType { get; }
+
+        /// <summary>
+        /// Gets the fueld name of the current value.
+        /// </summary>
+        /// <value>
+        /// Return the field name of the current value. Or null if there is no valid current value.
+        /// </value>
+        string CurrentFieldName { get; }
+
+        /// <summary>Gets a value indicating whether the current value is a null.</summary>
+        /// <value>True if the current value is a null.</value>
+        bool CurrentIsNull { get; }
+
+        /// <summary>Gets a value indicating whether the current value is in a struct.</summary>
+        /// <value>True if reading a struct.</value>
+        bool IsInStruct { get; }
+
+        /// <summary>
+        /// Get the field name of the current value as a <see cref="SymbolToken"/>.
+        /// </summary>
+        /// <returns>
+        /// The field name of the current value as a <see cref="SymbolToken"/>.
+        /// </returns>
+        SymbolToken GetFieldNameSymbol();
+
+        /// <summary>
+        /// Positions this reader on the next sibling after the current value.
+        /// </summary>
+        /// <returns>Type of the current value.</returns>
         IonType MoveNext();
 
         /// <summary>
         /// Positions the reader just before the contents of the current value, which must be a container (list, sexp, or struct).
         /// </summary>
-        /// <exception cref="InvalidOperationException">When the current value is not an <see cref="IonDotnet.Tree.IonContainer"/></exception>
+        /// <exception cref="InvalidOperationException">When the current value is not an <see cref="IonDotnet.Tree.IonContainer"/>.</exception>
         /// <remarks>
         /// There's no current value immediately after stepping in, so the next thing you'll want to do is call <see cref="MoveNext"/>
         /// to move onto the first child value (or learn that there's not one).
@@ -43,18 +79,12 @@ namespace Amazon.IonDotnet
         /// <summary>
         /// Positions the iterator after the current parent's value, moving up one level in the data hierarchy.
         /// </summary>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="InvalidOperationException">When the current value cannot be stepped into.</exception>
         /// <remarks>
         /// There's no current value immediately after stepping out, so the next thing you'll want to do is call <see cref="MoveNext"/>
-        /// to move onto the following value
+        /// to move onto the following value.
         /// </remarks>
         void StepOut();
-
-        /// <summary>
-        /// Depth into the Ion value that this reader has traversed. At top level the depth is 0, and it increases
-        /// by 1 by each call to <see cref="StepIn"/>
-        /// </summary>
-        int CurrentDepth { get; }
 
         /// <summary>
         /// Returns the symbol table that is applicable to the current value.
@@ -64,77 +94,67 @@ namespace Amazon.IonDotnet
         ISymbolTable GetSymbolTable();
 
         /// <summary>
-        /// Returns the type of the current value, or null if there is no current value
+        /// Returns the smallest-possible C# type of an IonInt value.
         /// </summary>
-        /// <returns></returns>
-        IonType CurrentType { get; }
-
         /// <returns>
-        /// Smallest possible size representing the smallest-possible, or <see cref="IntegerSize.Unknown"/>
-        /// if there is no current value or the current value is a 'null'
+        /// Smallest-possible C# type of an IonInt value, or <see cref="IntegerSize.Unknown"/>
+        /// if there is no current value or the current value is a 'null'.
         /// </returns>
         IntegerSize GetIntegerSize();
 
-        /// <value>
-        /// Return the field name of the current value. Or null if there is no valid current value
-        /// </value>
-        string CurrentFieldName { get; }
-
-        /// <summary>
-        /// Get the field name of the current value as a <see cref="SymbolToken"/>.
-        /// </summary>
-        SymbolToken GetFieldNameSymbol();
-
-        /// <value>True if the current value is a null</value>
-        bool CurrentIsNull { get; }
-
-        /// <value>True if reading a struct</value>
-        bool IsInStruct { get; }
-
-        /// <returns>Current boolean value</returns>
+        /// <summary>Returns the current value as a Boolean.</summary>
+        /// <returns>Current boolean value.</returns>
         bool BoolValue();
 
-        /// <returns>Current int value</returns>
+        /// <summary>Returns the current value as a int.</summary>
+        /// <returns>Current int value.</returns>
         int IntValue();
 
-        /// <returns>Current long value</returns>
+        /// <summary>Returns the current value as a long.</summary>
+        /// <returns>Current long value.</returns>
         long LongValue();
 
-        /// <returns>Current BigInteger value</returns>
+        /// <summary>Returns the current value as a BigInteger.</summary>
+        /// <returns>Current BigInteger value.</returns>
         BigInteger BigIntegerValue();
 
-        /// <returns>Current double value</returns>
+        /// <summary>Returns the current value as a double.</summary>
+        /// <returns>Current double value.</returns>
         double DoubleValue();
 
-        /// <returns>Current decimal value</returns>
+        /// <summary>Returns the current value as a decimal.</summary>
+        /// <returns>Current decimal value.</returns>
         BigDecimal DecimalValue();
 
-        /// <returns>Current timestamp value</returns>
+        /// <summary>Returns the current value as a Timestamp.</summary>
+        /// <returns>Current timestamp value.</returns>
         Timestamp TimestampValue();
 
-        /// <returns>Current string value</returns>
+        /// <summary>Returns the current value as a string.</summary>
+        /// <returns>Current string value.</returns>
         string StringValue();
 
-        /// <returns>Current symbol value</returns>
+        /// <summary>Returns th current value as a SymbolToken.</summary>
+        /// <returns>Current symbol value.</returns>
         SymbolToken SymbolValue();
 
         /// <summary>
-        /// Get the size of the current lob value
+        /// Get the size of the current lob value.
         /// </summary>
-        /// <returns>Size of the current lob value</returns>
+        /// <returns>Size of the current lob value.</returns>
         int GetLobByteSize();
 
         /// <summary>
-        /// Copy the current blob value to a new byte array
+        /// Copy the current blob value to a new byte array.
         /// </summary>
-        /// <returns>Reference to new byte array</returns>
+        /// <returns>Reference to new byte array.</returns>
         byte[] NewByteArray();
 
         /// <summary>
-        /// Copy the current blob value to a buffer
+        /// Copy the current blob value to a buffer.
         /// </summary>
-        /// <param name="buffer">Buffer</param>
-        /// <returns>Number of bytes copied</returns>
+        /// <param name="buffer">Buffer.</param>
+        /// <returns>Number of bytes copied.</returns>
         int GetBytes(Span<byte> buffer);
 
         /// <summary>
@@ -161,7 +181,7 @@ namespace Amazon.IonDotnet
         /// </summary>
         /// <returns>
         /// True if the current value contains such annotation.
-        /// Otherwise, False,
+        /// Otherwise, False.
         /// </returns>
         /// <param name="annotation">Annotation text.</param>
         /// <exception cref="ArgumentNullException">When annotation is null.</exception>

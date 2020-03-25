@@ -13,10 +13,10 @@
  * permissions and limitations under the License.
  */
 
-using System;
-
 namespace Amazon.IonDotnet.Builders
 {
+    using System;
+
     public class IonTextOptions
     {
         public static readonly IonTextOptions Default = new IonTextOptions();

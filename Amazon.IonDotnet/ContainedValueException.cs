@@ -13,21 +13,24 @@
  * permissions and limitations under the License.
  */
 
-using Amazon.IonDotnet.Tree;
-
 namespace Amazon.IonDotnet
 {
+    using Amazon.IonDotnet.Tree;
+
     public class ContainedValueException : IonException
     {
-        public ContainedValueException() : this(string.Empty)
+        public ContainedValueException()
+            : this(string.Empty)
         {
         }
 
-        internal ContainedValueException(IIonValue value) : this(value.ToString())
+        internal ContainedValueException(IIonValue value)
+            : this(value.ToString())
         {
         }
 
-        private ContainedValueException(string valueString) : base($"Value {valueString} is already child of a container")
+        private ContainedValueException(string valueString)
+            : base($"Value {valueString} is already child of a container")
         {
         }
     }
