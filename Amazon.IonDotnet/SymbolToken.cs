@@ -54,7 +54,7 @@ namespace Amazon.IonDotnet
         /// <summary>
         /// The import location of this symbol token.
         /// </summary>
-        public readonly ImportLocation ImportLocation;
+        public readonly ImportLocation? ImportLocation;
 
         /// <summary>
         /// Create a new symbol token.
@@ -62,7 +62,7 @@ namespace Amazon.IonDotnet
         /// <param name="text">Text</param>
         /// <param name="sid">Sid</param>
         /// <param name="importLocation">ImportLocation</param>
-        public SymbolToken(string text, int sid, ImportLocation importLocation = default)
+        public SymbolToken(string text, int sid, ImportLocation? importLocation = default)
         {
             /**
              * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
@@ -72,7 +72,14 @@ namespace Amazon.IonDotnet
 
             Text = text;
             _sid = sid + 1;
-            ImportLocation = importLocation;
+            if (text == null && sid == 0)
+            {
+                ImportLocation = null;
+            }
+            else
+            {
+                ImportLocation = importLocation;
+            }
         }
 
         //Override everything to avoid boxing allocation

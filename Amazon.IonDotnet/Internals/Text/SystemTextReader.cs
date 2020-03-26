@@ -526,17 +526,21 @@ namespace Amazon.IonDotnet.Internals.Text
             for (int index = 0; index < _annotations.Count; index++)
             {
                 SymbolToken symbolToken = _annotations[index];
-                if (symbolToken.Text is null && symbolToken.ImportLocation != default)
+                if (symbolToken.Text is null && symbolToken.Sid == 0 && symbolToken.ImportLocation is null)
+                {
+                    throw new UnknownSymbolException(0);
+                }
+                else if (symbolToken.Text is null && symbolToken.ImportLocation != default)
                 {
                     ISymbolTable symtab = GetSymbolTable();
 
-                    string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);
+                    string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Value.Sid);
                     if (text == null)
                     {
-                        throw new UnknownSymbolException(symbolToken.ImportLocation.Sid);
+                        throw new UnknownSymbolException(symbolToken.ImportLocation.Value.Sid);
                     }
 
-                    annotations[index] = symtab.FindKnownSymbol(symbolToken.ImportLocation.Sid);
+                    annotations[index] = symtab.FindKnownSymbol(symbolToken.ImportLocation.Value.Sid);
                 }
                 else
                 {
@@ -559,12 +563,12 @@ namespace Amazon.IonDotnet.Internals.Text
                 if (a.Text is null && a.ImportLocation != default)
                 {
                     var symtab = GetSymbolTable();
-                    if (a.ImportLocation.Sid < -1 || a.ImportLocation.Sid > symtab.MaxId)
+                    if (a.ImportLocation.Value.Sid < -1 || a.ImportLocation.Value.Sid > symtab.MaxId)
                     {
                         throw new UnknownSymbolException(a.Sid);
                     }
 
-                    var text = symtab.FindKnownSymbol(a.ImportLocation.Sid);
+                    var text = symtab.FindKnownSymbol(a.ImportLocation.Value.Sid);
                     yield return new SymbolToken(text, a.Sid, a.ImportLocation);
                 }
                 else

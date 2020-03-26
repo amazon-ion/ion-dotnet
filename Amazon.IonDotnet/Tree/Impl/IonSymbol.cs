@@ -20,7 +20,7 @@ namespace Amazon.IonDotnet.Tree.Impl
     internal sealed class IonSymbol : IonText, IIonSymbol
     {
         private int _sid;
-        private ImportLocation _importLocation;
+        private ImportLocation? _importLocation;
 
         public IonSymbol(string text, int sid = SymbolToken.UnknownSid, ImportLocation importLocation = default) : this(new SymbolToken(text, sid, importLocation))
         {
