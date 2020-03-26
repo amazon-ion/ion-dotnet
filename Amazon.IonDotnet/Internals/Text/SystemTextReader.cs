@@ -528,7 +528,7 @@ namespace Amazon.IonDotnet.Internals.Text
                 SymbolToken symbolToken = _annotations[index];
                 if (symbolToken.ImportLocation == default)
                 {
-                    throw new UnknownSymbolException(0);
+                    throw new UnknownSymbolException(symbolToken.Sid);
                 }
                 else if (symbolToken.Text is null && symbolToken.ImportLocation != default)
                 {
