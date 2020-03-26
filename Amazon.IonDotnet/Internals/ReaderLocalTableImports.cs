@@ -66,37 +66,58 @@ namespace Amazon.IonDotnet.Internals
          */
         public ReaderLocalTableImports(List<ISymbolTable> importTables)
         {
-            ValidateImports(importTables);
-
             var importTablesSize = importTables.Count;
 
-            // Detects and adapts local tables so they are importable.
-            imports = new ISymbolTable[importTablesSize];
-            for (var i = 0; i < importTables.Count; i++)
-            {
-                ISymbolTable symbolTable = importTables[i];
-                if (symbolTable.IsLocal)
-                {
-                    // TODO-BQ: The adapter seems to provide a shallow or deep copy? Do we even need it?
-                    ISymbolTable tableDelegate;
-                    if (symbolTable.IsReadOnly)
-                    {
-                        tableDelegate = symbolTable;
-                    }
-                    else
-                    {
-                        tableDelegate = new ReaderLocalTable(symbolTable);
-                    }
+            imports = importTables.ToArray();
+            baseSids = new int[importTablesSize];
+            MaxId = PrepBaseSids(baseSids, imports);
+        }
 
-                    imports[i] = tableDelegate;
+        /**
+         * @param defaultSystemSymtab
+         *          The default system symtab, which will be used if the first
+         *          import in {@code importCollection} isn't a system symtab, never null.
+         * @param importCollection
+         *          The set of shared symbol tables to import; the first (and only
+         *          the first) may be a system table, in which case the
+         *          {@code defaultSystemSymtab is ignored}.
+         *
+         * @throws ArgumentException
+         *          If any import is a local table, or if any but the first is a
+         *          system table.
+         * @throws NullPointerException
+         *          If any import is null.
+         */
+        public ReaderLocalTableImports(
+            ISymbolTable defaultSystemSymtab,
+            params ISymbolTable[] importCollection)
+        {
+            Debug.Assert(
+                defaultSystemSymtab.IsSystem,
+                "defaultSystemSymtab isn't a system symtab.");
+
+            if (importCollection != null && importCollection.Length > 0)
+            {
+                if (imports[0].IsSystem)
+                {
+                    // Copy imports as-is.
+                    imports = (ISymbolTable[]) imports.Clone();
                 }
                 else
                 {
-                    imports[i] = symbolTable;
+                    // Use defaultSystemSymtab and append imports.
+                    imports = new ISymbolTable[importCollection.Length + 1];
+                    imports[0] = defaultSystemSymtab;
+                    Array.Copy(imports, 0, imports, 1, importCollection.Length);
                 }
             }
+            else
+            {
+                // Use defaultSystemSymtab only.
+                imports = new ISymbolTable[] { defaultSystemSymtab };
+            }
 
-            baseSids = new int[importTablesSize];
+            baseSids = new int[imports.Length];
             MaxId = PrepBaseSids(baseSids, imports);
         }
 
@@ -260,34 +281,6 @@ namespace Amazon.IonDotnet.Internals
             }
 
             return total;
-        }
-
-        /**
-         * Validates the import list to ensure that if there is a {@link LocalSymbolTable} in it then it's a single import
-         * apart from the system table.
-         */
-        private void ValidateImports(List<ISymbolTable> importTables)
-        {
-            var sizeWithoutSystemTables = importTables.Count;
-            var numberOfLocalTables = 0;
-
-            foreach (ISymbolTable table in importTables)
-            {
-                if (table.IsLocal)
-                {
-                    numberOfLocalTables++;
-                }
-
-                if (table.IsSystem)
-                {
-                    sizeWithoutSystemTables--;
-                }
-            }
-
-            if (numberOfLocalTables > 0 && sizeWithoutSystemTables != 1)
-            {
-                throw new ArgumentException("When importing LocalSymbolTables it needs to be the only import.");
-            }
         }
     }
 }

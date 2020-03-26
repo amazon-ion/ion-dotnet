@@ -140,7 +140,6 @@ namespace Amazon.IonDotnet.Internals
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var importList = table.Imports;
             var symbolList = table._ownSymbols;
-            var oldLocalSymbolCount = symbolList.Count;
 
             if (!isOnStruct)
             {
@@ -160,6 +159,11 @@ namespace Amazon.IonDotnet.Internals
 
             // Assume that we're standing before a struct.
             reader.StepIn();
+
+            // Isolate the newly-declared symbols because they must be added after any symbols declared
+            // by the previous symbol table if this is an appending local symbol table, but the 'imports' and
+            // 'symbols' declarations can occur in any order.
+            List<string> newSymbols = new List<string>();
 
             IonType fieldType;
             bool foundImport = false;
@@ -192,7 +196,7 @@ namespace Amazon.IonDotnet.Internals
                         foundLocals = true;
                         if (fieldType == IonType.List)
                         {
-                            ReadSymbolList(reader, symbolList);
+                            ReadSymbolList(reader, newSymbols);
                         }
 
                         break;
@@ -215,7 +219,15 @@ namespace Amazon.IonDotnet.Internals
                                  && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid))
                                  
                         {
-                            importList.Add(reader.GetSymbolTable());
+                            ISymbolTable currentSymbolTable = reader.GetSymbolTable();
+
+                            importList.AddRange(currentSymbolTable.GetImportedTables());
+
+                            var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames();
+                            foreach (var declaredSymbol in declaredSymbols)
+                            {
+                                symbolList.Add(declaredSymbol);
+                            }
                         }
                         else
                         {
@@ -230,30 +242,22 @@ namespace Amazon.IonDotnet.Internals
             }
 
             reader.StepOut();
-
-            if (!foundImport)
-            {
-                // No import field found, remove old symbols.
-                symbolList.RemoveRange(0, oldLocalSymbolCount);
-            }
-
-            // TODO-BQ: ???
-            ReaderLocalTableImports imports = new ReaderLocalTableImports(importList);
+            symbolList.AddRange(newSymbols);
 
             table.Refresh();
             return table;
         }
 
-        private static void ReadSymbolList(IIonReader reader, ICollection<string> symbolList)
+        private static void ReadSymbolList(IIonReader reader, ICollection<string> newSymbols)
         {
             reader.StepIn();
 
-            IonType type;
-            while ((type = reader.MoveNext()) != IonType.None)
+            IonType ionType;
+            while ((ionType = reader.MoveNext()) != IonType.None)
             {
-                var text = type == IonType.String ? reader.StringValue() : null;
+                var text = ionType == IonType.String ? reader.StringValue() : null;
 
-                symbolList.Add(text);
+                newSymbols.Add(text);
             }
 
             reader.StepOut();
@@ -264,23 +268,31 @@ namespace Amazon.IonDotnet.Internals
         /// </summary>
         private static void ReadImportList(IIonReader reader, ICatalog catalog, IList<ISymbolTable> importList)
         {
-            /*try to read sth like this
+            /* Try to read something like this:
             imports:[
                 { name:"table1", version:1 },
                 { name:"table2", version:12 }
             ]
             */
+
+            Debug.Assert(
+                SystemSymbols.Imports.Equals(reader.CurrentFieldName),
+                "Current field name '" + reader.CurrentFieldName
+                    + "' does not match '" + SystemSymbols.Imports + "'.");
+
             reader.StepIn();
 
-            IonType t;
-            while ((t = reader.MoveNext()) != IonType.None)
+            IonType ionType;
+            while ((ionType = reader.MoveNext()) != IonType.None)
             {
-                if (reader.CurrentIsNull || t != IonType.Struct)
-                    continue;
-                var imported = FindImportedTable(reader, catalog);
-                if (imported is null)
-                    continue;
-                importList.Add(imported);
+                if (!reader.CurrentIsNull && ionType == IonType.Struct)
+                {
+                    var importedTable = FindImportedTable(reader, catalog);
+                    if (importedTable != null)
+                    {
+                        importList.Add(importedTable);
+                    }
+                }
             }
 
             reader.StepOut();
