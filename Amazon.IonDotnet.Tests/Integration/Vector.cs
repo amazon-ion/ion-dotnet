@@ -40,9 +40,7 @@ namespace Amazon.IonDotnet.Tests.Integration
     {
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
-            "subfieldVarInt.ion",
-            "localSymbolTableAppend.ion"
-
+            "subfieldVarInt.ion"
         };
 
         private static readonly DirectoryInfo IonTestDir = DirStructure.IonTestDir();
