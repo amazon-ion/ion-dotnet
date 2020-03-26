@@ -535,6 +535,10 @@ namespace Amazon.IonDotnet.Internals.Text
                     break;
             }
 
+            if (text == null && sid == 0)
+            {
+                return new SymbolToken(text, sid);
+            }
             return new SymbolToken(text, sid, new ImportLocation(GetSymbolTable().Name, sid));
         }
 
