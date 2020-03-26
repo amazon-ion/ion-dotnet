@@ -526,21 +526,24 @@ namespace Amazon.IonDotnet.Internals.Text
             for (int index = 0; index < _annotations.Count; index++)
             {
                 SymbolToken symbolToken = _annotations[index];
-                if (symbolToken.Text is null && symbolToken.Sid == 0 && symbolToken.ImportLocation is null)
+                if (symbolToken.Text is null)
                 {
-                    throw new UnknownSymbolException(0);
-                }
-                else if (symbolToken.Text is null && symbolToken.ImportLocation != default)
-                {
-                    ISymbolTable symtab = GetSymbolTable();
-
-                    string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Value.Sid);
-                    if (text == null)
+                    if (symbolToken.Sid == 0)
                     {
-                        throw new UnknownSymbolException(symbolToken.ImportLocation.Value.Sid);
+                        throw new UnknownSymbolException(0);
                     }
+                    else if (symbolToken.ImportLocation != default)
+                    {
+                        ISymbolTable symtab = GetSymbolTable();
 
-                    annotations[index] = symtab.FindKnownSymbol(symbolToken.ImportLocation.Value.Sid);
+                        string text = symtab.FindKnownSymbol(symbolToken.ImportLocation.Value.Sid);
+                        if (text == null)
+                        {
+                            throw new UnknownSymbolException(symbolToken.ImportLocation.Value.Sid);
+                        }
+
+                        annotations[index] = symtab.FindKnownSymbol(symbolToken.ImportLocation.Value.Sid);
+                    }
                 }
                 else
                 {
