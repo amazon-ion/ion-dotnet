@@ -226,7 +226,7 @@ namespace Amazon.IonDotnet.Internals
                             var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames();
                             foreach (var declaredSymbol in declaredSymbols)
                             {
-                                symbolList.Add(declaredSymbol);
+                                newSymbols.Add(declaredSymbol);
                             }
                         }
                         else
