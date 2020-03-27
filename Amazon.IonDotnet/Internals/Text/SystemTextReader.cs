@@ -532,7 +532,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         throw new UnknownSymbolException(symbolToken.Sid);
                     }
-                    else if (symbolToken.ImportLocation != default)
+                    else
                     {
                         ISymbolTable symtab = GetSymbolTable();
 
