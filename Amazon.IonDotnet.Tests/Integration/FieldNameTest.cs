@@ -13,7 +13,7 @@ namespace Amazon.IonDotnet.Tests.Integration
         [DataRow("fieldNameInf", "inf")]
         [DataRow("fieldNameQuotedFalse", "false")]
         [DataRow("fieldNameQuotedNan", "nan")]
-        [DataRow("fieldNameQuotedNegInf", "+inf")]
+        [DataRow("fieldNameQuotedNegInf", "-inf")]
         [DataRow("fieldNameQuotedNull", "null")]
         [DataRow("fieldNameQuotedNullInt", "null.int")]
         [DataRow("fieldNameQuotedPosInf", "+inf")]
