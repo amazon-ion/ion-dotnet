@@ -220,10 +220,7 @@ namespace Amazon.IonDotnet.Internals
                                  
                         {
                             ISymbolTable currentSymbolTable = reader.GetSymbolTable();
-
-                            importList.AddRange(currentSymbolTable.GetImportedTables());
-
-                            var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames();
+                            var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames(); 
                             foreach (var declaredSymbol in declaredSymbols)
                             {
                                 newSymbols.Add(declaredSymbol);
@@ -242,6 +239,11 @@ namespace Amazon.IonDotnet.Internals
             }
 
             reader.StepOut();
+
+            // Clear _ownSymbols because symbolList contains current _ownSymbols
+            table._ownSymbols.Clear();
+            table._importedMaxId = 0;
+
             symbolList.AddRange(newSymbols);
 
             table.Refresh();
