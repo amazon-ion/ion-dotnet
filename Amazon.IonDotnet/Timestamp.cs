@@ -14,9 +14,7 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Amazon.IonDotnet
 {
@@ -32,7 +30,8 @@ namespace Amazon.IonDotnet
             Month = 2,
             Day = 3,
             Minute = 4,
-            Second = 5
+            Second = 5,
+            FractionalSecond = 6
         }
 
         private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
@@ -53,20 +52,24 @@ namespace Amazon.IonDotnet
         public readonly Precision TimestampPrecision;
 
         /// <summary>
+        /// Fractional seconds (milliseconds).
+        /// </summary>
+        public readonly decimal FractionalSecond;
+
+        /// <summary>
         /// Initialize a new Timestamp structure
         /// </summary>
         public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            in decimal frac, Precision precision = Precision.Second)
+            in decimal frac, Precision precision = Precision.FractionalSecond)
         {
             TimestampPrecision = precision;
 
             //offset unknown
             if (frac >= 1)
                 throw new ArgumentException("Fraction must be < 1", nameof(frac));
-
-            var ticks = (int) (frac * TimeSpan.TicksPerSecond);
+            FractionalSecond = frac;
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified)
-                .Add(TimeSpan.FromTicks(ticks));
+                            .AddSeconds(Decimal.ToDouble(FractionalSecond));
             LocalOffset = 0;
         }
 
@@ -74,7 +77,7 @@ namespace Amazon.IonDotnet
             Precision precision = Precision.Second)
         {
             TimestampPrecision = precision;
-
+            FractionalSecond = 0;
             //no frag, no perf lost
             //offset known
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
@@ -88,15 +91,14 @@ namespace Amazon.IonDotnet
         }
 
         public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            int offset, in decimal frac, Precision precision = Precision.Second)
+            int offset, in decimal frac, Precision precision = Precision.FractionalSecond)
         {
             TimestampPrecision = precision;
 
             //offset known
             if (frac >= 1)
                 throw new ArgumentException($"Fraction must be < 1: {frac}", nameof(frac));
-
-            var ticks = (int) (frac * TimeSpan.TicksPerSecond);
+            FractionalSecond = frac;
             var kind = DateTimeKind.Unspecified;
             //offset only makes sense if precision >= Minute
             if (precision < Precision.Minute)
@@ -109,7 +111,7 @@ namespace Amazon.IonDotnet
             }
 
             const int maxOffset = 14 * 60;
-            var shift = TimeSpan.FromTicks(ticks);
+            var shift = TimeSpan.FromSeconds(Decimal.ToDouble(FractionalSecond));
             if (offset > maxOffset || offset < -maxOffset)
             {
                 var minuteShift = (offset / maxOffset) * maxOffset;
@@ -119,7 +121,6 @@ namespace Amazon.IonDotnet
 
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
                 .Add(shift);
-
             LocalOffset = offset;
         }
 
@@ -146,10 +147,37 @@ namespace Amazon.IonDotnet
         public Timestamp(DateTime dateTimeValue)
         {
             TimestampPrecision = Precision.Second;
-
+            FractionalSecond = 0;
             DateTimeValue = DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified);
             //we have no idea about the local offset except when it's 0, so no change here
             LocalOffset = 0;
+        }
+
+        /// <summary>
+        /// Initialize the timestamp with different components, offset and fractional second. Timestamps in the
+        /// binary encoding are always in UTC, while in the text encoding are in the local time. This means transcoding
+        /// requires a conversion between UTC and local time, ergo we add the offset and fractional seconds to this value.
+        /// </summary>
+        /// <param name="year">Year</param>
+        /// <param name="month">Month</param>
+        /// <param name="day">Day</param>
+        /// <param name="hour">Hour</param>
+        /// <param name="minute">Minute</param>
+        /// <param name="second">Second</param>
+        /// <param name="offset">Offset value</param>
+        /// <param name="frac">Fractional second value</param>
+        /// <param name="precision">The precision of the value</param>
+        public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac,
+            int toChange, Precision precision, DateTimeKind kind)
+        {
+            TimestampPrecision = precision;
+            if (frac >= 1)
+                throw new ArgumentException("Fraction must be < 1", nameof(frac));
+            FractionalSecond = frac;
+            DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
+                .AddMinutes(toChange)
+                .AddSeconds(Decimal.ToDouble(FractionalSecond));
+            LocalOffset = offset;
         }
 
         /// <summary>
@@ -159,6 +187,7 @@ namespace Amazon.IonDotnet
         public Timestamp(DateTimeOffset dateTimeOffset)
         {
             TimestampPrecision = Precision.Second;
+            FractionalSecond = 0;
             LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
             DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0
                 ? DateTimeKind.Utc

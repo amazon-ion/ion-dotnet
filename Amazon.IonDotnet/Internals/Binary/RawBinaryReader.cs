@@ -600,7 +600,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             ReadVarInt(out var exponent);
             if (exponent > 0)
-                throw new IonException($"Exponent should be <= 0: {exponent}");
+                return 0m;
             //we care about the scale here
             exponent = -exponent;
 
@@ -665,6 +665,21 @@ namespace Amazon.IonDotnet.Internals.Binary
             return ret;
         }
 
+        private DateTimeKind GetOffsetKind(Timestamp.Precision precision, bool offsetKnown, ref int offset)
+        {
+            if (precision < Timestamp.Precision.Minute)
+            {
+                offset = 0;
+                return DateTimeKind.Unspecified;
+            }
+            else
+            {
+                return offsetKnown
+                    ? offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local
+                    : DateTimeKind.Unspecified;
+            }
+        }
+
         protected Timestamp ReadTimeStamp(int length)
         {
             Debug.Assert(length > 0);
@@ -700,23 +715,21 @@ namespace Amazon.IonDotnet.Internals.Binary
                             {
                                 // now we read in our actual "milliseconds since the epoch"
                                 frac = ReadDecimal(_localRemaining);
+                                // if fractional second does not exist, it will be set to 0. However, we can have 0.0 or 0.00
+                                // which are valid and different from 0. So anything other than 0 is a fractional second. 
+                                if (!frac.ToString().Equals("0"))
+                                {
+                                    precision = Timestamp.Precision.FractionalSecond;
+                                }
                             }
                         }
                     }
                 }
             }
-
             _localRemaining = saveLimit;
-            if (frac > 0)
-            {
-                return offsetKnown
-                    ? new Timestamp(year, month, day, hour, minute, second, offset, frac, precision)
-                    : new Timestamp(year, month, day, hour, minute, second, frac, precision);
-            }
 
-            return offsetKnown
-                ? new Timestamp(year, month, day, hour, minute, second, offset, precision)
-                : new Timestamp(year, month, day, hour, minute, second, precision);
+            DateTimeKind kind = GetOffsetKind(precision, offsetKnown, ref offset);
+            return new Timestamp(year, month, day, hour, minute, second, offset, frac, offset, precision, kind);
         }
 
         /// <summary>
