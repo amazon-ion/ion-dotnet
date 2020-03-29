@@ -21,7 +21,7 @@ using Amazon.IonDotnet.Internals.Binary;
 namespace Amazon.IonDotnet.Internals
 {
     /// <summary>
-    /// This class is used for processing local symbol tables while reading ion data.
+    /// This class is used for processing local symbol tables while reading Ion data.
     /// </summary>
     internal class ReaderLocalTable : ISymbolTable
     {
@@ -39,8 +39,23 @@ namespace Amazon.IonDotnet.Internals
         /// Refresh the local symbol table to a valid state. Typically called after <see cref="Imports"/>
         /// and <see cref="_ownSymbols"/> has been mutated. 
         /// </summary>
-        internal void Refresh()
+        /// <param name="symbols">
+        /// Optional: Collection of symbol names, new and prior, when appending
+        /// more than one import.
+        /// </param>
+        internal void Refresh(List<string> symbols = null)
         {
+            if (symbols != null)
+            {
+                // Clear _ownSymbols and repopulate with symbols containing
+                // new and previous symbols.
+                _ownSymbols.Clear();
+                _ownSymbols.AddRange(symbols);
+
+                // Reset since this will be recalculated.
+                _importedMaxId = 0;
+            }
+
             var maxId = 0;
             foreach (var import in Imports)
             {
@@ -79,7 +94,9 @@ namespace Amazon.IonDotnet.Internals
             {
                 var t = import.Find(text);
                 if (t != default)
+                {
                     return new SymbolToken(t.Text, SymbolToken.UnknownSid);
+                }
             }
 
             for (var i = 0; i < _ownSymbols.Count; i++)
@@ -98,14 +115,19 @@ namespace Amazon.IonDotnet.Internals
             {
                 var t = import.FindSymbolId(text);
                 if (t > 0)
+                {
                     return t + offset;
+                }
+
                 offset += import.MaxId;
             }
 
             for (var i = 0; i < _ownSymbols.Count; i++)
             {
                 if (_ownSymbols[i] == text)
+                {
                     return i + 1 + _importedMaxId;
+                }
             }
 
             return SymbolToken.UnknownSid;
@@ -114,10 +136,14 @@ namespace Amazon.IonDotnet.Internals
         public string FindKnownSymbol(int sid)
         {
             if (sid < SystemSymbols.IonSid || sid > MaxId)
+            {
                 return null;
+            }
 
             if (sid > _importedMaxId)
+            {
                 return _ownSymbols[sid - _importedMaxId - 1];
+            }
 
             var offset = 0;
             foreach (var import in Imports)
@@ -139,7 +165,6 @@ namespace Amazon.IonDotnet.Internals
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var importList = table.Imports;
-            var symbolList = table._ownSymbols;
 
             if (!isOnStruct)
             {
@@ -220,6 +245,7 @@ namespace Amazon.IonDotnet.Internals
                                  
                         {
                             ISymbolTable currentSymbolTable = reader.GetSymbolTable();
+
                             var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames(); 
                             foreach (var declaredSymbol in declaredSymbols)
                             {
@@ -240,13 +266,7 @@ namespace Amazon.IonDotnet.Internals
 
             reader.StepOut();
 
-            // Clear _ownSymbols because symbolList contains current _ownSymbols
-            table._ownSymbols.Clear();
-            table._importedMaxId = 0;
-
-            symbolList.AddRange(newSymbols);
-
-            table.Refresh();
+            table.Refresh(newSymbols);
             return table;
         }
 
@@ -306,20 +326,31 @@ namespace Amazon.IonDotnet.Internals
         /// <returns>Null if no such table is found.</returns>
         private static ISymbolTable FindImportedTable(IIonReader reader, ICatalog catalog)
         {
-            reader.StepIn();
+            Debug.Assert(
+                reader.CurrentType == IonType.Struct,
+                "Invalid symbol table image passed in reader "
+                    + reader.CurrentType
+                    + " encountered when a struct was expected.");
 
-            IonType t;
             string name = null;
             var version = -1;
             var maxId = -1;
+
+            reader.StepIn();
+
+            IonType t;
             while ((t = reader.MoveNext()) != IonType.None)
             {
                 if (reader.CurrentIsNull)
+                {
                     continue;
+                }
 
                 var fieldId = reader.GetFieldNameSymbol().Sid;
                 if (fieldId == SymbolToken.UnknownSid)
                 {
+                    // This is a user defined reader or a pure DOM
+                    // we fall back to text here.
                     fieldId = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
                 }
 
@@ -347,13 +378,19 @@ namespace Amazon.IonDotnet.Internals
                         }
 
                         break;
+                    default:
+                        // We just ignore anything else as "open content".
+                        break;
                 }
             }
 
             reader.StepOut();
 
+            // Ignore import clauses with malformed name field.
             if (string.IsNullOrWhiteSpace(name) || SystemSymbols.Ion.Equals(name))
+            {
                 return null;
+            }
 
             if (version < 1)
             {
@@ -364,8 +401,11 @@ namespace Amazon.IonDotnet.Internals
             if (maxId < 0)
             {
                 if (table == null || table.Version != version)
+                {
                     throw new IonException($@"Import of shared table {name}/{version} lacks a max_id field, but an exact match is 
                                                 not found in the catalog");
+                }
+
                 maxId = table.MaxId;
             }
 

@@ -82,7 +82,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
                             break;
                         case IonType.Symbol:
-                            // $ion_1_0 is read as an IVM only if it is not annotated
+                            // $ion_1_0 is read as an IVM only if it is not annotated.
                             if (_annotations.Count == 0)
                             {
                                 var version = SymbolValue().Text;
@@ -91,24 +91,28 @@ namespace Amazon.IonDotnet.Internals.Text
                                     break;
                                 }
 
-                                //new Ivm found, reset all symbol tables
+                                // New IVM found, reset all symbol tables.
                                 if (SystemSymbols.Ion10 != version)
+                                {
                                     throw new UnsupportedIonVersionException(version);
+                                }
 
                                 MoveNext();
 
 
-                                // from specs: only unquoted $ion_1_0 text can be interpreted as ivm semantics and 
+                                // From specs: only unquoted $ion_1_0 text can be interpreted as IVM semantics and 
                                 // cause the symbol tables to be reset.
                                 if (_v.AuthoritativeType == ScalarType.String && _scanner.Token != TextConstants.TokenSymbolQuoted)
                                 {
                                     _currentSymtab = _systemSymbols;
                                 }
 
-                                //even if that's not the case we still skip the ivm
+                                // Even if that's not the case we still skip the IVM.
                                 _hasNextCalled = false;
                             }
 
+                            break;
+                        default:
                             break;
                     }
                 }
