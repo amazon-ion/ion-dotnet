@@ -26,7 +26,8 @@ namespace Amazon.IonDotnet.Internals
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
-        internal readonly HashSet<string> NewSymbols = new HashSet<string>();  // Ensure only new symbols are added, perserve order.
+        internal readonly HashSet<string> Symbols = new HashSet<string>();  // Ensure only new symbols are added, perserve order.
+
         private readonly List<string> _ownSymbols = new List<string>();
         private int _importedMaxId;
 
@@ -43,12 +44,12 @@ namespace Amazon.IonDotnet.Internals
         internal void Refresh()
         {
             // Maintain symbol to SID value pairings.
-            if (NewSymbols.Count > 0)
+            if (Symbols.Count > 0)
             {
                 // Clear _ownSymbols and repopulate with symbols containing
                 // new and previous symbols.
                 _ownSymbols.Clear();
-                _ownSymbols.AddRange(NewSymbols);
+                _ownSymbols.AddRange(Symbols);
             }
 
             var maxId = 0;
@@ -87,17 +88,16 @@ namespace Amazon.IonDotnet.Internals
         {
             foreach (var import in Imports)
             {
-                var t = import.Find(text);
-                if (t != default)
+                var symbolToken = import.Find(text);
+                if (symbolToken != default)
                 {
-                    return new SymbolToken(t.Text, SymbolToken.UnknownSid);
+                    return new SymbolToken(symbolToken.Text, SymbolToken.UnknownSid);
                 }
             }
 
-            for (var i = 0; i < _ownSymbols.Count; i++)
+            if (_ownSymbols.Contains(text))
             {
-                if (_ownSymbols[i] == text)
-                    return new SymbolToken(text, SymbolToken.UnknownSid);
+                return new SymbolToken(text, SymbolToken.UnknownSid);
             }
 
             return default;
@@ -108,10 +108,10 @@ namespace Amazon.IonDotnet.Internals
             var offset = 0;
             foreach (var import in Imports)
             {
-                var t = import.FindSymbolId(text);
-                if (t > 0)
+                var sid = import.FindSymbolId(text);
+                if (sid > 0)
                 {
-                    return t + offset;
+                    return sid + offset;
                 }
 
                 offset += import.MaxId;
@@ -144,7 +144,10 @@ namespace Amazon.IonDotnet.Internals
             foreach (var import in Imports)
             {
                 if (import.MaxId + offset >= sid)
+                {
                     return import.FindKnownSymbol(sid - offset);
+                }
+
                 offset += import.MaxId;
             }
 
@@ -159,9 +162,10 @@ namespace Amazon.IonDotnet.Internals
         public static ISymbolTable ImportReaderTable(IIonReader reader, ICatalog catalog, bool isOnStruct)
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
-            var importList = table.Imports;
-            var symbolList = table.NewSymbols;
-
+            var imports = table.Imports;
+            var symbols = table.Symbols;
+            var newSymbols = new List<string>();
+ 
             if (!isOnStruct)
             {
                 reader.MoveNext();
@@ -212,7 +216,7 @@ namespace Amazon.IonDotnet.Internals
                         foundLocals = true;
                         if (fieldType == IonType.List)
                         {
-                            ReadSymbolList(reader, symbolList);
+                            ReadSymbolList(reader, newSymbols);
                         }
 
                         break;
@@ -227,7 +231,7 @@ namespace Amazon.IonDotnet.Internals
                         if (fieldType == IonType.List)
                         {
                             // List of symbol tables to imports.
-                            ReadImportList(reader, catalog, importList);
+                            ReadImportList(reader, catalog, imports);
                         }
                         // Trying to import the current table.
                         else if (fieldType == IonType.Symbol
@@ -240,7 +244,7 @@ namespace Amazon.IonDotnet.Internals
                             var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames(); 
                             foreach (var declaredSymbol in declaredSymbols)
                             {
-                                symbolList.Add(declaredSymbol);
+                                newSymbols.Add(declaredSymbol);
                             }
                         }
 
@@ -253,11 +257,26 @@ namespace Amazon.IonDotnet.Internals
 
             reader.StepOut();
 
+            // If there were prior imports and now only a system table is
+            // seen, then start fresh again as prior imports no longer matter.
+            if (imports.Count > 1 && !foundImport && foundLocals)
+            {
+                symbols.Clear();
+                imports.RemoveAll(symbolTable => symbolTable.IsSubstitute == true);
+            }
+
+            // Add all the new symbols.
+            foreach (string newSymbol in newSymbols)
+            {
+                symbols.Add(newSymbol);
+            }
+
             table.Refresh();
+
             return table;
         }
 
-        private static void ReadSymbolList(IIonReader reader, HashSet<string> symbolList)
+        private static void ReadSymbolList(IIonReader reader, List<string> newSymbols)
         {
             reader.StepIn();
 
@@ -265,7 +284,7 @@ namespace Amazon.IonDotnet.Internals
             while ((ionType = reader.MoveNext()) != IonType.None)
             {
                 var text = ionType == IonType.String ? reader.StringValue() : null;
-                symbolList.Add(text);
+                newSymbols.Add(text);
             }
 
             reader.StepOut();
@@ -324,8 +343,8 @@ namespace Amazon.IonDotnet.Internals
 
             reader.StepIn();
 
-            IonType t;
-            while ((t = reader.MoveNext()) != IonType.None)
+            IonType ionType;
+            while ((ionType = reader.MoveNext()) != IonType.None)
             {
                 if (reader.CurrentIsNull)
                 {
@@ -344,21 +363,21 @@ namespace Amazon.IonDotnet.Internals
                 switch (fieldId)
                 {
                     case SystemSymbols.NameSid:
-                        if (t == IonType.String)
+                        if (ionType == IonType.String)
                         {
                             name = reader.StringValue();
                         }
 
                         break;
                     case SystemSymbols.VersionSid:
-                        if (t == IonType.Int)
+                        if (ionType == IonType.Int)
                         {
                             version = reader.IntValue();
                         }
 
                         break;
                     case SystemSymbols.MaxIdSid:
-                        if (t == IonType.Int)
+                        if (ionType == IonType.Int)
                         {
                             maxId = reader.IntValue();
                         }
