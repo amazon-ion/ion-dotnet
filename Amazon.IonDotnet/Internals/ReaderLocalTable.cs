@@ -26,6 +26,7 @@ namespace Amazon.IonDotnet.Internals
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
+        internal readonly HashSet<string> NewSymbols = new HashSet<string>();  // Ensure only new symbols are added, perserve order.
         private readonly List<string> _ownSymbols = new List<string>();
         private int _importedMaxId;
 
@@ -39,21 +40,15 @@ namespace Amazon.IonDotnet.Internals
         /// Refresh the local symbol table to a valid state. Typically called after <see cref="Imports"/>
         /// and <see cref="_ownSymbols"/> has been mutated. 
         /// </summary>
-        /// <param name="symbols">
-        /// Optional: Collection of symbol names, new and prior, when appending
-        /// more than one import.
-        /// </param>
-        internal void Refresh(List<string> symbols = null)
+        internal void Refresh()
         {
-            if (symbols != null)
+            // Maintain symbol to SID value pairings.
+            if (NewSymbols.Count > 0)
             {
                 // Clear _ownSymbols and repopulate with symbols containing
                 // new and previous symbols.
                 _ownSymbols.Clear();
-                _ownSymbols.AddRange(symbols);
-
-                // Reset since this will be recalculated.
-                _importedMaxId = 0;
+                _ownSymbols.AddRange(NewSymbols);
             }
 
             var maxId = 0;
@@ -165,6 +160,7 @@ namespace Amazon.IonDotnet.Internals
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var importList = table.Imports;
+            var symbolList = table.NewSymbols;
 
             if (!isOnStruct)
             {
@@ -184,11 +180,6 @@ namespace Amazon.IonDotnet.Internals
 
             // Assume that we're standing before a struct.
             reader.StepIn();
-
-            // Isolate the newly-declared symbols because they must be added after any symbols declared
-            // by the previous symbol table if this is an appending local symbol table, but the 'imports' and
-            // 'symbols' declarations can occur in any order.
-            List<string> newSymbols = new List<string>();
 
             IonType fieldType;
             bool foundImport = false;
@@ -221,7 +212,7 @@ namespace Amazon.IonDotnet.Internals
                         foundLocals = true;
                         if (fieldType == IonType.List)
                         {
-                            ReadSymbolList(reader, newSymbols);
+                            ReadSymbolList(reader, symbolList);
                         }
 
                         break;
@@ -249,12 +240,8 @@ namespace Amazon.IonDotnet.Internals
                             var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames(); 
                             foreach (var declaredSymbol in declaredSymbols)
                             {
-                                newSymbols.Add(declaredSymbol);
+                                symbolList.Add(declaredSymbol);
                             }
-                        }
-                        else
-                        {
-                            throw new IonException("Invalid import format.");
                         }
 
                         break;
@@ -266,11 +253,11 @@ namespace Amazon.IonDotnet.Internals
 
             reader.StepOut();
 
-            table.Refresh(newSymbols);
+            table.Refresh();
             return table;
         }
 
-        private static void ReadSymbolList(IIonReader reader, ICollection<string> newSymbols)
+        private static void ReadSymbolList(IIonReader reader, HashSet<string> symbolList)
         {
             reader.StepIn();
 
@@ -278,8 +265,7 @@ namespace Amazon.IonDotnet.Internals
             while ((ionType = reader.MoveNext()) != IonType.None)
             {
                 var text = ionType == IonType.String ? reader.StringValue() : null;
-
-                newSymbols.Add(text);
+                symbolList.Add(text);
             }
 
             reader.StepOut();
