@@ -13,32 +13,33 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Numerics;
-using Amazon.IonDotnet.Tree;
-using Amazon.IonDotnet.Tree.Impl;
-
 namespace Amazon.IonDotnet.Internals
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Numerics;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
+
     internal class IonTreeWriter : IonSystemWriter
     {
-        private IIonContainer _currentContainer;
-        private Stack<IIonContainer> _containers = new Stack<IIonContainer>();
+        private readonly Stack<IIonContainer> containers = new Stack<IIonContainer>();
+        private IIonContainer currentContainer;
 
         public IonTreeWriter(IonContainer root)
         {
-            Debug.Assert(root != null);
-            _currentContainer = root;
-            _containers.Push(root);
+            Debug.Assert(root != null, "root is null");
+            this.currentContainer = root;
+            this.containers.Push(root);
         }
+
+        public override bool IsInStruct => ((IIonValue)this.currentContainer).Type() == IonType.Struct;
 
         public override void WriteNull()
         {
             var v = new IonNull();
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteNull(IonType type)
@@ -90,81 +91,80 @@ namespace Amazon.IonDotnet.Internals
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteBool(bool value)
         {
             var v = new IonBool(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteInt(long value)
         {
             var v = new IonInt(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteInt(BigInteger value)
         {
             var v = new IonInt(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteFloat(double value)
         {
             var v = new IonFloat(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteDecimal(decimal value)
         {
             var v = new IonDecimal(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteDecimal(BigDecimal value)
         {
             var v = new IonDecimal(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteTimestamp(Timestamp value)
         {
             var v = new IonTimestamp(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteString(string value)
         {
             var v = new IonString(value);
-            AppendValue(v);
+            this.AppendValue(v);
         }
 
         public override void WriteBlob(ReadOnlySpan<byte> value)
         {
-            AppendValue(new IonBlob(value));
+            this.AppendValue(new IonBlob(value));
         }
 
         public override void WriteClob(ReadOnlySpan<byte> value)
         {
-            AppendValue(new IonClob(value));
+            this.AppendValue(new IonClob(value));
         }
 
         public override void Dispose()
         {
-            //nothing to do here
+            // nothing to do here
         }
-
 
         public override void Flush()
         {
-            //nothing to do here
+            // nothing to do here
         }
 
         public override void Finish()
         {
-            //nothing to do here
+            // nothing to do here
         }
 
         public override void StepIn(IonType type)
@@ -185,17 +185,17 @@ namespace Amazon.IonDotnet.Internals
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            _containers.Push(c);
-            AppendValue(c);
-            _currentContainer = c;
+            this.containers.Push(c);
+            this.AppendValue(c);
+            this.currentContainer = c;
         }
 
         public override void StepOut()
         {
-            if (_containers.Count > 0)
+            if (this.containers.Count > 0)
             {
-                _containers.Pop();
-                _currentContainer = _containers.Peek();
+                this.containers.Pop();
+                this.currentContainer = this.containers.Peek();
             }
             else
             {
@@ -203,21 +203,19 @@ namespace Amazon.IonDotnet.Internals
             }
         }
 
-        public override bool IsInStruct => ((IIonValue)_currentContainer).Type() == IonType.Struct;
-
         public override int GetDepth()
         {
-            return _containers.Count;
+            return this.containers.Count;
         }
 
         protected override void WriteSymbolAsIs(SymbolToken symbolToken)
         {
-            AppendValue(new IonSymbol(symbolToken));
+            this.AppendValue(new IonSymbol(symbolToken));
         }
 
         protected override void WriteIonVersionMarker(ISymbolTable systemSymtab)
         {
-            //do nothing
+            // do nothing
         }
 
         /// <summary>
@@ -225,31 +223,33 @@ namespace Amazon.IonDotnet.Internals
         /// </summary>
         private void AppendValue(IonValue value)
         {
-            if (annotations.Count > 0)
+            if (this.annotations.Count > 0)
             {
                 value.ClearAnnotations();
-                foreach (var annotation in annotations)
+                foreach (var annotation in this.annotations)
                 {
                     value.AddTypeAnnotation(annotation);
                 }
 
-                annotations.Clear();
+                this.annotations.Clear();
             }
 
-            if (IsInStruct)
+            if (this.IsInStruct)
             {
-                var field = AssumeFieldNameSymbol();
-                ClearFieldName();
+                var field = this.AssumeFieldNameSymbol();
+                this.ClearFieldName();
                 if (field == default)
+                {
                     throw new InvalidOperationException("Field name is missing");
+                }
 
-                var structContainer = _currentContainer as IonStruct;
-                Debug.Assert(structContainer != null);
+                var structContainer = this.currentContainer as IonStruct;
+                Debug.Assert(structContainer != null, "structContainer is null");
                 structContainer.Add(field, value);
             }
             else
             {
-                _currentContainer.Add(value);
+                this.currentContainer.Add(value);
             }
         }
     }
