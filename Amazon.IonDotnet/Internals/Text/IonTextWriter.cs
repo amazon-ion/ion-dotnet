@@ -13,353 +13,73 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Numerics;
-using Amazon.IonDotnet.Builders;
-using Amazon.IonDotnet.Utils;
-
 namespace Amazon.IonDotnet.Internals.Text
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Numerics;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Utils;
+
     /// <inheritdoc />
     /// <summary>
-    /// Deals with writing Ion text form
+    /// Deals with writing Ion text form.
     /// </summary>
     internal class IonTextWriter : IonSystemWriter
     {
-        private enum SymbolVariant
-        {
-            Unknown,
-            Identifier,
-            Quoted,
-            Operator
-        }
+        private readonly Stack<(IonType containerType, bool pendingComma)> containerStack = new Stack<(IonType containerType, bool pendingComma)>(6);
+        private readonly IonTextRawWriter textWriter;
+        private readonly IonTextOptions options;
 
-        private readonly Stack<(IonType containerType, bool pendingComma)> _containerStack = new Stack<(IonType containerType, bool pendingComma)>(6);
-        private readonly IonTextRawWriter _textWriter;
-        private readonly IonTextOptions _options;
+        private bool isInStruct;
+        private bool pendingSeparator;
+        private bool isWritingIvm;
+        private bool followingLongString;
+        private bool valueStarted;
+        private char separatorCharacter;
 
-        private bool _isInStruct;
-        private bool _pendingSeparator;
-        private bool _isWritingIvm;
-        private bool _followingLongString;
-        private bool _valueStarted;
-        private char _separatorCharacter;
-
-        public IonTextWriter(TextWriter textWriter, IEnumerable<ISymbolTable> imports = null) : this(textWriter, IonTextOptions.Default, imports)
+        public IonTextWriter(TextWriter textWriter, IEnumerable<ISymbolTable> imports = null)
+            : this(textWriter, IonTextOptions.Default, imports)
         {
         }
 
         public IonTextWriter(TextWriter textWriter, IonTextOptions textOptions, IEnumerable<ISymbolTable> imports = null)
         {
-            _textWriter = new IonTextRawWriter(textWriter);
-            _options = textOptions;
-            InitializeImportList(imports);
-            _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
+            this.textWriter = new IonTextRawWriter(textWriter);
+            this.options = textOptions;
+            this.InitializeImportList(imports);
+            this.separatorCharacter = this.options.PrettyPrint ? '\n' : ' ';
         }
 
-
-        private void InitializeImportList(IEnumerable<ISymbolTable> imports)
+        private enum SymbolVariant
         {
-            if (imports == null)
-            {
-                return;
-            }
-
-            foreach (var table in imports)
-            {
-                if (!table.IsShared)
-                {
-                    throw new ArgumentException($"Import table is not shared: {table}");
-                }
-
-                if (table.IsSystem)
-                {
-                    continue;
-                }
-
-                symbolTable.Imports.Add(table);
-            }
-
-            symbolTable.Refresh();
+            Unknown,
+            Identifier,
+            Quoted,
+            Operator,
         }
 
-        private void WriteLeadingWhiteSpace()
-        {
-            for (var ii = 0; ii < _containerStack.Count; ii++)
-            {
-                _textWriter.Write(' ');
-                _textWriter.Write(' ');
-            }
-        }
+        public override bool IsInStruct => this.isInStruct;
 
-        private void WriteSidLiteral(int sid)
-        {
-            if (_options.SymbolAsString)
-            {
-                _textWriter.Write('"');
-            }
-
-            _textWriter.Write('$');
-            _textWriter.Write(sid);
-            if (_options.SymbolAsString)
-            {
-                _textWriter.Write('"');
-            }
-        }
-
-        private void WriteSymbolText(string text)
-        {
-            if (_options.SymbolAsString)
-            {
-                _textWriter.WriteString(text);
-                return;
-            }
-
-            // Determine the variant for writing.
-            SymbolVariant symbolVariant = GetSymbolVariant(text);
-
-            switch (symbolVariant)
-            {
-                case SymbolVariant.Identifier:
-                    _textWriter.Write(text);
-                    break;
-                case SymbolVariant.Operator:
-                    if (_containerStack.Count > 0 && _containerStack.Peek().containerType == IonType.Sexp)
-                    {
-                        _textWriter.Write(text);
-                        break;
-                    }
-
-                    goto case SymbolVariant.Quoted;
-                case SymbolVariant.Quoted:
-                    _textWriter.WriteSingleQuotedSymbol(text);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(symbolVariant), symbolVariant, null);
-            }
-        }
-
-        private void WriteFieldNameToken(SymbolToken token)
-        {
-            if (token.Text == null)
-            {
-                //unknown text, write id
-                WriteSidLiteral(token.Sid);
-                return;
-            }
-
-            WriteSymbolText(token.Text);
-        }
-
-        private void WriteAnnotations()
-        {
-            foreach (var annotation in annotations)
-            {
-                WriteAnnotationToken(annotation);
-                _textWriter.Write("::");
-            }
-        }
-
-        private void WriteAnnotationToken(SymbolToken annotation)
-        {
-            var text = annotation.Text;
-            if (text is null)
-            {
-                //unknown text, write sid
-                _textWriter.Write('$');
-                _textWriter.Write(annotation.Sid < 0 ? 0 : annotation.Sid);
-                return;
-            }
-
-            var needQuote = GetSymbolVariant(text) != SymbolVariant.Identifier;
-            //TODO extra need quote
-            if (needQuote)
-            {
-                _textWriter.WriteSingleQuotedSymbol(text);
-                return;
-            }
-
-            _textWriter.WriteSymbol(text);
-        }
-
-        /// <summary>
-        /// Write a separator between values
-        /// </summary>
-        /// <param name="followingLongString">If this is a separator to separate long string</param>
-        /// <returns>If long string separation continues</returns>
-        private bool WriteSeparator(bool followingLongString)
-        {
-            if (_options.PrettyPrint)
-            {
-                if (_pendingSeparator && _separatorCharacter > ' ')
-                {
-                    // Only bother if the separator is non-whitespace.
-                    _textWriter.Write(_separatorCharacter);
-                    followingLongString = false;
-                }
-
-                if (_valueStarted)
-                {
-                    //this mean we've written something
-                    _textWriter.Write(_options.LineSeparator);
-                }
-
-                WriteLeadingWhiteSpace();
-            }
-            else if (_pendingSeparator)
-            {
-                _textWriter.Write(_separatorCharacter);
-                if (_separatorCharacter > ' ')
-                {
-                    followingLongString = false;
-                }
-            }
-
-            return followingLongString;
-        }
-
-        protected override void WriteSymbolAsIs(SymbolToken symbolToken)
-        {
-            if (symbolToken == default)
-            {
-                WriteNull(IonType.Symbol);
-                return;
-            }
-
-            StartValue();
-            if (symbolToken.Text is null)
-            {
-                WriteSidLiteral(symbolToken.Sid);
-            }
-            else
-            {
-                WriteSymbolText(symbolToken.Text);
-            }
-
-            CloseValue();
-        }
-
-        protected override void WriteIonVersionMarker(ISymbolTable systemSymtab)
-        {
-            _isWritingIvm = true;
-
-            StartValue();
-            WriteSymbolText(systemSymtab.IonVersionId);
-            CloseValue();
-
-            _isWritingIvm = false;
-        }
-
-        protected void StartValue()
-        {
-            if (!_valueStarted)
-            {
-                _valueStarted = true;
-                if (_options.WriteVersionMarker)
-                {
-                    WriteIonVersionMarker();
-                }
-
-                //write the imports here
-                WriteImports();
-            }
-
-            var followingLongString = WriteSeparator(_followingLongString);
-
-            //write field name
-            if (_isInStruct)
-            {
-                var sym = AssumeFieldNameSymbol();
-                WriteFieldNameToken(sym);
-                _textWriter.Write(':');
-                if (_options.PrettyPrint)
-                {
-                    _textWriter.Write(' ');
-                }
-
-                ClearFieldName();
-                followingLongString = false;
-            }
-
-            // write annotations only if they exist and we're not currently writing an IVM
-            if (annotations.Count > 0 && !_isWritingIvm)
-            {
-                if (!_options.SkipAnnotations)
-                {
-                    WriteAnnotations();
-                    followingLongString = false;
-                }
-
-                annotations.Clear();
-            }
-
-            _followingLongString = followingLongString;
-        }
-
-        /// <summary>
-        /// Write all the imported symbol tables
-        /// </summary>
-        /// <exception cref="NotImplementedException"></exception>
-        private void WriteImports()
-        {
-            //only write local symtab if we import sth more than just system table
-            if (symbolTable.Imports.Count <= 1)
-            {
-                return;
-            }
-
-            AddTypeAnnotation(SystemSymbols.IonSymbolTable);
-            StepIn(IonType.Struct);
-            SetFieldName(SystemSymbols.Imports);
-            StepIn(IonType.List);
-
-            foreach (var importedTable in symbolTable.Imports)
-            {
-                if (importedTable.IsSystem)
-                {
-                    continue;
-                }
-
-                this.WriteImportTable(importedTable);
-            }
-
-            StepOut();
-            StepOut();
-        }
-
-        private void CloseValue()
-        {
-            _pendingSeparator = true;
-            _followingLongString = false;
-
-            // TODO Flush if a top-level-value was written
-            if (GetDepth() == 0)
-            {
-//                Flush();
-            }
-        }
-
-//        public override Task FlushAsync() => _textWriter.FlushAsync();
-        public override void Flush() => _textWriter.Flush();
+        public override void Flush() => this.textWriter.Flush();
 
         /// <summary>
         /// Override this so that the imports are written first.
         /// </summary>
-        /// <param name="annotation"></param>
+        /// <param name="annotation">Annotation to add.</param>
         public override void AddTypeAnnotationSymbol(SymbolToken annotation)
         {
-            if (!_valueStarted)
+            if (!this.valueStarted)
             {
-                _valueStarted = true;
-                if (_options.WriteVersionMarker)
+                this.valueStarted = true;
+                if (this.options.WriteVersionMarker)
                 {
-                    WriteIonVersionMarker();
+                    this.WriteIonVersionMarker();
                 }
 
-                //write the imports here
-                WriteImports();
+                // write the imports here
+                this.WriteImports();
             }
 
             base.AddTypeAnnotationSymbol(annotation);
@@ -367,16 +87,16 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override void WriteNull()
         {
-            StartValue();
-            _textWriter.Write("null");
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write("null");
+            this.CloseValue();
         }
 
         public override void WriteNull(IonType type)
         {
-            StartValue();
+            this.StartValue();
             string nullImage;
-            if (_options.UntypedNull)
+            if (this.options.UntypedNull)
             {
                 nullImage = "null";
             }
@@ -428,232 +148,227 @@ namespace Amazon.IonDotnet.Internals.Text
                 }
             }
 
-            _textWriter.Write(nullImage);
-            CloseValue();
+            this.textWriter.Write(nullImage);
+            this.CloseValue();
         }
 
         public override void WriteBool(bool value)
         {
-            StartValue();
-            _textWriter.Write(value ? "true" : "false");
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write(value ? "true" : "false");
+            this.CloseValue();
         }
 
         public override void WriteInt(long value)
         {
-            StartValue();
-            _textWriter.Write(value);
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write(value);
+            this.CloseValue();
         }
 
         public override void WriteInt(BigInteger value)
         {
-            StartValue();
-            //this is not optimal but it's not a common use case
-            _textWriter.Write(value.ToString());
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write(value.ToString());
+            this.CloseValue();
         }
 
         public override void WriteFloat(double value)
         {
-            StartValue();
-            _textWriter.Write(value);
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write(value);
+            this.CloseValue();
         }
 
         public override void WriteDecimal(decimal value)
         {
-            StartValue();
-            _textWriter.Write(value);
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write(value);
+            this.CloseValue();
         }
 
         public override void WriteDecimal(BigDecimal value)
         {
-            StartValue();
-            _textWriter.Write(value);
-            CloseValue();
+            this.StartValue();
+            this.textWriter.Write(value);
+            this.CloseValue();
         }
 
         public override void WriteTimestamp(Timestamp value)
         {
-            StartValue();
+            this.StartValue();
 
-            if (_options.TimestampAsMillis)
+            if (this.options.TimestampAsMillis)
             {
-                _textWriter.Write(value.Milliseconds);
+                this.textWriter.Write(value.Milliseconds);
             }
             else
             {
-                _textWriter.Write(value.ToString());
+                this.textWriter.Write(value.ToString());
             }
 
-            CloseValue();
+            this.CloseValue();
         }
 
         public override void WriteString(string value)
         {
-            StartValue();
-            if (value != null && !_followingLongString && _options.LongStringThreshold < value.Length)
+            this.StartValue();
+            if (value != null && !this.followingLongString && this.options.LongStringThreshold < value.Length)
             {
-                _textWriter.WriteLongString(value);
-                CloseValue();
-                //CloseValue This sets _following_long_string = false so we must overwrite
-                _followingLongString = true;
+                this.textWriter.WriteLongString(value);
+                this.CloseValue();
+
+                // CloseValue sets followingLongString = false so we must overwrite
+                this.followingLongString = true;
                 return;
             }
 
-            //double-quoted
-            _textWriter.WriteString(value);
+            // double-quoted
+            this.textWriter.WriteString(value);
 
-            CloseValue();
+            this.CloseValue();
         }
 
         public override void WriteBlob(ReadOnlySpan<byte> value)
         {
-            StartValue();
+            this.StartValue();
 
-            //TODO high-perf no-alloc encoding?
-#if NET45 || NETSTANDARD1_3 || NETSTANDARD2_0
+#if NET45 || NETSTANDARD2_0
             var base64 = Convert.ToBase64String(value.ToArray());
 #else
             var base64 = Convert.ToBase64String(value);
 #endif
 
-            //TODO blob as string?
-            _textWriter.Write("{{");
-            if (_options.PrettyPrint)
+            this.textWriter.Write("{{");
+            if (this.options.PrettyPrint)
             {
-                _textWriter.Write(' ');
+                this.textWriter.Write(' ');
             }
 
-            _textWriter.Write(base64);
-            if (_options.PrettyPrint)
+            this.textWriter.Write(base64);
+            if (this.options.PrettyPrint)
             {
-                _textWriter.Write(' ');
+                this.textWriter.Write(' ');
             }
 
-            _textWriter.Write("}}");
+            this.textWriter.Write("}}");
 
-            CloseValue();
+            this.CloseValue();
         }
 
         public override void WriteClob(ReadOnlySpan<byte> value)
         {
-            StartValue();
+            this.StartValue();
 
-            _textWriter.Write("{{");
-            if (_options.PrettyPrint)
+            this.textWriter.Write("{{");
+            if (this.options.PrettyPrint)
             {
-                _textWriter.Write(' ');
+                this.textWriter.Write(' ');
             }
 
-            _textWriter.WriteClobAsString(value);
-            if (_options.PrettyPrint)
+            this.textWriter.WriteClobAsString(value);
+            if (this.options.PrettyPrint)
             {
-                _textWriter.Write(' ');
+                this.textWriter.Write(' ');
             }
 
-            _textWriter.Write("}}");
+            this.textWriter.Write("}}");
 
-            CloseValue();
+            this.CloseValue();
         }
 
         public override void Dispose()
         {
-            //TODO is there anything to do here?
         }
 
         public override void Finish()
         {
-//            _textWriter.Flush();
         }
-
-//        public override Task FinishAsync()
-//        {
-//            throw new NotImplementedException();
-//        }
 
         public override void StepIn(IonType type)
         {
-            StartValue();
+            this.StartValue();
             char opener;
             switch (type)
             {
                 case IonType.List:
-                    _isInStruct = false;
+                    this.isInStruct = false;
                     opener = '[';
                     break;
                 case IonType.Sexp:
-                    //TODO handle sexp as list option
+                    // TODO: handle sexp as list option
                     opener = '(';
-                    _isInStruct = false;
+                    this.isInStruct = false;
                     break;
                 case IonType.Struct:
                     opener = '{';
-                    _isInStruct = true;
+                    this.isInStruct = true;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            _containerStack.Push((type, _pendingSeparator));
-            //determine the separator in this container
+            this.containerStack.Push((type, this.pendingSeparator));
+
+            // determine the separator in this container
             switch (type)
             {
                 case IonType.Struct:
                 case IonType.List:
-                    _separatorCharacter = ',';
+                    this.separatorCharacter = ',';
                     break;
                 case IonType.Sexp:
-                    _separatorCharacter = ' ';
+                    this.separatorCharacter = ' ';
                     break;
                 default:
-                    _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
+                    this.separatorCharacter = this.options.PrettyPrint ? '\n' : ' ';
                     break;
             }
 
-            _textWriter.Write(opener);
-            //we've started the value and written something, ivm no longer needed
-            _pendingSeparator = false;
-            _followingLongString = false;
+            this.textWriter.Write(opener);
+
+            // we've started the value and written something, ivm no longer needed
+            this.pendingSeparator = false;
+            this.followingLongString = false;
         }
 
         public override void StepOut()
         {
-            if (_containerStack.Count == 0)
+            if (this.containerStack.Count == 0)
+            {
                 throw new InvalidOperationException("Already at top-level");
+            }
 
-            var top = _containerStack.Pop();
+            var (containerType, pendingComma) = this.containerStack.Pop();
 
-            var parentType = _containerStack.Count == 0 ? IonType.Datagram : _containerStack.Peek().containerType;
+            var parentType = this.containerStack.Count == 0 ? IonType.Datagram : this.containerStack.Peek().containerType;
             switch (parentType)
             {
                 case IonType.Sexp:
-                    _isInStruct = false;
-                    _separatorCharacter = ' ';
+                    this.isInStruct = false;
+                    this.separatorCharacter = ' ';
                     break;
                 case IonType.List:
-                    _isInStruct = false;
-                    _separatorCharacter = ',';
+                    this.isInStruct = false;
+                    this.separatorCharacter = ',';
                     break;
                 case IonType.Struct:
-                    _isInStruct = true;
-                    _separatorCharacter = ',';
+                    this.isInStruct = true;
+                    this.separatorCharacter = ',';
                     break;
                 default:
-                    _isInStruct = false;
-                    _separatorCharacter = _options.PrettyPrint ? '\n' : ' ';
+                    this.isInStruct = false;
+                    this.separatorCharacter = this.options.PrettyPrint ? '\n' : ' ';
                     break;
             }
 
-            _pendingSeparator = top.pendingComma;
+            this.pendingSeparator = pendingComma;
             char closer;
-            switch (top.containerType)
+            switch (containerType)
             {
                 default:
-                    //shoud not happen
-                    throw new IonException($"{top.containerType} is no container");
+                    // shoud not happen
+                    throw new IonException($"{containerType} is no container");
                 case IonType.List:
                     closer = ']';
                     break;
@@ -665,34 +380,118 @@ namespace Amazon.IonDotnet.Internals.Text
                     break;
             }
 
-            //close the collection
-            if (_options.PrettyPrint)
+            // close the collection
+            if (this.options.PrettyPrint)
             {
-                _textWriter.Write(_options.LineSeparator);
-                WriteLeadingWhiteSpace();
+                this.textWriter.Write(this.options.LineSeparator);
+                this.WriteLeadingWhiteSpace();
             }
 
-            _textWriter.Write(closer);
-            CloseValue();
+            this.textWriter.Write(closer);
+            this.CloseValue();
         }
 
-        public override bool IsInStruct => _isInStruct;
+        public override int GetDepth() => this.containerStack.Count;
 
-        public override int GetDepth() => _containerStack.Count;
+        protected override void WriteSymbolAsIs(SymbolToken symbolToken)
+        {
+            if (symbolToken == default)
+            {
+                this.WriteNull(IonType.Symbol);
+                return;
+            }
+
+            this.StartValue();
+            if (symbolToken.Text is null)
+            {
+                this.WriteSidLiteral(symbolToken.Sid);
+            }
+            else
+            {
+                this.WriteSymbolText(symbolToken.Text);
+            }
+
+            this.CloseValue();
+        }
+
+        protected override void WriteIonVersionMarker(ISymbolTable systemSymtab)
+        {
+            this.isWritingIvm = true;
+
+            this.StartValue();
+            this.WriteSymbolText(systemSymtab.IonVersionId);
+            this.CloseValue();
+
+            this.isWritingIvm = false;
+        }
+
+        protected void StartValue()
+        {
+            if (!this.valueStarted)
+            {
+                this.valueStarted = true;
+                if (this.options.WriteVersionMarker)
+                {
+                    this.WriteIonVersionMarker();
+                }
+
+                // write the imports here
+                this.WriteImports();
+            }
+
+            var followingLongString = this.WriteSeparator(this.followingLongString);
+
+            // write field name
+            if (this.isInStruct)
+            {
+                var sym = this.AssumeFieldNameSymbol();
+                this.WriteFieldNameToken(sym);
+                this.textWriter.Write(':');
+                if (this.options.PrettyPrint)
+                {
+                    this.textWriter.Write(' ');
+                }
+
+                this.ClearFieldName();
+                followingLongString = false;
+            }
+
+            // write annotations only if they exist and we're not currently writing an IVM
+            if (this.annotations.Count > 0 && !this.isWritingIvm)
+            {
+                if (!this.options.SkipAnnotations)
+                {
+                    this.WriteAnnotations();
+                    followingLongString = false;
+                }
+
+                this.annotations.Clear();
+            }
+
+            this.followingLongString = followingLongString;
+        }
 
         /// <summary>
         /// Returns true if c is part of an symbol identifier string.
         /// </summary>
-        /// <param name="c">Character</param>
-        /// <param name="start">True if character is the start of the text</param>
+        /// <param name="c">Character.</param>
+        /// <param name="start">True if character is the start of the text.</param>
         private static bool IsIdentifierPart(char c, bool start)
         {
             if (c >= 'a' && c <= 'z')
+            {
                 return true;
+            }
+
             if (c >= 'A' && c <= 'Z')
+            {
                 return true;
+            }
+
             if (c >= '0' && c <= '9')
+            {
                 return !start;
+            }
 
             return c == '_' || c == '$';
         }
@@ -703,7 +502,9 @@ namespace Amazon.IonDotnet.Internals.Text
             var valuelen = text.Length;
 
             if (valuelen == 0)
+            {
                 return false;
+            }
 
             var keyword = false;
 
@@ -712,51 +513,52 @@ namespace Amazon.IonDotnet.Internals.Text
             {
                 case '$':
                     if (valuelen == 1)
+                    {
                         return false;
+                    }
+
                     while (pos < valuelen)
                     {
                         var c = text[pos++];
                         if (!char.IsDigit(c))
+                        {
                             return false;
+                        }
                     }
 
                     return true;
                 case 'f':
-                    if (valuelen == 5 //      'f'
+                    if (valuelen == 5 // 'f'
                         && text[pos++] == 'a'
                         && text[pos++] == 'l'
                         && text[pos++] == 's'
-                        && text[pos] == 'e'
-                    )
+                        && text[pos] == 'e')
                     {
                         keyword = true;
                     }
 
                     break;
                 case 'n':
-                    if (valuelen == 4 //      'n'
+                    if (valuelen == 4 // 'n'
                         && text[pos++] == 'u'
                         && text[pos++] == 'l'
-                        && text[pos++] == 'l'
-                    )
+                        && text[pos++] == 'l')
                     {
                         keyword = true;
                     }
                     else if (valuelen == 3 // 'n'
                              && text[pos++] == 'a'
-                             && text[pos] == 'n'
-                    )
+                             && text[pos] == 'n')
                     {
                         keyword = true;
                     }
 
                     break;
                 case 't':
-                    if (valuelen == 4 //      't'
+                    if (valuelen == 4 // 't'
                         && text[pos++] == 'r'
                         && text[pos++] == 'u'
-                        && text[pos] == 'e'
-                    )
+                        && text[pos] == 'e')
                     {
                         keyword = true;
                     }
@@ -769,19 +571,40 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private static bool IsOperatorPart(char c)
         {
-            //TODO stackalloc
             if (!Characters.Is8BitChar(c))
+            {
                 return false;
+            }
+
             Span<int> operatorChars = stackalloc int[]
             {
-                '<', '>', '=', '+', '-', '*', '&', '^', '%',
-                '~', '/', '?', '.', ';', '!', '|', '@', '`', '#'
+                '<',
+                '>',
+                '=',
+                '+',
+                '-',
+                '*',
+                '&',
+                '^',
+                '%',
+                '~',
+                '/',
+                '?',
+                '.',
+                ';',
+                '!',
+                '|',
+                '@',
+                '`',
+                '#',
             };
 
             foreach (var operatorChar in operatorChars)
             {
                 if (operatorChar == c)
+                {
                     return true;
+                }
             }
 
             return false;
@@ -799,35 +622,239 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             var c = symbol[0];
+
             // Surrogates are neither identifierStart nor operatorPart, so the
             // first one we hit will fall through and return QUOTED.
-            // TODO test that
-
             if (IsIdentifierPart(c, true))
             {
                 for (var ii = 0; ii < length; ii++)
                 {
                     c = symbol[ii];
                     if (c == '\'' || c < 32 || c > 126 || !IsIdentifierPart(c, false))
+                    {
                         return SymbolVariant.Quoted;
+                    }
                 }
 
                 return SymbolVariant.Identifier;
             }
 
             if (!IsOperatorPart(c))
+            {
                 return SymbolVariant.Quoted;
+            }
 
             for (var ii = 0; ii < length; ii++)
             {
                 c = symbol[ii];
+
                 // We don't need to look for escapes since all
                 // operator characters are ASCII.
                 if (!IsOperatorPart(c))
+                {
                     return SymbolVariant.Quoted;
+                }
             }
 
             return SymbolVariant.Operator;
+        }
+
+        private void InitializeImportList(IEnumerable<ISymbolTable> imports)
+        {
+            if (imports == null)
+            {
+                return;
+            }
+
+            foreach (var table in imports)
+            {
+                if (!table.IsShared)
+                {
+                    throw new ArgumentException($"Import table is not shared: {table}");
+                }
+
+                if (table.IsSystem)
+                {
+                    continue;
+                }
+
+                this.symbolTable.Imports.Add(table);
+            }
+
+            this.symbolTable.Refresh();
+        }
+
+        private void WriteLeadingWhiteSpace()
+        {
+            for (var ii = 0; ii < this.containerStack.Count; ii++)
+            {
+                this.textWriter.Write(' ');
+                this.textWriter.Write(' ');
+            }
+        }
+
+        private void WriteSidLiteral(int sid)
+        {
+            if (this.options.SymbolAsString)
+            {
+                this.textWriter.Write('"');
+            }
+
+            this.textWriter.Write('$');
+            this.textWriter.Write(sid);
+            if (this.options.SymbolAsString)
+            {
+                this.textWriter.Write('"');
+            }
+        }
+
+        private void WriteSymbolText(string text)
+        {
+            if (this.options.SymbolAsString)
+            {
+                this.textWriter.WriteString(text);
+                return;
+            }
+
+            // Determine the variant for writing.
+            SymbolVariant symbolVariant = GetSymbolVariant(text);
+
+            switch (symbolVariant)
+            {
+                case SymbolVariant.Identifier:
+                    this.textWriter.Write(text);
+                    break;
+                case SymbolVariant.Operator:
+                    if (this.containerStack.Count > 0 && this.containerStack.Peek().containerType == IonType.Sexp)
+                    {
+                        this.textWriter.Write(text);
+                        break;
+                    }
+
+                    goto case SymbolVariant.Quoted;
+                case SymbolVariant.Quoted:
+                    this.textWriter.WriteSingleQuotedSymbol(text);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(symbolVariant), symbolVariant, null);
+            }
+        }
+
+        private void WriteFieldNameToken(SymbolToken token)
+        {
+            if (token.Text == null)
+            {
+                // unknown text, write id
+                this.WriteSidLiteral(token.Sid);
+                return;
+            }
+
+            this.WriteSymbolText(token.Text);
+        }
+
+        private void WriteAnnotations()
+        {
+            foreach (var annotation in this.annotations)
+            {
+                this.WriteAnnotationToken(annotation);
+                this.textWriter.Write("::");
+            }
+        }
+
+        private void WriteAnnotationToken(SymbolToken annotation)
+        {
+            var text = annotation.Text;
+            if (text is null)
+            {
+                // unknown text, write sid
+                this.textWriter.Write('$');
+                this.textWriter.Write(annotation.Sid < 0 ? 0 : annotation.Sid);
+                return;
+            }
+
+            var needQuote = GetSymbolVariant(text) != SymbolVariant.Identifier;
+
+            if (needQuote)
+            {
+                this.textWriter.WriteSingleQuotedSymbol(text);
+                return;
+            }
+
+            this.textWriter.WriteSymbol(text);
+        }
+
+        /// <summary>
+        /// Write a separator between values.
+        /// </summary>
+        /// <param name="followingLongString">If this is a separator to separate long string.</param>
+        /// <returns>If long string separation continues.</returns>
+        private bool WriteSeparator(bool followingLongString)
+        {
+            if (this.options.PrettyPrint)
+            {
+                if (this.pendingSeparator && this.separatorCharacter > ' ')
+                {
+                    // Only bother if the separator is non-whitespace.
+                    this.textWriter.Write(this.separatorCharacter);
+                    followingLongString = false;
+                }
+
+                if (this.valueStarted)
+                {
+                    // this means we've written something
+                    this.textWriter.Write(this.options.LineSeparator);
+                }
+
+                this.WriteLeadingWhiteSpace();
+            }
+            else if (this.pendingSeparator)
+            {
+                this.textWriter.Write(this.separatorCharacter);
+                if (this.separatorCharacter > ' ')
+                {
+                    followingLongString = false;
+                }
+            }
+
+            return followingLongString;
+        }
+
+        /// <summary>
+        /// Write all the imported symbol tables.
+        /// </summary>
+        private void WriteImports()
+        {
+            // only write local symtab if we import sth more than just system table
+            if (this.symbolTable.Imports.Count <= 1)
+            {
+                return;
+            }
+
+            this.AddTypeAnnotation(SystemSymbols.IonSymbolTable);
+            this.StepIn(IonType.Struct);
+            this.SetFieldName(SystemSymbols.Imports);
+            this.StepIn(IonType.List);
+
+            foreach (var importedTable in this.symbolTable.Imports)
+            {
+                if (importedTable.IsSystem)
+                {
+                    continue;
+                }
+
+                this.WriteImportTable(importedTable);
+            }
+
+            this.StepOut();
+            this.StepOut();
+        }
+
+        private void CloseValue()
+        {
+            this.pendingSeparator = true;
+            this.followingLongString = false;
+
+            // TODO: Flush if a top-level-value was written
         }
     }
 }
