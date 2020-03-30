@@ -26,7 +26,6 @@ namespace Amazon.IonDotnet.Internals
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
-        internal readonly List<string> Symbols = new List<string>();
 
         private readonly List<string> _ownSymbols = new List<string>();
         private int _importedMaxId;
@@ -43,15 +42,6 @@ namespace Amazon.IonDotnet.Internals
         /// </summary>
         internal void Refresh()
         {
-            // Maintain symbol to SID value pairings.
-            if (Symbols.Count > 0)
-            {
-                // Clear _ownSymbols and repopulate with symbols containing
-                // new and previous symbols.
-                _ownSymbols.Clear();
-                _ownSymbols.AddRange(Symbols);
-            }
-
             var maxId = 0;
             foreach (var import in Imports)
             {
@@ -163,7 +153,7 @@ namespace Amazon.IonDotnet.Internals
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var imports = table.Imports;
-            var symbols = table.Symbols;
+            var symbols = table._ownSymbols;
             var newSymbols = new List<string>();
  
             if (!isOnStruct)
