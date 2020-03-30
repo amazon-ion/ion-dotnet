@@ -26,7 +26,7 @@ namespace Amazon.IonDotnet.Internals
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
-        internal readonly HashSet<string> Symbols = new HashSet<string>();  // Ensure only new symbols are added, perserve order.
+        internal readonly List<string> Symbols = new List<string>();
 
         private readonly List<string> _ownSymbols = new List<string>();
         private int _importedMaxId;
@@ -265,10 +265,13 @@ namespace Amazon.IonDotnet.Internals
                 imports.RemoveAll(symbolTable => symbolTable.IsSubstitute == true);
             }
 
-            // Add all the new symbols.
             foreach (string newSymbol in newSymbols)
             {
-                symbols.Add(newSymbol);
+                // Keep null gaps and unique symbols.
+                if (newSymbol == null || !symbols.Contains(newSymbol))
+                {
+                    symbols.Add(newSymbol);
+                }
             }
 
             table.Refresh();
