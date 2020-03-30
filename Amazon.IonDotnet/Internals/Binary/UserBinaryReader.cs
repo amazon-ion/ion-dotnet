@@ -13,45 +13,51 @@
  * permissions and limitations under the License.
  */
 
-using System.Diagnostics;
-using System.IO;
-
 namespace Amazon.IonDotnet.Internals.Binary
 {
+    using System.Diagnostics;
+    using System.IO;
+
     /// <inheritdoc />
     /// <summary>
     /// This user-level reader is used to recognize symbols and process symbol table.
     /// </summary>
-    /// <remarks>Starts out as a system bin reader</remarks>
+    /// <remarks>Starts out as a system bin reader.</remarks>
     internal sealed class UserBinaryReader : SystemBinaryReader
     {
-        private readonly ICatalog _catalog;
+        private readonly ICatalog catalog;
 
         internal UserBinaryReader(Stream input, ICatalog catalog = null)
             : base(input)
         {
-            _catalog = catalog;
+            this.catalog = catalog;
         }
 
         public override IonType MoveNext()
         {
-            GetSymbolTable();
-            if (!HasNext()) return IonType.None;
-            moveNextNeeded = true;
-            return valueType;
+            this.GetSymbolTable();
+            if (!this.HasNext())
+            {
+                return IonType.None;
+            }
+
+            this.moveNextNeeded = true;
+            return this.valueType;
         }
 
         protected override bool HasNext()
         {
-            if (eof || !moveNextNeeded)
-                return !eof;
-
-            while (!eof && moveNextNeeded)
+            if (this.eof || !this.moveNextNeeded)
             {
-                MoveNextUser();
+                return !this.eof;
             }
 
-            return !eof;
+            while (!this.eof && this.moveNextNeeded)
+            {
+                this.MoveNextUser();
+            }
+
+            return !this.eof;
         }
 
         private void MoveNextUser()
@@ -59,37 +65,46 @@ namespace Amazon.IonDotnet.Internals.Binary
             base.HasNext();
 
             // if we're not at the top (datagram) level or the next value is null
-            if (CurrentDepth != 0 || valueIsNull) 
+            if (this.CurrentDepth != 0 || this.valueIsNull)
+            {
                 return;
-            Debug.Assert(valueTid != BinaryConstants.TidTypedecl);
+            }
 
-            if (valueTid == BinaryConstants.TidSymbol)
+            Debug.Assert(this.valueTid != BinaryConstants.TidTypedecl, "valueTid is Typedec1");
+
+            if (this.valueTid == BinaryConstants.TidSymbol)
             {
                 // trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
                 // we already count the number of annotations
-                if (Annotations.Count != 0)
+                if (this.Annotations.Count != 0)
+                {
                     return;
+                }
 
-                LoadOnce();
+                this.LoadOnce();
 
                 // just get it straight from the holder, no conversion needed
-                var sid = valueVariant.IntValue;
+                var sid = this.valueVariant.IntValue;
                 if (sid != SystemSymbols.Ion10Sid)
-                    return;
-
-                SymbolTable = SharedSymbolTable.GetSystem(1);
-                //user don't need to see this symbol so continue here
-                moveNextNeeded = true;
-            }
-            else if (valueTid == BinaryConstants.TidStruct)
-            {
-                //trying to read the local symboltable here
-                if (hasSymbolTableAnnotation)
                 {
-                    SymbolTable = ReaderLocalTable.ImportReaderTable(this, _catalog, false);
-                    //user don't need to read the localsymboltable so continue
-                    moveNextNeeded = true;
+                    return;
+                }
+
+                this.SymbolTable = SharedSymbolTable.GetSystem(1);
+
+                // user don't need to see this symbol so continue here
+                this.moveNextNeeded = true;
+            }
+            else if (this.valueTid == BinaryConstants.TidStruct)
+            {
+                // trying to read the local symbolTable here
+                if (this.hasSymbolTableAnnotation)
+                {
+                    this.SymbolTable = ReaderLocalTable.ImportReaderTable(this, this.catalog, false);
+
+                    // user don't need to read the localsymboltable so continue
+                    this.moveNextNeeded = true;
                 }
             }
         }
