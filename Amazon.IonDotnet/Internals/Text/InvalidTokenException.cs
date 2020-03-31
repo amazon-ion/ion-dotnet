@@ -23,7 +23,7 @@ namespace Amazon.IonDotnet.Internals.Text
         }
 
         public InvalidTokenException(int token)
-            : base($"Token {(char) token} : {token} is not expected")
+            : base($"Token {(char)token} : {token} is not expected")
         {
         }
     }
