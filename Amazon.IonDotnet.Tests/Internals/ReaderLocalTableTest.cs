@@ -13,6 +13,8 @@
  * permissions and limitations under the License.
  */
 
+using System;
+using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Internals;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -21,10 +23,12 @@ namespace Amazon.IonDotnet.Tests.Internals
     [TestClass]
     public class ReaderLocalTableTest
     {
+        internal static string LocalSymbolTablePrefix = SystemSymbols.IonSymbolTable + "::";
+
         [TestMethod]
         public void WithImport_FindCorrectSymbol()
         {
-            void assertTable(ISymbolTable tab, params (string sym, int id)[] syms)
+            void AssertTable(ISymbolTable tab, params (string sym, int id)[] syms)
             {
                 foreach (var sym in syms)
                 {
@@ -42,11 +46,248 @@ namespace Amazon.IonDotnet.Tests.Internals
             var shared = SharedSymbolTable.NewSharedSymbolTable("table", 1, null, new[] {"a", "b", "c"});
             table.Imports.Add(shared);
             table.Refresh();
-            assertTable(table,
+            AssertTable(table,
                 ("a", 10),
                 ("b", 11),
                 ("c", 12)
             );
+        }
+
+        [TestMethod]
+        public void TestLocalSymbolTableAppend()
+        {
+            var text = LocalSymbolTablePrefix +
+                    "{" +
+                    "  symbols:[ \"s1\", \"s2\"]" +
+                    "}\n" +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[ \"s3\", \"s4\", \"s5\"]" +
+                    "}\n" +
+                    "null";
+
+            ISymbolTable symbolTable = OneValue(text);
+            CheckLocalTable(symbolTable);
+            var systemMaxId = symbolTable.GetSystemTable().MaxId;
+
+            // table contains all symbols and SIDs are in correct order
+            CheckSymbol("s1", systemMaxId + 1, symbolTable);
+            CheckSymbol("s2", systemMaxId + 2, symbolTable);
+            CheckSymbol("s3", systemMaxId + 3, symbolTable);
+            CheckSymbol("s4", systemMaxId + 4, symbolTable);
+            CheckSymbol("s5", systemMaxId + 5, symbolTable);
+
+            CheckUnknownSymbol("unknown", SymbolToken.UnknownSid, symbolTable);
+            CheckUnknownSymbol(33, symbolTable);
+        }
+
+        [TestMethod]
+        public void TestLocalSymbolTableMultiAppend()
+        {
+            var text =
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  symbols:[ \"s1\", \"s2\"]" +
+                    "}\n" +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[ \"s3\"]" +
+                    "}\n" +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[\"s4\", \"s5\"]" +
+                    "}\n" +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[\"s6\"]" +
+                    "}\n" +
+                    "null";
+
+            ISymbolTable symbolTable = OneValue(text);
+            CheckLocalTable(symbolTable);
+            var systemMaxId = symbolTable.GetSystemTable().MaxId;
+
+            // table contains all symbols and SIDs are in correct order
+            CheckSymbol("s1", systemMaxId + 1, symbolTable);
+            CheckSymbol("s2", systemMaxId + 2, symbolTable);
+            CheckSymbol("s3", systemMaxId + 3, symbolTable);
+            CheckSymbol("s4", systemMaxId + 4, symbolTable);
+            CheckSymbol("s5", systemMaxId + 5, symbolTable);
+            CheckSymbol("s6", systemMaxId + 6, symbolTable);
+
+            CheckUnknownSymbol("unknown", SymbolToken.UnknownSid, symbolTable);
+            CheckUnknownSymbol(33, symbolTable);
+        }
+
+        [TestMethod]
+        public void TestLocalSymbolTableAppendEmptyList()
+        {
+            var original =
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  symbols:[ \"s1\"]" +
+                    "}\n";
+
+            var appended = original +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[]" +
+                    "}\n";
+
+            ISymbolTable originalSymbolTable = OneValue(original + "null");
+            ISymbolTable appendedSymbolTable = OneValue(appended + "null") ;
+
+            var originalSymbol = originalSymbolTable.Find("s1");
+            var appendedSymbol = appendedSymbolTable.Find("s1");
+
+            Assert.AreEqual(originalSymbol.Sid, appendedSymbol.Sid);
+        }
+
+        [TestMethod]
+        public void TestLocalSymbolTableAppendImportBoundary()
+        {
+            var text =
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  symbols:[ \"s11\"]" +
+                    "}\n" +
+                    "1\n";
+
+            var text2 = 
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[ \"s21\"]" +
+                    "}\n" +
+                    "null";
+
+            ISymbolTable original = OneValue(text);
+            ISymbolTable appended = OneValue(text2);
+
+            //TODO this is not implemented, the test could be failing because of this
+            //original.Intern("o1");
+            //appended.Intern("a1");
+            var systemMaxId = appended.GetSystemTable().MaxId;
+
+            // new symbols in `original` don't influence SIDs for new symbols in `appended` after import
+            CheckSymbol("s11", systemMaxId + 1, appended);
+            CheckSymbol("o1", systemMaxId + 2, original);
+
+            CheckSymbol("s11", systemMaxId + 1, appended);
+            CheckSymbol("s21", systemMaxId + 2, appended);
+            CheckSymbol("a1", systemMaxId + 3, appended);
+
+            // new symbols in `original` are not accessible from `appended` after import
+            Assert.IsNull(original.Find("a1"));
+            Assert.IsNull(original.Find("o1"));
+        }
+
+
+        private static ISymbolTable OneValue(string text)
+        {
+            IIonReader reader = IonReaderBuilder.Build(text);
+            reader.MoveNext();
+            return reader.GetSymbolTable();
+        }
+
+        private static void CheckLocalTable(ISymbolTable symbolTable)
+        {
+            Assert.IsTrue(symbolTable.IsLocal);
+            Assert.IsFalse(symbolTable.IsShared);
+            Assert.IsFalse(symbolTable.IsSystem);
+            Assert.IsFalse(symbolTable.IsSubstitute);
+            Assert.IsNotNull(symbolTable.GetImportedTables());
+
+            CheckUnknownSymbol(" not defined ", SymbolToken.UnknownSid, symbolTable);
+
+            ISymbolTable systemTable = symbolTable.GetSystemTable();
+            CheckSystemTable(systemTable);
+            Assert.AreEqual(systemTable.IonVersionId, symbolTable.IonVersionId);
+        }
+
+        private static void CheckSystemTable(ISymbolTable symbolTable)
+        {
+            Assert.IsFalse(symbolTable.IsLocal);
+            Assert.IsTrue(symbolTable.IsShared);
+            Assert.IsTrue(symbolTable.IsSystem);
+            Assert.IsFalse(symbolTable.IsSubstitute, "table is substitute");
+            Assert.AreSame(symbolTable, symbolTable.GetSystemTable());
+            Assert.AreEqual(SystemSymbols.Ion10MaxId, symbolTable.MaxId);
+            Assert.AreEqual(SystemSymbols.Ion10, symbolTable.IonVersionId);
+        }
+
+        private static void CheckSymbol(string text, int sid, ISymbolTable symbolTable)
+        {
+            CheckSymbol(text, sid, false, symbolTable);
+        }
+
+        private static void CheckUnknownSymbol(string text, int sid, ISymbolTable symbolTable)
+        {
+            CheckUnknownSymbol(text, symbolTable);
+
+            if (sid != SymbolToken.UnknownSid)
+            {
+                CheckUnknownSymbol(sid, symbolTable);
+            }
+        }
+
+        private static void CheckUnknownSymbol(string text, ISymbolTable symbolTable)
+        {
+            Assert.AreEqual(default, symbolTable.Find(text));
+            Assert.AreEqual(SymbolToken.UnknownSid, symbolTable.FindSymbolId(text));
+            if (symbolTable.IsReadOnly)
+            {
+                try
+                {
+                    symbolTable.Intern(text);
+                    Assert.Fail("Expected exception");
+                }
+                catch (NotSupportedException)
+                {
+                }
+            }
+        }
+
+        private static void CheckSymbol(string text, int sid, bool dupe, ISymbolTable symbolTable)
+        {
+            Assert.IsTrue(!dupe || text != null);
+
+            string msg = "text:" + text + " sid:" + sid;
+
+            if (text != null)
+            {
+                if (sid != SymbolToken.UnknownSid)
+                {
+                    Assert.AreEqual(text, symbolTable.FindKnownSymbol(sid), msg);
+                }
+
+                //Can't do this stuff when we have duplicate symbol.
+                if (!dupe)
+                {
+                    Assert.AreEqual(sid, symbolTable.FindSymbolId(text), msg);
+
+                    //TODO - currently commented out because it is not implemented
+                    //SymbolToken symbolToken = symbolTable.Intern(text);
+                    //Assert.AreEqual(sid, symbolToken.Sid, msg);
+
+                    //symbolToken = symbolTable.Find(text);
+                    //Assert.AreEqual(sid, symbolToken.Sid, msg);
+                }
+            }
+            else //No text expected, must have sid
+            {
+                Assert.AreEqual(text /* null */, symbolTable.FindKnownSymbol(sid), msg);
+            }
+        }
+
+        private static void CheckUnknownSymbol(int sid, ISymbolTable symbolTable)
+        {
+            CheckSymbol(null, sid, false, symbolTable);
         }
     }
 }
