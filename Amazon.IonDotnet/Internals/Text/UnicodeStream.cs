@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Amazon.IonDotnet.Utils;
 
 namespace Amazon.IonDotnet.Internals.Text
 {
@@ -11,6 +9,7 @@ namespace Amazon.IonDotnet.Internals.Text
     {
         private readonly StreamReader _streamReader;
         private readonly Stack<int> _unreadStack;
+        private long? remainingChars = null;
 
         public UnicodeStream(Stream inputStream) : this(inputStream, Encoding.UTF8)
         {
@@ -20,9 +19,12 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             if (!inputStream.CanRead)
                 throw new ArgumentException("Input stream must be readable", nameof(inputStream));
-
             _streamReader = new StreamReader(inputStream, encoding);
             _unreadStack = new Stack<int>();
+            if (inputStream.CanSeek)
+            {
+                remainingChars = inputStream.Length;
+            }
         }
 
         public UnicodeStream(Stream inputStream, Span<byte> readBytes)
@@ -44,6 +46,7 @@ namespace Amazon.IonDotnet.Internals.Text
             _streamReader = new StreamReader(inputStream, encoding);
             if (inputStream.CanSeek)
             {
+                remainingChars = inputStream.Length;
                 InputStream.Seek(-readBytes.Length, SeekOrigin.Current);
                 return;
             }
@@ -57,7 +60,18 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override int Read()
         {
-            return _unreadStack.Count > 0 ? _unreadStack.Pop() : _streamReader.Read();
+            var value = _unreadStack.Count > 0 ? _unreadStack.Pop() : _streamReader.Read();
+
+            if (remainingChars.HasValue)
+            {
+                remainingChars--;
+                if (_streamReader.CurrentEncoding == Encoding.UTF8)
+                {
+                    IsValidUTF8Character();
+                }
+            }
+
+            return value;
         }
 
         public override void Unread(int c)
@@ -72,5 +86,13 @@ namespace Amazon.IonDotnet.Internals.Text
         }
 
         private Stream InputStream => _streamReader.BaseStream;
+
+        private void IsValidUTF8Character()
+        {
+            if (remainingChars > 0 && _streamReader.Peek() == -1)
+            {
+                throw new IonException("Input stream is not a valid UTF-8 stream.");
+            }
+        }
     }
 }
