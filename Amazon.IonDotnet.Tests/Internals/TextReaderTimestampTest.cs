@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 
+using System;
 using System.IO;
 using Amazon.IonDotnet.Internals.Text;
 using Amazon.IonDotnet.Tests.Common;
@@ -65,6 +66,16 @@ namespace Amazon.IonDotnet.Tests.Internals
 
             Assert.AreEqual(expectedLocalOffset, localOffset); 
             Assert.AreEqual(expectedTimeOffset, LocalDateTime);
+        }
+         
+        [DataRow("2010-10-10T03:20")]
+        [DataRow("2010-10-10T03:20:40")]
+        [DataRow("2010-10-10T03:20:40.5")]
+        [TestMethod]
+        [ExpectedException(typeof(FormatException))]
+        public void Invalid_Timestamps_Missing_Offset(string dateString)
+        {
+            Timestamp.Parse(dateString);
         }
 
         private string ExtractTimeAndTimeZone(System.DateTimeOffset localDateTime)

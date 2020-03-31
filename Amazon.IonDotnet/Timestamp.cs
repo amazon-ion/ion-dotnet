@@ -314,14 +314,9 @@ namespace Amazon.IonDotnet
                 throw new FormatException(s);
             }
 
-            if (s.Length < 19 || !IntTryParseSubString(s, 17, 2, false, out var second))
+            if (s.Length < 20 || !IntTryParseSubString(s, 17, 2, false, out var second))
             {
                 throw new FormatException(s);
-            }
-
-            if (s.Length == 19)
-            {
-                return new Timestamp(year, month, day, hour, minute, second);
             }
 
             switch (s[19])
@@ -364,9 +359,10 @@ namespace Amazon.IonDotnet
             }
 
             var idxNext = 20 + fracLength;
-            if (idxNext >= s.Length)
+            if (idxNext == s.Length)
             {
-                return new Timestamp(year, month, day, hour, minute, second, frac);
+                //this cover the case where offset is missing after fractional seconds 
+                throw new FormatException(s + " requires an offset.");
             }
 
             switch (s[idxNext])
