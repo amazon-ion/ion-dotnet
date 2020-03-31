@@ -32,7 +32,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void WithImport_FindCorrectSymbol()
         {
-            static void AssertTable(ISymbolTable tab, params (string sym, int id)[] syms)
+            void AssertTable(ISymbolTable tab, params (string sym, int id)[] syms)
             {
                 foreach (var sym in syms)
                 {
@@ -115,33 +115,36 @@ namespace Amazon.IonDotnet.Tests.Internals
             var fooSymbols = new List<string>() { "bar" };
             var fooTable = SharedSymbolTable.NewSharedSymbolTable("foo", 1, null, fooSymbols);
 
+            var catalog = new SimpleCatalog();
+            catalog.PutTable(fooTable);
+
             // Text.
             var textOutput = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(textOutput, Enumerable.Repeat(fooTable, 1));
             datagram.WriteTo(textWriter);
             textWriter.Finish();
 
-            // Binary.
-            using var binaryOutput = new MemoryStream();
-            var binaryWriter = IonBinaryWriterBuilder.Build(binaryOutput, Enumerable.Repeat(fooTable, 1));
-            datagram.WriteTo(binaryWriter);
-            binaryWriter.Finish();
-
-            var catalog = new SimpleCatalog();
-            catalog.PutTable(fooTable);
-
             var textRoundTrip = IonLoader.WithReaderOptions(new ReaderOptions { Catalog = catalog }).Load(textOutput.ToString());
-            var binaryRoundTrip = IonLoader.WithReaderOptions(new ReaderOptions { Catalog = catalog, Format = ReaderFormat.Binary }).Load(binaryOutput.ToArray());
 
-            Assert.AreEqual("bar",  textRoundTrip.GetElementAt(0).StringValue);
-            Assert.AreEqual("s1",   textRoundTrip.GetElementAt(1).StringValue);
-            Assert.AreEqual("s2",   textRoundTrip.GetElementAt(2).StringValue);
-            Assert.AreEqual("s3",   textRoundTrip.GetElementAt(3).StringValue);
+            Assert.AreEqual("bar", textRoundTrip.GetElementAt(0).StringValue);
+            Assert.AreEqual("s1", textRoundTrip.GetElementAt(1).StringValue);
+            Assert.AreEqual("s2", textRoundTrip.GetElementAt(2).StringValue);
+            Assert.AreEqual("s3", textRoundTrip.GetElementAt(3).StringValue);
 
-            Assert.AreEqual("bar",  binaryRoundTrip.GetElementAt(0).StringValue);
-            Assert.AreEqual("s1",   binaryRoundTrip.GetElementAt(1).StringValue);
-            Assert.AreEqual("s2",   binaryRoundTrip.GetElementAt(2).StringValue);
-            Assert.AreEqual("s3",   binaryRoundTrip.GetElementAt(3).StringValue);
+            // Binary.
+            using (var binaryOutput = new MemoryStream())
+            {
+                var binaryWriter = IonBinaryWriterBuilder.Build(binaryOutput, Enumerable.Repeat(fooTable, 1));
+                datagram.WriteTo(binaryWriter);
+                binaryWriter.Finish();
+
+                var binaryRoundTrip = IonLoader.WithReaderOptions(new ReaderOptions { Catalog = catalog, Format = ReaderFormat.Binary }).Load(binaryOutput.ToArray());
+
+                Assert.AreEqual("bar", binaryRoundTrip.GetElementAt(0).StringValue);
+                Assert.AreEqual("s1", binaryRoundTrip.GetElementAt(1).StringValue);
+                Assert.AreEqual("s2", binaryRoundTrip.GetElementAt(2).StringValue);
+                Assert.AreEqual("s3", binaryRoundTrip.GetElementAt(3).StringValue);
+            }
         }
 
         [TestMethod]
