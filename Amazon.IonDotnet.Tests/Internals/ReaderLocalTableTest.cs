@@ -16,7 +16,6 @@
 using System;
 using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Internals;
-using Amazon.IonDotnet.Tree;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Amazon.IonDotnet.Tests.Internals
@@ -24,15 +23,13 @@ namespace Amazon.IonDotnet.Tests.Internals
     [TestClass]
     public class ReaderLocalTableTest
     {
-        internal const int UNKNOWN_SYMBOL_ID = -1;
-        internal static string ION_SYMBOL_TABLE = "$ion_symbol_table";
-        internal static string LocalSymbolTablePrefix = ION_SYMBOL_TABLE + "::";
+        internal static string LocalSymbolTablePrefix = SystemSymbols.IonSymbolTable + "::";
         internal static string ION_1_0 = "$ion_1_0";
 
         [TestMethod]
         public void WithImport_FindCorrectSymbol()
         {
-            void assertTable(ISymbolTable tab, params (string sym, int id)[] syms)
+            void AssertTable(ISymbolTable tab, params (string sym, int id)[] syms)
             {
                 foreach (var sym in syms)
                 {
@@ -50,7 +47,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             var shared = SharedSymbolTable.NewSharedSymbolTable("table", 1, null, new[] {"a", "b", "c"});
             table.Imports.Add(shared);
             table.Refresh();
-            assertTable(table,
+            AssertTable(table,
                 ("a", 10),
                 ("b", 11),
                 ("c", 12)
@@ -60,20 +57,20 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void TestLocalSymbolTableAppend()
         {
-            string text = LocalSymbolTablePrefix +
+            var text = LocalSymbolTablePrefix +
                     "{" +
                     "  symbols:[ \"s1\", \"s2\"]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  imports:" + ION_SYMBOL_TABLE + "," +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
                     "  symbols:[ \"s3\", \"s4\", \"s5\"]" +
                     "}\n" +
                     "null";
 
             ISymbolTable symbolTable = OneValue(text);
             CheckLocalTable(symbolTable);
-            int systemMaxId = symbolTable.GetSystemTable().MaxId;
+            var systemMaxId = symbolTable.GetSystemTable().MaxId;
 
             // table contains all symbols and SIDs are in correct order
             CheckSymbol("s1", systemMaxId + 1, symbolTable);
@@ -82,38 +79,38 @@ namespace Amazon.IonDotnet.Tests.Internals
             CheckSymbol("s4", systemMaxId + 4, symbolTable);
             CheckSymbol("s5", systemMaxId + 5, symbolTable);
 
-            CheckUnknownSymbol("unknown", UNKNOWN_SYMBOL_ID, symbolTable);
+            CheckUnknownSymbol("unknown", SymbolToken.UnknownSid, symbolTable);
             CheckUnknownSymbol(33, symbolTable);
         }
 
         [TestMethod]
         public void TestLocalSymbolTableMultiAppend()
         {
-            string text =
+            var text =
                 LocalSymbolTablePrefix +
                     "{" +
                     "  symbols:[ \"s1\", \"s2\"]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  imports:" + ION_SYMBOL_TABLE + "," +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
                     "  symbols:[ \"s3\"]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  imports:" + ION_SYMBOL_TABLE + "," +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
                     "  symbols:[\"s4\", \"s5\"]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  imports:" + ION_SYMBOL_TABLE + "," +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
                     "  symbols:[\"s6\"]" +
                     "}\n" +
                     "null";
 
             ISymbolTable symbolTable = OneValue(text);
             CheckLocalTable(symbolTable);
-            int systemMaxId = symbolTable.GetSystemTable().MaxId;
+            var systemMaxId = symbolTable.GetSystemTable().MaxId;
 
             // table contains all symbols and SIDs are in correct order
             CheckSymbol("s1", systemMaxId + 1, symbolTable);
@@ -123,31 +120,31 @@ namespace Amazon.IonDotnet.Tests.Internals
             CheckSymbol("s5", systemMaxId + 5, symbolTable);
             CheckSymbol("s6", systemMaxId + 6, symbolTable);
 
-            CheckUnknownSymbol("unknown", UNKNOWN_SYMBOL_ID, symbolTable);
+            CheckUnknownSymbol("unknown", SymbolToken.UnknownSid, symbolTable);
             CheckUnknownSymbol(33, symbolTable);
         }
 
         [TestMethod]
         public void TestLocalSymbolTableAppendEmptyList()
         {
-            string original =
+            var original =
                 LocalSymbolTablePrefix +
                     "{" +
                     "  symbols:[ \"s1\"]" +
                     "}\n";
 
-            string appended = original +
+            var appended = original +
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  imports:" + ION_SYMBOL_TABLE + "," +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
                     "  symbols:[]" +
                     "}\n";
 
             ISymbolTable originalSymbolTable = OneValue(original + "null");
             ISymbolTable appendedSymbolTable = OneValue(appended + "null") ;
 
-            SymbolToken originalSymbol = originalSymbolTable.Find("s1");
-            SymbolToken appendedSymbol = appendedSymbolTable.Find("s1");
+            var originalSymbol = originalSymbolTable.Find("s1");
+            var appendedSymbol = appendedSymbolTable.Find("s1");
 
             Assert.AreEqual(originalSymbol.Sid, appendedSymbol.Sid);
         }
@@ -155,17 +152,17 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void TestLocalSymbolTableAppendImportBoundary()
         {
-            string text =
+            var text =
                 LocalSymbolTablePrefix +
                     "{" +
                     "  symbols:[ \"s11\"]" +
                     "}\n" +
                     "1\n";
 
-            string text2 = 
+            var text2 = 
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  imports:" + ION_SYMBOL_TABLE + "," +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
                     "  symbols:[ \"s21\"]" +
                     "}\n" +
                     "null";
@@ -176,7 +173,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             //TODO this is not implemented, the test could be failing because of this
             //original.Intern("o1");
             //appended.Intern("a1");
-            int systemMaxId = appended.GetSystemTable().MaxId;
+            var systemMaxId = appended.GetSystemTable().MaxId;
 
             // new symbols in `original` don't influence SIDs for new symbols in `appended` after import
             CheckSymbol("s11", systemMaxId + 1, appended);
@@ -207,7 +204,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.IsFalse(symbolTable.IsSubstitute);
             Assert.IsNotNull(symbolTable.GetImportedTables());
 
-            CheckUnknownSymbol(" not defined ", UNKNOWN_SYMBOL_ID, symbolTable);
+            CheckUnknownSymbol(" not defined ", SymbolToken.UnknownSid, symbolTable);
 
             ISymbolTable systemTable = symbolTable.GetSystemTable();
             CheckSystemTable(systemTable);
@@ -234,7 +231,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             CheckUnknownSymbol(text, symbolTable);
 
-            if (sid != UNKNOWN_SYMBOL_ID)
+            if (sid != SymbolToken.UnknownSid)
             {
                 CheckUnknownSymbol(sid, symbolTable);
             }
@@ -243,7 +240,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         private static void CheckUnknownSymbol(string text, ISymbolTable symbolTable)
         {
             Assert.AreEqual(default, symbolTable.Find(text));
-            Assert.AreEqual(UNKNOWN_SYMBOL_ID, symbolTable.FindSymbolId(text));
+            Assert.AreEqual(SymbolToken.UnknownSid, symbolTable.FindSymbolId(text));
             if (symbolTable.IsReadOnly)
             {
                 try
@@ -265,7 +262,7 @@ namespace Amazon.IonDotnet.Tests.Internals
 
             if (text != null)
             {
-                if (sid != UNKNOWN_SYMBOL_ID)
+                if (sid != SymbolToken.UnknownSid)
                 {
                     Assert.AreEqual(text, symbolTable.FindKnownSymbol(sid), msg);
                 }
