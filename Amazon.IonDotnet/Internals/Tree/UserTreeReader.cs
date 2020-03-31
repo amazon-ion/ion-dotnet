@@ -13,107 +13,43 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using Amazon.IonDotnet.Tree;
-
 namespace Amazon.IonDotnet.Internals.Tree
 {
+    using System;
+    using Amazon.IonDotnet.Tree;
+
     internal class UserTreeReader : SystemTreeReader
     {
-        /// The ID of system symbol {@value #ION_1_0}, as defined by Ion 1.0.
+        // The ID of system symbol {@value #ION_1_0}, as defined by Ion 1.0.
         private const int ION_1_0_SID = 2;
-        private readonly ICatalog _catalog;
-        private ISymbolTable _currentSymtab;
-        private int _symbolTableTop = 0;
-        private ISymbolTable[] _symbolTableStack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
+        private readonly ICatalog catalog;
+        private int symbolTableTop = 0;
+        private ISymbolTable[] symbolTableStack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
 
-        public UserTreeReader(IIonValue value, ICatalog catalog = null) : base(value)
+        public UserTreeReader(IIonValue value, ICatalog catalog = null)
+            : base(value)
         {
-            _catalog = catalog;
-            _currentSymtab = systemSymbols;
+            this.catalog = catalog;
         }
 
         public override ISymbolTable GetSymbolTable() => throw new InvalidOperationException("This operation is not supported.");
 
         public override bool HasNext()
         {
-            return NextHelperUser();
+            return this.NextHelperUser();
         }
-        
+
         public override IonType MoveNext()
         {
-            if (!NextHelperUser())
+            if (!this.NextHelperUser())
             {
-                current = null;
+                this.current = null;
                 return IonType.None;
             }
-            current = next;
-            next = null;
-            return current.Type();
-        }
 
-        bool NextHelperUser()
-        {
-            if (eof) return false;
-            if (next != null) return true;
-
-            ClearSystemValueStack();
-
-            // read values from the system
-            // reader and if they are system values
-            // process them.  Return when we've
-            // read all the immediate system values
-            IonType nextType;
-            while (true)
-            {
-                nextType = NextHelperSystem();
-
-                if (top == 0 && parent != null && parent.Type() == IonType.Datagram)
-                {
-                    if (IonType.Symbol == nextType)
-                    {
-                        var sym = next;
-                        if (sym.IsNull)
-                        {
-                            // there are no null values we will consume here
-                            break;
-                        }
-                        int sid = sym.SymbolValue.Sid;
-                        if (sid == -1) // if sid is unknown
-                        {
-                            String name = sym.SymbolValue.Text;
-                            if (name != null)
-                            {
-                                sid = systemSymbols.FindSymbolId(name);
-                            }
-                        }
-                        if (sid == ION_1_0_SID && next.GetTypeAnnotationSymbols().Count == 0)
-                        {
-                            // $ion_1_0 is read as an IVM only if it is not annotated
-                            ISymbolTable symbols = systemSymbols;
-                            _currentSymtab = symbols;
-                            PushSymbolTable(symbols);
-                            next = null;
-                            continue;
-                        }
-                    }
-                    else if (IonType.Struct == nextType && next.HasAnnotation("$ion_symbol_table"))
-                    {
-                        // read a local symbol table
-                        IIonReader reader = new UserTreeReader(next, _catalog);
-                        ISymbolTable symtab = ReaderLocalTable.ImportReaderTable(this, _catalog, true);
-                        _currentSymtab = symtab;
-                        PushSymbolTable(symtab);
-                        next = null;
-                        continue;
-                    }
-                }
-                // if we get here we didn't process a system
-                // value, if we had we would have 'continue'd
-                // so this is a value the user gets
-                break;
-            }
-            return (nextType != IonType.None);
+            this.current = this.next;
+            this.next = null;
+            return this.current.Type();
         }
 
         /// <summary>
@@ -124,35 +60,100 @@ namespace Amazon.IonDotnet.Internals.Tree
             return;
         }
 
+        private bool NextHelperUser()
+        {
+            if (this.eof)
+            {
+                return false;
+            }
+
+            if (this.next != null)
+            {
+                return true;
+            }
+
+            this.ClearSystemValueStack();
+
+            // read values from the system
+            // reader and if they are system values
+            // process them. Return when we've
+            // read all the immediate system values
+            IonType nextType;
+            while (true)
+            {
+                nextType = this.NextHelperSystem();
+
+                if (this.top == 0 && this.parent != null && this.parent.Type() == IonType.Datagram)
+                {
+                    if (nextType == IonType.Symbol)
+                    {
+                        var sym = this.next;
+                        if (sym.IsNull)
+                        {
+                            // there are no null values that we will consume here
+                            break;
+                        }
+
+                        int sid = sym.SymbolValue.Sid;
+
+                        // if sid is unknown
+                        if (sid == -1)
+                        {
+                            string name = sym.SymbolValue.Text;
+                            if (name != null)
+                            {
+                                sid = this.systemSymbols.FindSymbolId(name);
+                            }
+                        }
+
+                        if (sid == ION_1_0_SID && this.next.GetTypeAnnotationSymbols().Count == 0)
+                        {
+                            // $ion_1_0 is read as an IVM only if it is not annotated
+                            ISymbolTable symbols = this.systemSymbols;
+                            this.PushSymbolTable(symbols);
+                            this.next = null;
+                            continue;
+                        }
+                    }
+                    else if (nextType == IonType.Struct && this.next.HasAnnotation("$ion_symbol_table"))
+                    {
+                        // read a local symbol table
+                        ISymbolTable symtab = ReaderLocalTable.ImportReaderTable(this, this.catalog, true);
+                        this.PushSymbolTable(symtab);
+                        this.next = null;
+                        continue;
+                    }
+                }
+
+                // if we get here we didn't process a system
+                // value, if we had we would have 'continue'd
+                // so this is a value the user gets
+                break;
+            }
+
+            return nextType != IonType.None;
+        }
+
         private void ClearSystemValueStack()
         {
-            while (_symbolTableTop > 0)
+            while (this.symbolTableTop > 0)
             {
-                _symbolTableTop--;
-                _symbolTableStack[_symbolTableTop] = null;
+                this.symbolTableTop--;
+                this.symbolTableStack[this.symbolTableTop] = null;
             }
         }
+
         private void PushSymbolTable(ISymbolTable symbols)
         {
-            if (_symbolTableTop >= _symbolTableStack.Length)
+            if (this.symbolTableTop >= this.symbolTableStack.Length)
             {
-                int new_len = _symbolTableStack.Length * 2;
+                int new_len = this.symbolTableStack.Length * 2;
                 ISymbolTable[] temp = new ISymbolTable[new_len];
-                Array.Copy(_symbolTableStack, 0, temp, 0, _symbolTableStack.Length);
-                _symbolTableStack = temp;
+                Array.Copy(this.symbolTableStack, 0, temp, 0, this.symbolTableStack.Length);
+                this.symbolTableStack = temp;
             }
-            _symbolTableStack[_symbolTableTop++] = symbols;
-        }
-        private ISymbolTable PopPassedSymbolTable()
-        {
-            if (_symbolTableTop <= 0)
-            {
-                return null;
-            }
-            _symbolTableTop--;
-            ISymbolTable symbols = _symbolTableStack[_symbolTableTop];
-            _symbolTableStack[_symbolTableTop] = null;
-            return symbols;
+
+            this.symbolTableStack[this.symbolTableTop++] = symbols;
         }
     }
 }
