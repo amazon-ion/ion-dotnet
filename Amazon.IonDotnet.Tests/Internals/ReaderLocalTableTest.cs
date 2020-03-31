@@ -24,7 +24,6 @@ namespace Amazon.IonDotnet.Tests.Internals
     public class ReaderLocalTableTest
     {
         internal static string LocalSymbolTablePrefix = SystemSymbols.IonSymbolTable + "::";
-        internal static string ION_1_0 = "$ion_1_0";
 
         [TestMethod]
         public void WithImport_FindCorrectSymbol()
@@ -219,7 +218,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.IsFalse(symbolTable.IsSubstitute, "table is substitute");
             Assert.AreSame(symbolTable, symbolTable.GetSystemTable());
             Assert.AreEqual(SystemSymbols.Ion10MaxId, symbolTable.MaxId);
-            Assert.AreEqual(ION_1_0, symbolTable.IonVersionId);
+            Assert.AreEqual(SystemSymbols.Ion10, symbolTable.IonVersionId);
         }
 
         private static void CheckSymbol(string text, int sid, ISymbolTable symbolTable)
