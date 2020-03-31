@@ -14,8 +14,12 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Internals;
+using Amazon.IonDotnet.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Amazon.IonDotnet.Tests.Internals
@@ -23,20 +27,22 @@ namespace Amazon.IonDotnet.Tests.Internals
     [TestClass]
     public class ReaderLocalTableTest
     {
-        internal static string LocalSymbolTablePrefix = SystemSymbols.IonSymbolTable + "::";
+        private static readonly string LocalSymbolTablePrefix = SystemSymbols.IonSymbolTable + "::";
 
         [TestMethod]
         public void WithImport_FindCorrectSymbol()
         {
-            void AssertTable(ISymbolTable tab, params (string sym, int id)[] syms)
+            static void AssertTable(ISymbolTable tab, params (string sym, int id)[] syms)
             {
                 foreach (var sym in syms)
                 {
                     var symtok = tab.Find(sym.sym);
                     Assert.AreEqual(sym, sym, symtok.Text);
                     Assert.AreEqual(SymbolToken.UnknownSid, symtok.Sid);
+
                     var symText = tab.FindKnownSymbol(sym.id);
                     Assert.AreEqual(sym.sym, symText);
+
                     var sid = tab.FindSymbolId(sym.sym);
                     Assert.AreEqual(sym.id, sid);
                 }
@@ -44,8 +50,10 @@ namespace Amazon.IonDotnet.Tests.Internals
 
             var table = new ReaderLocalTable(SharedSymbolTable.GetSystem(1));
             var shared = SharedSymbolTable.NewSharedSymbolTable("table", 1, null, new[] {"a", "b", "c"});
+
             table.Imports.Add(shared);
             table.Refresh();
+
             AssertTable(table,
                 ("a", 10),
                 ("b", 11),
@@ -58,20 +66,21 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             var text = LocalSymbolTablePrefix +
                     "{" +
-                    "  symbols:[ \"s1\", \"s2\"]" +
+                    "  symbols:[ \"s1\", \"s2\" ]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
                     "  imports:" + SystemSymbols.IonSymbolTable + "," +
-                    "  symbols:[ \"s3\", \"s4\", \"s5\"]" +
+                    "  symbols:[ \"s3\", \"s4\", \"s5\" ]" +
                     "}\n" +
                     "null";
 
             ISymbolTable symbolTable = OneValue(text);
             CheckLocalTable(symbolTable);
+
             var systemMaxId = symbolTable.GetSystemTable().MaxId;
 
-            // table contains all symbols and SIDs are in correct order
+            // Table contains all symbols and SIDs are in correct order.
             CheckSymbol("s1", systemMaxId + 1, symbolTable);
             CheckSymbol("s2", systemMaxId + 2, symbolTable);
             CheckSymbol("s3", systemMaxId + 3, symbolTable);
@@ -83,35 +92,89 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void TestLocalSymbolTableAppendRoundTrip()
+        {
+            var text =
+                LocalSymbolTablePrefix +
+                "{" +
+                "   imports:[{name:\"foo\", version:1, max_id:1}], " +
+                "   symbols:[\"s1\", \"s2\"]" +
+                "}\n" +
+                "$10\n" + // Symbol with unknown text from "foo".
+                "$11\n" + // s1.
+                LocalSymbolTablePrefix +
+                "{" +
+                "   imports:" + SystemSymbols.IonSymbolTable + "," +
+                "   symbols:[\"s3\"]" +
+                "}\n" +
+                "$12\n" + // s2.
+                "$13"; // s3.
+
+            var datagram = IonLoader.Default.Load(text);
+
+            var fooSymbols = new List<string>() { "bar" };
+            var fooTable = SharedSymbolTable.NewSharedSymbolTable("foo", 1, null, fooSymbols);
+
+            // Text.
+            var textOutput = new StringWriter();
+            var textWriter = IonTextWriterBuilder.Build(textOutput, Enumerable.Repeat(fooTable, 1));
+            datagram.WriteTo(textWriter);
+            textWriter.Finish();
+
+            // Binary.
+            using var binaryOutput = new MemoryStream();
+            var binaryWriter = IonBinaryWriterBuilder.Build(binaryOutput, Enumerable.Repeat(fooTable, 1));
+            datagram.WriteTo(binaryWriter);
+            binaryWriter.Finish();
+
+            var catalog = new SimpleCatalog();
+            catalog.PutTable(fooTable);
+
+            var textRoundTrip = IonLoader.WithReaderOptions(new ReaderOptions { Catalog = catalog }).Load(textOutput.ToString());
+            var binaryRoundTrip = IonLoader.WithReaderOptions(new ReaderOptions { Catalog = catalog, Format = ReaderFormat.Binary }).Load(binaryOutput.ToArray());
+
+            Assert.AreEqual("bar",  textRoundTrip.GetElementAt(0).StringValue);
+            Assert.AreEqual("s1",   textRoundTrip.GetElementAt(1).StringValue);
+            Assert.AreEqual("s2",   textRoundTrip.GetElementAt(2).StringValue);
+            Assert.AreEqual("s3",   textRoundTrip.GetElementAt(3).StringValue);
+
+            Assert.AreEqual("bar",  binaryRoundTrip.GetElementAt(0).StringValue);
+            Assert.AreEqual("s1",   binaryRoundTrip.GetElementAt(1).StringValue);
+            Assert.AreEqual("s2",   binaryRoundTrip.GetElementAt(2).StringValue);
+            Assert.AreEqual("s3",   binaryRoundTrip.GetElementAt(3).StringValue);
+        }
+
+        [TestMethod]
         public void TestLocalSymbolTableMultiAppend()
         {
             var text =
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  symbols:[ \"s1\", \"s2\"]" +
+                    "  symbols:[ \"s1\", \"s2\" ]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
                     "  imports:" + SystemSymbols.IonSymbolTable + "," +
-                    "  symbols:[ \"s3\"]" +
+                    "  symbols:[ \"s3\" ]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
                     "  imports:" + SystemSymbols.IonSymbolTable + "," +
-                    "  symbols:[\"s4\", \"s5\"]" +
+                    "  symbols:[ \"s4\", \"s5\" ]" +
                     "}\n" +
                 LocalSymbolTablePrefix +
                     "{" +
                     "  imports:" + SystemSymbols.IonSymbolTable + "," +
-                    "  symbols:[\"s6\"]" +
+                    "  symbols:[ \"s6\" ]" +
                     "}\n" +
                     "null";
 
             ISymbolTable symbolTable = OneValue(text);
             CheckLocalTable(symbolTable);
+
             var systemMaxId = symbolTable.GetSystemTable().MaxId;
 
-            // table contains all symbols and SIDs are in correct order
+            // Table contains all symbols and SIDs are in correct order.
             CheckSymbol("s1", systemMaxId + 1, symbolTable);
             CheckSymbol("s2", systemMaxId + 2, symbolTable);
             CheckSymbol("s3", systemMaxId + 3, symbolTable);
@@ -129,7 +192,7 @@ namespace Amazon.IonDotnet.Tests.Internals
             var original =
                 LocalSymbolTablePrefix +
                     "{" +
-                    "  symbols:[ \"s1\"]" +
+                    "  symbols:[ \"s1\" ]" +
                     "}\n";
 
             var appended = original +
@@ -148,50 +211,11 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.AreEqual(originalSymbol.Sid, appendedSymbol.Sid);
         }
 
-        [TestMethod]
-        public void TestLocalSymbolTableAppendImportBoundary()
-        {
-            var text =
-                LocalSymbolTablePrefix +
-                    "{" +
-                    "  symbols:[ \"s11\"]" +
-                    "}\n" +
-                    "1\n";
-
-            var text2 = 
-                LocalSymbolTablePrefix +
-                    "{" +
-                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
-                    "  symbols:[ \"s21\"]" +
-                    "}\n" +
-                    "null";
-
-            ISymbolTable original = OneValue(text);
-            ISymbolTable appended = OneValue(text2);
-
-            //TODO this is not implemented, the test could be failing because of this
-            //original.Intern("o1");
-            //appended.Intern("a1");
-            var systemMaxId = appended.GetSystemTable().MaxId;
-
-            // new symbols in `original` don't influence SIDs for new symbols in `appended` after import
-            CheckSymbol("s11", systemMaxId + 1, appended);
-            CheckSymbol("o1", systemMaxId + 2, original);
-
-            CheckSymbol("s11", systemMaxId + 1, appended);
-            CheckSymbol("s21", systemMaxId + 2, appended);
-            CheckSymbol("a1", systemMaxId + 3, appended);
-
-            // new symbols in `original` are not accessible from `appended` after import
-            Assert.IsNull(original.Find("a1"));
-            Assert.IsNull(original.Find("o1"));
-        }
-
-
         private static ISymbolTable OneValue(string text)
         {
             IIonReader reader = IonReaderBuilder.Build(text);
             reader.MoveNext();
+
             return reader.GetSymbolTable();
         }
 
@@ -203,10 +227,11 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.IsFalse(symbolTable.IsSubstitute);
             Assert.IsNotNull(symbolTable.GetImportedTables());
 
-            CheckUnknownSymbol(" not defined ", SymbolToken.UnknownSid, symbolTable);
+            CheckUnknownSymbol("not defined", SymbolToken.UnknownSid, symbolTable);
 
             ISymbolTable systemTable = symbolTable.GetSystemTable();
             CheckSystemTable(systemTable);
+
             Assert.AreEqual(systemTable.IonVersionId, symbolTable.IonVersionId);
         }
 
@@ -240,11 +265,13 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             Assert.AreEqual(default, symbolTable.Find(text));
             Assert.AreEqual(SymbolToken.UnknownSid, symbolTable.FindSymbolId(text));
+
             if (symbolTable.IsReadOnly)
             {
                 try
                 {
                     symbolTable.Intern(text);
+
                     Assert.Fail("Expected exception");
                 }
                 catch (NotSupportedException)
@@ -257,7 +284,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             Assert.IsTrue(!dupe || text != null);
 
-            string msg = "text:" + text + " sid:" + sid;
+            var msg = "text:" + text + " sid:" + sid;
 
             if (text != null)
             {
@@ -265,22 +292,10 @@ namespace Amazon.IonDotnet.Tests.Internals
                 {
                     Assert.AreEqual(text, symbolTable.FindKnownSymbol(sid), msg);
                 }
-
-                //Can't do this stuff when we have duplicate symbol.
-                if (!dupe)
-                {
-                    Assert.AreEqual(sid, symbolTable.FindSymbolId(text), msg);
-
-                    //TODO - currently commented out because it is not implemented
-                    //SymbolToken symbolToken = symbolTable.Intern(text);
-                    //Assert.AreEqual(sid, symbolToken.Sid, msg);
-
-                    //symbolToken = symbolTable.Find(text);
-                    //Assert.AreEqual(sid, symbolToken.Sid, msg);
-                }
             }
-            else //No text expected, must have sid
+            else 
             {
+                // No text expected, must have SID.
                 Assert.AreEqual(text /* null */, symbolTable.FindKnownSymbol(sid), msg);
             }
         }
