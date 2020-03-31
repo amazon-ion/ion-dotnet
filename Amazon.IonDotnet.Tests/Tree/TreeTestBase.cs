@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 
+using System;
 using System.Linq;
 using Amazon.IonDotnet.Tree;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -46,6 +47,13 @@ namespace Amazon.IonDotnet.Tests.Tree
                 Assert.IsTrue(v.HasAnnotation(annotation));
                 Assert.IsTrue(annotReturns.Any(a => a.Text == annotation));
             }
+        }
+
+        [TestMethod]
+        public void AddAnnotation_Null()
+        {
+            var v = MakeMutableValue();
+            Assert.ThrowsException<ArgumentNullException>(() => v.AddTypeAnnotation(null));
         }
     }
 }

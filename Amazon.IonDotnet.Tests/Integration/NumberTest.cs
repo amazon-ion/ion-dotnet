@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Tests.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -221,6 +223,18 @@ namespace Amazon.IonDotnet.Tests.Integration
         }
 
         [TestMethod]
+        public void FloatDblMax()
+        {
+            var file = DirStructure.IonTestFile("good/floatDblMax.ion");
+            var floats = new[]
+            {
+                1.7976931348623157e308
+            };
+
+            AssertReaderWriterPrescision(file, floats);
+        }
+
+        [TestMethod]
         public void FloatDblMin()
         {
             var file = DirStructure.IonTestFile("good/floatDblMin.ion");
@@ -230,34 +244,12 @@ namespace Amazon.IonDotnet.Tests.Integration
                 0.00022250738585072012e-304,
                 2.225073858507201200000e-308,
                 2.2250738585072012e-00308,
-                2.2250738585072012997800001e-308
+                2.2250738585072012997800001e-308,
+                2.2250738585072014e-308,
+                2.2250738585072009e-308
             };
 
-            void assertReader(IIonReader reader)
-            {
-                foreach (var f in floats)
-                {
-                    Assert.AreEqual(IonType.Float, reader.MoveNext());
-                    ReaderTestCommon.AssertFloatEqual(f, reader.DoubleValue());
-                }
-
-                Assert.AreEqual(IonType.None, reader.MoveNext());
-            }
-
-            void writerFunc(IIonWriter writer)
-            {
-                foreach (var f in floats)
-                {
-                    writer.WriteFloat(f);
-                }
-
-                writer.Finish();
-            }
-
-            var r = ReaderFromFile(file, InputStyle.FileStream);
-            assertReader(r);
-
-            AssertReaderWriter(assertReader, writerFunc);
+            AssertReaderWriterPrescision(file, floats);
         }
 
         [TestMethod]
@@ -316,11 +308,43 @@ namespace Amazon.IonDotnet.Tests.Integration
         {
             var file = DirStructure.IonTestFile("good/float_zeros.ion");
             var reader = ReaderFromFile(file, InputStyle.FileStream);
+
             while (reader.MoveNext() != IonType.None)
             {
                 Assert.AreEqual(IonType.Float, reader.CurrentType);
                 Assert.AreEqual(0d, reader.DoubleValue());
+
+                using (var memoryStream = new MemoryStream())
+                {
+                    using (var writer = IonBinaryWriterBuilder.Build(memoryStream, forceFloat64: true))
+                    {
+                        writer.WriteFloat(reader.DoubleValue());
+                        writer.Finish();
+                    }
+
+                    // Confirm the reader's and writer's byte presentations are the same
+                    var readerByte = BitConverter.GetBytes(reader.DoubleValue());
+                    Array.Reverse(readerByte);
+                    // Get byte reprsentation of value from the stream
+                    var writerByte = memoryStream.ToArray().Skip(5).ToArray();
+
+                    Assert.IsTrue(Enumerable.SequenceEqual(writerByte, readerByte));
+                }
             }
+
+        }
+
+        [TestMethod]
+        public void FloatTrappedZeros()
+        {
+            var file = DirStructure.IonTestFile("good/float_trapped_zeros.ion");
+            var floats = new[]
+            {
+                1.0000000000000002e0,
+                -1.0000000000000002e0
+            };
+
+            AssertReaderWriterPrescision(file, floats);
         }
 
         [TestMethod]
@@ -396,6 +420,35 @@ namespace Amazon.IonDotnet.Tests.Integration
             }
 
             return co;
+        }
+
+        private void AssertReaderWriterPrescision(FileInfo file, double[] floats)
+        {
+            void assertReader(IIonReader reader)
+            {
+                foreach (var f in floats)
+                {
+                    Assert.AreEqual(IonType.Float, reader.MoveNext());
+                    ReaderTestCommon.AssertFloatEqual(f, reader.DoubleValue());
+                }
+
+                Assert.AreEqual(IonType.None, reader.MoveNext());
+            }
+
+            void writerFunc(IIonWriter writer)
+            {
+                foreach (var f in floats)
+                {
+                    writer.WriteFloat(f);
+                }
+
+                writer.Finish();
+            }
+
+            var r = ReaderFromFile(file, InputStyle.FileStream);
+            assertReader(r);
+
+            AssertReaderWriter(assertReader, writerFunc);
         }
     }
 }

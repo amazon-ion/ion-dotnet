@@ -226,8 +226,13 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// Add an annotation to this value.
         /// </summary>
         /// <param name="annotation">Annotation text.</param>
+        /// <exception cref="ArgumentNullException">When annotation is null.</exception>
         public void AddTypeAnnotation(string annotation)
         {
+            if (annotation == null)
+            {
+                throw new ArgumentNullException(nameof(annotation));
+            }
             AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
         }
 

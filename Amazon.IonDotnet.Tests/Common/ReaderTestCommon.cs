@@ -168,9 +168,18 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual("withannot", reader.CurrentFieldName);
             Assert.AreEqual(18, reader.IntValue());
 
-            string[] annotations = reader.GetTypeAnnotations();
+            var annotations = reader.GetTypeAnnotations();
             Assert.AreEqual(symbols.Count(), annotations.Count());
             Assert.IsTrue(symbols.SequenceEqual(annotations));
+        }
+
+        public static void ReadTypeAnnotations_ZeroSymbol(IIonReader reader)
+        {
+            // an int with zero symbol annotation
+            // $0::18
+            reader.MoveNext();
+
+            Assert.ThrowsException<UnknownSymbolException>(() => reader.GetTypeAnnotations());
         }
 
         public static void ReadTypeAnnotations_AssertUnknownSymbolException(IIonReader reader)
@@ -200,6 +209,18 @@ namespace Amazon.IonDotnet.Tests.Common
             {
                 Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == s));
             }
+        }
+
+        public static void ReadTypeAnnotationSymbols_ZeroSymbol(IIonReader reader)
+        {
+            // an int with zero symbol annotation
+            // $0::18
+            reader.MoveNext();
+
+            Assert.AreEqual(IonType.Int, reader.CurrentType);
+            Assert.AreEqual(18, reader.IntValue());
+            Assert.AreEqual(1, reader.GetTypeAnnotationSymbols().Count());
+            Assert.IsTrue(reader.GetTypeAnnotationSymbols().Any(a => a.Text == null && a.ImportLocation == default));
         }
 
         public static void ReadTypeAnnotationSymbols_AssertNoUnknownSymbolException(IIonReader reader)
@@ -248,6 +269,14 @@ namespace Amazon.IonDotnet.Tests.Common
             Assert.AreEqual(18, reader.IntValue());
 
             Assert.IsFalse(reader.HasAnnotation("Spam Musubi"));
+        }
+
+        public static void HasAnnotation_ZeroSymbol(IIonReader reader)
+        {
+            // an int with zero symbol annotation
+            // $0::18
+            reader.MoveNext();
+            Assert.ThrowsException<ArgumentNullException>(() => reader.HasAnnotation(null));
         }
 
         public static void HasAnnotation_AssertUnknownSymbolException(IIonReader reader)
