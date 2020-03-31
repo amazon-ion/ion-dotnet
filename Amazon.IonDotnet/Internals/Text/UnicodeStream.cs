@@ -37,11 +37,12 @@ namespace Amazon.IonDotnet.Internals.Text
             {
                 throw new ArgumentException("Input stream must be readable", nameof(inputStream));
             }
+
             this.streamReader = new StreamReader(inputStream, encoding);
             this.unreadStack = new Stack<int>();
             if (inputStream.CanSeek)
             {
-                remainingChars = inputStream.Length;
+                this.remainingChars = inputStream.Length;
             }
         }
 
@@ -67,7 +68,7 @@ namespace Amazon.IonDotnet.Internals.Text
             this.streamReader = new StreamReader(inputStream, encoding);
             if (inputStream.CanSeek)
             {
-                remainingChars = inputStream.Length;
+                this.remainingChars = inputStream.Length;
                 this.InputStream.Seek(-readBytes.Length, SeekOrigin.Current);
                 return;
             }
@@ -83,14 +84,14 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override int Read()
         {
-            var value = _unreadStack.Count > 0 ? _unreadStack.Pop() : _streamReader.Read();
+            var value = this.unreadStack.Count > 0 ? this.unreadStack.Pop() : this.streamReader.Read();
 
-            if (remainingChars.HasValue)
+            if (this.remainingChars.HasValue)
             {
-                remainingChars--;
-                if (_streamReader.CurrentEncoding == Encoding.UTF8)
+                this.remainingChars--;
+                if (this.streamReader.CurrentEncoding == Encoding.UTF8)
                 {
-                    IsValidUTF8Character();
+                    this.IsValidUTF8Character();
                 }
             }
 
@@ -109,7 +110,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private void IsValidUTF8Character()
         {
-            if (remainingChars > 0 && _streamReader.Peek() == -1)
+            if (this.remainingChars > 0 && this.streamReader.Peek() == -1)
             {
                 throw new IonException("Input stream is not a valid UTF-8 stream.");
             }
