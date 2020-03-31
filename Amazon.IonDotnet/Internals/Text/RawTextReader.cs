@@ -13,22 +13,36 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using Amazon.IonDotnet.Internals.Conversions;
-
-// ReSharper disable ImpureMethodCallOnReadonlyValueField
-
 namespace Amazon.IonDotnet.Internals.Text
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Numerics;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using Amazon.IonDotnet.Internals.Conversions;
+
     internal abstract class RawTextReader : IIonReader
     {
-        #region States
+        protected readonly StringBuilder valueBuffer;
+        protected readonly TextScanner scanner;
+        protected readonly List<SymbolToken> annotations = new List<SymbolToken>();
 
+        protected ValueVariant valueVariant;
+        protected bool eof;
+        protected int valueKeyword;
+        protected IonType valueType;
+        protected bool hasNextCalled;
+
+        protected string fieldName;
+        protected int fieldNameSid = SymbolToken.UnknownSid;
+
+        protected int lobToken;
+        protected int lobValuePosition;
+        protected byte[] lobBuffer;
+
+#pragma warning disable IDE0051 // Remove unused private members
         private const int StateBeforeAnnotationDatagram = 0;
         private const int StateBeforeAnnotationContained = 1;
         private const int StateBeforeAnnotationSexp = 2;
@@ -42,10 +56,6 @@ namespace Amazon.IonDotnet.Internals.Text
         private const int StateAfterValueContents = 10;
         private const int StateEof = 11;
         private const int StateMax = 11;
-
-        #endregion
-
-        #region Actions
 
         private const short ActionNotDefined = 0;
         private const short ActionLoadFieldName = 1;
@@ -62,8 +72,361 @@ namespace Amazon.IonDotnet.Internals.Text
         private const short ActionFinishLob = 13;
         private const short ActionFinishDatagram = 14;
         private const short ActionEof = 15;
+#pragma warning restore IDE0051 // Remove unused private members
 
         private static readonly short[,] TransitionActions = MakeTransitionActionArray();
+
+        // For any container being opened, its closing symbol should come before
+        // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
+        private readonly Stack<int> expectedContainerClosingSymbol = new Stack<int>();
+
+        private readonly ContainerStack containerStack;
+
+        private int state;
+        private bool tokenContentLoaded;
+        private bool containerIsStruct; // helper bool's set on push and pop and used
+        private bool containerProhibitsCommas; // frequently during state transitions actions
+
+        protected RawTextReader(TextStream input)
+        {
+            this.state = GetStateAtContainerStart(IonType.Datagram);
+            this.valueBuffer = new StringBuilder();
+            this.scanner = new TextScanner(input);
+            this.eof = false;
+            this.valueType = IonType.None;
+            this.hasNextCalled = false;
+            this.containerStack = new ContainerStack(this, 6);
+            this.containerStack.PushContainer(IonType.Datagram);
+        }
+
+        public IonType CurrentType => this.valueType;
+
+        public abstract string CurrentFieldName { get; }
+
+        public abstract bool CurrentIsNull { get; }
+
+        public bool IsInStruct => this.containerStack.Count > 0 && this.containerStack.Peek() == IonType.Struct;
+
+        public int CurrentDepth
+        {
+            get
+            {
+                var top = this.containerStack.Count;
+
+                if (top == 0)
+                {
+                    // Usually won't happen
+                    return 0;
+                }
+
+                // subtract 1 because level '0' is the datagram
+                Debug.Assert(this.containerStack.First() == IonType.Datagram, "First tpye in containerStack is not Datagram");
+                return top - 1;
+            }
+        }
+
+        public IonType MoveNext()
+        {
+            if (!this.HasNext())
+            {
+                return IonType.None;
+            }
+
+            if (this.valueType == IonType.None && this.scanner.UnfinishedToken)
+            {
+                this.LoadTokenContents(this.scanner.Token);
+            }
+
+            this.hasNextCalled = false;
+            return this.valueType;
+        }
+
+        public void StepIn()
+        {
+            if (!this.valueType.IsContainer())
+            {
+                throw new InvalidOperationException($"Current value type {this.valueType} is not a container");
+            }
+
+            this.state = GetStateAtContainerStart(this.valueType);
+            this.containerStack.PushContainer(this.valueType);
+            this.scanner.MarkTokenFinished();
+
+            this.FinishValue();
+            if (this.valueVariant.TypeSet.HasFlag(ScalarType.Null))
+            {
+                this.eof = true;
+                this.hasNextCalled = true;
+            }
+
+            this.valueType = IonType.None;
+        }
+
+        public void StepOut()
+        {
+            if (this.CurrentDepth < 1)
+            {
+                throw new InvalidOperationException("Already at outer most");
+            }
+
+            this.FinishValue();
+            switch (this.containerStack.Peek())
+            {
+                default:
+                    throw new IonException("Invalid state");
+                case IonType.Datagram:
+                    break;
+                case IonType.List:
+                    if (!this.eof)
+                    {
+                        this.scanner.SkipOverList();
+                    }
+
+                    break;
+                case IonType.Struct:
+                    if (!this.eof)
+                    {
+                        this.scanner.SkipOverStruct();
+                    }
+
+                    break;
+                case IonType.Sexp:
+                    if (!this.eof)
+                    {
+                        this.scanner.SkipOverSexp();
+                    }
+
+                    break;
+            }
+
+            this.containerStack.Pop();
+            this.FinishValue();
+            this.ClearValue();
+        }
+
+        public abstract ISymbolTable GetSymbolTable();
+
+        public abstract IntegerSize GetIntegerSize();
+
+        public abstract SymbolToken GetFieldNameSymbol();
+
+        public abstract bool BoolValue();
+
+        public abstract int IntValue();
+
+        public abstract long LongValue();
+
+        public abstract BigInteger BigIntegerValue();
+
+        public abstract double DoubleValue();
+
+        public abstract BigDecimal DecimalValue();
+
+        public abstract Timestamp TimestampValue();
+
+        public abstract string StringValue();
+
+        public abstract SymbolToken SymbolValue();
+
+        public abstract int GetLobByteSize();
+
+        public abstract byte[] NewByteArray();
+
+        public abstract int GetBytes(Span<byte> buffer);
+
+        /// <summary>
+        /// Dispose RawTextReader.
+        /// </summary>
+        public virtual void Dispose()
+        {
+            return;
+        }
+
+        public abstract string[] GetTypeAnnotations();
+
+        public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
+
+        public abstract bool HasAnnotation(string annotation);
+
+        protected void ClearValueBuffer()
+        {
+            this.tokenContentLoaded = false;
+            this.valueBuffer.Clear();
+        }
+
+        protected virtual bool HasNext()
+        {
+            if (this.hasNextCalled || this.eof)
+            {
+                return this.eof != true;
+            }
+
+            this.FinishValue();
+            this.ClearValue();
+            this.ParseNext();
+
+            this.hasNextCalled = true;
+            return !this.eof;
+        }
+
+        protected IonType GetContainerType() => this.containerStack.Peek();
+
+        protected void LoadTokenContents(int scannerToken)
+        {
+            if (this.tokenContentLoaded)
+            {
+                return;
+            }
+
+            int c;
+            bool clobCharsOnly;
+            switch (scannerToken)
+            {
+                default:
+                    throw new InvalidTokenException(scannerToken);
+                case TextConstants.TokenUnknownNumeric:
+                case TextConstants.TokenInt:
+                case TextConstants.TokenBinary:
+                case TextConstants.TokenHex:
+                case TextConstants.TokenFloat:
+                case TextConstants.TokenDecimal:
+                case TextConstants.TokenTimestamp:
+                    this.valueType = this.scanner.LoadNumber(this.valueBuffer);
+                    break;
+                case TextConstants.TokenSymbolIdentifier:
+                    this.scanner.LoadSymbolIdentifier(this.valueBuffer);
+                    this.valueType = IonType.Symbol;
+                    break;
+                case TextConstants.TokenSymbolOperator:
+                    this.scanner.LoadSymbolOperator(this.valueBuffer);
+                    this.valueType = IonType.Symbol;
+                    break;
+                case TextConstants.TokenSymbolQuoted:
+                    clobCharsOnly = this.valueType == IonType.Clob;
+                    c = this.scanner.LoadSingleQuotedString(this.valueBuffer, clobCharsOnly);
+                    if (c == TextConstants.TokenEof)
+                    {
+                        throw new UnexpectedEofException();
+                    }
+
+                    this.valueType = IonType.Symbol;
+                    break;
+                case TextConstants.TokenStringDoubleQuote:
+                    clobCharsOnly = this.valueType == IonType.Clob;
+                    c = this.scanner.LoadDoubleQuotedString(this.valueBuffer, clobCharsOnly);
+                    if (c == TextConstants.TokenEof)
+                    {
+                        throw new UnexpectedEofException();
+                    }
+
+                    this.valueType = IonType.String;
+                    break;
+                case TextConstants.TokenStringTripleQuote:
+                    clobCharsOnly = this.valueType == IonType.Clob;
+                    c = this.scanner.LoadTripleQuotedString(this.valueBuffer, clobCharsOnly);
+                    if (c == TextConstants.TokenEof)
+                    {
+                        throw new UnexpectedEofException();
+                    }
+
+                    this.valueType = IonType.String;
+                    break;
+            }
+
+            this.tokenContentLoaded = true;
+        }
+
+        private static int GetStateAtContainerStart(IonType container)
+        {
+            if (container == IonType.None)
+            {
+                return StateBeforeAnnotationDatagram;
+            }
+
+            Debug.Assert(container.IsContainer(), "container isContainer is false");
+
+            switch (container)
+            {
+                default:
+                    // should not happen
+                    throw new IonException($"{container} is no container");
+                case IonType.Struct:
+                    return StateBeforeFieldName;
+                case IonType.List:
+                    return StateBeforeAnnotationContained;
+                case IonType.Sexp:
+                    return StateBeforeAnnotationSexp;
+                case IonType.Datagram:
+                    return StateBeforeAnnotationDatagram;
+            }
+        }
+
+        private static int GetStateAfterAnnotation(int stateBeforeAnnotation, IonType container)
+        {
+            switch (stateBeforeAnnotation)
+            {
+                default:
+                    throw new IonException($"Invalid state before annotation {stateBeforeAnnotation}");
+                case StateAfterValueContents:
+                    switch (container)
+                    {
+                        default:
+                            throw new IonException($"{container} is no container");
+                        case IonType.Struct:
+                        case IonType.List:
+                        case IonType.Datagram:
+                            return StateBeforeValueContent;
+                        case IonType.Sexp:
+                            return StateBeforeValueContentSexp;
+                    }
+
+                case StateBeforeAnnotationDatagram:
+                case StateBeforeAnnotationContained:
+                    return StateBeforeValueContent;
+                case StateBeforeAnnotationSexp:
+                    return StateBeforeValueContentSexp;
+            }
+        }
+
+        private static int GetStateAfterValue(IonType currentContainerType)
+        {
+            switch (currentContainerType)
+            {
+                default:
+                    throw new IonException($"{currentContainerType} is no container");
+                case IonType.List:
+                case IonType.Struct:
+                    return StateAfterValueContents;
+                case IonType.Sexp:
+                    return StateBeforeAnnotationSexp;
+                case IonType.Datagram:
+                    return StateBeforeAnnotationDatagram;
+            }
+        }
+
+        private static int GetStateAfterContainer(IonType newContainer)
+        {
+            if (newContainer == IonType.None)
+            {
+                return StateBeforeAnnotationDatagram;
+            }
+
+            Debug.Assert(newContainer.IsContainer(), "newContainer IsContainer is false");
+
+            switch (newContainer)
+            {
+                default:
+                    // should not happen
+                    throw new IonException($"{newContainer} is no container");
+                case IonType.Struct:
+                case IonType.List:
+                    return StateAfterValueContents;
+                case IonType.Sexp:
+                    return StateBeforeAnnotationSexp;
+                case IonType.Datagram:
+                    return StateBeforeAnnotationDatagram;
+            }
+        }
 
         private static short[,] MakeTransitionActionArray()
         {
@@ -130,7 +493,7 @@ namespace Amazon.IonDotnet.Internals.Text
             actions[StateBeforeFieldName, TextConstants.TokenCloseSquare] = ActionFinishContainer;
 
             // after a value we'll either see a separator (like ',') or a containers closing token. If we're not in a container
-            // (i.e. we're at the top level) then this isn't the state we should be in.  We'll be in StateBeforeAnnotationDatagram
+            // (i.e. we're at the top level) then this isn't the state we should be in. We'll be in StateBeforeAnnotationDatagram
             actions[StateAfterValueContents, TextConstants.TokenComma] = ActionEatComma;
             actions[StateAfterValueContents, TextConstants.TokenCloseParen] = ActionFinishContainer;
             actions[StateAfterValueContents, TextConstants.TokenCloseBrace] = ActionFinishContainer;
@@ -153,92 +516,32 @@ namespace Amazon.IonDotnet.Internals.Text
             return actions;
         }
 
-        #endregion
-
-        private readonly ContainerStack _containerStack;
-        protected readonly StringBuilder _valueBuffer;
-        protected readonly TextScanner _scanner;
-        protected readonly List<SymbolToken> _annotations = new List<SymbolToken>();
-
-        protected ValueVariant _v;
-        private int _state;
-        protected bool _eof;
-        protected int _valueKeyword;
-
-        protected IonType _valueType;
-        private bool _tokenContentLoaded;
-        private bool _containerIsStruct; // helper bool's set on push and pop and used
-        private bool _containerProhibitsCommas; // frequently during state transitions actions
-        protected bool _hasNextCalled;
-        protected string _fieldName;
-        protected int _fieldNameSid = SymbolToken.UnknownSid;
-
-
-        protected int _lobToken;
-        protected int _lobValuePosition;
-        protected byte[] _lobBuffer;
-
-        // For any container being opened, its closing symbol should come before
-        // any other closing symbol: ) ] }  eg: [2, (hi),  { a:h }, ''' abc ''']
-        private readonly Stack<int> _expectedContainerClosingSymbol = new Stack<int>();
-
-        protected RawTextReader(TextStream input)
-        {
-            _state = GetStateAtContainerStart(IonType.Datagram);
-            _valueBuffer = new StringBuilder();
-            _scanner = new TextScanner(input);
-            _eof = false;
-            _valueType = IonType.None;
-            _hasNextCalled = false;
-            _containerStack = new ContainerStack(this, 6);
-            _containerStack.PushContainer(IonType.Datagram);
-        }
-
-        protected void ClearValueBuffer()
-        {
-            _tokenContentLoaded = false;
-            _valueBuffer.Clear();
-        }
-
-        protected virtual bool HasNext()
-        {
-            if (_hasNextCalled || _eof)
-                return _eof != true;
-
-            FinishValue();
-            ClearValue();
-            ParseNext();
-
-            _hasNextCalled = true;
-            return !_eof;
-        }
-
         private void ClearValue()
         {
-            _valueType = IonType.None;
-            ClearValueBuffer();
-            _annotations.Clear();
-            ClearFieldName();
-            _v.Clear();
-            _lobValuePosition = 0;
-            _lobBuffer = null;
+            this.valueType = IonType.None;
+            this.ClearValueBuffer();
+            this.annotations.Clear();
+            this.ClearFieldName();
+            this.valueVariant.Clear();
+            this.lobValuePosition = 0;
+            this.lobBuffer = null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ClearFieldName()
         {
-            _fieldName = null;
-            _fieldNameSid = SymbolToken.UnknownSid;
+            this.fieldName = null;
+            this.fieldNameSid = SymbolToken.UnknownSid;
         }
 
         private void ParseNext()
         {
             var trailingWhitespace = false;
 
-            var token = _scanner.NextToken();
+            var token = this.scanner.NextToken();
             while (true)
             {
-                int action = TransitionActions[_state, token];
+                int action = TransitionActions[this.state, token];
                 switch (action)
                 {
                     default:
@@ -246,41 +549,47 @@ namespace Amazon.IonDotnet.Internals.Text
                     case ActionNotDefined:
                         throw new IonException("Invalid state");
                     case ActionEof:
-                        _state = StateEof;
-                        _eof = true;
+                        this.state = StateEof;
+                        this.eof = true;
                         return;
                     case ActionLoadFieldName:
-                        if (!IsInStruct)
+                        if (!this.IsInStruct)
+                        {
                             throw new IonException("Field names have to be inside struct");
+                        }
 
-                        LoadTokenContents(token);
-                        var symtok = ParseSymbolToken(_valueBuffer, token);
-                        SetFieldName(symtok);
-                        ClearValueBuffer();
-                        token = _scanner.NextToken();
+                        this.LoadTokenContents(token);
+                        var symtok = this.ParseSymbolToken(this.valueBuffer, token);
+                        this.SetFieldName(symtok);
+                        this.ClearValueBuffer();
+                        token = this.scanner.NextToken();
                         if (token != TextConstants.TokenColon)
+                        {
                             throw new InvalidTokenException("Field name has to be followed by a colon");
-                        _scanner.MarkTokenFinished();
-                        _state = StateBeforeAnnotationContained;
-                        token = _scanner.NextToken();
+                        }
+
+                        this.scanner.MarkTokenFinished();
+                        this.state = StateBeforeAnnotationContained;
+                        token = this.scanner.NextToken();
                         break;
                     case ActionLoadAnnotation:
-                        LoadTokenContents(token);
-                        trailingWhitespace = _scanner.SkipWhiteSpace();
-                        if (!_scanner.TrySkipDoubleColon())
+                        this.LoadTokenContents(token);
+                        trailingWhitespace = this.scanner.SkipWhiteSpace();
+                        if (!this.scanner.TrySkipDoubleColon())
                         {
-                            _state = GetStateAfterAnnotation(_state, _containerStack.Peek());
+                            this.state = GetStateAfterAnnotation(this.state, this.containerStack.Peek());
                             break;
                         }
 
-                        var sym = ParseSymbolToken(_valueBuffer, token);
-                        _annotations.Add(sym);
-                        ClearValueBuffer();
-                        _scanner.MarkTokenFinished();
+                        var sym = this.ParseSymbolToken(this.valueBuffer, token);
+                        this.annotations.Add(sym);
+                        this.ClearValueBuffer();
+                        this.scanner.MarkTokenFinished();
+
                         // Consumed the annotation, move on.
                         // note: that peekDoubleColon() consumed the two colons
                         // so nextToken won't see them
-                        token = _scanner.NextToken();
+                        token = this.scanner.NextToken();
                         switch (token)
                         {
                             case TextConstants.TokenSymbolIdentifier:
@@ -290,41 +599,41 @@ namespace Amazon.IonDotnet.Internals.Text
                                 break;
                             default:
                                 // we leave the error handling to the transition
-                                _state = GetStateAfterAnnotation(_state, _containerStack.Peek());
+                                this.state = GetStateAfterAnnotation(this.state, this.containerStack.Peek());
                                 break;
                         }
 
                         break;
                     case ActionStartStruct:
-                        _valueType = IonType.Struct;
-                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseBrace);
-                        _state = StateBeforeFieldName;
+                        this.valueType = IonType.Struct;
+                        this.expectedContainerClosingSymbol.Push(TextConstants.TokenCloseBrace);
+                        this.state = StateBeforeFieldName;
                         return;
                     case ActionStartList:
-                        _valueType = IonType.List;
-                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseSquare);
-                        _state = StateBeforeAnnotationContained;
+                        this.valueType = IonType.List;
+                        this.expectedContainerClosingSymbol.Push(TextConstants.TokenCloseSquare);
+                        this.state = StateBeforeAnnotationContained;
                         return;
                     case ActionStartSexp:
-                        _valueType = IonType.Sexp;
-                        _expectedContainerClosingSymbol.Push(TextConstants.TokenCloseParen);
-                        _state = StateBeforeAnnotationSexp;
+                        this.valueType = IonType.Sexp;
+                        this.expectedContainerClosingSymbol.Push(TextConstants.TokenCloseParen);
+                        this.state = StateBeforeAnnotationSexp;
                         return;
                     case ActionStartLob:
-                        switch (_scanner.PeekLobStartPunctuation())
+                        switch (this.scanner.PeekLobStartPunctuation())
                         {
                             case TextConstants.TokenStringDoubleQuote:
-                                _lobToken = TextConstants.TokenStringDoubleQuote;
-                                _valueType = IonType.Clob;
+                                this.lobToken = TextConstants.TokenStringDoubleQuote;
+                                this.valueType = IonType.Clob;
                                 break;
                             case TextConstants.TokenStringTripleQuote:
-                                _lobToken = TextConstants.TokenStringTripleQuote;
-                                _valueType = IonType.Clob;
+                                this.lobToken = TextConstants.TokenStringTripleQuote;
+                                this.valueType = IonType.Clob;
                                 break;
                             default:
-                                _state = StateInBlobContent;
-                                _lobToken = TextConstants.TokenOpenDoubleBrace;
-                                _valueType = IonType.Blob;
+                                this.state = StateInBlobContent;
+                                this.lobToken = TextConstants.TokenOpenDoubleBrace;
+                                this.valueType = IonType.Blob;
                                 break;
                         }
 
@@ -332,87 +641,90 @@ namespace Amazon.IonDotnet.Internals.Text
                     case ActionLoadScalar:
                         if (token == TextConstants.TokenSymbolIdentifier)
                         {
-                            LoadTokenContents(token);
-                            //token has been wholy loaded
-                            _scanner.MarkTokenFinished();
+                            this.LoadTokenContents(token);
 
-                            _valueKeyword = TextConstants.GetKeyword(_valueBuffer, 0, _valueBuffer.Length);
-                            switch (_valueKeyword)
+                            // token has been completely loaded
+                            this.scanner.MarkTokenFinished();
+
+                            this.valueKeyword = TextConstants.GetKeyword(this.valueBuffer, 0, this.valueBuffer.Length);
+                            switch (this.valueKeyword)
                             {
                                 default:
-                                    _valueType = IonType.Symbol;
+                                    this.valueType = IonType.Symbol;
                                     break;
                                 case TextConstants.KeywordNull:
-                                    ReadNullType(trailingWhitespace);
+                                    this.ReadNullType(trailingWhitespace);
                                     break;
                                 case TextConstants.KeywordTrue:
-                                    _valueType = IonType.Bool;
-                                    _v.BoolValue = true;
+                                    this.valueType = IonType.Bool;
+                                    this.valueVariant.BoolValue = true;
                                     break;
                                 case TextConstants.KeywordFalse:
-                                    _valueType = IonType.Bool;
-                                    _v.BoolValue = false;
+                                    this.valueType = IonType.Bool;
+                                    this.valueVariant.BoolValue = false;
                                     break;
                                 case TextConstants.KeywordNan:
-                                    _valueType = IonType.Float;
-                                    ClearValueBuffer();
-                                    _v.DoubleValue = double.NaN;
+                                    this.valueType = IonType.Float;
+                                    this.ClearValueBuffer();
+                                    this.valueVariant.DoubleValue = double.NaN;
                                     break;
                                 case TextConstants.KeywordSid:
-                                    var sid = TextConstants.DecodeSid(_valueBuffer);
-                                    _v.IntValue = sid;
-                                    _valueType = IonType.Symbol;
+                                    var sid = TextConstants.DecodeSid(this.valueBuffer);
+                                    this.valueVariant.IntValue = sid;
+                                    this.valueType = IonType.Symbol;
                                     break;
                             }
 
-                            //do not clear the buffer yet because LoadTokenContents() might be called again
+                            // do not clear the buffer yet because LoadTokenContents() might be called again
                         }
                         else if (token == TextConstants.TokenDot)
                         {
-                            _valueType = IonType.Symbol;
-                            ClearValueBuffer();
-                            _v.StringValue = ".";
+                            this.valueType = IonType.Symbol;
+                            this.ClearValueBuffer();
+                            this.valueVariant.StringValue = ".";
                         }
                         else
                         {
                             // if it's not a symbol we just look at the token type
-                            _valueType = TextConstants.GetIonTypeOfToken(token);
+                            this.valueType = TextConstants.GetIonTypeOfToken(token);
                         }
 
-                        _state = GetStateAfterValue(_containerStack.Peek());
+                        this.state = GetStateAfterValue(this.containerStack.Peek());
                         return;
                     case ActionEatComma:
-                        if (_containerProhibitsCommas)
+                        if (this.containerProhibitsCommas)
+                        {
                             throw new InvalidTokenException(',');
+                        }
 
-                        _state = _containerIsStruct ? StateBeforeFieldName : StateBeforeAnnotationContained;
-                        _scanner.MarkTokenFinished();
-                        token = _scanner.NextToken();
+                        this.state = this.containerIsStruct ? StateBeforeFieldName : StateBeforeAnnotationContained;
+                        this.scanner.MarkTokenFinished();
+                        token = this.scanner.NextToken();
                         break;
                     case ActionFinishDatagram:
-                        Debug.Assert(CurrentDepth == 0);
-                        _eof = true;
-                        _state = StateEof;
+                        Debug.Assert(this.CurrentDepth == 0, "CurrentDepth is not 0");
+                        this.eof = true;
+                        this.state = StateEof;
                         return;
                     case ActionFinishContainer:
-                        ValidateClosingSymbol(token);
-                        _state = GetStateAfterContainer(_containerStack.Peek());
-                        _eof = true;
+                        this.ValidateClosingSymbol(token);
+                        this.state = GetStateAfterContainer(this.containerStack.Peek());
+                        this.eof = true;
                         return;
                     case ActionFinishLob:
-                        _state = GetStateAfterValue(_containerStack.Peek());
+                        this.state = GetStateAfterValue(this.containerStack.Peek());
                         return;
                     case ActionPlusInf:
-                        _valueType = IonType.Float;
-                        ClearValueBuffer();
-                        _v.DoubleValue = double.PositiveInfinity;
-                        _state = GetStateAfterValue(_containerStack.Peek());
+                        this.valueType = IonType.Float;
+                        this.ClearValueBuffer();
+                        this.valueVariant.DoubleValue = double.PositiveInfinity;
+                        this.state = GetStateAfterValue(this.containerStack.Peek());
                         return;
                     case ActionMinusInf:
-                        _valueType = IonType.Float;
-                        ClearValueBuffer();
-                        _v.DoubleValue = double.NegativeInfinity;
-                        _state = GetStateAfterValue(_containerStack.Peek());
+                        this.valueType = IonType.Float;
+                        this.ClearValueBuffer();
+                        this.valueVariant.DoubleValue = double.NegativeInfinity;
+                        this.state = GetStateAfterValue(this.containerStack.Peek());
                         return;
                 }
             }
@@ -420,16 +732,18 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private void ValidateClosingSymbol(int token)
         {
-            if (_expectedContainerClosingSymbol.Count == 0)
-                throw new FormatException($"Unexpected { GetCharacterValueOfClosingContainerToken(token) }");
+            if (this.expectedContainerClosingSymbol.Count == 0)
+            {
+                throw new FormatException($"Unexpected {this.GetCharacterValueOfClosingContainerToken(token)}");
+            }
 
-            var latestContainerSymbol = _expectedContainerClosingSymbol.Pop();
+            var latestContainerSymbol = this.expectedContainerClosingSymbol.Pop();
             if (latestContainerSymbol != token)
             {
-                var currentToken = GetCharacterValueOfClosingContainerToken(token);
-                var expectedToken = GetCharacterValueOfClosingContainerToken(latestContainerSymbol);
+                var currentToken = this.GetCharacterValueOfClosingContainerToken(token);
+                var expectedToken = this.GetCharacterValueOfClosingContainerToken(latestContainerSymbol);
 
-                throw new FormatException($"Illegal character: expected '{ expectedToken }' character but encountered '{ currentToken }'");
+                throw new FormatException($"Illegal character: expected '{expectedToken}' character but encountered '{currentToken}'");
             }
         }
 
@@ -446,51 +760,52 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private void ReadNullType(bool trailingWhitespace)
         {
-            var kwt = trailingWhitespace ? TextConstants.KeywordNone : _scanner.PeekNullTypeSymbol();
+            var kwt = trailingWhitespace ? TextConstants.KeywordNone : this.scanner.PeekNullTypeSymbol();
             switch (kwt)
             {
                 case TextConstants.KeywordNull:
-                    _valueType = IonType.Null;
+                    this.valueType = IonType.Null;
                     break;
                 case TextConstants.KeywordBool:
-                    _valueType = IonType.Bool;
+                    this.valueType = IonType.Bool;
                     break;
                 case TextConstants.KeywordInt:
-                    _valueType = IonType.Int;
+                    this.valueType = IonType.Int;
                     break;
                 case TextConstants.KeywordFloat:
-                    _valueType = IonType.Float;
+                    this.valueType = IonType.Float;
                     break;
                 case TextConstants.KeywordDecimal:
-                    _valueType = IonType.Decimal;
+                    this.valueType = IonType.Decimal;
                     break;
                 case TextConstants.KeywordTimestamp:
-                    _valueType = IonType.Timestamp;
+                    this.valueType = IonType.Timestamp;
                     break;
                 case TextConstants.KeywordSymbol:
-                    _valueType = IonType.Symbol;
+                    this.valueType = IonType.Symbol;
                     break;
                 case TextConstants.KeywordString:
-                    _valueType = IonType.String;
+                    this.valueType = IonType.String;
                     break;
                 case TextConstants.KeywordBlob:
-                    _valueType = IonType.Blob;
+                    this.valueType = IonType.Blob;
                     break;
                 case TextConstants.KeywordClob:
-                    _valueType = IonType.Clob;
+                    this.valueType = IonType.Clob;
                     break;
                 case TextConstants.KeywordList:
-                    _valueType = IonType.List;
+                    this.valueType = IonType.List;
                     break;
                 case TextConstants.KeywordSexp:
-                    _valueType = IonType.Sexp;
+                    this.valueType = IonType.Sexp;
                     break;
                 case TextConstants.KeywordStruct:
-                    _valueType = IonType.Struct;
+                    this.valueType = IonType.Struct;
                     break;
                 case TextConstants.KeywordNone:
-                    _valueType = IonType.Null;
+                    this.valueType = IonType.Null;
                     break; // this happens when there isn't a '.' otherwise peek
+
                 // throws the error or returns none
                 default:
                     throw new IonException($"invalid keyword id ({kwt}) encountered while parsing a null");
@@ -499,20 +814,22 @@ namespace Amazon.IonDotnet.Internals.Text
             // at this point we've consumed a dot '.' and it's preceding
             // whitespace
             // clear_value();
-            _v.SetNull(_valueType);
+            this.valueVariant.SetNull(this.valueType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetFieldName(in SymbolToken symtok)
         {
-            _fieldName = symtok.Text;
-            _fieldNameSid = symtok.Sid;
+            this.fieldName = symtok.Text;
+            this.fieldNameSid = symtok.Sid;
         }
 
         private SymbolToken ParseSymbolToken(StringBuilder sb, int token)
         {
             if (token != TextConstants.TokenSymbolIdentifier)
+            {
                 return new SymbolToken(sb.ToString(), SymbolToken.UnknownSid);
+            }
 
             var kw = TextConstants.GetKeyword(sb, 0, sb.Length);
             string text;
@@ -527,11 +844,11 @@ namespace Amazon.IonDotnet.Internals.Text
                     throw new IonException($"Cannot use unquoted keyword {sb}");
                 case TextConstants.KeywordSid:
                     sid = TextConstants.DecodeSid(sb);
-                    text = GetSymbolTable().FindKnownSymbol(sid);
+                    text = this.GetSymbolTable().FindKnownSymbol(sid);
                     break;
                 default:
                     text = sb.ToString();
-                    sid = GetSymbolTable().FindSymbolId(text);
+                    sid = this.GetSymbolTable().FindSymbolId(text);
                     break;
             }
 
@@ -539,358 +856,71 @@ namespace Amazon.IonDotnet.Internals.Text
             {
                 return new SymbolToken(text, sid);
             }
-            return new SymbolToken(text, sid, new ImportLocation(GetSymbolTable().Name, sid));
+
+            return new SymbolToken(text, sid, new ImportLocation(this.GetSymbolTable().Name, sid));
         }
 
         private void FinishValue()
         {
-            if (_scanner.UnfinishedToken)
+            if (this.scanner.UnfinishedToken)
             {
-                _scanner.FinishToken();
-                _state = GetStateAfterValue(_containerStack.Peek());
+                this.scanner.FinishToken();
+                this.state = GetStateAfterValue(this.containerStack.Peek());
             }
 
-            _hasNextCalled = false;
+            this.hasNextCalled = false;
         }
-
-        public IonType MoveNext()
-        {
-            if (!HasNext())
-                return IonType.None;
-
-            if (_valueType == IonType.None && _scanner.UnfinishedToken)
-            {
-                LoadTokenContents(_scanner.Token);
-            }
-
-            _hasNextCalled = false;
-            return _valueType;
-        }
-
-        protected IonType GetContainerType() => _containerStack.Peek();
-
-        protected void LoadTokenContents(int scannerToken)
-        {
-            if (_tokenContentLoaded)
-                return;
-
-            int c;
-            bool clobCharsOnly;
-            switch (scannerToken)
-            {
-                default:
-                    throw new InvalidTokenException(scannerToken);
-                case TextConstants.TokenUnknownNumeric:
-                case TextConstants.TokenInt:
-                case TextConstants.TokenBinary:
-                case TextConstants.TokenHex:
-                case TextConstants.TokenFloat:
-                case TextConstants.TokenDecimal:
-                case TextConstants.TokenTimestamp:
-                    _valueType = _scanner.LoadNumber(_valueBuffer);
-                    break;
-                case TextConstants.TokenSymbolIdentifier:
-                    _scanner.LoadSymbolIdentifier(_valueBuffer);
-                    _valueType = IonType.Symbol;
-                    break;
-                case TextConstants.TokenSymbolOperator:
-                    _scanner.LoadSymbolOperator(_valueBuffer);
-                    _valueType = IonType.Symbol;
-                    break;
-                case TextConstants.TokenSymbolQuoted:
-                    clobCharsOnly = IonType.Clob == _valueType;
-                    c = _scanner.LoadSingleQuotedString(_valueBuffer, clobCharsOnly);
-                    if (c == TextConstants.TokenEof)
-                        throw new UnexpectedEofException();
-
-                    _valueType = IonType.Symbol;
-                    break;
-                case TextConstants.TokenStringDoubleQuote:
-                    clobCharsOnly = IonType.Clob == _valueType;
-                    c = _scanner.LoadDoubleQuotedString(_valueBuffer, clobCharsOnly);
-                    if (c == TextConstants.TokenEof)
-                        throw new UnexpectedEofException();
-
-                    _valueType = IonType.String;
-                    break;
-                case TextConstants.TokenStringTripleQuote:
-                    clobCharsOnly = IonType.Clob == _valueType;
-                    c = _scanner.LoadTripleQuotedString(_valueBuffer, clobCharsOnly);
-                    if (c == TextConstants.TokenEof)
-                        throw new UnexpectedEofException();
-
-                    _valueType = IonType.String;
-                    break;
-            }
-
-            _tokenContentLoaded = true;
-        }
-
-        public void StepIn()
-        {
-            if (!_valueType.IsContainer())
-                throw new InvalidOperationException($"Current value type {_valueType} is not a container");
-
-            _state = GetStateAtContainerStart(_valueType);
-            _containerStack.PushContainer(_valueType);
-            _scanner.MarkTokenFinished();
-
-            FinishValue();
-            if (_v.TypeSet.HasFlag(ScalarType.Null))
-            {
-                _eof = true;
-                _hasNextCalled = true;
-            }
-
-            _valueType = IonType.None;
-        }
-
-        public void StepOut()
-        {
-            if (CurrentDepth < 1)
-                throw new InvalidOperationException("Already at outer most");
-
-            FinishValue();
-            switch (_containerStack.Peek())
-            {
-                default:
-                    throw new IonException("Invalid state");
-                case IonType.Datagram:
-                    break;
-                case IonType.List:
-                    if (!_eof)
-                    {
-                        _scanner.SkipOverList();
-                    }
-
-                    break;
-                case IonType.Struct:
-                    if (!_eof)
-                    {
-                        _scanner.SkipOverStruct();
-                    }
-
-                    break;
-                case IonType.Sexp:
-                    if (!_eof)
-                    {
-                        _scanner.SkipOverSexp();
-                    }
-
-                    break;
-            }
-
-            _containerStack.Pop();
-            FinishValue();
-            ClearValue();
-        }
-
-        public int CurrentDepth
-        {
-            get
-            {
-                var top = _containerStack.Count;
-
-                if (top == 0)
-                    //not sure why this would ever happen
-                    return 0;
-
-                //subtract 1 because level '0' is the datagram
-                Debug.Assert(_containerStack.First() == IonType.Datagram);
-                return top - 1;
-                //TODO handle nested parent
-            }
-        }
-
-        public abstract ISymbolTable GetSymbolTable();
-
-        public IonType CurrentType => _valueType;
-
-        public abstract IntegerSize GetIntegerSize();
-
-        public abstract string CurrentFieldName { get; }
-
-        public abstract SymbolToken GetFieldNameSymbol();
-
-        public abstract bool CurrentIsNull { get; }
-        public bool IsInStruct => _containerStack.Count > 0 && _containerStack.Peek() == IonType.Struct;
-
-        public abstract bool BoolValue();
-
-        public abstract int IntValue();
-
-        public abstract long LongValue();
-
-        public abstract BigInteger BigIntegerValue();
-
-        public abstract double DoubleValue();
-
-        public abstract BigDecimal DecimalValue();
-
-        public abstract Timestamp TimestampValue();
-
-        public abstract string StringValue();
-
-        public abstract SymbolToken SymbolValue();
-
-        public abstract int GetLobByteSize();
-
-        public abstract byte[] NewByteArray();
-
-        public abstract int GetBytes(Span<byte> buffer);
-
-        private static int GetStateAtContainerStart(IonType container)
-        {
-            if (container == IonType.None)
-                return StateBeforeAnnotationDatagram;
-
-            Debug.Assert(container.IsContainer());
-
-            switch (container)
-            {
-                default:
-                    //should not happen
-                    throw new IonException($"{container} is no container");
-                case IonType.Struct:
-                    return StateBeforeFieldName;
-                case IonType.List:
-                    return StateBeforeAnnotationContained;
-                case IonType.Sexp:
-                    return StateBeforeAnnotationSexp;
-                case IonType.Datagram:
-                    return StateBeforeAnnotationDatagram;
-            }
-        }
-
-        private static int GetStateAfterAnnotation(int stateBeforeAnnotation, IonType container)
-        {
-            switch (stateBeforeAnnotation)
-            {
-                default:
-                    throw new IonException($"Invalid state before annotation {stateBeforeAnnotation}");
-                case StateAfterValueContents:
-                    switch (container)
-                    {
-                        default:
-                            throw new IonException($"{container} is no container");
-                        case IonType.Struct:
-                        case IonType.List:
-                        case IonType.Datagram:
-                            return StateBeforeValueContent;
-                        case IonType.Sexp:
-                            return StateBeforeValueContentSexp;
-                    }
-                case StateBeforeAnnotationDatagram:
-                case StateBeforeAnnotationContained:
-                    return StateBeforeValueContent;
-                case StateBeforeAnnotationSexp:
-                    return StateBeforeValueContentSexp;
-            }
-        }
-
-        private static int GetStateAfterValue(IonType currentContainerType)
-        {
-            //TODO handle nested parent
-            //            if (_nesting_parent != null && getDepth() == 0) {
-            //                state_after_scalar = STATE_EOF;
-            //            }
-
-            switch (currentContainerType)
-            {
-                default:
-                    throw new IonException($"{currentContainerType} is no container");
-                case IonType.List:
-                case IonType.Struct:
-                    return StateAfterValueContents;
-                case IonType.Sexp:
-                    return StateBeforeAnnotationSexp;
-                case IonType.Datagram:
-                    return StateBeforeAnnotationDatagram;
-            }
-        }
-
-        private static int GetStateAfterContainer(IonType newContainer)
-        {
-            if (newContainer == IonType.None)
-                return StateBeforeAnnotationDatagram;
-            Debug.Assert(newContainer.IsContainer());
-
-            //TODO handle the case for nesting parent that returns eof when its scope ends
-            //            if (_nestingparent != None && CurrentDepth == 0) {
-            //                new_state = STATE_EOF;
-            //            }
-
-            switch (newContainer)
-            {
-                default:
-                    //should not happen
-                    throw new IonException($"{newContainer} is no container");
-                case IonType.Struct:
-                case IonType.List:
-                    return StateAfterValueContents;
-                case IonType.Sexp:
-                    return StateBeforeAnnotationSexp;
-                case IonType.Datagram:
-                    return StateBeforeAnnotationDatagram;
-            }
-        }
-
-        /// <summary>
-        /// Dispose RawTextReader.
-        /// </summary>
-        public virtual void Dispose()
-        {
-            return;
-        }
-
-        public abstract string[] GetTypeAnnotations();
-        public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
-        public abstract bool HasAnnotation(string annotation);
 
         private class ContainerStack
         {
-            private readonly RawTextReader _rawTextReader;
-            private IonType[] _array;
+            private readonly RawTextReader rawTextReader;
+            private IonType[] array;
 
             public ContainerStack(RawTextReader rawTextReader, int initialCapacity)
             {
-                Debug.Assert(initialCapacity > 0);
-                _rawTextReader = rawTextReader;
-                _array = new IonType[initialCapacity];
+                Debug.Assert(initialCapacity > 0, "initialCapacity is not greater than 0");
+                this.rawTextReader = rawTextReader;
+                this.array = new IonType[initialCapacity];
             }
+
+            public int Count { get; private set; }
 
             public void PushContainer(IonType containerType)
             {
-                EnsureCapacity(Count);
-                _array[Count] = containerType;
-                SetContainerFlags(containerType);
+                this.EnsureCapacity(this.Count);
+                this.array[this.Count] = containerType;
+                this.SetContainerFlags(containerType);
 
-                Count++;
+                this.Count++;
             }
 
             public IonType Peek()
             {
-                if (Count == 0)
+                if (this.Count == 0)
+                {
                     throw new IndexOutOfRangeException();
-                return _array[Count - 1];
+                }
+
+                return this.array[this.Count - 1];
             }
 
             public void Pop()
             {
-                if (Count == 0)
+                if (this.Count == 0)
+                {
                     throw new IndexOutOfRangeException();
-                Count--;
+                }
 
-                _rawTextReader._eof = false;
-                _rawTextReader._hasNextCalled = false;
-                var topState = _array[Count - 1];
-                SetContainerFlags(topState);
-                _rawTextReader._state = GetStateAfterContainer(topState);
+                this.Count--;
+
+                this.rawTextReader.eof = false;
+                this.rawTextReader.hasNextCalled = false;
+                var topState = this.array[this.Count - 1];
+                this.SetContainerFlags(topState);
+                this.rawTextReader.state = GetStateAfterContainer(topState);
             }
 
-            public IonType First() => _array[0];
-
-            public int Count { get; private set; }
+            public IonType First() => this.array[0];
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void SetContainerFlags(IonType type)
@@ -900,20 +930,20 @@ namespace Amazon.IonDotnet.Internals.Text
                     default:
                         throw new IonException($"{type} is no container");
                     case IonType.Struct:
-                        _rawTextReader._containerIsStruct = true;
-                        _rawTextReader._containerProhibitsCommas = false;
+                        this.rawTextReader.containerIsStruct = true;
+                        this.rawTextReader.containerProhibitsCommas = false;
                         return;
                     case IonType.List:
-                        _rawTextReader._containerIsStruct = false;
-                        _rawTextReader._containerProhibitsCommas = false;
+                        this.rawTextReader.containerIsStruct = false;
+                        this.rawTextReader.containerProhibitsCommas = false;
                         return;
                     case IonType.Datagram:
-                        _rawTextReader._containerIsStruct = false;
-                        _rawTextReader._containerProhibitsCommas = true;
+                        this.rawTextReader.containerIsStruct = false;
+                        this.rawTextReader.containerProhibitsCommas = true;
                         return;
                     case IonType.Sexp:
-                        _rawTextReader._containerIsStruct = false;
-                        _rawTextReader._containerProhibitsCommas = false;
+                        this.rawTextReader.containerIsStruct = false;
+                        this.rawTextReader.containerProhibitsCommas = false;
                         return;
                 }
             }
@@ -921,9 +951,13 @@ namespace Amazon.IonDotnet.Internals.Text
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void EnsureCapacity(int forIndex)
             {
-                if (forIndex < _array.Length) return;
-                //resize
-                Array.Resize(ref _array, _array.Length * 2);
+                if (forIndex < this.array.Length)
+                {
+                    return;
+                }
+
+                // resize
+                Array.Resize(ref this.array, this.array.Length * 2);
             }
         }
     }

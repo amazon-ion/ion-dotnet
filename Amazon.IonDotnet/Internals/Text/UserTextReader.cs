@@ -65,25 +65,25 @@ namespace Amazon.IonDotnet.Internals.Text
 
         protected override bool HasNext()
         {
-            while (!_hasNextCalled)
+            while (!hasNextCalled)
             {
                 base.HasNext();
 
-                if (_valueType != IonType.None && !CurrentIsNull && GetContainerType() == IonType.Datagram)
+                if (valueType != IonType.None && !CurrentIsNull && GetContainerType() == IonType.Datagram)
                 {
-                    switch (_valueType)
+                    switch (valueType)
                     {
                         case IonType.Struct:
-                            if (_annotations.Count > 0 && _annotations[0].Text == SystemSymbols.IonSymbolTable)
+                            if (annotations.Count > 0 && annotations[0].Text == SystemSymbols.IonSymbolTable)
                             {
                                 _currentSymtab = ReaderLocalTable.ImportReaderTable(this, _catalog, true);
-                                _hasNextCalled = false;
+                                hasNextCalled = false;
                             }
 
                             break;
                         case IonType.Symbol:
                             // $ion_1_0 is read as an IVM only if it is not annotated.
-                            if (_annotations.Count == 0)
+                            if (annotations.Count == 0)
                             {
                                 var version = SymbolValue().Text;
                                 if (version is null || !IvmRegex.IsMatch(version))
@@ -102,13 +102,13 @@ namespace Amazon.IonDotnet.Internals.Text
 
                                 // From specs: only unquoted $ion_1_0 text can be interpreted as IVM semantics and 
                                 // cause the symbol tables to be reset.
-                                if (_v.AuthoritativeType == ScalarType.String && _scanner.Token != TextConstants.TokenSymbolQuoted)
+                                if (valueVariant.AuthoritativeType == ScalarType.String && scanner.Token != TextConstants.TokenSymbolQuoted)
                                 {
                                     _currentSymtab = systemSymbols;
                                 }
 
                                 // Even if that's not the case we still skip the IVM.
-                                _hasNextCalled = false;
+                                hasNextCalled = false;
                             }
 
                             break;
@@ -118,7 +118,7 @@ namespace Amazon.IonDotnet.Internals.Text
                 }
             }
 
-            return !_eof;
+            return !eof;
         }
 
         public override ISymbolTable GetSymbolTable()
