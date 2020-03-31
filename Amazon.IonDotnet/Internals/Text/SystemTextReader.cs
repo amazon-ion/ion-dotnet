@@ -32,18 +32,18 @@ namespace Amazon.IonDotnet.Internals.Text
             this.systemSymbols = SharedSymbolTable.GetSystem(1);
         }
 
-        public override bool CurrentIsNull => this._v.TypeSet.HasFlag(ScalarType.Null);
+        public override bool CurrentIsNull => this.valueVariant.TypeSet.HasFlag(ScalarType.Null);
 
         public override string CurrentFieldName
         {
             get
             {
-                var text = this._fieldName;
-                if (text == null && this._fieldNameSid != SymbolToken.UnknownSid)
+                var text = this.fieldName;
+                if (text == null && this.fieldNameSid != SymbolToken.UnknownSid)
                 {
-                    if (this._fieldNameSid != 0 && (text = this.GetSymbolTable().FindKnownSymbol(this._fieldNameSid)) == null)
+                    if (this.fieldNameSid != 0 && (text = this.GetSymbolTable().FindKnownSymbol(this.fieldNameSid)) == null)
                     {
-                        throw new UnknownSymbolException(this._fieldNameSid);
+                        throw new UnknownSymbolException(this.fieldNameSid);
                     }
                 }
 
@@ -53,17 +53,17 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override SymbolToken GetFieldNameSymbol()
         {
-            if (this._fieldName is null)
+            if (this.fieldName is null)
             {
-                if (this._fieldNameSid < 0 || this._fieldNameSid > this.GetSymbolTable().MaxId)
+                if (this.fieldNameSid < 0 || this.fieldNameSid > this.GetSymbolTable().MaxId)
                 {
-                    throw new UnknownSymbolException(this._fieldNameSid);
+                    throw new UnknownSymbolException(this.fieldNameSid);
                 }
 
-                this._fieldName = this.GetSymbolTable().FindKnownSymbol(this._fieldNameSid);
+                this.fieldName = this.GetSymbolTable().FindKnownSymbol(this.fieldNameSid);
             }
 
-            return new SymbolToken(this._fieldName, this._fieldNameSid);
+            return new SymbolToken(this.fieldName, this.fieldNameSid);
         }
 
         public override ISymbolTable GetSymbolTable() => this.systemSymbols;
@@ -71,12 +71,12 @@ namespace Amazon.IonDotnet.Internals.Text
         public override IntegerSize GetIntegerSize()
         {
             this.LoadOnce();
-            if (this._valueType != IonType.Int || this._v.TypeSet.HasFlag(ScalarType.Null))
+            if (this.valueType != IonType.Int || this.valueVariant.TypeSet.HasFlag(ScalarType.Null))
             {
                 return IntegerSize.Unknown;
             }
 
-            return this._v.IntegerSize;
+            return this.valueVariant.IntegerSize;
         }
 
         public override bool BoolValue()
@@ -87,7 +87,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.BoolValue;
+            return this.valueVariant.BoolValue;
         }
 
         public override int IntValue()
@@ -98,7 +98,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.IntValue;
+            return this.valueVariant.IntValue;
         }
 
         public override long LongValue()
@@ -109,7 +109,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.LongValue;
+            return this.valueVariant.LongValue;
         }
 
         public override BigInteger BigIntegerValue()
@@ -120,7 +120,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.BigIntegerValue;
+            return this.valueVariant.BigIntegerValue;
         }
 
         public override double DoubleValue()
@@ -131,7 +131,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.DoubleValue;
+            return this.valueVariant.DoubleValue;
         }
 
         public override BigDecimal DecimalValue()
@@ -142,7 +142,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.DecimalValue;
+            return this.valueVariant.DecimalValue;
         }
 
         public override Timestamp TimestampValue()
@@ -153,99 +153,99 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             this.PrepareValue();
-            return this._v.TimestampValue;
+            return this.valueVariant.TimestampValue;
         }
 
         public override string StringValue()
         {
-            if (!this._valueType.IsText())
+            if (!this.valueType.IsText())
             {
-                throw new InvalidOperationException($"Value type {this._valueType} is not text");
+                throw new InvalidOperationException($"Value type {this.valueType} is not text");
             }
 
             this.PrepareValue();
-            return this._v.StringValue;
+            return this.valueVariant.StringValue;
         }
 
         public override SymbolToken SymbolValue()
         {
-            if (this._valueType != IonType.Symbol)
+            if (this.valueType != IonType.Symbol)
             {
-                throw new InvalidOperationException($"Current value is of type {this._valueType}");
+                throw new InvalidOperationException($"Current value is of type {this.valueType}");
             }
 
             this.PrepareValue();
-            if (this._v.TypeSet.HasFlag(ScalarType.Int) && !this._v.TypeSet.HasFlag(ScalarType.String))
+            if (this.valueVariant.TypeSet.HasFlag(ScalarType.Int) && !this.valueVariant.TypeSet.HasFlag(ScalarType.String))
             {
                 // lookup symbol string from sid
-                var text = this.GetSymbolTable().FindKnownSymbol(this._v.IntValue);
-                if (text == null && (this._v.IntValue > this.GetSymbolTable().MaxId || this._v.IntValue < 0))
+                var text = this.GetSymbolTable().FindKnownSymbol(this.valueVariant.IntValue);
+                if (text == null && (this.valueVariant.IntValue > this.GetSymbolTable().MaxId || this.valueVariant.IntValue < 0))
                 {
-                    throw new UnknownSymbolException(this._v.IntValue);
+                    throw new UnknownSymbolException(this.valueVariant.IntValue);
                 }
 
-                this._v.AddString(text);
+                this.valueVariant.AddString(text);
             }
-            else if (this._v.StringValue != null && !this._v.TypeSet.HasFlag(ScalarType.Int))
+            else if (this.valueVariant.StringValue != null && !this.valueVariant.TypeSet.HasFlag(ScalarType.Int))
             {
-                this._v.AddInt(this.GetSymbolTable().FindSymbolId(this._v.StringValue));
+                this.valueVariant.AddInt(this.GetSymbolTable().FindSymbolId(this.valueVariant.StringValue));
             }
 
-            return new SymbolToken(this._v.StringValue, this._v.IntValue);
+            return new SymbolToken(this.valueVariant.StringValue, this.valueVariant.IntValue);
         }
 
         public override int GetBytes(Span<byte> buffer)
         {
-            if (!this._valueType.IsLob())
+            if (!this.valueType.IsLob())
             {
-                throw new InvalidOperationException($"Value type {this._valueType} is not a lob");
+                throw new InvalidOperationException($"Value type {this.valueType} is not a lob");
             }
 
             this.LoadLobContent();
-            if (this._lobValuePosition == this._lobBuffer.Length)
+            if (this.lobValuePosition == this.lobBuffer.Length)
             {
                 return 0;
             }
 
-            Span<byte> span = this._lobBuffer;
-            var remaining = this._lobBuffer.Length - this._lobValuePosition;
+            Span<byte> span = this.lobBuffer;
+            var remaining = this.lobBuffer.Length - this.lobValuePosition;
             var bytes = remaining > buffer.Length ? buffer.Length : remaining;
 
-            span.Slice(this._lobValuePosition, bytes).CopyTo(buffer);
-            this._lobValuePosition += bytes;
+            span.Slice(this.lobValuePosition, bytes).CopyTo(buffer);
+            this.lobValuePosition += bytes;
             return bytes;
         }
 
         public override byte[] NewByteArray()
         {
-            if (!this._valueType.IsLob())
+            if (!this.valueType.IsLob())
             {
-                throw new InvalidOperationException($"Value type {this._valueType} is not a lob");
+                throw new InvalidOperationException($"Value type {this.valueType} is not a lob");
             }
 
             this.LoadLobContent();
-            var newArray = new byte[this._lobBuffer.Length];
-            Buffer.BlockCopy(this._lobBuffer, 0, newArray, 0, newArray.Length);
+            var newArray = new byte[this.lobBuffer.Length];
+            Buffer.BlockCopy(this.lobBuffer, 0, newArray, 0, newArray.Length);
             return newArray;
         }
 
         public override int GetLobByteSize()
         {
-            if (!this._valueType.IsLob())
+            if (!this.valueType.IsLob())
             {
-                throw new InvalidOperationException($"Value type {this._valueType} is not a lob");
+                throw new InvalidOperationException($"Value type {this.valueType} is not a lob");
             }
 
             this.LoadLobContent();
-            return this._lobBuffer.Length;
+            return this.lobBuffer.Length;
         }
 
         public override string[] GetTypeAnnotations()
         {
-            string[] annotations = new string[this._annotations.Count];
-            for (int index = 0; index < this._annotations.Count; index++)
+            string[] annotations = new string[this.annotations.Count];
+            for (int index = 0; index < this.annotations.Count; index++)
             {
-                SymbolToken symbolToken = this._annotations[index];
+                SymbolToken symbolToken = this.annotations[index];
                 if (symbolToken.Text is null)
                 {
                     if (symbolToken.ImportLocation == default)
@@ -276,12 +276,12 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override IEnumerable<SymbolToken> GetTypeAnnotationSymbols()
         {
-            if (this._annotations == null)
+            if (this.annotations == null)
             {
                 yield break;
             }
 
-            foreach (var a in this._annotations)
+            foreach (var a in this.annotations)
             {
                 if (a.Text is null && a.ImportLocation != default)
                 {
@@ -309,7 +309,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             int? annotationId = null;
-            foreach (SymbolToken symbolToken in this._annotations)
+            foreach (SymbolToken symbolToken in this.annotations)
             {
                 if (symbolToken.Text == null)
                 {
@@ -336,7 +336,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private void LoadOnce()
         {
-            if (!this._v.IsEmpty)
+            if (!this.valueVariant.IsEmpty)
             {
                 return;
             }
@@ -346,57 +346,57 @@ namespace Amazon.IonDotnet.Internals.Text
 
         private void LoadScalarValue()
         {
-            if (!this._valueType.IsScalar())
+            if (!this.valueType.IsScalar())
             {
                 return;
             }
 
-            this.LoadTokenContents(this._scanner.Token);
+            this.LoadTokenContents(this.scanner.Token);
             var negative = false;
-            if (this._scanner.Token == TextConstants.TokenHex)
+            if (this.scanner.Token == TextConstants.TokenHex)
             {
-                negative = this._valueBuffer[0] == '-';
-                Debug.Assert(this._valueBuffer[negative ? 1 : 0] == '0', "valueBuffer initial value is not 0");
-                Debug.Assert(char.ToLower(this._valueBuffer[negative ? 2 : 1]) == 'x', "valueBuffer second value is not x");
+                negative = this.valueBuffer[0] == '-';
+                Debug.Assert(this.valueBuffer[negative ? 1 : 0] == '0', "valueBuffer initial value is not 0");
+                Debug.Assert(char.ToLower(this.valueBuffer[negative ? 2 : 1]) == 'x', "valueBuffer second value is not x");
 
                 // we need to delete 0x but we also want '0' at the beginning of the hex string
                 // so that the .net parsing will work correctly, so we only delete 'x' here (and the leading '+'/'-' if any)
                 const int delStart = 1;
-                if (this._valueBuffer[0] == '0')
+                if (this.valueBuffer[0] == '0')
                 {
                     // no leading sign
-                    this._valueBuffer.Remove(delStart, 1);
+                    this.valueBuffer.Remove(delStart, 1);
                 }
                 else
                 {
                     // leading sign
-                    this._valueBuffer[0] = '0';
-                    this._valueBuffer.Remove(delStart, 2);
+                    this.valueBuffer[0] = '0';
+                    this.valueBuffer.Remove(delStart, 2);
                 }
             }
-            else if (this._scanner.Token == TextConstants.TokenBinary)
+            else if (this.scanner.Token == TextConstants.TokenBinary)
             {
-                negative = this._valueBuffer[0] == '-';
-                Debug.Assert(this._valueBuffer[negative ? 1 : 0] == '0', "valueBuffer initial value is not 0");
-                Debug.Assert(char.ToLower(this._valueBuffer[negative ? 2 : 1]) == 'b', "valueBuffer second value is not b");
+                negative = this.valueBuffer[0] == '-';
+                Debug.Assert(this.valueBuffer[negative ? 1 : 0] == '0', "valueBuffer initial value is not 0");
+                Debug.Assert(char.ToLower(this.valueBuffer[negative ? 2 : 1]) == 'b', "valueBuffer second value is not b");
 
                 // delete '0b'
-                this._valueBuffer.Remove(0, this._valueBuffer[0] != '0' ? 3 : 2);
+                this.valueBuffer.Remove(0, this.valueBuffer[0] != '0' ? 3 : 2);
             }
 
-            var s = this._valueBuffer.ToString();
-            this._v.AddString(s);
+            var s = this.valueBuffer.ToString();
+            this.valueVariant.AddString(s);
             this.ClearValueBuffer();
 
-            switch (this._scanner.Token)
+            switch (this.scanner.Token)
             {
                 default:
-                    throw new IonException($"Unrecognized token {this._scanner.Token}");
+                    throw new IonException($"Unrecognized token {this.scanner.Token}");
                 case TextConstants.TokenUnknownNumeric:
-                    switch (this._valueType)
+                    switch (this.valueType)
                     {
                         default:
-                            throw new IonException($"Expected value type to be numeric, but is {this._valueType}");
+                            throw new IonException($"Expected value type to be numeric, but is {this.valueType}");
                         case IonType.Int:
                             this.SetInteger(Radix.Decimal, s, negative);
                             break;
@@ -407,7 +407,7 @@ namespace Amazon.IonDotnet.Internals.Text
                             this.SetFloat(s);
                             break;
                         case IonType.Timestamp:
-                            this._v.TimestampValue = Timestamp.Parse(s);
+                            this.valueVariant.TimestampValue = Timestamp.Parse(s);
                             break;
                     }
 
@@ -428,39 +428,39 @@ namespace Amazon.IonDotnet.Internals.Text
                     this.SetFloat(s);
                     break;
                 case TextConstants.TokenTimestamp:
-                    this._v.TimestampValue = Timestamp.Parse(s);
+                    this.valueVariant.TimestampValue = Timestamp.Parse(s);
                     break;
                 case TextConstants.TokenSymbolIdentifier:
                     if (this.CurrentIsNull)
                     {
-                        this._v.SetNull(this._valueType);
+                        this.valueVariant.SetNull(this.valueType);
                         break;
                     }
 
-                    switch (this._valueType)
+                    switch (this.valueType)
                     {
                         default:
-                            throw new IonException($"Unexpected type {this._valueType}");
+                            throw new IonException($"Unexpected type {this.valueType}");
                         case IonType.Symbol:
-                            this._v.StringValue = s;
-                            this._v.AuthoritativeType = ScalarType.String;
+                            this.valueVariant.StringValue = s;
+                            this.valueVariant.AuthoritativeType = ScalarType.String;
                             break;
                         case IonType.Float:
-                            if (this._valueKeyword != TextConstants.KeywordNan)
+                            if (this.valueKeyword != TextConstants.KeywordNan)
                             {
                                 throw new IonException($"Unexpected keyword {s} as float");
                             }
 
-                            this._v.DoubleValue = double.NaN;
+                            this.valueVariant.DoubleValue = double.NaN;
                             break;
                         case IonType.Bool:
-                            if (this._valueKeyword == TextConstants.KeywordTrue)
+                            if (this.valueKeyword == TextConstants.KeywordTrue)
                             {
-                                this._v.BoolValue = true;
+                                this.valueVariant.BoolValue = true;
                             }
-                            else if (this._valueKeyword == TextConstants.KeywordFalse)
+                            else if (this.valueKeyword == TextConstants.KeywordFalse)
                             {
-                                this._v.BoolValue = false;
+                                this.valueVariant.BoolValue = false;
                             }
                             else
                             {
@@ -474,12 +474,12 @@ namespace Amazon.IonDotnet.Internals.Text
                 case TextConstants.TokenSymbolQuoted:
                 case TextConstants.TokenSymbolOperator:
                 case TextConstants.TokenStringDoubleQuote:
-                    this._v.StringValue = s;
+                    this.valueVariant.StringValue = s;
                     break;
                 case TextConstants.TokenStringTripleQuote:
                     // long strings (triple quoted strings) are never finished by the raw parser.
                     // At most it reads the first triple quoted string.
-                    this._v.StringValue = s;
+                    this.valueVariant.StringValue = s;
                     break;
             }
         }
@@ -510,13 +510,13 @@ namespace Amazon.IonDotnet.Internals.Text
             var decimalPlaces = dotIdx < 0 ? 0 : text.Length - dotIdx;
             if (decimalPlaces > 28)
             {
-                this._v.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
-                this._valueType = IonType.Float;
+                this.valueVariant.DoubleValue = double.Parse(text, CultureInfo.InvariantCulture);
+                this.valueType = IonType.Float;
             }
             else
             {
-                this._v.DecimalValue = BigDecimal.Parse(text);
-                this._valueType = IonType.Decimal;
+                this.valueVariant.DecimalValue = BigDecimal.Parse(text);
+                this.valueType = IonType.Decimal;
             }
         }
 
@@ -529,16 +529,16 @@ namespace Amazon.IonDotnet.Internals.Text
                 // check for negative zero
                 if (Math.Abs(parsed) < double.Epsilon * 100 && text[0] == '-')
                 {
-                    this._v.DoubleValue = -1.0f * 0;
+                    this.valueVariant.DoubleValue = -1.0f * 0;
                 }
                 else
                 {
-                    this._v.DoubleValue = parsed;
+                    this.valueVariant.DoubleValue = parsed;
                 }
             }
             catch (OverflowException)
             {
-                this._v.DoubleValue = text[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
+                this.valueVariant.DoubleValue = text[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
             }
         }
 
@@ -548,7 +548,7 @@ namespace Amazon.IonDotnet.Internals.Text
         /// <param name="text">Number text.</param>
         private void SetDecimal(string text)
         {
-            this._v.DecimalValue = BigDecimal.Parse(text);
+            this.valueVariant.DecimalValue = BigDecimal.Parse(text);
         }
 
         private void SetInteger(Radix radix, string s, bool negative)
@@ -557,20 +557,20 @@ namespace Amazon.IonDotnet.Internals.Text
 
             if (radix.IsInt(s.AsSpan()))
             {
-                this._v.IntValue = negative ? -Convert.ToInt32(s, intBase) : Convert.ToInt32(s, intBase);
+                this.valueVariant.IntValue = negative ? -Convert.ToInt32(s, intBase) : Convert.ToInt32(s, intBase);
                 return;
             }
 
             if (radix.IsLong(s.AsSpan()))
             {
-                this._v.LongValue = negative ? -Convert.ToInt64(s, intBase) : Convert.ToInt64(s, intBase);
+                this.valueVariant.LongValue = negative ? -Convert.ToInt64(s, intBase) : Convert.ToInt64(s, intBase);
                 return;
             }
 
             // bigint
             if (intBase == 10)
             {
-                this._v.BigIntegerValue = negative
+                this.valueVariant.BigIntegerValue = negative
                     ? -BigInteger.Parse(s, CultureInfo.InvariantCulture)
                     : BigInteger.Parse(s, CultureInfo.InvariantCulture);
                 return;
@@ -578,7 +578,7 @@ namespace Amazon.IonDotnet.Internals.Text
 
             if (intBase == 16)
             {
-                this._v.BigIntegerValue = negative
+                this.valueVariant.BigIntegerValue = negative
                     ? -BigInteger.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture)
                     : BigInteger.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                 return;
@@ -607,45 +607,45 @@ namespace Amazon.IonDotnet.Internals.Text
                 b += 1;
             }
 
-            this._v.BigIntegerValue = negative ? -b : b;
+            this.valueVariant.BigIntegerValue = negative ? -b : b;
         }
 
         private void LoadLobContent()
         {
-            Debug.Assert(this._valueType.IsLob(), "valueType is not Lob");
+            Debug.Assert(this.valueType.IsLob(), "valueType is not Lob");
 
             // check if we already loaded
-            if (this._lobBuffer != null)
+            if (this.lobBuffer != null)
             {
                 return;
             }
 
             this.ClearValueBuffer();
-            switch (this._lobToken)
+            switch (this.lobToken)
             {
                 default:
-                    throw new InvalidTokenException($"Invalid lob format for {this._valueType}");
+                    throw new InvalidTokenException($"Invalid lob format for {this.valueType}");
                 case TextConstants.TokenOpenDoubleBrace:
-                    this._scanner.LoadBlob(this._valueBuffer);
+                    this.scanner.LoadBlob(this.valueBuffer);
                     break;
                 case TextConstants.TokenStringDoubleQuote:
-                    this._scanner.LoadDoubleQuotedString(this._valueBuffer, true);
+                    this.scanner.LoadDoubleQuotedString(this.valueBuffer, true);
                     break;
                 case TextConstants.TokenStringTripleQuote:
-                    this._scanner.LoadTripleQuotedString(this._valueBuffer, true);
+                    this.scanner.LoadTripleQuotedString(this.valueBuffer, true);
                     break;
             }
 
-            if (this._valueType == IonType.Blob)
+            if (this.valueType == IonType.Blob)
             {
-                this._lobBuffer = Convert.FromBase64String(this._valueBuffer.ToString());
+                this.lobBuffer = Convert.FromBase64String(this.valueBuffer.ToString());
             }
             else
             {
-                Array.Resize(ref this._lobBuffer, this._valueBuffer.Length);
-                for (int i = 0, l = this._valueBuffer.Length; i < l; i++)
+                Array.Resize(ref this.lobBuffer, this.valueBuffer.Length);
+                for (int i = 0, l = this.valueBuffer.Length; i < l; i++)
                 {
-                    this._lobBuffer[i] = (byte)this._valueBuffer[i];
+                    this.lobBuffer[i] = (byte)this.valueBuffer[i];
                 }
             }
 
