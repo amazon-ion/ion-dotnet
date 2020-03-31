@@ -13,65 +13,20 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Runtime.CompilerServices;
-using System.Text;
-using Amazon.IonDotnet.Utils;
-
 namespace Amazon.IonDotnet.Internals.Text
 {
-    /// <summary>
-    /// Contains constants that refer to escaped character sequence, could be newline or escaped
-    /// </summary>
-    internal static class CharacterSequence
-    {
-        public const int CharSeqEof = -1; // matches -1 (stream eof)
-        public const int CharSeqStringTerminator = -2; // can't be >=0, ==-1 (eof), nor -2 (empty esc)
-        public const int CharSeqStringNonTerminator = -3; // used for a pair of triple quotes treated a nothing
-
-        /// <summary>
-        /// Single new line '\n'
-        /// </summary>
-        public const int CharSeqNewlineSequence1 = -4;
-
-        /// <summary>
-        ///  Single carriage return '\r'
-        /// </summary>
-        public const int CharSeqNewlineSequence2 = -5;
-
-        /// <summary>
-        /// New line - carriage return pair '\r\n'
-        /// </summary>
-        public const int CharSeqNewlineSequence3 = -6;
-
-        /// <summary>
-        /// Escape followed by new line
-        /// </summary>
-        public const int CharSeqEscapedNewlineSequence1 = -7;
-
-        /// <summary>
-        /// Escape followed by carriage return
-        /// </summary>
-        public const int CharSeqEscapedNewlineSequence2 = -8;
-
-        /// <summary>
-        /// Escape followed by new line - carriage return pair
-        /// </summary>
-        public const int CharSeqEscapedNewlineSequence3 = -9;
-    }
+    using System;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using Amazon.IonDotnet.Utils;
 
     /// <summary>
-    /// Text-related constants
+    /// Text-related constants.
     /// </summary>
     internal static class TextConstants
     {
-        #region Tokens
-
-        /**
-         * A bunch of tokens const, note that these are used for reference, not the
-         * actual ASCII values
-         */
-
+        // A bunch of tokens const
+        // Note that these are used for reference, not the actual ASCII values
         public const int TokenError = -1;
         public const int TokenEof = 0;
 
@@ -84,20 +39,14 @@ namespace Amazon.IonDotnet.Internals.Text
         public const int TokenFloatMinusInf = 7;
         public const int TokenTimestamp = 8;
 
-        /**
-         * Unquoted identifier symbol, including keywords like {@code true} and
-         * {@code nan} as well as SIDs like {@code $123}
-         */
+        // Unquoted identifier symbol, including keywords like {@code true} and
+        // {@code nan} as well as SIDs like { @code $123}
         public const int TokenSymbolIdentifier = 9;
 
-        /**
-         * Single-quoted symbol
-         */
+        // Single-quoted symbol
         public const int TokenSymbolQuoted = 10;
 
-        /**
-         * Unquoted operator sequence for sexp
-         */
+        // Unquoted operator sequence for sexp
         public const int TokenSymbolOperator = 11;
         public const int TokenStringDoubleQuote = 12;
         public const int TokenStringTripleQuote = 13;
@@ -115,17 +64,10 @@ namespace Amazon.IonDotnet.Internals.Text
         public const int TokenCloseDoubleBrace = 25;
         public const int TokenBinary = 26;
         public const int TokenMax = 26;
-
-        #endregion
-
         public const int EscapeNotDefined = -11;
         public const int EscapeHex = -16;
         public const int EscapeBigU = -15;
         public const int EscapeLittleU = -14;
-        private const int EscapeRemovesNewline2 = -13;
-        private const int EscapeRemovesNewline = -12;
-
-        #region Keywords
 
         public const int KeywordUnrecognized = -1;
         public const int KeywordNone = 0;
@@ -147,13 +89,10 @@ namespace Amazon.IonDotnet.Internals.Text
         public const int KeywordNan = 16;
         public const int KeywordSid = 17;
 
-        #endregion
+        public const int TnMaxNameLength = 10;
 
-        #region KeywordBits
-
-        public const int TnMaxNameLength = 10; //"TIMESTAMP".Length+ 1; // so anything too long will be 0
-
-        #endregion
+        private const int EscapeRemovesNewline2 = -13;
+        private const int EscapeRemovesNewline = -12;
 
         public static int GetEscapeReplacementCharacter(int c)
         {
@@ -162,39 +101,39 @@ namespace Amazon.IonDotnet.Internals.Text
                 default:
                     return EscapeNotDefined;
                 case '0':
-                    return 0; //    \u0000  \0  alert NUL
+                    return 0; // \u0000  \0  alert NUL
                 case 'a':
-                    return 7; //    \u0007  \a  alert BEL
+                    return 7; // \u0007  \a  alert BEL
                 case 'b':
-                    return 8; //    \u0008  \b  backspace BS
+                    return 8; // \u0008  \b  backspace BS
                 case 't':
-                    return 9; //    \u0009  \t  horizontal tab HT
+                    return 9; // \u0009  \t  horizontal tab HT
                 case 'n':
-                    return '\n'; //    \ u000A  \ n  linefeed LF
+                    return '\n'; // \u000A  \ n  linefeed LF
                 case 'f':
-                    return 0x0c; //    \u000C  \f  form feed FF
+                    return 0x0c; // \u000C  \f  form feed FF
                 case 'r':
-                    return '\r'; //    \ u000D  \ r  carriage return CR
+                    return '\r'; // \u000D  \ r  carriage return CR
                 case 'v':
-                    return 0x0b; //    \u000B  \v  vertical tab VT
+                    return 0x0b; // \u000B  \v  vertical tab VT
                 case '"':
-                    return '"'; //    \u0022  \"  double quote
+                    return '"'; // \u0022  \"  double quote
                 case '\'':
-                    return '\''; //    \u0027  \'  single quote
+                    return '\''; // \u0027  \'  single quote
                 case '?':
-                    return '?'; //    \u003F  \?  question mark
+                    return '?'; // \u003F  \?  question mark
                 case '\\':
-                    return '\\'; //    \u005C  \\  backslash
+                    return '\\'; // \u005C  \\  backslash
                 case '/':
-                    return '/'; //    \u002F  \/  forward slash nothing  \NL  escaped NL expands to nothing
+                    return '/'; // \u002F  \/  forward slash nothing  \NL  escaped NL expands to nothing
                 case '\n':
                     return EscapeRemovesNewline; // slash-new line the new line eater
                 case '\r':
                     return EscapeRemovesNewline2; // slash-new line the new line eater
                 case 'x':
-                    return EscapeHex; //      \xHH  2-digit hexadecimal unicode character equivalent to \ u00HH
+                    return EscapeHex; // \xHH  2-digit hexadecimal unicode character equivalent to \u00HH
                 case 'u':
-                    return EscapeLittleU; //    any  \ uHHHH  4-digit hexadecimal unicode character
+                    return EscapeLittleU; // any  \uHHHH  4-digit hexadecimal unicode character
                 case 'U':
                     return EscapeBigU;
             }
@@ -203,65 +142,101 @@ namespace Amazon.IonDotnet.Internals.Text
         public static bool IsValidTerminatingCharForInf(int c)
         {
             if (Characters.Is8BitChar(c))
+            {
                 return false;
+            }
 
             if (c >= 'a' && c <= 'z')
-                return false;
-            if (c >= 'A' && c <= 'Z')
-                return false;
-            if (c >= '0' && c <= '9')
-                return false;
-            if (c == '$' || c == '_')
-                return false;
-
-            return true;
-        }
-
-        // this can be faster but it's pretty unusual to be called.
-        public static int TypeNameKeyWordFromMask(Span<int> readAhead, int readCount)
-        {
-            if (CompareName(readAhead, readCount, "int"))
-                return KeywordInt;
-            if (CompareName(readAhead, readCount, "blob"))
-                return KeywordBlob;
-            if (CompareName(readAhead, readCount, "clob"))
-                return KeywordClob;
-            if (CompareName(readAhead, readCount, "bool"))
-                return KeywordBool;
-            if (CompareName(readAhead, readCount, "float"))
-                return KeywordFloat;
-            if (CompareName(readAhead, readCount, "decimal"))
-                return KeywordDecimal;
-            if (CompareName(readAhead, readCount, "timestamp"))
-                return KeywordTimestamp;
-            if (CompareName(readAhead, readCount, "string"))
-                return KeywordString;
-            if (CompareName(readAhead, readCount, "symbol"))
-                return KeywordSymbol;
-            if (CompareName(readAhead, readCount, "sexp"))
-                return KeywordSexp;
-            if (CompareName(readAhead, readCount, "list"))
-                return KeywordList;
-            if (CompareName(readAhead, readCount, "struct"))
-                return KeywordStruct;
-            if (CompareName(readAhead, readCount, "null"))
-                return KeywordNull;
-
-            return KeywordUnrecognized;
-        }
-
-        private static bool CompareName(Span<int> readAhead, int readCount, string name)
-        {
-            if (name.Length != readCount)
-                return false;
-
-            for (var i = 0; i < readCount; i++)
             {
-                if (name[i] != readAhead[i])
-                    return false;
+                return false;
+            }
+
+            if (c >= 'A' && c <= 'Z')
+            {
+                return false;
+            }
+
+            if (c >= '0' && c <= '9')
+            {
+                return false;
+            }
+
+            if (c == '$' || c == '_')
+            {
+                return false;
             }
 
             return true;
+        }
+
+        public static int TypeNameKeyWordFromMask(Span<int> readAhead, int readCount)
+        {
+            if (CompareName(readAhead, readCount, "int"))
+            {
+                return KeywordInt;
+            }
+
+            if (CompareName(readAhead, readCount, "blob"))
+            {
+                return KeywordBlob;
+            }
+
+            if (CompareName(readAhead, readCount, "clob"))
+            {
+                return KeywordClob;
+            }
+
+            if (CompareName(readAhead, readCount, "bool"))
+            {
+                return KeywordBool;
+            }
+
+            if (CompareName(readAhead, readCount, "float"))
+            {
+                return KeywordFloat;
+            }
+
+            if (CompareName(readAhead, readCount, "decimal"))
+            {
+                return KeywordDecimal;
+            }
+
+            if (CompareName(readAhead, readCount, "timestamp"))
+            {
+                return KeywordTimestamp;
+            }
+
+            if (CompareName(readAhead, readCount, "string"))
+            {
+                return KeywordString;
+            }
+
+            if (CompareName(readAhead, readCount, "symbol"))
+            {
+                return KeywordSymbol;
+            }
+
+            if (CompareName(readAhead, readCount, "sexp"))
+            {
+                return KeywordSexp;
+            }
+
+            if (CompareName(readAhead, readCount, "list"))
+            {
+                return KeywordList;
+            }
+
+            if (CompareName(readAhead, readCount, "struct"))
+            {
+                return KeywordStruct;
+            }
+
+            if (CompareName(readAhead, readCount, "null"))
+            {
+                return KeywordNull;
+            }
+
+            return KeywordUnrecognized;
         }
 
         public static bool IsValidEscapeStart(int c)
@@ -274,34 +249,50 @@ namespace Amazon.IonDotnet.Internals.Text
         public static int HexDigitValue(int h)
         {
             if (h >= '0' && h <= '9')
+            {
                 return h - '0';
+            }
 
             if (h >= 'a' && h <= 'f')
+            {
                 return h - 'a' + 10;
+            }
 
             if (h >= 'A' && h <= 'F')
+            {
                 return h - 'A' + 10;
+            }
 
-            throw new InvalidTokenException($"Invalid Hex value: { h }");
+            throw new InvalidTokenException($"Invalid Hex value: {h}");
         }
 
         public static bool IsValidSymbolCharacter(int c)
         {
             if (!Characters.Is8BitChar(c))
+            {
                 return false;
+            }
 
             c &= 0xff;
             if (c == '$' || c == '_')
+            {
                 return true;
+            }
 
             if (c >= 'a' && c <= 'z')
+            {
                 return true;
+            }
 
             if (c >= 'A' && c <= 'Z')
+            {
                 return true;
+            }
 
             if (c >= '0' && c <= '9')
+            {
                 return true;
+            }
 
             return false;
         }
@@ -309,7 +300,9 @@ namespace Amazon.IonDotnet.Internals.Text
         public static bool IsValidExtendedSymbolCharacter(int c)
         {
             if (!Characters.Is8BitChar(c))
+            {
                 return false;
+            }
 
             switch (c)
             {
@@ -404,7 +397,10 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         for (var i = startWord + 1; i < endWord; i++)
                         {
-                            if (!char.IsDigit(word[i])) return -1;
+                            if (!char.IsDigit(word[i]))
+                            {
+                                return -1;
+                            }
                         }
 
                         return KeywordSid;
@@ -416,16 +412,14 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         if (word[startWord + 1] == 'o'
                             && word[startWord + 2] == 'o'
-                            && word[startWord + 3] == 'l'
-                        )
+                            && word[startWord + 3] == 'l')
                         {
                             return KeywordBool;
                         }
 
                         if (word[startWord + 1] == 'l'
                             && word[startWord + 2] == 'o'
-                            && word[startWord + 3] == 'b'
-                        )
+                            && word[startWord + 3] == 'b')
                         {
                             return KeywordBlob;
                         }
@@ -437,8 +431,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         if (word[startWord + 1] == 'l'
                             && word[startWord + 2] == 'o'
-                            && word[startWord + 3] == 'b'
-                        )
+                            && word[startWord + 3] == 'b')
                         {
                             return KeywordClob;
                         }
@@ -453,8 +446,7 @@ namespace Amazon.IonDotnet.Internals.Text
                             && word[startWord + 3] == 'i'
                             && word[startWord + 4] == 'm'
                             && word[startWord + 5] == 'a'
-                            && word[startWord + 6] == 'l'
-                        )
+                            && word[startWord + 6] == 'l')
                         {
                             return KeywordDecimal;
                         }
@@ -540,8 +532,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     else if (len == 6)
                     {
                         if (word[startWord + 1] == 't'
-                            && word[startWord + 2] == 'r'
-                        )
+                            && word[startWord + 2] == 'r')
                         {
                             if (word[startWord + 3] == 'i'
                                 && word[startWord + 4] == 'n'
@@ -613,7 +604,10 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         for (var i = startWord + 1; i < endWord; i++)
                         {
-                            if (!char.IsDigit(word[i])) return -1;
+                            if (!char.IsDigit(word[i]))
+                            {
+                                return -1;
+                            }
                         }
 
                         return KeywordSid;
@@ -625,16 +619,14 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         if (word[startWord + 1] == 'o'
                             && word[startWord + 2] == 'o'
-                            && word[startWord + 3] == 'l'
-                        )
+                            && word[startWord + 3] == 'l')
                         {
                             return KeywordBool;
                         }
 
                         if (word[startWord + 1] == 'l'
                             && word[startWord + 2] == 'o'
-                            && word[startWord + 3] == 'b'
-                        )
+                            && word[startWord + 3] == 'b')
                         {
                             return KeywordBlob;
                         }
@@ -646,8 +638,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     {
                         if (word[startWord + 1] == 'l'
                             && word[startWord + 2] == 'o'
-                            && word[startWord + 3] == 'b'
-                        )
+                            && word[startWord + 3] == 'b')
                         {
                             return KeywordClob;
                         }
@@ -662,8 +653,7 @@ namespace Amazon.IonDotnet.Internals.Text
                             && word[startWord + 3] == 'i'
                             && word[startWord + 4] == 'm'
                             && word[startWord + 5] == 'a'
-                            && word[startWord + 6] == 'l'
-                        )
+                            && word[startWord + 6] == 'l')
                         {
                             return KeywordDecimal;
                         }
@@ -749,8 +739,7 @@ namespace Amazon.IonDotnet.Internals.Text
                     else if (len == 6)
                     {
                         if (word[startWord + 1] == 't'
-                            && word[startWord + 2] == 'r'
-                        )
+                            && word[startWord + 2] == 'r')
                         {
                             if (word[startWord + 3] == 'i'
                                 && word[startWord + 4] == 'n'
@@ -816,5 +805,65 @@ namespace Amazon.IonDotnet.Internals.Text
             var digits = sb.ToString(1, sb.Length - 1);
             return int.Parse(digits, System.Globalization.CultureInfo.InvariantCulture);
         }
+
+        private static bool CompareName(Span<int> readAhead, int readCount, string name)
+        {
+            if (name.Length != readCount)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < readCount; i++)
+            {
+                if (name[i] != readAhead[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Contains constants that refer to escaped character sequence, could be newline or escaped.
+    /// </summary>
+#pragma warning disable SA1402 // File may only contain a single type
+    internal static class CharacterSequence
+#pragma warning restore SA1402 // File may only contain a single type
+    {
+        public const int CharSeqEof = -1; // matches -1 (stream eof)
+        public const int CharSeqStringTerminator = -2; // can't be >=0, ==-1 (eof), nor -2 (empty esc)
+        public const int CharSeqStringNonTerminator = -3; // used for a pair of triple quotes treated a nothing
+
+        /// <summary>
+        /// Single new line '\n'.
+        /// </summary>
+        public const int CharSeqNewlineSequence1 = -4;
+
+        /// <summary>
+        ///  Single carriage return '\r'.
+        /// </summary>
+        public const int CharSeqNewlineSequence2 = -5;
+
+        /// <summary>
+        /// New line - carriage return pair '\r\n'.
+        /// </summary>
+        public const int CharSeqNewlineSequence3 = -6;
+
+        /// <summary>
+        /// Escape followed by new line.
+        /// </summary>
+        public const int CharSeqEscapedNewlineSequence1 = -7;
+
+        /// <summary>
+        /// Escape followed by carriage return.
+        /// </summary>
+        public const int CharSeqEscapedNewlineSequence2 = -8;
+
+        /// <summary>
+        /// Escape followed by new line - carriage return pair.
+        /// </summary>
+        public const int CharSeqEscapedNewlineSequence3 = -9;
     }
 }
