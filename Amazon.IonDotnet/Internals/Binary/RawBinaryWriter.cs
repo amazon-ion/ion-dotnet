@@ -215,7 +215,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         private void WriteVarUint(long value)
         {
             Debug.Assert(value >= 0);
-            var written = _dataBuffer.WriteVarInt(value);
+            var written = _dataBuffer.WriteVarUint(value);
             _containerStack.IncreaseCurrentContainerLength(written);
         }
 
@@ -738,7 +738,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 WriteVarUint(value.DateTimeValue.Second);
             }
-
+            var z = Decimal.GetBits(0m);
             if (value.TimestampPrecision >= Timestamp.Precision.Second && !value.FractionalSecond.ToString().Equals("0"))
             {
                 WriteDecimalNumber(value.FractionalSecond, false);
