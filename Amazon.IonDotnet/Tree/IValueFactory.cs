@@ -13,11 +13,11 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Numerics;
-
 namespace Amazon.IonDotnet.Tree
 {
+    using System;
+    using System.Numerics;
+
     /// <summary>
     /// The factory for all <c>IonValue</c>s.
     /// </summary>
