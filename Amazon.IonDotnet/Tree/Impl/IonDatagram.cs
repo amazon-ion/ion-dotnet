@@ -13,18 +13,18 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Diagnostics;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System.Diagnostics;
+
     /// <inheritdoc />
     /// <summary>
     /// An ion datagram is a special kind of value which represents a stream of Ion values.
     /// </summary>
     internal sealed class IonDatagram : IonSequence, IIonDatagram
     {
-        public IonDatagram() : base(false)
+        public IonDatagram()
+            : base(false)
         {
         }
 
@@ -39,6 +39,7 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <summary>
         /// Adding an item to the datagram will mark the current symbol table.
         /// </summary>
+        /// <param name="item">The IIonValue to add.</param>
         public override void Add(IIonValue item)
         {
             base.Add(item);

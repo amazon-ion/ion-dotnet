@@ -13,37 +13,44 @@
  * permissions and limitations under the License.
  */
 
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using Amazon.IonDotnet.Internals;
+
     /// <inheritdoc />
     /// <summary>
     /// An Ion string value.
     /// </summary>
     internal sealed class IonString : IonText, IIonString
     {
-        public IonString(string value) : base(value, value is null)
+        public IonString(string value)
+            : base(value, value is null)
         {
         }
 
         /// <summary>
         /// Returns a new null.string value.
         /// </summary>
+        /// <returns>A null IonString.</returns>
         public static IonString NewNull() => new IonString(null);
 
         public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
+            {
                 return false;
+            }
 
             if (!(other is IonString otherString))
+            {
                 return false;
-            return StringVal == otherString.StringVal;
+            }
+
+            return this.StringVal == otherString.StringVal;
         }
 
-        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(StringVal);
-
         public override IonType Type() => IonType.String;
+
+        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(this.StringVal);
     }
 }

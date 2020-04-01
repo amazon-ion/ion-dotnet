@@ -13,61 +13,71 @@
  * permissions and limitations under the License.
  */
 
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using Amazon.IonDotnet.Internals;
+
     internal sealed class IonTimestamp : IonValue, IIonTimestamp
     {
-        private Timestamp _timestamp;
+        private Timestamp timestamp;
 
-        public IonTimestamp(Timestamp val) : base(false)
+        public IonTimestamp(Timestamp val)
+            : base(false)
         {
-            _timestamp = val;
+            this.timestamp = val;
         }
 
-        private IonTimestamp(bool isNull) : base(isNull)
+        private IonTimestamp(bool isNull)
+            : base(isNull)
         {
-        }
-
-        /// <summary>
-        /// Returns a new null.timestamp value.
-        /// </summary>
-        public static IonTimestamp NewNull() => new IonTimestamp(true);
-
-        public override bool IsEquivalentTo(IIonValue other)
-        {
-            if (!base.IsEquivalentTo(other))
-                return false;
-            
-            if (!(other is IonTimestamp oTimestamp))
-                return false;
-            if (NullFlagOn())
-                return other.IsNull;
-
-            return !other.IsNull && _timestamp == oTimestamp._timestamp;
-        }
-
-        internal override void WriteBodyTo(IPrivateWriter writer)
-        {
-            if (NullFlagOn())
-            {
-                writer.WriteNull(IonType.Timestamp);
-                return;
-            }
-
-            writer.WriteTimestamp(_timestamp);
         }
 
         public override Timestamp TimestampValue
         {
             get
             {
-                ThrowIfNull();
-                return _timestamp;
+                this.ThrowIfNull();
+                return this.timestamp;
             }
         }
 
+        /// <summary>
+        /// Returns a new null.timestamp value.
+        /// </summary>
+        /// <returns>A null IonTimestamp.</returns>
+        public static IonTimestamp NewNull() => new IonTimestamp(true);
+
+        public override bool IsEquivalentTo(IIonValue other)
+        {
+            if (!base.IsEquivalentTo(other))
+            {
+                return false;
+            }
+
+            if (!(other is IonTimestamp oTimestamp))
+            {
+                return false;
+            }
+
+            if (this.NullFlagOn())
+            {
+                return other.IsNull;
+            }
+
+            return !other.IsNull && this.timestamp == oTimestamp.timestamp;
+        }
+
         public override IonType Type() => IonType.Timestamp;
+
+        internal override void WriteBodyTo(IPrivateWriter writer)
+        {
+            if (this.NullFlagOn())
+            {
+                writer.WriteNull(IonType.Timestamp);
+                return;
+            }
+
+            writer.WriteTimestamp(this.timestamp);
+        }
     }
 }

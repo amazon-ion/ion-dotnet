@@ -13,26 +13,28 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Diagnostics;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using System.Diagnostics;
+
     /// <inheritdoc />
     /// <summary>
     /// A value that holds a blob of byte data.
     /// </summary>
     internal abstract class IonLob : IonValue, IIonLob
     {
-        protected byte[] ByteBuffer;
+        protected byte[] byteBuffer;
 
-        protected IonLob() : base(true)
+        protected IonLob()
+            : base(true)
         {
         }
 
-        protected IonLob(ReadOnlySpan<byte> bytes) : base(false)
+        protected IonLob(ReadOnlySpan<byte> bytes)
+            : base(false)
         {
-            SetBytes(bytes);
+            this.SetBytes(bytes);
         }
 
         /// <summary>
@@ -42,33 +44,32 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <exception cref="NullValueException">If this lob is null.</exception>
         public override ReadOnlySpan<byte> Bytes()
         {
-            ThrowIfNull();
-            Debug.Assert(ByteBuffer != null);
-            return ByteBuffer.AsSpan();
+            this.ThrowIfNull();
+            Debug.Assert(this.byteBuffer != null, "byteBuffer is null");
+            return this.byteBuffer.AsSpan();
         }
 
         /// <summary>
         /// Copy the bytes from the buffer to this lob.
         /// </summary>
-        /// <param name="buffer">Byte buffer</param>
+        /// <param name="buffer">Byte buffer.</param>
         public override void SetBytes(ReadOnlySpan<byte> buffer)
         {
-            ThrowIfLocked();
-            //this is bad but this operation is pretty non-common.
-            Array.Resize(ref ByteBuffer, buffer.Length);
-            buffer.CopyTo(ByteBuffer);
-            NullFlagOn(false);
+            this.ThrowIfLocked();
+            Array.Resize(ref this.byteBuffer, buffer.Length);
+            buffer.CopyTo(this.byteBuffer);
+            this.NullFlagOn(false);
         }
 
         public override void MakeNull()
         {
             base.MakeNull();
-            ByteBuffer = null;
+            this.byteBuffer = null;
         }
 
         public override int ByteSize()
         {
-            return ByteBuffer.Length;
+            return this.byteBuffer.Length;
         }
     }
 }

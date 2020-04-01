@@ -13,18 +13,19 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using Amazon.IonDotnet.Internals;
+
     /// <inheritdoc />
     /// <summary>
     /// An Ion blob value.
     /// </summary>
     internal sealed class IonBlob : IonLob, IIonBlob
     {
-        public IonBlob(ReadOnlySpan<byte> bytes) : base(bytes)
+        public IonBlob(ReadOnlySpan<byte> bytes)
+            : base(bytes)
         {
         }
 
@@ -35,31 +36,37 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <summary>
         /// Construct a new null.blob value.
         /// </summary>
+        /// <returns>A new null IonBlob.</returns>
         public static IonBlob NewNull() => new IonBlob();
 
         public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
+            {
                 return false;
+            }
 
             var otherBlob = (IonBlob) other;
 
-            if (NullFlagOn())
+            if (this.NullFlagOn())
+            {
                 return otherBlob.IsNull;
-            return !otherBlob.IsNull && otherBlob.Bytes().SequenceEqual(Bytes());
+            }
+
+            return !otherBlob.IsNull && otherBlob.Bytes().SequenceEqual(this.Bytes());
         }
+
+        public override IonType Type() => IonType.Blob;
 
         internal override void WriteBodyTo(IPrivateWriter writer)
         {
-            if (NullFlagOn())
+            if (this.NullFlagOn())
             {
                 writer.WriteNull(IonType.Blob);
                 return;
             }
 
-            writer.WriteBlob(Bytes());
+            writer.WriteBlob(this.Bytes());
         }
-
-        public override IonType Type() => IonType.Blob;
     }
 }

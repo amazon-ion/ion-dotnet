@@ -13,11 +13,11 @@
  * permissions and limitations under the License.
  */
 
-using System.IO;
-using System.Text;
-
 namespace Amazon.IonDotnet.Tree
 {
+    using System.IO;
+    using System.Text;
+
     public interface IIonClob : IIonLob
     {
         StreamReader NewReader(Encoding encoding);

@@ -13,64 +13,70 @@
  * permissions and limitations under the License.
  */
 
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using Amazon.IonDotnet.Internals;
+
     /// <summary>
-    /// Ion object holding a boolean value
+    /// Ion object holding a boolean value.
     /// </summary>
     internal sealed class IonBool : IonValue, IIonBool
     {
-        public IonBool(bool value) : base(false)
+        public IonBool(bool value)
+            : base(false)
         {
-            BoolTrueFlagOn(value);
+            this.BoolTrueFlagOn(value);
         }
-
-        public override bool IsEquivalentTo(IIonValue other)
-        {
-            if (!base.IsEquivalentTo(other))
-                return false;
-
-            var otherBool = (IonBool) other;
-
-            if (NullFlagOn())
-                return otherBool.IsNull;
-
-            return !otherBool.IsNull && otherBool.BoolValue == BoolValue;
-        }
-
-        internal override void WriteBodyTo(IPrivateWriter writer)
-        {
-            if (NullFlagOn())
-            {
-                writer.WriteNull(IonType.Bool);
-            }
-            else
-            {
-                writer.WriteBool(BoolTrueFlagOn());
-            }
-        }
-
-        public override IonType Type() => IonType.Bool;
 
         public override bool BoolValue
         {
             get
             {
-                ThrowIfNull();
-                return BoolTrueFlagOn();
+                this.ThrowIfNull();
+                return this.BoolTrueFlagOn();
             }
         }
 
         /// <summary>
         /// Returns a new null.bool value.
         /// </summary>
+        /// <returns>A new null IonBool.</returns>
         public static IonBool NewNull()
         {
             var v = new IonBool(false);
             v.MakeNull();
             return v;
+        }
+
+        public override bool IsEquivalentTo(IIonValue other)
+        {
+            if (!base.IsEquivalentTo(other))
+            {
+                return false;
+            }
+
+            var otherBool = (IonBool) other;
+
+            if (this.NullFlagOn())
+            {
+                return otherBool.IsNull;
+            }
+
+            return !otherBool.IsNull && otherBool.BoolValue == this.BoolValue;
+        }
+
+        public override IonType Type() => IonType.Bool;
+
+        internal override void WriteBodyTo(IPrivateWriter writer)
+        {
+            if (this.NullFlagOn())
+            {
+                writer.WriteNull(IonType.Bool);
+            }
+            else
+            {
+                writer.WriteBool(this.BoolTrueFlagOn());
+            }
         }
     }
 }

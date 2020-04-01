@@ -13,20 +13,21 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.IO;
-using System.Text;
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using System.IO;
+    using System.Text;
+    using Amazon.IonDotnet.Internals;
+
     /// <inheritdoc />
     /// <summary>
     /// An Ion clob value.
     /// </summary>
     internal sealed class IonClob : IonLob, IIonClob
     {
-        public IonClob(ReadOnlySpan<byte> bytes) : base(bytes)
+        public IonClob(ReadOnlySpan<byte> bytes)
+            : base(bytes)
         {
         }
 
@@ -37,29 +38,27 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <summary>
         /// Construct a new null.clob value.
         /// </summary>
+        /// <returns>A new null IonClob.</returns>
         public static IonClob NewNull() => new IonClob();
 
         public override bool IsEquivalentTo(IIonValue other)
         {
             if (!base.IsEquivalentTo(other))
-                return false;
-            
-            if (!(other is IonClob otherClob))
-                return false;
-            if (NullFlagOn())
-                return otherClob.IsNull;
-            return !otherClob.IsNull && otherClob.Bytes().SequenceEqual(Bytes());
-        }
-
-        internal override void WriteBodyTo(IPrivateWriter writer)
-        {
-            if (NullFlagOn())
             {
-                writer.WriteNull(IonType.Clob);
-                return;
+                return false;
             }
 
-            writer.WriteClob(Bytes());
+            if (!(other is IonClob otherClob))
+            {
+                return false;
+            }
+
+            if (this.NullFlagOn())
+            {
+                return otherClob.IsNull;
+            }
+
+            return !otherClob.IsNull && otherClob.Bytes().SequenceEqual(this.Bytes());
         }
 
         public override IonType Type() => IonType.Clob;
@@ -68,10 +67,22 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// Returns a new <see cref="StreamReader"/> to read the content of this clob.
         /// </summary>
         /// <param name="encoding">Encoding to use.</param>
+        /// <returns>A new StreamReader.</returns>
         public override StreamReader NewReader(Encoding encoding)
         {
-            ThrowIfNull();
-            return new StreamReader(new MemoryStream(ByteBuffer), encoding);
+            this.ThrowIfNull();
+            return new StreamReader(new MemoryStream(this.byteBuffer), encoding);
+        }
+
+        internal override void WriteBodyTo(IPrivateWriter writer)
+        {
+            if (this.NullFlagOn())
+            {
+                writer.WriteNull(IonType.Clob);
+                return;
+            }
+
+            writer.WriteClob(this.Bytes());
         }
     }
 }

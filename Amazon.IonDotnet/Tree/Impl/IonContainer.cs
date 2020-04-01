@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+
     /// <inheritdoc cref="IonValue" />
     /// <summary>
     /// Base class for all container type (List,Struct,Sexp,Datagram) Ion values.
@@ -26,9 +26,16 @@ namespace Amazon.IonDotnet.Tree.Impl
     /// </summary>
     internal abstract class IonContainer : IonValue, ICollection<IIonValue>, IIonContainer
     {
-        protected IonContainer(bool isNull) : base(isNull)
+        protected IonContainer(bool isNull)
+            : base(isNull)
         {
         }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// The number of children of this container.
+        /// </summary>
+        public override abstract int Count { get; }
 
         /// <inheritdoc />
         /// <summary>
@@ -42,16 +49,8 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// Remove the item from container.
         /// </summary>
         /// <param name="item"></param>
-        /// <returns>True if the item has been removed</returns>
+        /// <returns>True if the item has been removed.</returns>
         public override abstract bool Remove(IIonValue item);
-
-
-        /// <inheritdoc />
-        /// <summary>
-        /// The number of children of this container.
-        /// </summary>
-        public override abstract int Count { get; }
-
 
         /// <inheritdoc />
         /// <summary>
@@ -73,17 +72,16 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <summary>
         /// This operation is not supported.
         /// </summary>
-        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         public override void CopyTo(IIonValue[] array, int arrayIndex) => throw new NotSupportedException();
 
         public override void MakeNull()
         {
-            Clear();
+            this.Clear();
             base.MakeNull();
         }
 
         public override abstract IEnumerator<IIonValue> GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 }
