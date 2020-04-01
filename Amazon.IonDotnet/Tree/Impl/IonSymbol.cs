@@ -19,8 +19,8 @@ namespace Amazon.IonDotnet.Tree.Impl
 
     internal sealed class IonSymbol : IonText, IIonSymbol
     {
+        private readonly ImportLocation importLocation;
         private int sid;
-        private ImportLocation importLocation;
 
         public IonSymbol(string text, int sid = SymbolToken.UnknownSid, ImportLocation importLocation = default)
             : this(new SymbolToken(text, sid, importLocation))

@@ -18,6 +18,7 @@ namespace Amazon.IonDotnet.Tree
     public interface IIonDecimal
     {
         decimal DecimalValue { get; }
+
         BigDecimal BigDecimalValue { get; }
     }
 }
