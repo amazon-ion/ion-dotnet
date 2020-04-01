@@ -738,7 +738,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 WriteVarUint(value.DateTimeValue.Second);
             }
-            var z = Decimal.GetBits(0m);
+
             if (value.TimestampPrecision >= Timestamp.Precision.Second && !value.FractionalSecond.ToString().Equals("0"))
             {
                 WriteDecimalNumber(value.FractionalSecond, false);
