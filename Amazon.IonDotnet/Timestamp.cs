@@ -30,8 +30,7 @@ namespace Amazon.IonDotnet
             Month = 2,
             Day = 3,
             Minute = 4,
-            Second = 5,
-            FractionalSecond = 6
+            Second = 5
         }
 
         private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
@@ -60,7 +59,7 @@ namespace Amazon.IonDotnet
         /// Initialize a new Timestamp structure
         /// </summary>
         public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            in decimal frac, Precision precision = Precision.FractionalSecond)
+            in decimal frac, Precision precision = Precision.Second)
         {
             TimestampPrecision = precision;
 
@@ -69,7 +68,7 @@ namespace Amazon.IonDotnet
                 throw new ArgumentException("Fraction must be < 1", nameof(frac));
             FractionalSecond = frac;
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified)
-                            .AddSeconds(Decimal.ToDouble(FractionalSecond));
+                            .AddSeconds(Decimal.ToDouble(frac));
             LocalOffset = 0;
         }
 
@@ -91,7 +90,7 @@ namespace Amazon.IonDotnet
         }
 
         public Timestamp(int year, int month, int day, int hour, int minute, int second,
-            int offset, in decimal frac, Precision precision = Precision.FractionalSecond)
+            int offset, in decimal frac, Precision precision = Precision.Second)
         {
             TimestampPrecision = precision;
 
@@ -111,7 +110,7 @@ namespace Amazon.IonDotnet
             }
 
             const int maxOffset = 14 * 60;
-            var shift = TimeSpan.FromSeconds(Decimal.ToDouble(FractionalSecond));
+            var shift = TimeSpan.FromSeconds(Decimal.ToDouble(frac));
             if (offset > maxOffset || offset < -maxOffset)
             {
                 var minuteShift = (offset / maxOffset) * maxOffset;
@@ -168,15 +167,15 @@ namespace Amazon.IonDotnet
         /// <param name="frac">Fractional second value</param>
         /// <param name="precision">The precision of the value</param>
         public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac,
-            int toChange, Precision precision, DateTimeKind kind)
+            int adjustByOffset, Precision precision, DateTimeKind kind)
         {
             TimestampPrecision = precision;
             if (frac >= 1)
                 throw new ArgumentException("Fraction must be < 1", nameof(frac));
             FractionalSecond = frac;
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
-                .AddMinutes(toChange)
-                .AddSeconds(Decimal.ToDouble(FractionalSecond));
+                .AddMinutes(adjustByOffset)
+                .AddSeconds(Decimal.ToDouble(frac));
             LocalOffset = offset;
         }
 

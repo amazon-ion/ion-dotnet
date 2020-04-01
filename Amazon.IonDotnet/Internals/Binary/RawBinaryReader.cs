@@ -715,12 +715,6 @@ namespace Amazon.IonDotnet.Internals.Binary
                             {
                                 // now we read in our actual "milliseconds since the epoch"
                                 frac = ReadDecimal(_localRemaining);
-                                // if fractional second does not exist, it will be set to 0. However, we can have 0.0 or 0.00
-                                // which are valid and different from 0. So anything other than 0 is a fractional second. 
-                                if (!frac.ToString().Equals("0"))
-                                {
-                                    precision = Timestamp.Precision.FractionalSecond;
-                                }
                             }
                         }
                     }

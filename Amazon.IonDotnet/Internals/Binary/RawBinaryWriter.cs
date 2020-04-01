@@ -692,7 +692,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             value = new Timestamp(value.DateTimeValue.Year, value.DateTimeValue.Month, value.DateTimeValue.Day,
                 value.DateTimeValue.Hour, value.DateTimeValue.Minute, value.DateTimeValue.Second, value.LocalOffset,
-                value.FractionalSecond, -value.LocalOffset, value.TimestampPrecision, value.DateTimeValue.Kind);
+               value.FractionalSecond, -value.LocalOffset, value.TimestampPrecision, value.DateTimeValue.Kind);
 
             PrepareValue();
 
@@ -739,7 +739,7 @@ namespace Amazon.IonDotnet.Internals.Binary
                 WriteVarUint(value.DateTimeValue.Second);
             }
 
-            if (value.TimestampPrecision >= Timestamp.Precision.FractionalSecond)
+            if (value.TimestampPrecision >= Timestamp.Precision.Second && !value.FractionalSecond.ToString().Equals("0"))
             {
                 WriteDecimalNumber(value.FractionalSecond, false);
             }
