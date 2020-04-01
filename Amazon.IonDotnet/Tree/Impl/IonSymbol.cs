@@ -46,7 +46,7 @@ namespace Amazon.IonDotnet.Tree.Impl
 
         public override SymbolToken SymbolValue
         {
-            get => new SymbolToken(this.StringVal, this.sid, this.importLocation);
+            get => new SymbolToken(this.stringVal, this.sid, this.importLocation);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Amazon.IonDotnet.Tree.Impl
                 return oSymbol.IsNull;
             }
 
-            return !oSymbol.IsNull && oSymbol.StringVal == this.StringValue;
+            return !oSymbol.IsNull && oSymbol.stringVal == this.StringValue;
         }
 
         public override IonType Type() => IonType.Symbol;

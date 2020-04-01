@@ -21,7 +21,8 @@ namespace Amazon.IonDotnet
         {
         }
 
-        public UnexpectedEofException(long position) : base($"Unexpected EOF at position {position}")
+        public UnexpectedEofException(long position)
+            : base($"Unexpected EOF at position {position}")
         {
         }
     }
