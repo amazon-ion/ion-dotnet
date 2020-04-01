@@ -21,17 +21,20 @@ namespace Amazon.IonDotnet.Tree.Impl
     /// </summary>
     internal sealed class IonList : IonSequence, IIonList
     {
-        public IonList() : this(false)
+        public IonList()
+            : this(false)
         {
         }
 
-        private IonList(bool isNull) : base(isNull)
+        private IonList(bool isNull)
+            : base(isNull)
         {
         }
 
         /// <summary>
         /// Returns a new null.list value.
         /// </summary>
+        /// <returns>A null IonList.</returns>
         public static IonList NewNull() => new IonList(true);
 
         public override IonType Type() => IonType.List;
