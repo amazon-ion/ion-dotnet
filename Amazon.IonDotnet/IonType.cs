@@ -20,8 +20,7 @@ namespace Amazon.IonDotnet
         None = -1,
         Null = 0,
         Bool = 1,
-        // note that INT is actually 0x2 **and** 0x3 in the Ion binary encoding
-        Int = 2,
+        Int = 2, // note that INT is actually 0x2 **and** 0x3 in the Ion binary encoding
         Float = 4,
         Decimal = 5,
         Timestamp = 6,
@@ -32,44 +31,46 @@ namespace Amazon.IonDotnet
         List = 11,
         Sexp = 12,
         Struct = 13,
-        Datagram = 14
+        Datagram = 14,
     }
 
+#pragma warning disable SA1649 // File name should match first type name
     public static class IonTypeExtensions
+#pragma warning restore SA1649 // File name should match first type name
     {
         /// <summary>
         /// Determines whether a type represents an Ion container.
         /// </summary>
-        /// <param name="t">IonType enum</param>
-        /// <returns>true when t is enum after List</returns>
+        /// <param name="t">IonType enum.</param>
+        /// <returns>true when t is enum after List.</returns>
         public static bool IsContainer(this IonType t) => t >= IonType.List;
 
         /// <summary>
-        /// Determines whether a type represents an Ion text scalar, namely
+        /// Determines whether a type represents an Ion text scalar.
         /// </summary>
-        /// <param name="t">IonType enum</param>
-        /// <returns>true when t is String or Symbol</returns>
+        /// <param name="t">IonType enum.</param>
+        /// <returns>true when t is String or Symbol.</returns>
         public static bool IsText(this IonType t) => t == IonType.String || t == IonType.Symbol;
 
         /// <summary>
-        /// Determines whether a type represents an Ion LOB
+        /// Determines whether a type represents an Ion LOB.
         /// </summary>
-        /// <param name="t">IonType enum</param>
-        /// <returns>true when t is Blob or Clob</returns>
+        /// <param name="t">IonType enum.</param>
+        /// <returns>true when t is Blob or Clob.</returns>
         public static bool IsLob(this IonType t) => t == IonType.Blob || t == IonType.Clob;
 
         /// <summary>
-        /// Determines whether a type represents a scalar value type
+        /// Determines whether a type represents a scalar value type.
         /// </summary>
-        /// <param name="t">IonType enum</param>
-        /// <returns>true when the this is a scalar type</returns>
+        /// <param name="t">IonType enum.</param>
+        /// <returns>true when the this is a scalar type.</returns>
         public static bool IsScalar(this IonType t) => t > IonType.None && t < IonType.List;
 
         /// <summary>
-        /// Determines whether a type represents a numeric type
+        /// Determines whether a type represents a numeric type.
         /// </summary>
-        /// <param name="t">IonType enum</param>
-        /// <returns>true when this type is numeric</returns>
+        /// <param name="t">IonType enum.</param>
+        /// <returns>true when this type is numeric.</returns>
         public static bool IsNumeric(this IonType t) => t == IonType.Int || t == IonType.Float || t == IonType.Decimal;
     }
 }

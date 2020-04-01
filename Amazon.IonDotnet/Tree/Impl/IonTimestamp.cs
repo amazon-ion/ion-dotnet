@@ -19,7 +19,7 @@ namespace Amazon.IonDotnet.Tree.Impl
 
     internal sealed class IonTimestamp : IonValue, IIonTimestamp
     {
-        private Timestamp timestamp;
+        private readonly Timestamp timestamp;
 
         public IonTimestamp(Timestamp val)
             : base(false)
