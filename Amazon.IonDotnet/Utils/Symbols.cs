@@ -13,15 +13,13 @@
  * permissions and limitations under the License.
  */
 
-using System.Diagnostics;
-using Amazon.IonDotnet.Utils;
-
 namespace Amazon.IonDotnet.Utils
 {
+    using System.Diagnostics;
+
     public static class Symbols
     {
         public static readonly ISymbolTable[] EmptySymbolTablesArray = new ISymbolTable[0];
-
 
         public static readonly SymbolToken[] SystemSymbolTokens =
         {
@@ -33,7 +31,7 @@ namespace Amazon.IonDotnet.Utils
             new SymbolToken(SystemSymbols.Imports, SystemSymbols.ImportsSid),
             new SymbolToken(SystemSymbols.Symbols, SystemSymbols.SymbolsSid),
             new SymbolToken(SystemSymbols.MaxId, SystemSymbols.MaxIdSid),
-            new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid)
+            new SymbolToken(SystemSymbols.IonSharedSymbolTable, SystemSymbols.IonSharedSymbolTableSid),
         };
 
         public static SymbolToken GetSystemSymbol(int sid) => SystemSymbolTokens[sid - 1];
@@ -41,13 +39,14 @@ namespace Amazon.IonDotnet.Utils
         /// <summary>
         /// Try to re-make the token in the context of the <paramref name="table"/>.
         /// </summary>
-        /// <param name="table">Symbol table</param>
-        /// <param name="token">Un-localized token</param>
-        /// <returns>Localized token</returns>
+        /// <param name="table">Symbol table.</param>
+        /// <param name="token">Un-localized token.</param>
+        /// <returns>Localized token.</returns>
         public static SymbolToken Localize(ISymbolTable table, SymbolToken token)
         {
             var newToken = token;
-            //try to localize
+
+            // try to localize
             if (token.Text == null)
             {
                 var text = table.FindKnownSymbol(token.Sid);
@@ -70,20 +69,21 @@ namespace Amazon.IonDotnet.Utils
 
         /// <summary>
         /// Returns a catalog that contains all shared symbol tables that the reader has read so far.
-        /// </summary> 
+        /// </summary>
         /// <param name="readerTable">The reader's local symbol table. Typically obtained by calling <see cref="IIonReader.GetSymbolTable"/>.</param>
         /// <remarks>
-        /// Normally when a text or binary Ion data with shared symbol tables is read, the materialized object (such as 
-        /// a .Net POCO object or an <see cref="IonDotnet.Tree.IonDatagram"/> does not have the reference to these tables.
+        /// Normally when a text or binary Ion data with shared symbol tables is read, the materialized object (such as
+        /// a .Net POCO object or an <see cref="Tree.IonDatagram"/> does not have the reference to these tables.
         /// As such, systems that want to reuse those shared tables should extract them after reading through all the values.
         /// This method provides a shortcut to do get a catalog that contains those tables.
         /// </remarks>
+        /// <returns>The catalog.</returns>
         public static ICatalog GetReaderCatalog(ISymbolTable readerTable)
         {
             var catalog = new SimpleCatalog();
             foreach (var importedTable in readerTable.GetImportedTables())
             {
-                Debug.Assert(importedTable.IsShared);
+                Debug.Assert(importedTable.IsShared, "importedTable IsShared is false");
                 if (importedTable.IsSystem || importedTable.IsSubstitute)
                 {
                     continue;
