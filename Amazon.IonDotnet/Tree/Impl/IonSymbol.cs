@@ -13,60 +13,31 @@
  * permissions and limitations under the License.
  */
 
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using Amazon.IonDotnet.Internals;
+
     internal sealed class IonSymbol : IonText, IIonSymbol
     {
-        private int _sid;
-        private ImportLocation _importLocation;
+        private int sid;
+        private ImportLocation importLocation;
 
-        public IonSymbol(string text, int sid = SymbolToken.UnknownSid, ImportLocation importLocation = default) : this(new SymbolToken(text, sid, importLocation))
+        public IonSymbol(string text, int sid = SymbolToken.UnknownSid, ImportLocation importLocation = default)
+            : this(new SymbolToken(text, sid, importLocation))
         {
         }
 
-        public IonSymbol(SymbolToken symbolToken) : base(symbolToken.Text, symbolToken == default)
+        public IonSymbol(SymbolToken symbolToken)
+            : base(symbolToken.Text, symbolToken == default)
         {
-            _sid = symbolToken.Sid;
-            _importLocation = symbolToken.ImportLocation;
+            this.sid = symbolToken.Sid;
+            this.importLocation = symbolToken.ImportLocation;
         }
 
-        private IonSymbol(bool isNull) : base(null, isNull)
+        private IonSymbol(bool isNull)
+            : base(null, isNull)
         {
         }
-
-        /// <summary>
-        /// Returns a new null.symbol value.
-        /// </summary>
-        public static IonSymbol NewNull() => new IonSymbol(true);
-
-        public override bool IsEquivalentTo(IIonValue other)
-        {
-            if (!base.IsEquivalentTo(other))
-                return false;
-
-            if (!(other is IonSymbol oSymbol))
-                return false;
-
-            if (NullFlagOn())
-                return oSymbol.IsNull;
-
-            return !oSymbol.IsNull && oSymbol.StringVal == StringValue;
-        }
-
-        internal override void WriteBodyTo(IPrivateWriter writer)
-        {
-            if (NullFlagOn())
-            {
-                writer.WriteNull(IonType.Symbol);
-                return;
-            }
-
-            writer.WriteSymbolToken(SymbolValue);
-        }
-
-        public override IonType Type() => IonType.Symbol;
 
         public override string StringValue
         {
@@ -75,7 +46,46 @@ namespace Amazon.IonDotnet.Tree.Impl
 
         public override SymbolToken SymbolValue
         {
-            get => new SymbolToken(StringVal, _sid, _importLocation);
+            get => new SymbolToken(this.StringVal, this.sid, this.importLocation);
+        }
+
+        /// <summary>
+        /// Returns a new null.symbol value.
+        /// </summary>
+        /// <returns>A null IonSymbol.</returns>
+        public static IonSymbol NewNull() => new IonSymbol(true);
+
+        public override bool IsEquivalentTo(IIonValue other)
+        {
+            if (!base.IsEquivalentTo(other))
+            {
+                return false;
+            }
+
+            if (!(other is IonSymbol oSymbol))
+            {
+                return false;
+            }
+
+            if (this.NullFlagOn())
+            {
+                return oSymbol.IsNull;
+            }
+
+            return !oSymbol.IsNull && oSymbol.StringVal == this.StringValue;
+        }
+
+        public override IonType Type() => IonType.Symbol;
+
+        internal override void WriteBodyTo(IPrivateWriter writer)
+        {
+            if (this.NullFlagOn())
+            {
+                writer.WriteNull(IonType.Symbol);
+                return;
+            }
+
+            writer.WriteSymbolToken(this.SymbolValue);
         }
     }
 }

@@ -13,76 +13,88 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using Amazon.IonDotnet.Internals;
-using Amazon.IonDotnet.Utils;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using System.Collections.Generic;
+    using Amazon.IonDotnet.Internals;
+    using Amazon.IonDotnet.Utils;
+
     /// <inheritdoc />
     /// <summary>
     /// Ion value representing a floating point number.
     /// </summary>
     internal sealed class IonFloat : IonValue, IIonFloat
     {
-        private double _d;
+        private readonly double d;
 
-        public IonFloat(double value) : base(false)
+        public IonFloat(double value)
+            : base(false)
         {
-            _d = value;
+            this.d = value;
         }
 
-        private IonFloat(bool isNull) : base(isNull)
+        private IonFloat(bool isNull)
+            : base(isNull)
         {
-        }
-
-        /// <summary>
-        /// Returns a new null.float value.
-        /// </summary>
-        public static IonFloat NewNull() => new IonFloat(true);
-
-        public override bool IsEquivalentTo(IIonValue other)
-        {
-            if (!base.IsEquivalentTo(other))
-                return false;
-
-            var oFloat = (IonFloat)other;
-
-            if (NullFlagOn())
-                return oFloat.IsNull;
-            if (oFloat.IsNull)
-                return false;
-
-            if (PrivateHelper.IsNegativeZero(_d) ^ PrivateHelper.IsNegativeZero(oFloat._d))
-                return false;
-
-            return EqualityComparer<double>.Default.Equals(oFloat.DoubleValue, DoubleValue);
-        }
-
-        internal override void WriteBodyTo(IPrivateWriter writer)
-        {
-            if (NullFlagOn())
-            {
-                writer.WriteNull(IonType.Float);
-                return;
-            }
-
-            writer.WriteFloat(_d);
         }
 
         /// <summary>
-        /// Get or set the value of this float as <see cref="System.Double"/>.
+        /// Gets the value of this float as <see cref="double"/>.
         /// </summary>
         public override double DoubleValue
         {
             get
             {
-                ThrowIfNull();
-                return _d;
+                this.ThrowIfNull();
+                return this.d;
             }
         }
 
+        /// <summary>
+        /// Returns a new null.float value.
+        /// </summary>
+        /// <returns>A null IonFloat.</returns>
+        public static IonFloat NewNull() => new IonFloat(true);
+
+        public override bool IsEquivalentTo(IIonValue other)
+        {
+            if (!base.IsEquivalentTo(other))
+            {
+                return false;
+            }
+
+            var oFloat = (IonFloat)other;
+
+            if (this.NullFlagOn())
+            {
+                return oFloat.IsNull;
+            }
+
+            if (oFloat.IsNull)
+            {
+                return false;
+            }
+
+            if (PrivateHelper.IsNegativeZero(this.d) ^ PrivateHelper.IsNegativeZero(oFloat.d))
+            {
+                return false;
+            }
+
+            return EqualityComparer<double>.Default.Equals(oFloat.DoubleValue, this.DoubleValue);
+        }
+
         public override IonType Type() => IonType.Float;
+
+        internal override void WriteBodyTo(IPrivateWriter writer)
+        {
+            if (this.NullFlagOn())
+            {
+                writer.WriteNull(IonType.Float);
+                return;
+            }
+
+            writer.WriteFloat(this.d);
+        }
     }
 }

@@ -13,22 +13,23 @@
  * permissions and limitations under the License.
  */
 
-using Amazon.IonDotnet.Internals;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using Amazon.IonDotnet.Internals;
+
     /// <inheritdoc />
     /// <summary>
     /// Represent a null.null value.
     /// </summary>
     internal sealed class IonNull : IonValue, IIonNull
     {
-        public IonNull() : base(true)
+        public IonNull()
+            : base(true)
         {
         }
 
-        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteNull();
-
         public override IonType Type() => IonType.Null;
+
+        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteNull();
     }
 }
