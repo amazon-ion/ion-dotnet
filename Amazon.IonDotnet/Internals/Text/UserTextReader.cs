@@ -13,14 +13,14 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using Amazon.IonDotnet.Internals.Conversions;
-
 namespace Amazon.IonDotnet.Internals.Text
 {
+    using System;
+    using System.IO;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using Amazon.IonDotnet.Internals.Conversions;
+
     /// <summary>
     /// The user-level text reader is resposible for recoginizing symbols and process symbol tables.
     /// </summary>
@@ -28,8 +28,8 @@ namespace Amazon.IonDotnet.Internals.Text
     {
         private static readonly Regex IvmRegex = new Regex("^\\$ion_[0-9]+_[0-9]+$", RegexOptions.Compiled);
 
-        private ISymbolTable _currentSymtab;
-        private readonly ICatalog _catalog;
+        private readonly ICatalog catalog;
+        private ISymbolTable currentSymtab;
 
         public UserTextReader(string textForm, ICatalog catalog = null)
             : this(new CharSequenceStream(textForm), catalog)
@@ -59,56 +59,60 @@ namespace Amazon.IonDotnet.Internals.Text
         private UserTextReader(TextStream textStream, ICatalog catalog)
             : base(textStream)
         {
-            _catalog = catalog;
-            _currentSymtab = systemSymbols;
+            this.catalog = catalog;
+            this.currentSymtab = this.systemSymbols;
+        }
+
+        public override ISymbolTable GetSymbolTable()
+        {
+            return this.currentSymtab;
         }
 
         protected override bool HasNext()
         {
-            while (!hasNextCalled)
+            while (!this.hasNextCalled)
             {
                 base.HasNext();
 
-                if (valueType != IonType.None && !CurrentIsNull && GetContainerType() == IonType.Datagram)
+                if (this.valueType != IonType.None && !this.CurrentIsNull && this.GetContainerType() == IonType.Datagram)
                 {
-                    switch (valueType)
+                    switch (this.valueType)
                     {
                         case IonType.Struct:
-                            if (annotations.Count > 0 && annotations[0].Text == SystemSymbols.IonSymbolTable)
+                            if (this.annotations.Count > 0 && this.annotations[0].Text == SystemSymbols.IonSymbolTable)
                             {
-                                _currentSymtab = ReaderLocalTable.ImportReaderTable(this, _catalog, true);
-                                hasNextCalled = false;
+                                this.currentSymtab = ReaderLocalTable.ImportReaderTable(this, this.catalog, true);
+                                this.hasNextCalled = false;
                             }
 
                             break;
                         case IonType.Symbol:
                             // $ion_1_0 is read as an IVM only if it is not annotated.
-                            if (annotations.Count == 0)
+                            if (this.annotations.Count == 0)
                             {
-                                var version = SymbolValue().Text;
+                                var version = this.SymbolValue().Text;
                                 if (version is null || !IvmRegex.IsMatch(version))
                                 {
                                     break;
                                 }
 
                                 // New IVM found, reset all symbol tables.
-                                if (SystemSymbols.Ion10 != version)
+                                if (version != SystemSymbols.Ion10)
                                 {
                                     throw new UnsupportedIonVersionException(version);
                                 }
 
-                                MoveNext();
+                                this.MoveNext();
 
-
-                                // From specs: only unquoted $ion_1_0 text can be interpreted as IVM semantics and 
+                                // From specs: only unquoted $ion_1_0 text can be interpreted as IVM semantics and
                                 // cause the symbol tables to be reset.
-                                if (valueVariant.AuthoritativeType == ScalarType.String && scanner.Token != TextConstants.TokenSymbolQuoted)
+                                if (this.valueVariant.AuthoritativeType == ScalarType.String && this.scanner.Token != TextConstants.TokenSymbolQuoted)
                                 {
-                                    _currentSymtab = systemSymbols;
+                                    this.currentSymtab = this.systemSymbols;
                                 }
 
                                 // Even if that's not the case we still skip the IVM.
-                                hasNextCalled = false;
+                                this,hasNextCalled = false;
                             }
 
                             break;
@@ -118,12 +122,7 @@ namespace Amazon.IonDotnet.Internals.Text
                 }
             }
 
-            return !eof;
-        }
-
-        public override ISymbolTable GetSymbolTable()
-        {
-            return _currentSymtab;
+            return !this.eof;
         }
     }
 }
