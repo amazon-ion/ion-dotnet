@@ -600,7 +600,14 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             ReadVarInt(out var exponent);
             if (exponent > 0)
-                return 0m;
+            {
+                if (_localRemaining == 0) // Meaning that mantissa is zero
+                {
+                    return 0m;
+                }
+                throw new IonException($"Exponent should be <= 0: {exponent}");
+            }
+
             //we care about the scale here
             exponent = -exponent;
 

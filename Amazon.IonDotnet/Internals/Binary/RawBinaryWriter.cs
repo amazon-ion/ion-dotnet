@@ -690,9 +690,9 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             const byte varintNegZero = 0xC0;
 
-            value = new Timestamp(value.DateTimeValue.Year, value.DateTimeValue.Month, value.DateTimeValue.Day,
-                value.DateTimeValue.Hour, value.DateTimeValue.Minute, value.DateTimeValue.Second, value.LocalOffset,
-               value.FractionalSecond, -value.LocalOffset, value.TimestampPrecision, value.DateTimeValue.Kind);
+            DateTime dateTimeValue = value.DateTimeValue.Kind == DateTimeKind.Local
+                ? value.DateTimeValue.AddMinutes(-value.LocalOffset)
+                : value.DateTimeValue;
 
             PrepareValue();
 
@@ -718,25 +718,25 @@ namespace Amazon.IonDotnet.Internals.Binary
             _containerStack.IncreaseCurrentContainerLength(totalLength);
 
             //don't update totallength here
-            WriteVarUint(value.DateTimeValue.Year);
+            WriteVarUint(dateTimeValue.Year);
             if (value.TimestampPrecision >= Timestamp.Precision.Month)
             {
-                WriteVarUint(value.DateTimeValue.Month);
+                WriteVarUint(dateTimeValue.Month);
             }
             if (value.TimestampPrecision >= Timestamp.Precision.Day)
             {
-                WriteVarUint(value.DateTimeValue.Day);
+                WriteVarUint(dateTimeValue.Day);
             }
             //The hour and minute is considered as a single component
             if (value.TimestampPrecision >= Timestamp.Precision.Minute)
             {
-                WriteVarUint(value.DateTimeValue.Hour);
-                WriteVarUint(value.DateTimeValue.Minute);
+                WriteVarUint(dateTimeValue.Hour);
+                WriteVarUint(dateTimeValue.Minute);
             }
 
             if (value.TimestampPrecision >= Timestamp.Precision.Second)
             {
-                WriteVarUint(value.DateTimeValue.Second);
+                WriteVarUint(dateTimeValue.Second);
             }
 
             if (value.TimestampPrecision >= Timestamp.Precision.Second && !value.FractionalSecond.ToString().Equals("0"))
