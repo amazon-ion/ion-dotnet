@@ -13,11 +13,11 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Numerics;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using System.Numerics;
+
     public class ValueFactory : IValueFactory
     {
         public ValueFactory()
