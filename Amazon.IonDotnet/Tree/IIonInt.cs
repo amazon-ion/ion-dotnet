@@ -13,10 +13,10 @@
  * permissions and limitations under the License.
  */
 
-using System.Numerics;
-
 namespace Amazon.IonDotnet.Tree
 {
+    using System.Numerics;
+
     public interface IIonInt
     {
         IntegerSize IntegerSize { get; }

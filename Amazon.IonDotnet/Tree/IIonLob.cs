@@ -13,13 +13,16 @@
  * permissions and limitations under the License.
  */
 
-using System;
 namespace Amazon.IonDotnet.Tree
 {
+    using System;
+
     public interface IIonLob
     {
         ReadOnlySpan<byte> Bytes();
+
         void SetBytes(ReadOnlySpan<byte> buffer);
+
         int ByteSize();
     }
 }

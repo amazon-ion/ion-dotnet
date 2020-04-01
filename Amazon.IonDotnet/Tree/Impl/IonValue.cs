@@ -13,27 +13,25 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using Amazon.IonDotnet.Builders;
-using Amazon.IonDotnet.Internals;
-using Amazon.IonDotnet.Internals.Text;
-
 namespace Amazon.IonDotnet.Tree.Impl
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Numerics;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Internals;
+    using Amazon.IonDotnet.Internals.Text;
+
     /// <summary>
     /// Represents a tree view into Ion data. Each <see cref="IonValue" /> is a node in the tree. These values are
     /// mutable and strictly hierarchical.
     /// </summary>
     internal abstract class IonValue : IIonValue
     {
-        #region Flags
-
         private const byte LockedFlag = 0x01;
         private const byte SystemValueFlag = 0x02;
         private const byte NullFlag = 0x04;
@@ -42,172 +40,94 @@ namespace Amazon.IonDotnet.Tree.Impl
         private const byte AutoCreatedFlag = 0x20;
         private const byte SymbolPresentFlag = 0x80;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected int GetMetadata(int mask, int shift) => (_flags & mask) >> shift;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void SetMetadata(int metadata, byte mask, int shift)
-        {
-            _flags &= (byte) ~mask;
-            _flags |= (byte) ((metadata << shift) & mask);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasFlag(byte flagBit) => (_flags & flagBit) != 0;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SetFlag(byte flagBit) => _flags |= flagBit;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ClearFlag(byte flagBit) => _flags &= (byte) ~flagBit;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool LockedFlagOn() => HasFlag(LockedFlag);
-
-        private void LockedFlagOn(bool value)
-        {
-            if (value)
-            {
-                SetFlag(LockedFlag);
-            }
-            else
-            {
-                ClearFlag(LockedFlag);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool BoolTrueFlagOn() => HasFlag(BoolTrueFlag);
-
-        protected void BoolTrueFlagOn(bool value)
-        {
-            if (value)
-            {
-                SetFlag(BoolTrueFlag);
-            }
-            else
-            {
-                ClearFlag(BoolTrueFlag);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsSystemValue() => HasFlag(SystemValueFlag);
-
-        protected bool IsSystemValue(bool value)
-        {
-            if (value)
-            {
-                SetFlag(SystemValueFlag);
-            }
-            else
-            {
-                ClearFlag(SystemValueFlag);
-            }
-
-            return value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool NullFlagOn() => HasFlag(NullFlag);
-
-        protected void NullFlagOn(bool value)
-        {
-            if (value)
-            {
-                SetFlag(NullFlag);
-            }
-            else
-            {
-                ClearFlag(NullFlag);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsIvm() => HasFlag(IvmFlag);
-
-        protected bool IsIvm(bool value)
-        {
-            if (value)
-            {
-                SetFlag(IvmFlag);
-            }
-            else
-            {
-                ClearFlag(IvmFlag);
-            }
-
-            return value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsAutoCreated() => HasFlag(AutoCreatedFlag);
-
-        protected bool IsAutoCreated(bool value)
-        {
-            if (value)
-            {
-                SetFlag(AutoCreatedFlag);
-            }
-            else
-            {
-                ClearFlag(AutoCreatedFlag);
-            }
-
-            return value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool IsSymbolPresent() => HasFlag(SymbolPresentFlag);
-
-        protected bool IsSymbolPresent(bool value)
-        {
-            if (value)
-            {
-                SetFlag(SymbolPresentFlag);
-            }
-            else
-            {
-                ClearFlag(SymbolPresentFlag);
-            }
-
-            return value;
-        }
-
-        protected void ThrowIfLocked()
-        {
-            if (LockedFlagOn())
-                throw new InvalidOperationException("Value is read-only");
-        }
-
-        protected void ThrowIfNull()
-        {
-            if (NullFlagOn())
-                throw new NullValueException();
-        }
-
         /// <summary>
         /// This field stores information about different value properties, and element Id
         /// First byte for flags.
         /// <para>The rest 24bit for element id.</para>
         /// </summary>
-        private byte _flags;
-
-        #endregion
-
-        private List<SymbolToken> _annotations;
-
-        /// <summary>
-        /// Store the field name text and sid.
-        /// </summary>
-        public SymbolToken FieldNameSymbol { get; set; }
+        private byte flags;
+        private List<SymbolToken> annotations;
 
         protected IonValue(bool isNull)
         {
             if (isNull)
             {
-                NullFlagOn(true);
+                this.NullFlagOn(true);
             }
+        }
+
+        /// <summary>
+        /// Gets or sets the field name text and sid.
+        /// </summary>
+        public SymbolToken FieldNameSymbol { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether this value is a null value.
+        /// </summary>
+        public bool IsNull => this.NullFlagOn();
+
+        public bool IsReadOnly => this.LockedFlagOn();
+
+        // Applicable to IonDecimal
+        public virtual decimal DecimalValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual BigDecimal BigDecimalValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        // Applicable to IonContainer
+        public virtual int Count => throw new InvalidOperationException(this.GetErrorMessage());
+
+        // Applicable to IonText
+        public virtual string StringValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        // Applicable to IonInt
+        public virtual IntegerSize IntegerSize => throw new InvalidOperationException(this.GetErrorMessage());
+
+        public virtual BigInteger BigIntegerValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual int IntValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual long LongValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        // Applicable to IonSymbol
+        public virtual SymbolToken SymbolValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        // Applicable to IonBool
+        public virtual bool BoolValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        // Applicable to IonFloat
+        public virtual double DoubleValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        // Applicable to IonTimestamp
+        public virtual Timestamp TimestampValue
+        {
+            get => throw new InvalidOperationException(this.GetErrorMessage());
         }
 
         /// <summary>
@@ -216,10 +136,12 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <returns>Read-only collection of type annotations.</returns>
         public IReadOnlyCollection<SymbolToken> GetTypeAnnotationSymbols()
         {
-            if (_annotations == null)
+            if (this.annotations == null)
+            {
                 return SymbolToken.EmptyArray;
+            }
 
-            return _annotations;
+            return this.annotations;
         }
 
         /// <summary>
@@ -233,7 +155,8 @@ namespace Amazon.IonDotnet.Tree.Impl
             {
                 throw new ArgumentNullException(nameof(annotation));
             }
-            AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
+
+            this.AddTypeAnnotation(new SymbolToken(annotation, SymbolToken.UnknownSid));
         }
 
         /// <summary>
@@ -242,14 +165,14 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// <param name="annotation">Annotation symbol.</param>
         public void AddTypeAnnotation(SymbolToken annotation)
         {
-            ThrowIfLocked();
+            this.ThrowIfLocked();
 
-            if (_annotations == null)
+            if (this.annotations == null)
             {
-                _annotations = new List<SymbolToken>(1);
+                this.annotations = new List<SymbolToken>(1);
             }
 
-            _annotations.Add(annotation);
+            this.annotations.Add(annotation);
         }
 
         /// <summary>
@@ -257,40 +180,311 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// </summary>
         public void ClearAnnotations()
         {
-            ThrowIfLocked();
-            if (_annotations == null)
+            this.ThrowIfLocked();
+            if (this.annotations == null)
             {
-                _annotations = new List<SymbolToken>();
+                this.annotations = new List<SymbolToken>();
             }
 
-            _annotations.Clear();
+            this.annotations.Clear();
         }
 
         /// <summary>
         /// Returns true if the value contains such annotation.
         /// </summary>
         /// <param name="text">Annotation text.</param>
+        /// <returns>True if the value contains such annotation.</returns>
         /// <exception cref="ArgumentNullException">When text is null.</exception>
         public bool HasAnnotation(string text)
         {
             if (text == null)
+            {
                 throw new ArgumentNullException(nameof(text));
+            }
 
-            return _annotations != null && _annotations.Any(a => text.Equals(a.Text));
+            return this.annotations != null && this.annotations.Any(a => text.Equals(a.Text));
         }
-
-        /// <summary>
-        /// Get or set whether this value is a null value.
-        /// </summary>
-        public bool IsNull => NullFlagOn();
 
         /// <summary>
         /// Make this value become a null.
         /// </summary>
         public virtual void MakeNull()
         {
-            ThrowIfLocked();
-            NullFlagOn(true);
+            this.ThrowIfLocked();
+            this.NullFlagOn(true);
+        }
+
+        public void WriteTo(IIonWriter writer)
+        {
+            if (!(writer is IPrivateWriter privateWriter))
+            {
+                throw new InvalidOperationException();
+            }
+
+            if (writer.IsInStruct && !privateWriter.IsFieldNameSet())
+            {
+                if (this.FieldNameSymbol == default)
+                {
+                    throw new IonException("Field name is not set");
+                }
+
+                writer.SetFieldNameSymbol(this.FieldNameSymbol);
+            }
+
+            privateWriter.ClearTypeAnnotations();
+            if (this.annotations != null)
+            {
+                foreach (var a in this.annotations)
+                {
+                    privateWriter.AddTypeAnnotationSymbol(a);
+                }
+            }
+
+            this.WriteBodyTo(privateWriter);
+        }
+
+        public void MakeReadOnly() => this.LockedFlagOn(true);
+
+        public string ToPrettyString()
+        {
+            using (var sw = new StringWriter())
+            {
+                var writer = new IonTextWriter(sw, new IonTextOptions { PrettyPrint = true });
+                this.WriteTo(writer);
+                writer.Finish();
+                return sw.ToString();
+            }
+        }
+
+        public virtual bool IsEquivalentTo(IIonValue value)
+        {
+            var valueIonValue = (IonValue)value;
+            return this.IsEquivalentTo(valueIonValue);
+        }
+
+        public virtual ReadOnlySpan<byte> Bytes()
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual void SetBytes(ReadOnlySpan<byte> buffer)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual int ByteSize()
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual StreamReader NewReader(Encoding encoding)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual void RemoveAt(int index)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual IIonValue GetElementAt(int index)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual bool ContainsField(string fieldName)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual IIonValue GetField(string fieldName)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual void SetField(string fieldName, IIonValue value)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual bool RemoveField(string fieldName)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual void Clear()
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual void Add(IIonValue item)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual int IndexOf(IIonValue item)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual bool Remove(IIonValue item)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual bool Contains(IIonValue item)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual void CopyTo(IIonValue[] array, int arrayIndex)
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual IEnumerator<IIonValue> GetEnumerator()
+        {
+            throw new InvalidOperationException(this.GetErrorMessage());
+        }
+
+        public virtual IonType Type()
+        {
+            throw new InvalidOperationException("This operation is not supported for this IonType}");
+        }
+
+        /// <summary>
+        /// Concrete class implementations should call the correct writer method.
+        /// </summary>
+        /// <param name="writer">The writer to write to.</param>
+        internal abstract void WriteBodyTo(IPrivateWriter writer);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected int GetMetadata(int mask, int shift) => (this.flags & mask) >> shift;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void SetMetadata(int metadata, byte mask, int shift)
+        {
+            this.flags &= (byte)~mask;
+            this.flags |= (byte)((metadata << shift) & mask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool BoolTrueFlagOn() => this.HasFlag(BoolTrueFlag);
+
+        protected void BoolTrueFlagOn(bool value)
+        {
+            if (value)
+            {
+                this.SetFlag(BoolTrueFlag);
+            }
+            else
+            {
+                this.ClearFlag(BoolTrueFlag);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool IsSystemValue() => this.HasFlag(SystemValueFlag);
+
+        protected bool IsSystemValue(bool value)
+        {
+            if (value)
+            {
+                this.SetFlag(SystemValueFlag);
+            }
+            else
+            {
+                this.ClearFlag(SystemValueFlag);
+            }
+
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool NullFlagOn() => this.HasFlag(NullFlag);
+
+        protected void NullFlagOn(bool value)
+        {
+            if (value)
+            {
+                this.SetFlag(NullFlag);
+            }
+            else
+            {
+                this.ClearFlag(NullFlag);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool IsIvm() => this.HasFlag(IvmFlag);
+
+        protected bool IsIvm(bool value)
+        {
+            if (value)
+            {
+                this.SetFlag(IvmFlag);
+            }
+            else
+            {
+                this.ClearFlag(IvmFlag);
+            }
+
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool IsAutoCreated() => this.HasFlag(AutoCreatedFlag);
+
+        protected bool IsAutoCreated(bool value)
+        {
+            if (value)
+            {
+                this.SetFlag(AutoCreatedFlag);
+            }
+            else
+            {
+                this.ClearFlag(AutoCreatedFlag);
+            }
+
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool IsSymbolPresent() => this.HasFlag(SymbolPresentFlag);
+
+        protected bool IsSymbolPresent(bool value)
+        {
+            if (value)
+            {
+                this.SetFlag(SymbolPresentFlag);
+            }
+            else
+            {
+                this.ClearFlag(SymbolPresentFlag);
+            }
+
+            return value;
+        }
+
+        protected void ThrowIfLocked()
+        {
+            if (this.LockedFlagOn())
+            {
+                throw new InvalidOperationException("Value is read-only");
+            }
+        }
+
+        protected void ThrowIfNull()
+        {
+            if (this.NullFlagOn())
+            {
+                throw new NullValueException();
+            }
+        }
+
+        private string GetErrorMessage()
+        {
+            return $"This operation is not supported for IonType {this.Type()}";
         }
 
         /// <summary>
@@ -303,240 +497,55 @@ namespace Amazon.IonDotnet.Tree.Impl
         /// </remarks>
         private bool IsEquivalentTo(IonValue other)
         {
-            if (other == null || Type() != other.Type())
-                return false;
-
-            var otherAnnotations = other._annotations;
-            if (_annotations == null)
-                return otherAnnotations == null || otherAnnotations.Count == 0;
-
-            if (otherAnnotations == null || otherAnnotations.Count != _annotations.Count)
-                return false;
-
-            for (int i = 0, l = _annotations.Count; i < l; i++)
+            if (other == null || this.Type() != other.Type())
             {
-                if (!_annotations[i].IsEquivalentTo(otherAnnotations[i]))
+                return false;
+            }
+
+            var otherAnnotations = other.annotations;
+            if (this.annotations == null)
+            {
+                return otherAnnotations == null || otherAnnotations.Count == 0;
+            }
+
+            if (otherAnnotations == null || otherAnnotations.Count != this.annotations.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0, l = this.annotations.Count; i < l; i++)
+            {
+                if (!this.annotations[i].IsEquivalentTo(otherAnnotations[i]))
+                {
                     return false;
+                }
             }
 
             return true;
         }
 
-        public void WriteTo(IIonWriter writer)
-        {
-            if (!(writer is IPrivateWriter privateWriter))
-                throw new InvalidOperationException();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasFlag(byte flagBit) => (this.flags & flagBit) != 0;
 
-            if (writer.IsInStruct && !privateWriter.IsFieldNameSet())
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetFlag(byte flagBit) => this.flags |= flagBit;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ClearFlag(byte flagBit) => this.flags &= (byte)~flagBit;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool LockedFlagOn() => this.HasFlag(LockedFlag);
+
+        private void LockedFlagOn(bool value)
+        {
+            if (value)
             {
-                if (FieldNameSymbol == default)
-                    throw new IonException("Field name is not set");
-
-                writer.SetFieldNameSymbol(FieldNameSymbol);
+                this.SetFlag(LockedFlag);
             }
-
-            privateWriter.ClearTypeAnnotations();
-            if (_annotations != null)
+            else
             {
-                foreach (var a in _annotations)
-                {
-                    privateWriter.AddTypeAnnotationSymbol(a);
-                }
+                this.ClearFlag(LockedFlag);
             }
-
-//            privateWriter.SetTypeAnnotation(GetTypeAnnotations());
-            WriteBodyTo(privateWriter);
-        }
-
-        /// <summary>
-        /// Concrete class implementations should call the correct writer method.
-        /// </summary>
-        internal abstract void WriteBodyTo(IPrivateWriter writer);
-
-//        /// <summary>
-//        /// Create a new instance of this Ion value with the same value but does not share the container context.
-//        /// </summary>
-//        /// <returns>A clone of this Ion value instance.</returns>
-//        public IonValue Clone()
-//        {
-//            throw new NotImplementedException();
-//        }
-
-        private string GetErrorMessage()
-        {
-            return $"This operation is not supported for IonType {Type()}";
-        }
-
-        public bool IsReadOnly => LockedFlagOn();
-
-        public void MakeReadOnly() => LockedFlagOn(true);
-
-        // Applicable to IonDecimal
-        public virtual decimal DecimalValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-        public virtual BigDecimal BigDecimalValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        // Applicable to IonContainer
-        public virtual int Count => throw new InvalidOperationException(GetErrorMessage());
-
-        // Applicable to IonText
-        public virtual string StringValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        // Applicable to IonInt
-        public virtual IntegerSize IntegerSize => throw new InvalidOperationException(GetErrorMessage());
-
-        public virtual BigInteger BigIntegerValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual int IntValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual long LongValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        // Applicable to IonSymbol
-        public virtual SymbolToken SymbolValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        // Applicable to IonBool
-        public virtual bool BoolValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        // Applicable to IonFloat
-        public virtual double DoubleValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        // Applicable to IonTimestamp
-        public virtual Timestamp TimestampValue
-        {
-            get => throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public string ToPrettyString()
-        {
-            using (var sw = new StringWriter())
-            {
-                var writer = new IonTextWriter(sw, new IonTextOptions {PrettyPrint = true});
-                WriteTo(writer);
-                writer.Finish();
-                return sw.ToString();
-            }
-        }
-
-        public virtual bool IsEquivalentTo(IIonValue value)
-        {
-            var valueIonValue = (IonValue)value;
-            return IsEquivalentTo(valueIonValue);
-        }
-
-        public virtual ReadOnlySpan<byte> Bytes()
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual void SetBytes(ReadOnlySpan<byte> buffer)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual int ByteSize()
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual StreamReader NewReader(Encoding encoding)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual void RemoveAt(int index)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual IIonValue GetElementAt(int index)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual bool ContainsField(string fieldName)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual IIonValue GetField(string fieldName)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual void SetField(string fieldName, IIonValue value)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual bool RemoveField(string fieldName)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual void Clear()
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual void Add(IIonValue item)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual int IndexOf(IIonValue item)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual bool Remove(IIonValue item)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual bool Contains(IIonValue item)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual void CopyTo(IIonValue[] array, int arrayIndex)
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual IEnumerator<IIonValue> GetEnumerator()
-        {
-            throw new InvalidOperationException(GetErrorMessage());
-        }
-
-        public virtual IonType Type()
-        {
-            throw new InvalidOperationException("This operation is not supported for this IonType}");
         }
     }
 }

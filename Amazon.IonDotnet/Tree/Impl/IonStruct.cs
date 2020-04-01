@@ -348,7 +348,7 @@ namespace Amazon.IonDotnet.Tree.Impl
 
             public override bool Equals(object obj)
             {
-                var other = (MultisetField) obj;
+                var other = (MultisetField)obj;
                 Debug.Assert(other != null, "other is null");
                 return this.name == other.name && other.value.IsEquivalentTo(this.value);
             }
