@@ -46,7 +46,7 @@ namespace Amazon.IonDotnet.Tree.Impl
                 return false;
             }
 
-            var otherBlob = (IonBlob) other;
+            var otherBlob = (IonBlob)other;
 
             if (this.NullFlagOn())
             {

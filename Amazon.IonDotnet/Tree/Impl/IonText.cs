@@ -21,25 +21,26 @@ namespace Amazon.IonDotnet.Tree.Impl
     /// </summary>
     internal abstract class IonText : IonValue, IIonText
     {
-        protected string StringVal;
+        protected string stringVal;
 
-        protected IonText(string text, bool isNull) : base(isNull)
+        protected IonText(string text, bool isNull)
+            : base(isNull)
         {
-            StringVal = text;
+            this.stringVal = text;
         }
 
         /// <summary>
-        /// Textual value as string.
+        /// Gets the textual value as string.
         /// </summary>
         public override string StringValue
         {
-            get => StringVal;
+            get => this.stringVal;
         }
 
         public override void MakeNull()
         {
             base.MakeNull();
-            StringVal = null;
+            this.stringVal = null;
         }
     }
 }

@@ -21,17 +21,20 @@ namespace Amazon.IonDotnet.Tree.Impl
     /// </summary>
     internal sealed class IonSexp : IonSequence, IIonSexp
     {
-        public IonSexp() : this(false)
+        public IonSexp()
+            : this(false)
         {
         }
 
-        private IonSexp(bool isNull) : base(isNull)
+        private IonSexp(bool isNull)
+            : base(isNull)
         {
         }
 
         /// <summary>
         /// Returns a new null.list value.
         /// </summary>
+        /// <returns>A null IonSexp.</returns>
         public static IonSexp NewNull() => new IonSexp(true);
 
         public override IonType Type() => IonType.Sexp;

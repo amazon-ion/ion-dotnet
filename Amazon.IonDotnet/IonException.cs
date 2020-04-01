@@ -19,23 +19,26 @@ namespace Amazon.IonDotnet
 
     /// <inheritdoc />
     /// <summary>
-    /// Base class for exceptions thrown throughout this library
+    /// Base class for exceptions thrown throughout this library.
     /// </summary>
     public class IonException : Exception
     {
+        public IonException(Exception inner)
+            : base("Exception caused by another", inner)
+        {
+        }
+
+        public IonException(string message)
+            : base(message)
+        {
+        }
+
+        public IonException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
         protected IonException()
-        {
-        }
-
-        public IonException(Exception inner) : base("Exception caused by another", inner)
-        {
-        }
-
-        public IonException(string message) : base(message)
-        {
-        }
-
-        public IonException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }

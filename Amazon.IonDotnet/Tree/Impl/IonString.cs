@@ -46,11 +46,11 @@ namespace Amazon.IonDotnet.Tree.Impl
                 return false;
             }
 
-            return this.StringVal == otherString.StringVal;
+            return this.stringVal == otherString.stringVal;
         }
 
         public override IonType Type() => IonType.String;
 
-        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(this.StringVal);
+        internal override void WriteBodyTo(IPrivateWriter writer) => writer.WriteString(this.stringVal);
     }
 }

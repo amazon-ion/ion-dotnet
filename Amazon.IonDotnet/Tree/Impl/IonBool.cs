@@ -55,7 +55,7 @@ namespace Amazon.IonDotnet.Tree.Impl
                 return false;
             }
 
-            var otherBool = (IonBool) other;
+            var otherBool = (IonBool)other;
 
             if (this.NullFlagOn())
             {
