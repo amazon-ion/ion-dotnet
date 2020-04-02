@@ -109,7 +109,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
         }
 
-        private void WriteSymbolText(string text, SymbolVariant symbolVariant = SymbolVariant.Unknown)
+        private void WriteSymbolText(string text)
         {
             if (_options.SymbolAsString)
             {
@@ -117,11 +117,8 @@ namespace Amazon.IonDotnet.Internals.Text
                 return;
             }
 
-            //TODO handle different kinds of SymbolVariant
-            if (symbolVariant == SymbolVariant.Unknown)
-            {
-                symbolVariant = GetSymbolVariant(text);
-            }
+            // Determine the variant for writing.
+            SymbolVariant symbolVariant = GetSymbolVariant(text);
 
             switch (symbolVariant)
             {
@@ -238,8 +235,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
             else
             {
-                //we write all symbol values with single-quote
-                WriteSymbolText(symbolToken.Text, SymbolVariant.Quoted);
+                WriteSymbolText(symbolToken.Text);
             }
 
             CloseValue();
@@ -250,7 +246,7 @@ namespace Amazon.IonDotnet.Internals.Text
             _isWritingIvm = true;
 
             StartValue();
-            WriteSymbolText(systemSymtab.IonVersionId, SymbolVariant.Identifier);
+            WriteSymbolText(systemSymtab.IonVersionId);
             CloseValue();
 
             _isWritingIvm = false;
