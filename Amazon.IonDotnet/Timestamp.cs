@@ -39,6 +39,11 @@ namespace Amazon.IonDotnet
         /// </summary>
         public readonly Precision TimestampPrecision;
 
+        /// <summary>
+        /// Fractional seconds (milliseconds).
+        /// </summary>
+        public readonly decimal FractionalSecond;
+
         private static readonly DateTime EpochLocal = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
         /// <summary>
@@ -70,9 +75,9 @@ namespace Amazon.IonDotnet
                 throw new ArgumentException("Fraction must be < 1", nameof(frac));
             }
 
-            var ticks = (int)(frac * TimeSpan.TicksPerSecond);
+            this.FractionalSecond = frac;
             this.DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified)
-                .Add(TimeSpan.FromTicks(ticks));
+                .AddSeconds(decimal.ToDouble(frac));
             this.LocalOffset = 0;
         }
 
@@ -86,6 +91,7 @@ namespace Amazon.IonDotnet
             Precision precision = Precision.Second)
         {
             this.TimestampPrecision = precision;
+            this.FractionalSecond = 0;
 
             // offset known
             this.DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, DateTimeKind.Unspecified);
@@ -124,7 +130,7 @@ namespace Amazon.IonDotnet
                 throw new ArgumentException($"Fraction must be < 1: {frac}", nameof(frac));
             }
 
-            var ticks = (int)(frac * TimeSpan.TicksPerSecond);
+            this.FractionalSecond = frac;
             var kind = DateTimeKind.Unspecified;
 
             // offset only makes sense if precision >= Minute
@@ -138,7 +144,7 @@ namespace Amazon.IonDotnet
             }
 
             const int maxOffset = 14 * 60;
-            var shift = TimeSpan.FromTicks(ticks);
+            var shift = TimeSpan.FromSeconds(decimal.ToDouble(frac));
             if (offset > maxOffset || offset < -maxOffset)
             {
                 var minuteShift = (offset / maxOffset) * maxOffset;
@@ -160,6 +166,7 @@ namespace Amazon.IonDotnet
         public Timestamp(DateTime dateTimeValue)
         {
             this.TimestampPrecision = Precision.Second;
+            this.FractionalSecond = 0;
 
             this.DateTimeValue = DateTime.SpecifyKind(dateTimeValue, DateTimeKind.Unspecified);
 
@@ -175,10 +182,51 @@ namespace Amazon.IonDotnet
         public Timestamp(DateTimeOffset dateTimeOffset)
         {
             this.TimestampPrecision = Precision.Second;
+            this.FractionalSecond = 0;
             this.LocalOffset = (int)dateTimeOffset.Offset.TotalMinutes;
             this.DateTimeValue = DateTime.SpecifyKind(
                 dateTimeOffset.DateTime,
                 this.LocalOffset == 0 ? DateTimeKind.Utc : DateTimeKind.Local);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Timestamp"/> struct with different components, offset and fractional second.
+        /// Timestamps in the binary encoding are always in UTC, while in the text encoding are in the local time. This means transcoding
+        /// requires a conversion between UTC and local time, ergo we add the offset and fractional seconds to this value.
+        /// </summary>
+        /// <param name="year">Year.</param>
+        /// <param name="month">Month.</param>
+        /// <param name="day">Day.</param>
+        /// <param name="hour">Hour.</param>
+        /// <param name="minute">Minute.</param>
+        /// <param name="second">Second.</param>
+        /// <param name="offset">Offset value.</param>
+        /// <param name="frac">Fractional second value.</param>
+        /// <param name="precision">The precision of the value.</param>
+        /// <param name="kind">DateTimeKind.</param>
+        internal Timestamp(
+            int year,
+            int month,
+            int day,
+            int hour,
+            int minute,
+            int second,
+            int offset,
+            in decimal frac,
+            Precision precision,
+            DateTimeKind kind)
+        {
+            this.TimestampPrecision = precision;
+            if (frac >= 1)
+            {
+                throw new ArgumentException("Fraction must be < 1", nameof(frac));
+            }
+
+            this.FractionalSecond = frac;
+            this.DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
+                .AddMinutes(offset)
+                .AddSeconds(decimal.ToDouble(frac));
+            this.LocalOffset = offset;
         }
 
         public enum Precision : byte
@@ -334,14 +382,9 @@ namespace Amazon.IonDotnet
                 throw new FormatException(s);
             }
 
-            if (s.Length < 19 || !IntTryParseSubString(s, 17, 2, false, out var second))
+            if (s.Length < 20 || !IntTryParseSubString(s, 17, 2, false, out var second))
             {
                 throw new FormatException(s);
-            }
-
-            if (s.Length == 19)
-            {
-                return new Timestamp(year, month, day, hour, minute, second);
             }
 
             switch (s[19])
@@ -384,9 +427,10 @@ namespace Amazon.IonDotnet
             }
 
             var idxNext = 20 + fracLength;
-            if (idxNext >= s.Length)
+            if (idxNext == s.Length)
             {
-                return new Timestamp(year, month, day, hour, minute, second, frac);
+                // this covers the case where offset is missing after fractional seconds.
+                throw new FormatException(s + " requires an offset.");
             }
 
             switch (s[idxNext])

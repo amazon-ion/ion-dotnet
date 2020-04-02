@@ -471,6 +471,12 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.ReadVarInt(out var exponent);
             if (exponent > 0)
             {
+                // Meaning that mantissa is zero
+                if (this.localRemaining == 0)
+                {
+                    return 0m;
+                }
+
                 throw new IonException($"Exponent should be <= 0: {exponent}");
             }
 
@@ -570,16 +576,9 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
 
             this.localRemaining = saveLimit;
-            if (frac > 0)
-            {
-                return offsetKnown
-                    ? new Timestamp(year, month, day, hour, minute, second, offset, frac, precision)
-                    : new Timestamp(year, month, day, hour, minute, second, frac, precision);
-            }
 
-            return offsetKnown
-                ? new Timestamp(year, month, day, hour, minute, second, offset, precision)
-                : new Timestamp(year, month, day, hour, minute, second, precision);
+            DateTimeKind kind = this.GetOffsetKind(precision, offsetKnown, ref offset);
+            return new Timestamp(year, month, day, hour, minute, second, offset, frac, precision, kind);
         }
 
         /// <summary>
@@ -1184,6 +1183,21 @@ namespace Amazon.IonDotnet.Internals.Binary
             var bytesRead = this.input.Read(buffer);
             this.localRemaining -= bytesRead;
             return bytesRead;
+        }
+
+        private DateTimeKind GetOffsetKind(Timestamp.Precision precision, bool offsetKnown, ref int offset)
+        {
+            if (precision < Timestamp.Precision.Minute)
+            {
+                offset = 0;
+                return DateTimeKind.Unspecified;
+            }
+            else
+            {
+                return offsetKnown
+                    ? offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local
+                    : DateTimeKind.Unspecified;
+            }
         }
     }
 }
