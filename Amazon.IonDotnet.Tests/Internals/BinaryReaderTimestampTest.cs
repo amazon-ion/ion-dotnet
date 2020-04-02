@@ -34,23 +34,38 @@ namespace Amazon.IonDotnet.Tests.Internals
             ReaderTimestampCommon.Date_2000_11_20_8_20_15_Unknown(reader);
         }
 
-        [DataRow("2008-12-23T23:00:01.123+07:00")]
+        [DataRow("2008T", DateTimeKind.Unspecified, 0, "2008T")]
+        [DataRow("2008-02T", DateTimeKind.Unspecified, 0, "2008-02T")]
+        [DataRow("2008-02-03T", DateTimeKind.Unspecified, 0, "2008-02-03T")]
+        [DataRow("2008-12-23T23:22:00-00:00", DateTimeKind.Unspecified, 0, "2008-12-23T23:22:00-00:00")]
+        [DataRow("2008-12-23T23:22+00:00", DateTimeKind.Utc, 0, "2008-12-23T23:22Z")]
+        [DataRow("2008-12-23T23:22+07:20", DateTimeKind.Local, 440, "2008-12-23T16:02Z")]
+        [DataRow("2008-12-23T23:22-07:20", DateTimeKind.Local, -440, "2008-12-24T06:42Z")]
+        [DataRow("2008-12-23T23:22:33+07:20", DateTimeKind.Local, 440, "2008-12-23T16:02:33Z")]
+        [DataRow("2008-12-23T23:00:01.123+07:00", DateTimeKind.Local, 420, "2008-12-23T16:00:01.123Z")]
         [TestMethod]
-        public void Date_FragSecond(string dateStr)
+        public void Date_FracSecond_offset(string dateStr, DateTimeKind expectedOffsetKind,
+            int expectedOffsetValue, string expectedStr)
         {
-            var ts = Timestamp.Parse(dateStr);
+            var timestamp = Timestamp.Parse(dateStr);
+            var expected = Timestamp.Parse(expectedStr);
             using (var memStream = new MemoryStream())
             {
                 var binWriter = IonBinaryWriterBuilder.Build(memStream);
-                binWriter.WriteTimestamp(ts);
+                binWriter.WriteTimestamp(timestamp);
                 binWriter.Finish();
                 var bytes = memStream.ToArray();
                 var datagram = IonLoader.Default.Load(bytes);
                 foreach (var ionValue in datagram)
                 {
                     Assert.IsTrue(ionValue is IonTimestamp);
-                    var ionTimestamp = ionValue;
-                    Assert.AreEqual(0.123 * TimeSpan.TicksPerSecond, ionTimestamp.TimestampValue.DateTimeValue.Ticks % TimeSpan.TicksPerSecond);
+                    var ionTimestamp = ionValue.TimestampValue;
+                    Assert.AreEqual(expected.FractionalSecond, ionTimestamp.FractionalSecond);
+                    Assert.AreEqual(expectedOffsetValue, ionTimestamp.LocalOffset);
+                    Assert.AreEqual(expected.TimestampPrecision, ionTimestamp.TimestampPrecision);
+                    Assert.AreEqual(expectedOffsetKind, ionTimestamp.DateTimeValue.Kind);
+                    Assert.IsTrue(expected.Equals(ionTimestamp));
+
                 }
             }
         }
