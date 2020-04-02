@@ -730,7 +730,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             _localRemaining = saveLimit;
 
             DateTimeKind kind = GetOffsetKind(precision, offsetKnown, ref offset);
-            return new Timestamp(year, month, day, hour, minute, second, offset, frac, offset, precision, kind);
+            return new Timestamp(year, month, day, hour, minute, second, offset, frac, precision, kind);
         }
 
         /// <summary>

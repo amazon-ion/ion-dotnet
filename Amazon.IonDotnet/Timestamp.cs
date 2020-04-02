@@ -153,6 +153,20 @@ namespace Amazon.IonDotnet
         }
 
         /// <summary>
+        /// Initialize the timestamp with a <see cref="DateTimeOffset"/> value
+        /// </summary>
+        /// <param name="dateTimeOffset"></param>
+        public Timestamp(DateTimeOffset dateTimeOffset)
+        {
+            TimestampPrecision = Precision.Second;
+            FractionalSecond = 0;
+            LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
+            DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0
+                ? DateTimeKind.Utc
+                : DateTimeKind.Local);
+        }
+
+        /// <summary>
         /// Initialize the timestamp with different components, offset and fractional second. Timestamps in the
         /// binary encoding are always in UTC, while in the text encoding are in the local time. This means transcoding
         /// requires a conversion between UTC and local time, ergo we add the offset and fractional seconds to this value.
@@ -166,31 +180,18 @@ namespace Amazon.IonDotnet
         /// <param name="offset">Offset value</param>
         /// <param name="frac">Fractional second value</param>
         /// <param name="precision">The precision of the value</param>
-        public Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac,
-            int adjustByOffset, Precision precision, DateTimeKind kind)
+        /// <param name="kind">DateTimeKind</param>
+        internal Timestamp(int year, int month, int day, int hour, int minute, int second, int offset, in decimal frac,
+            Precision precision, DateTimeKind kind)
         {
             TimestampPrecision = precision;
             if (frac >= 1)
                 throw new ArgumentException("Fraction must be < 1", nameof(frac));
             FractionalSecond = frac;
             DateTimeValue = new DateTime(year, month > 0 ? month : 1, day > 0 ? day : 1, hour, minute, second, kind)
-                .AddMinutes(adjustByOffset)
+                .AddMinutes(offset)
                 .AddSeconds(Decimal.ToDouble(frac));
             LocalOffset = offset;
-        }
-
-        /// <summary>
-        /// Initialize the timestamp with a <see cref="DateTimeOffset"/> value
-        /// </summary>
-        /// <param name="dateTimeOffset"></param>
-        public Timestamp(DateTimeOffset dateTimeOffset)
-        {
-            TimestampPrecision = Precision.Second;
-            FractionalSecond = 0;
-            LocalOffset = (int) dateTimeOffset.Offset.TotalMinutes;
-            DateTimeValue = DateTime.SpecifyKind(dateTimeOffset.DateTime, LocalOffset == 0
-                ? DateTimeKind.Utc
-                : DateTimeKind.Local);
         }
 
         /// <summary>
