@@ -689,9 +689,10 @@ namespace Amazon.IonDotnet.Internals.Binary
         public void WriteTimestamp(Timestamp value)
         {
             const byte varintNegZero = 0xC0;
-            const short minutePrecision = 3;
-            const short secondPrecision = 4;
-            const short fracPrecision = 5;
+
+            DateTime dateTimeValue = value.DateTimeValue.Kind == DateTimeKind.Local
+                ? value.DateTimeValue.AddMinutes(-value.LocalOffset)
+                : value.DateTimeValue;
 
             PrepareValue();
 
@@ -703,7 +704,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             var newContainer = _containerStack.PushContainer(ContainerType.Timestamp);
             var totalLength = 0;
             _dataBuffer.StartStreak(newContainer.Sequence);
-            if (value.DateTimeValue.Kind == DateTimeKind.Unspecified || value.DateTimeValue.Kind == DateTimeKind.Local)
+            if (value.DateTimeValue.Kind == DateTimeKind.Unspecified)
             {
                 //unknown offset
                 totalLength++;
@@ -711,47 +712,36 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
             else
             {
-                totalLength += _dataBuffer.WriteVarUint(value.LocalOffset);
+                totalLength += _dataBuffer.WriteVarInt(value.LocalOffset);
             }
 
             _containerStack.IncreaseCurrentContainerLength(totalLength);
 
             //don't update totallength here
-            WriteVarUint(value.DateTimeValue.Year);
-            WriteVarUint(value.DateTimeValue.Month);
-            WriteVarUint(value.DateTimeValue.Day);
-
-            short precision = 0;
-            //we support up to ticks precision
-            decimal tickRemainder = value.DateTimeValue.Ticks % TimeSpan.TicksPerSecond;
-            if (tickRemainder != 0)
+            WriteVarUint(dateTimeValue.Year);
+            if (value.TimestampPrecision >= Timestamp.Precision.Month)
             {
-                precision = fracPrecision;
+                WriteVarUint(dateTimeValue.Month);
             }
-            else if (value.DateTimeValue.Second != 0)
+            if (value.TimestampPrecision >= Timestamp.Precision.Day)
             {
-                precision = secondPrecision;
+                WriteVarUint(dateTimeValue.Day);
             }
-            else if (value.DateTimeValue.Hour != 0 || value.DateTimeValue.Minute != 0)
+            //The hour and minute is considered as a single component
+            if (value.TimestampPrecision >= Timestamp.Precision.Minute)
             {
-                precision = minutePrecision;
+                WriteVarUint(dateTimeValue.Hour);
+                WriteVarUint(dateTimeValue.Minute);
             }
 
-            if (precision >= minutePrecision)
+            if (value.TimestampPrecision >= Timestamp.Precision.Second)
             {
-                WriteVarUint(value.DateTimeValue.Hour);
-                WriteVarUint(value.DateTimeValue.Minute);
+                WriteVarUint(dateTimeValue.Second);
             }
 
-            if (precision >= secondPrecision)
+            if (value.TimestampPrecision >= Timestamp.Precision.Second && !value.FractionalSecond.ToString().Equals("0"))
             {
-                WriteVarUint(value.DateTimeValue.Second);
-            }
-
-            if (precision == fracPrecision)
-            {
-                tickRemainder /= TimeSpan.TicksPerSecond;
-                WriteDecimalNumber(tickRemainder, false);
+                WriteDecimalNumber(value.FractionalSecond, false);
             }
 
             PopContainer();

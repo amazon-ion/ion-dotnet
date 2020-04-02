@@ -600,7 +600,14 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             ReadVarInt(out var exponent);
             if (exponent > 0)
+            {
+                if (_localRemaining == 0) // Meaning that mantissa is zero
+                {
+                    return 0m;
+                }
                 throw new IonException($"Exponent should be <= 0: {exponent}");
+            }
+
             //we care about the scale here
             exponent = -exponent;
 
@@ -665,6 +672,21 @@ namespace Amazon.IonDotnet.Internals.Binary
             return ret;
         }
 
+        private DateTimeKind GetOffsetKind(Timestamp.Precision precision, bool offsetKnown, ref int offset)
+        {
+            if (precision < Timestamp.Precision.Minute)
+            {
+                offset = 0;
+                return DateTimeKind.Unspecified;
+            }
+            else
+            {
+                return offsetKnown
+                    ? offset == 0 ? DateTimeKind.Utc : DateTimeKind.Local
+                    : DateTimeKind.Unspecified;
+            }
+        }
+
         protected Timestamp ReadTimeStamp(int length)
         {
             Debug.Assert(length > 0);
@@ -705,18 +727,10 @@ namespace Amazon.IonDotnet.Internals.Binary
                     }
                 }
             }
-
             _localRemaining = saveLimit;
-            if (frac > 0)
-            {
-                return offsetKnown
-                    ? new Timestamp(year, month, day, hour, minute, second, offset, frac, precision)
-                    : new Timestamp(year, month, day, hour, minute, second, frac, precision);
-            }
 
-            return offsetKnown
-                ? new Timestamp(year, month, day, hour, minute, second, offset, precision)
-                : new Timestamp(year, month, day, hour, minute, second, precision);
+            DateTimeKind kind = GetOffsetKind(precision, offsetKnown, ref offset);
+            return new Timestamp(year, month, day, hour, minute, second, offset, frac, precision, kind);
         }
 
         /// <summary>
