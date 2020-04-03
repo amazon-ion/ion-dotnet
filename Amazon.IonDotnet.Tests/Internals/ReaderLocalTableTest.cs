@@ -75,7 +75,7 @@ namespace Amazon.IonDotnet.Tests.Internals
                     "}\n" +
                     "null";
 
-            ISymbolTable symbolTable = OneValue(text);
+            ISymbolTable symbolTable = ReadSymbolTable(text);
             CheckLocalTable(symbolTable);
 
             var systemMaxId = symbolTable.GetSystemTable().MaxId;
@@ -172,7 +172,7 @@ namespace Amazon.IonDotnet.Tests.Internals
                     "}\n" +
                     "null";
 
-            ISymbolTable symbolTable = OneValue(text);
+            ISymbolTable symbolTable = ReadSymbolTable(text);
             CheckLocalTable(symbolTable);
 
             var systemMaxId = symbolTable.GetSystemTable().MaxId;
@@ -205,8 +205,8 @@ namespace Amazon.IonDotnet.Tests.Internals
                     "  symbols:[]" +
                     "}\n";
 
-            ISymbolTable originalSymbolTable = OneValue(original + "null");
-            ISymbolTable appendedSymbolTable = OneValue(appended + "null") ;
+            ISymbolTable originalSymbolTable = ReadSymbolTable(original + "null");
+            ISymbolTable appendedSymbolTable = ReadSymbolTable(appended + "null") ;
 
             var originalSymbol = originalSymbolTable.Find("s1");
             var appendedSymbol = appendedSymbolTable.Find("s1");
@@ -214,7 +214,52 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.AreEqual(originalSymbol.Sid, appendedSymbol.Sid);
         }
 
-        private static ISymbolTable OneValue(string text)
+        [TestMethod]
+        public void TestLocalSymbolTableAppendNonUnique()
+        {
+            var text = LocalSymbolTablePrefix +
+                    "{" +
+                    "  symbols:[ \"foo\" ]" +
+                    "}\n" +
+                    "$10\n" +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[ \"foo\", \"bar\" ]" +
+                    "}\n" +
+                    "$11\n" +
+                    "$12";
+
+            var datagram = IonLoader.Default.Load(text);
+
+            Assert.IsTrue(datagram.Count == 3);
+
+            Assert.AreEqual("foo", datagram.GetElementAt(0).StringValue);
+            Assert.AreEqual("foo", datagram.GetElementAt(1).StringValue);
+            Assert.AreEqual("bar", datagram.GetElementAt(2).StringValue);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
+        public void TestLocalSymbolTableAppendOutOfBounds()
+        {
+            var text = LocalSymbolTablePrefix +
+                    "{" +
+                    "  symbols:[ \"foo\" ]" +
+                    "}\n" +
+                    "$10\n" +
+                LocalSymbolTablePrefix +
+                    "{" +
+                    "  imports:" + SystemSymbols.IonSymbolTable + "," +
+                    "  symbols:[ \"foo\" ]" +
+                    "}\n" +
+                    "$11\n" +
+                    "$12";
+
+            IonLoader.Default.Load(text);
+        }
+
+        private static ISymbolTable ReadSymbolTable(string text)
         {
             IIonReader reader = IonReaderBuilder.Build(text);
             reader.MoveNext();

@@ -229,6 +229,15 @@ namespace Amazon.IonDotnet.Internals
                                  && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid))
                                  
                         {
+                            var priorSymbols = new List<string>();
+                            if (foundLocals)
+                            {
+                                // Ordering matters. Maintain order as 'symbols'
+                                // and 'imports' fields can come in any order.
+                                priorSymbols.AddRange(newSymbols);
+                                newSymbols.Clear();
+                            }
+
                             ISymbolTable currentSymbolTable = reader.GetSymbolTable();
 
                             var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames(); 
@@ -236,6 +245,8 @@ namespace Amazon.IonDotnet.Internals
                             {
                                 newSymbols.Add(declaredSymbol);
                             }
+
+                            newSymbols.AddRange(priorSymbols);
                         }
 
                         break;
@@ -247,22 +258,16 @@ namespace Amazon.IonDotnet.Internals
 
             reader.StepOut();
 
+            symbols.Clear();
+
             // If there were prior imports and now only a system table is
             // seen, then start fresh again as prior imports no longer matter.
             if (imports.Count > 1 && !foundImport && foundLocals)
             {
-                symbols.Clear();
                 imports.RemoveAll(symbolTable => symbolTable.IsSubstitute == true);
             }
 
-            foreach (string newSymbol in newSymbols)
-            {
-                // Keep null gaps and unique symbols.
-                if (newSymbol == null || !symbols.Contains(newSymbol))
-                {
-                    symbols.Add(newSymbol);
-                }
-            }
+            symbols.AddRange(newSymbols);
 
             table.Refresh();
 
