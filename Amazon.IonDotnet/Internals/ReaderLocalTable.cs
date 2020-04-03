@@ -13,13 +13,13 @@
  * permissions and limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Amazon.IonDotnet.Internals.Binary;
-
 namespace Amazon.IonDotnet.Internals
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using Amazon.IonDotnet.Internals.Binary;
+
     /// <summary>
     /// This class is used for processing local symbol tables while reading Ion data.
     /// </summary>
@@ -27,135 +27,40 @@ namespace Amazon.IonDotnet.Internals
     {
         internal readonly List<ISymbolTable> Imports;
 
-        private readonly List<string> _ownSymbols = new List<string>();
-        private int _importedMaxId;
+        private readonly List<string> ownSymbols = new List<string>();
+        private int importedMaxId;
 
         internal ReaderLocalTable(ISymbolTable systemTable)
         {
-            Debug.Assert(systemTable.IsSystem);
-            Imports = new List<ISymbolTable> {systemTable};
-        }
-
-        /// <summary>
-        /// Refresh the local symbol table to a valid state. Typically called after <see cref="Imports"/>
-        /// and <see cref="_ownSymbols"/> has been mutated. 
-        /// </summary>
-        internal void Refresh()
-        {
-            var maxId = 0;
-            foreach (var import in Imports)
-            {
-                Debug.Assert(import.IsShared);
-                maxId += import.MaxId;
-            }
-
-            _importedMaxId = maxId;
+            Debug.Assert(systemTable.IsSystem, "systemTable IsSystem is false");
+            this.Imports = new List<ISymbolTable> { systemTable };
         }
 
         public string Name => null;
+
         public int Version => 0;
+
         public bool IsLocal => true;
+
         public bool IsShared => false;
+
         public bool IsSubstitute => false;
+
         public bool IsSystem => false;
+
         public bool IsReadOnly => true;
 
-        void ISymbolTable.MakeReadOnly() => throw new NotSupportedException();
+        public string IonVersionId => this.GetSystemTable().IonVersionId;
 
-        public ISymbolTable GetSystemTable() => Imports[0];
-
-        public string IonVersionId => GetSystemTable().IonVersionId;
-
-        public IReadOnlyList<ISymbolTable> GetImportedTables() => Imports;
-
-        public int GetImportedMaxId() => _importedMaxId;
-
-        public int MaxId => _importedMaxId + _ownSymbols.Count;
-
-        SymbolToken ISymbolTable.Intern(string text) => throw new NotSupportedException();
-
-        public SymbolToken Find(string text)
-        {
-            foreach (var import in Imports)
-            {
-                var symbolToken = import.Find(text);
-                if (symbolToken != default)
-                {
-                    return new SymbolToken(symbolToken.Text, SymbolToken.UnknownSid);
-                }
-            }
-
-            if (_ownSymbols.Contains(text))
-            {
-                return new SymbolToken(text, SymbolToken.UnknownSid);
-            }
-
-            return default;
-        }
-
-        public int FindSymbolId(string text)
-        {
-            var offset = 0;
-            foreach (var import in Imports)
-            {
-                var sid = import.FindSymbolId(text);
-                if (sid > 0)
-                {
-                    return sid + offset;
-                }
-
-                offset += import.MaxId;
-            }
-
-            for (var i = 0; i < _ownSymbols.Count; i++)
-            {
-                if (_ownSymbols[i] == text)
-                {
-                    return i + 1 + _importedMaxId;
-                }
-            }
-
-            return SymbolToken.UnknownSid;
-        }
-
-        public string FindKnownSymbol(int sid)
-        {
-            if (sid < SystemSymbols.IonSid || sid > MaxId)
-            {
-                return null;
-            }
-
-            if (sid > _importedMaxId)
-            {
-                return _ownSymbols[sid - _importedMaxId - 1];
-            }
-
-            var offset = 0;
-            foreach (var import in Imports)
-            {
-                if (import.MaxId + offset >= sid)
-                {
-                    return import.FindKnownSymbol(sid - offset);
-                }
-
-                offset += import.MaxId;
-            }
-
-            // We should never get here.
-            throw new IonException($"Sid={sid}");
-        }
-
-        public void WriteTo(IIonWriter writer) => writer.WriteValue(new SymbolTableReader(this));
-
-        public IEnumerable<string> GetDeclaredSymbolNames() => _ownSymbols;
+        public int MaxId => this.importedMaxId + this.ownSymbols.Count;
 
         public static ISymbolTable ImportReaderTable(IIonReader reader, ICatalog catalog, bool isOnStruct)
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var imports = table.Imports;
-            var symbols = table._ownSymbols;
+            var symbols = table.ownSymbols;
             var newSymbols = new List<string>();
- 
+
             if (!isOnStruct)
             {
                 reader.MoveNext();
@@ -163,14 +68,11 @@ namespace Amazon.IonDotnet.Internals
 
             Debug.Assert(
                 reader.CurrentType == IonType.Struct,
-                "Invalid symbol table image passed in reader "
-                    + reader.CurrentType
-                    + " encountered when a struct was expected.");
+                "Invalid symbol table image passed in reader " + reader.CurrentType + " encountered when a struct was expected.");
 
             Debug.Assert(
                 SystemSymbols.IonSymbolTable.Equals(reader.GetTypeAnnotations()[0]),
-                "Local symbol tables must be annotated by "
-                    + SystemSymbols.IonSymbolTable + ".");
+                "Local symbol tables must be annotated by " + SystemSymbols.IonSymbolTable + ".");
 
             // Assume that we're standing before a struct.
             reader.StepIn();
@@ -223,11 +125,11 @@ namespace Amazon.IonDotnet.Internals
                             // List of symbol tables to imports.
                             ReadImportList(reader, catalog, imports);
                         }
+
                         // Trying to import the current table.
                         else if (fieldType == IonType.Symbol
                                  && reader.GetSymbolTable().IsLocal
                                  && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid))
-                                 
                         {
                             var currentSymbolTable = reader.GetSymbolTable();
                             var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames();
@@ -269,6 +171,107 @@ namespace Amazon.IonDotnet.Internals
             return table;
         }
 
+        void ISymbolTable.MakeReadOnly() => throw new NotSupportedException();
+
+        public ISymbolTable GetSystemTable() => this.Imports[0];
+
+        public IReadOnlyList<ISymbolTable> GetImportedTables() => this.Imports;
+
+        public int GetImportedMaxId() => this.importedMaxId;
+
+        SymbolToken ISymbolTable.Intern(string text) => throw new NotSupportedException();
+
+        public SymbolToken Find(string text)
+        {
+            foreach (var import in this.Imports)
+            {
+                var symbolToken = import.Find(text);
+                if (symbolToken != default)
+                {
+                    return new SymbolToken(symbolToken.Text, SymbolToken.UnknownSid);
+                }
+            }
+
+            if (this.ownSymbols.Contains(text))
+            {
+                return new SymbolToken(text, SymbolToken.UnknownSid);
+            }
+
+            return default;
+        }
+
+        public int FindSymbolId(string text)
+        {
+            var offset = 0;
+            foreach (var import in this.Imports)
+            {
+                var sid = import.FindSymbolId(text);
+                if (sid > 0)
+                {
+                    return sid + offset;
+                }
+
+                offset += import.MaxId;
+            }
+
+            for (var i = 0; i < this.ownSymbols.Count; i++)
+            {
+                if (this.ownSymbols[i] == text)
+                {
+                    return i + 1 + this.importedMaxId;
+                }
+            }
+
+            return SymbolToken.UnknownSid;
+        }
+
+        public string FindKnownSymbol(int sid)
+        {
+            if (sid < SystemSymbols.IonSid || sid > this.MaxId)
+            {
+                return null;
+            }
+
+            if (sid > this.importedMaxId)
+            {
+                return this.ownSymbols[sid - this.importedMaxId - 1];
+            }
+
+            var offset = 0;
+            foreach (var import in this.Imports)
+            {
+                if (import.MaxId + offset >= sid)
+                {
+                    return import.FindKnownSymbol(sid - offset);
+                }
+
+                offset += import.MaxId;
+            }
+
+            // We should never get here.
+            throw new IonException($"Sid={sid}");
+        }
+
+        public void WriteTo(IIonWriter writer) => writer.WriteValue(new SymbolTableReader(this));
+
+        public IEnumerable<string> GetDeclaredSymbolNames() => this.ownSymbols;
+
+        /// <summary>
+        /// Refresh the local symbol table to a valid state. Typically called after <see cref="Imports"/>
+        /// and <see cref="ownSymbols"/> has been mutated.
+        /// </summary>
+        internal void Refresh()
+        {
+            var maxId = 0;
+            foreach (var import in this.Imports)
+            {
+                Debug.Assert(import.IsShared, "import IsShared is false");
+                maxId += import.MaxId;
+            }
+
+            this.importedMaxId = maxId;
+        }
+
         private static void ReadSymbolList(IIonReader reader, List<string> newSymbols)
         {
             reader.StepIn();
@@ -297,8 +300,7 @@ namespace Amazon.IonDotnet.Internals
 
             Debug.Assert(
                 SystemSymbols.Imports.Equals(reader.CurrentFieldName),
-                "Current field name '" + reader.CurrentFieldName
-                    + "' does not match '" + SystemSymbols.Imports + "'.");
+                "Current field name '" + reader.CurrentFieldName + "' does not match '" + SystemSymbols.Imports + "'.");
 
             reader.StepIn();
 
@@ -326,9 +328,7 @@ namespace Amazon.IonDotnet.Internals
         {
             Debug.Assert(
                 reader.CurrentType == IonType.Struct,
-                "Invalid symbol table image passed in reader "
-                    + reader.CurrentType
-                    + " encountered when a struct was expected.");
+                "Invalid symbol table image passed in reader " + reader.CurrentType + " encountered when a struct was expected.");
 
             string name = null;
             var version = -1;
@@ -351,7 +351,6 @@ namespace Amazon.IonDotnet.Internals
                     // we fall back to text here.
                     fieldId = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
                 }
-
 
                 switch (fieldId)
                 {

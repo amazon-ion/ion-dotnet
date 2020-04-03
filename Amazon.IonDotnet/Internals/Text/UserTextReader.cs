@@ -112,7 +112,7 @@ namespace Amazon.IonDotnet.Internals.Text
                                 }
 
                                 // Even if that's not the case we still skip the IVM.
-                                this,hasNextCalled = false;
+                                this.hasNextCalled = false;
                             }
 
                             break;
