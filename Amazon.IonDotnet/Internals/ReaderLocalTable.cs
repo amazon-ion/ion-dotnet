@@ -229,24 +229,19 @@ namespace Amazon.IonDotnet.Internals
                                  && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid))
                                  
                         {
-                            var priorSymbols = new List<string>();
+                            var currentSymbolTable = reader.GetSymbolTable();
+                            var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames();
+
                             if (foundLocals)
                             {
                                 // Ordering matters. Maintain order as 'symbols'
                                 // and 'imports' fields can come in any order.
-                                priorSymbols.AddRange(newSymbols);
-                                newSymbols.Clear();
+                                newSymbols.InsertRange(0, declaredSymbols);
                             }
-
-                            ISymbolTable currentSymbolTable = reader.GetSymbolTable();
-
-                            var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames(); 
-                            foreach (var declaredSymbol in declaredSymbols)
+                            else
                             {
-                                newSymbols.Add(declaredSymbol);
+                                newSymbols.AddRange(declaredSymbols);
                             }
-
-                            newSymbols.AddRange(priorSymbols);
                         }
 
                         break;
