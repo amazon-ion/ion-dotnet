@@ -58,33 +58,33 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             base.HasNext();
 
-            // if we're not at the top (datagram) level or the next value is null
+            // If we're not at the top (datagram) level or the next value is null.
             if (CurrentDepth != 0 || _valueIsNull) 
                 return;
             Debug.Assert(_valueTid != BinaryConstants.TidTypedecl);
 
             if (_valueTid == BinaryConstants.TidSymbol)
             {
-                // trying to read a symbol here
+                // Trying to read a symbol here
                 // $ion_1_0 is read as an IVM only if it is not annotated
-                // we already count the number of annotations
+                // we already count the number of annotations.
                 if (Annotations.Count != 0)
                     return;
 
                 LoadOnce();
 
-                // just get it straight from the holder, no conversion needed
+                // Just get it straight from the holder, no conversion needed.
                 var sid = _v.IntValue;
                 if (sid != SystemSymbols.Ion10Sid)
                     return;
 
                 _symbolTable = SharedSymbolTable.GetSystem(1);
-                //user don't need to see this symbol so continue here
+                // User don't need to see this symbol so continue here.
                 _moveNextNeeded = true;
             }
             else if (_valueTid == BinaryConstants.TidStruct)
             {
-                //trying to read the local symboltable here
+                // Trying to read the local symboltable here.
                 if (_hasSymbolTableAnnotation)
                 {
                     _symbolTable = ReaderLocalTable.ImportReaderTable(this, _catalog, false);

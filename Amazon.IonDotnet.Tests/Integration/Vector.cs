@@ -41,7 +41,6 @@ namespace Amazon.IonDotnet.Tests.Integration
         private static readonly HashSet<string> Excludes = new HashSet<string>
         {
             "subfieldVarInt.ion",
-            "localSymbolTableAppend.ion",
             "clobNewlines.ion"
         };
 

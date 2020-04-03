@@ -21,11 +21,12 @@ using Amazon.IonDotnet.Internals.Binary;
 namespace Amazon.IonDotnet.Internals
 {
     /// <summary>
-    /// This class is used for processing local symbol tables while reading ion data.
+    /// This class is used for processing local symbol tables while reading Ion data.
     /// </summary>
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
+
         private readonly List<string> _ownSymbols = new List<string>();
         private int _importedMaxId;
 
@@ -77,15 +78,16 @@ namespace Amazon.IonDotnet.Internals
         {
             foreach (var import in Imports)
             {
-                var t = import.Find(text);
-                if (t != default)
-                    return new SymbolToken(t.Text, SymbolToken.UnknownSid);
+                var symbolToken = import.Find(text);
+                if (symbolToken != default)
+                {
+                    return new SymbolToken(symbolToken.Text, SymbolToken.UnknownSid);
+                }
             }
 
-            for (var i = 0; i < _ownSymbols.Count; i++)
+            if (_ownSymbols.Contains(text))
             {
-                if (_ownSymbols[i] == text)
-                    return new SymbolToken(text, SymbolToken.UnknownSid);
+                return new SymbolToken(text, SymbolToken.UnknownSid);
             }
 
             return default;
@@ -96,16 +98,21 @@ namespace Amazon.IonDotnet.Internals
             var offset = 0;
             foreach (var import in Imports)
             {
-                var t = import.FindSymbolId(text);
-                if (t > 0)
-                    return t + offset;
+                var sid = import.FindSymbolId(text);
+                if (sid > 0)
+                {
+                    return sid + offset;
+                }
+
                 offset += import.MaxId;
             }
 
             for (var i = 0; i < _ownSymbols.Count; i++)
             {
                 if (_ownSymbols[i] == text)
+                {
                     return i + 1 + _importedMaxId;
+                }
             }
 
             return SymbolToken.UnknownSid;
@@ -114,20 +121,27 @@ namespace Amazon.IonDotnet.Internals
         public string FindKnownSymbol(int sid)
         {
             if (sid < SystemSymbols.IonSid || sid > MaxId)
+            {
                 return null;
+            }
 
             if (sid > _importedMaxId)
+            {
                 return _ownSymbols[sid - _importedMaxId - 1];
+            }
 
             var offset = 0;
             foreach (var import in Imports)
             {
                 if (import.MaxId + offset >= sid)
+                {
                     return import.FindKnownSymbol(sid - offset);
+                }
+
                 offset += import.MaxId;
             }
 
-            //we should never get here
+            // We should never get here.
             throw new IonException($"Sid={sid}");
         }
 
@@ -138,90 +152,132 @@ namespace Amazon.IonDotnet.Internals
         public static ISymbolTable ImportReaderTable(IIonReader reader, ICatalog catalog, bool isOnStruct)
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
-            var importList = table.Imports;
-            var symbolList = table._ownSymbols;
-            var oldLocalSymbolCount = symbolList.Count;
+            var imports = table.Imports;
+            var symbols = table._ownSymbols;
+            var newSymbols = new List<string>();
+ 
             if (!isOnStruct)
             {
                 reader.MoveNext();
             }
 
-            Debug.Assert(reader.CurrentType == IonType.Struct);
+            Debug.Assert(
+                reader.CurrentType == IonType.Struct,
+                "Invalid symbol table image passed in reader "
+                    + reader.CurrentType
+                    + " encountered when a struct was expected.");
 
-            // assume that we're standing before a struct
+            Debug.Assert(
+                SystemSymbols.IonSymbolTable.Equals(reader.GetTypeAnnotations()[0]),
+                "Local symbol tables must be annotated by "
+                    + SystemSymbols.IonSymbolTable + ".");
+
+            // Assume that we're standing before a struct.
             reader.StepIn();
-            bool foundImport = false, foundLocals = false;
+
             IonType fieldType;
+            bool foundImport = false;
+            bool foundLocals = false;
             while ((fieldType = reader.MoveNext()) != IonType.None)
             {
                 if (reader.CurrentIsNull)
+                {
                     continue;
+                }
 
                 var sid = reader.GetFieldNameSymbol().Sid;
                 if (sid == SymbolToken.UnknownSid)
                 {
-                    //user-level symtab
+                    // This is a user-defined IonReader or a pure DOM, fall
+                    // back to text.
                     sid = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
                 }
 
                 switch (sid)
                 {
-                    case SystemSymbols.ImportsSid:
-                        if (foundImport)
-                            throw new IonException("Multiple imports field");
-                        foundImport = true;
+                    case SystemSymbols.SymbolsSid:
+                        // As per the spec, other field types are treated as
+                        // empty lists.
+                        if (foundLocals)
+                        {
+                            throw new IonException("Multiple symbol fields found within a single local symbol table.");
+                        }
+
+                        foundLocals = true;
                         if (fieldType == IonType.List)
                         {
-                            //list of symbol tables to imports
-                            ReadImportList(reader, catalog, importList);
-                        }
-                        else if (fieldType == IonType.Symbol
-                                 && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid)
-                                 && reader.GetSymbolTable().IsLocal)
-                        {
-                            //reader has a prev local symtab && current field is imports:$ion_symbol_table
-                            //we don't do anything here
-                        }
-                        else
-                        {
-                            throw new IonException("Invalid import format");
+                            ReadSymbolList(reader, newSymbols);
                         }
 
                         break;
-                    case SystemSymbols.SymbolsSid:
-                        if (foundLocals)
-                            throw new IonException("Multiple symbols field");
-                        foundLocals = true;
-                        if (fieldType != IonType.List)
-                            break;
 
-                        ReadSymbolList(reader, symbolList);
+                    case SystemSymbols.ImportsSid:
+                        if (foundImport)
+                        {
+                            throw new IonException("Multiple imports fields found within a single local symbol table.");
+                        }
+
+                        foundImport = true;
+                        if (fieldType == IonType.List)
+                        {
+                            // List of symbol tables to imports.
+                            ReadImportList(reader, catalog, imports);
+                        }
+                        // Trying to import the current table.
+                        else if (fieldType == IonType.Symbol
+                                 && reader.GetSymbolTable().IsLocal
+                                 && (SystemSymbols.IonSymbolTable.Equals(reader.StringValue()) || reader.IntValue() == SystemSymbols.IonSymbolTableSid))
+                                 
+                        {
+                            var currentSymbolTable = reader.GetSymbolTable();
+                            var declaredSymbols = currentSymbolTable.GetDeclaredSymbolNames();
+
+                            if (foundLocals)
+                            {
+                                // Ordering matters. Maintain order as 'symbols'
+                                // and 'imports' fields can come in any order.
+                                newSymbols.InsertRange(0, declaredSymbols);
+                            }
+                            else
+                            {
+                                newSymbols.AddRange(declaredSymbols);
+                            }
+                        }
+
+                        break;
+                    default:
+                        // As per the spec, any other field is ignored.
                         break;
                 }
             }
 
             reader.StepOut();
 
-            if (!foundImport)
+            symbols.Clear();
+
+            // If there were prior imports and now only a system table is
+            // seen, then start fresh again as prior imports no longer matter.
+            if (imports.Count > 1 && !foundImport && foundLocals)
             {
-                //no import field found, remove old symbols
-                symbolList.RemoveRange(0, oldLocalSymbolCount);
+                imports.RemoveAll(symbolTable => symbolTable.IsSubstitute == true);
             }
 
+            symbols.AddRange(newSymbols);
+
             table.Refresh();
+
             return table;
         }
 
-        private static void ReadSymbolList(IIonReader reader, ICollection<string> symbolList)
+        private static void ReadSymbolList(IIonReader reader, List<string> newSymbols)
         {
             reader.StepIn();
 
-            IonType type;
-            while ((type = reader.MoveNext()) != IonType.None)
+            IonType ionType;
+            while ((ionType = reader.MoveNext()) != IonType.None)
             {
-                var text = type == IonType.String ? reader.StringValue() : null;
-
-                symbolList.Add(text);
+                var text = ionType == IonType.String ? reader.StringValue() : null;
+                newSymbols.Add(text);
             }
 
             reader.StepOut();
@@ -232,23 +288,31 @@ namespace Amazon.IonDotnet.Internals
         /// </summary>
         private static void ReadImportList(IIonReader reader, ICatalog catalog, IList<ISymbolTable> importList)
         {
-            /*try to read sth like this
+            /* Try to read something like this:
             imports:[
                 { name:"table1", version:1 },
                 { name:"table2", version:12 }
             ]
             */
+
+            Debug.Assert(
+                SystemSymbols.Imports.Equals(reader.CurrentFieldName),
+                "Current field name '" + reader.CurrentFieldName
+                    + "' does not match '" + SystemSymbols.Imports + "'.");
+
             reader.StepIn();
 
-            IonType t;
-            while ((t = reader.MoveNext()) != IonType.None)
+            IonType ionType;
+            while ((ionType = reader.MoveNext()) != IonType.None)
             {
-                if (reader.CurrentIsNull || t != IonType.Struct)
-                    continue;
-                var imported = FindImportedTable(reader, catalog);
-                if (imported is null)
-                    continue;
-                importList.Add(imported);
+                if (!reader.CurrentIsNull && ionType == IonType.Struct)
+                {
+                    var importedTable = FindImportedTable(reader, catalog);
+                    if (importedTable != null)
+                    {
+                        importList.Add(importedTable);
+                    }
+                }
             }
 
             reader.StepOut();
@@ -260,20 +324,31 @@ namespace Amazon.IonDotnet.Internals
         /// <returns>Null if no such table is found.</returns>
         private static ISymbolTable FindImportedTable(IIonReader reader, ICatalog catalog)
         {
-            reader.StepIn();
+            Debug.Assert(
+                reader.CurrentType == IonType.Struct,
+                "Invalid symbol table image passed in reader "
+                    + reader.CurrentType
+                    + " encountered when a struct was expected.");
 
-            IonType t;
             string name = null;
             var version = -1;
             var maxId = -1;
-            while ((t = reader.MoveNext()) != IonType.None)
+
+            reader.StepIn();
+
+            IonType ionType;
+            while ((ionType = reader.MoveNext()) != IonType.None)
             {
                 if (reader.CurrentIsNull)
+                {
                     continue;
+                }
 
                 var fieldId = reader.GetFieldNameSymbol().Sid;
                 if (fieldId == SymbolToken.UnknownSid)
                 {
+                    // This is a user defined reader or a pure DOM
+                    // we fall back to text here.
                     fieldId = SystemSymbols.ResolveSidForSymbolTableField(reader.CurrentFieldName);
                 }
 
@@ -281,33 +356,39 @@ namespace Amazon.IonDotnet.Internals
                 switch (fieldId)
                 {
                     case SystemSymbols.NameSid:
-                        if (t == IonType.String)
+                        if (ionType == IonType.String)
                         {
                             name = reader.StringValue();
                         }
 
                         break;
                     case SystemSymbols.VersionSid:
-                        if (t == IonType.Int)
+                        if (ionType == IonType.Int)
                         {
                             version = reader.IntValue();
                         }
 
                         break;
                     case SystemSymbols.MaxIdSid:
-                        if (t == IonType.Int)
+                        if (ionType == IonType.Int)
                         {
                             maxId = reader.IntValue();
                         }
 
+                        break;
+                    default:
+                        // We just ignore anything else as "open content".
                         break;
                 }
             }
 
             reader.StepOut();
 
+            // Ignore import clauses with malformed name field.
             if (string.IsNullOrWhiteSpace(name) || SystemSymbols.Ion.Equals(name))
+            {
                 return null;
+            }
 
             if (version < 1)
             {
@@ -318,20 +399,23 @@ namespace Amazon.IonDotnet.Internals
             if (maxId < 0)
             {
                 if (table == null || table.Version != version)
+                {
                     throw new IonException($@"Import of shared table {name}/{version} lacks a max_id field, but an exact match is 
                                                 not found in the catalog");
+                }
+
                 maxId = table.MaxId;
             }
 
             if (table == null)
             {
-                //cannot find table with that name, create an empty substitute symtab
+                // Cannot find table with that name, create an empty substitute symtab.
                 table = new SubstituteSymbolTable(name, version, maxId);
             }
 
             if (table.Version != version || table.MaxId != maxId)
             {
-                //a table with the name is found but version doesn't match
+                // A table with the name is found but version doesn't match.
                 table = new SubstituteSymbolTable(table, version, maxId);
             }
 
