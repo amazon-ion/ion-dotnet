@@ -527,37 +527,42 @@ namespace Amazon.IonDotnet.Internals.Binary
         /// <summary>
         /// Reflects the 'view' of the local symbol used in this writer.
         /// </summary>
-        private class LocalSymbolTableView : AbstractSymbolTable
+        private class LocalSymbolTableView : ISymbolTable
         {
             private readonly ManagedBinaryWriter writer;
 
             public LocalSymbolTableView(ManagedBinaryWriter writer)
-                : base(string.Empty, 0)
             {
                 this.writer = writer;
             }
 
-            public override bool IsLocal => true;
+            public string Name => string.Empty;
 
-            public override bool IsShared => false;
+            public int Version => 0;
 
-            public override bool IsSubstitute => false;
+            public bool IsLocal => true;
 
-            public override bool IsSystem => false;
+            public bool IsShared => false;
 
-            public override bool IsReadOnly => this.writer.localsLocked;
+            public bool IsSubstitute => false;
 
-            public override int MaxId => this.GetImportedMaxId() + this.writer.locals.Count;
+            public bool IsSystem => false;
 
-            public override void MakeReadOnly() => this.writer.localsLocked = true;
+            public bool IsReadOnly => this.writer.localsLocked;
 
-            public override ISymbolTable GetSystemTable() => SharedSymbolTable.GetSystem(1);
+            public int MaxId => this.GetImportedMaxId() + this.writer.locals.Count;
 
-            public override IReadOnlyList<ISymbolTable> GetImportedTables() => this.writer.importContext.Parents;
+            public string IonVersionId => SystemSymbols.Ion10;
 
-            public override int GetImportedMaxId() => this.writer.importContext.LocalSidStart - 1;
+            public void MakeReadOnly() => this.writer.localsLocked = true;
 
-            public override SymbolToken Intern(string text)
+            public ISymbolTable GetSystemTable() => SharedSymbolTable.GetSystem(1);
+
+            public IReadOnlyList<ISymbolTable> GetImportedTables() => this.writer.importContext.Parents;
+
+            public int GetImportedMaxId() => this.writer.importContext.LocalSidStart - 1;
+
+            public SymbolToken Intern(string text)
             {
                 var existing = this.Find(text);
                 if (existing != default)
@@ -573,7 +578,7 @@ namespace Amazon.IonDotnet.Internals.Binary
                 return this.writer.Intern(text);
             }
 
-            public override SymbolToken Find(string text)
+            public SymbolToken Find(string text)
             {
                 if (text == null)
                 {
@@ -591,7 +596,7 @@ namespace Amazon.IonDotnet.Internals.Binary
                 return found ? new SymbolToken(text, SymbolToken.UnknownSid) : default;
             }
 
-            public override string FindKnownSymbol(int sid)
+            public string FindKnownSymbol(int sid)
             {
                 foreach (var symbolTable in this.writer.importContext.Parents)
                 {
@@ -607,7 +612,18 @@ namespace Amazon.IonDotnet.Internals.Binary
                 return this.writer.locals.FirstOrDefault(kvp => kvp.Value == sid).Key;
             }
 
-            public override IEnumerable<string> GetDeclaredSymbolNames() => this.writer.locals.Keys;
+            public IEnumerable<string> GetDeclaredSymbolNames() => this.writer.locals.Keys;
+
+            public int FindSymbolId(string text)
+            {
+                SymbolToken token = this.Find(text);
+                return token == default ? SymbolToken.UnknownSid : token.Sid;
+            }
+
+            public void WriteTo(IIonWriter writer)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
