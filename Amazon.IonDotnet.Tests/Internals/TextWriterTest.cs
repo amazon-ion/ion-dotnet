@@ -27,7 +27,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void NoQuotedSymbolAndFieldName()
         {
-            StringWriter sw = new StringWriter();
+            var sw = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(sw);
 
             textWriter.StepIn(IonType.Struct);
@@ -42,7 +42,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [TestMethod]
         public void QuotedSymbolAndFieldName()
         {
-            StringWriter sw = new StringWriter();
+            var sw = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(sw);
 
             textWriter.StepIn(IonType.Struct);
@@ -56,31 +56,29 @@ namespace Amazon.IonDotnet.Tests.Internals
 
 
         [TestMethod]
-        [DataRow("+inf", "nan", "s1 '+inf' 'nan' $13")]
-        [DataRow("s2", "abc", "s1 s2 abc $13")]
+        [DataRow("+inf", "nan", "s1 '+inf' 'nan'")]
+        [DataRow("s2", "abc", "s1 s2 abc")]
         public void WriteSymbolWithSymbolTable(String tableSym, String newSym, String expectedText)
         {
             var symbol = "symbols:[\"s1\", \"" + tableSym + "\"]";
-
-                var text =
+            var text =
                 SystemSymbols.IonSymbolTable + "::" +
                 "{" +
                 symbol +
                 "}\n" +
                 "$10\n" +
                 "$11\n";
+
             var ionValueFactory = new ValueFactory();
             var datagram = IonLoader.Default.Load(text);
             datagram.Add(ionValueFactory.NewSymbol(newSym));
-            datagram.Add(ionValueFactory.NewSymbol(new SymbolToken(null, 13))); 
 
-            // Text.
-            var textOutput = new StringWriter();
-            var textWriter = IonTextWriterBuilder.Build(textOutput);
+            var sw = new StringWriter();
+            var textWriter = IonTextWriterBuilder.Build(sw);
             datagram.WriteTo(textWriter);
             textWriter.Finish();
             var expected = expectedText;
-            var actual = textOutput.ToString();
+            var actual = sw.ToString();
             Assert.AreEqual(expected, actual);
         }
     }
