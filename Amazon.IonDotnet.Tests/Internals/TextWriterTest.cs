@@ -15,13 +15,9 @@
 
 using System;
 using System.IO;
-using System.Text;
 using Amazon.IonDotnet.Builders;
-using Amazon.IonDotnet.Internals.Text;
-using Amazon.IonDotnet.Tests.Common;
 using Amazon.IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 namespace Amazon.IonDotnet.Tests.Internals
 {
@@ -29,39 +25,61 @@ namespace Amazon.IonDotnet.Tests.Internals
     public class TextWriterTest
     {
         [TestMethod]
-        public void NoSingleQuotesSymbol()
+        public void NoQuotedSymbolAndFieldName()
         {
             StringWriter sw = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(sw);
 
+            textWriter.StepIn(IonType.Struct);
             textWriter.SetFieldName("hello");
             textWriter.AddTypeAnnotation("ion");
-            textWriter.AddTypeAnnotation("hash");
             textWriter.WriteSymbol("world");
+            textWriter.StepOut();
 
-            Assert.AreEqual("null [5] null {hello:ion::hash::world}", sw.ToString());
+            Assert.AreEqual("{hello:ion::world}", sw.ToString());
         }
 
         [TestMethod]
-        public void NoQuoteSymbol2()
+        public void QuotedSymbolAndFieldName()
         {
-            var text =
+            StringWriter sw = new StringWriter();
+            var textWriter = IonTextWriterBuilder.Build(sw);
+
+            textWriter.StepIn(IonType.Struct);
+            textWriter.SetFieldName("true");
+            textWriter.AddTypeAnnotation("ion");
+            textWriter.WriteSymbol("null");
+            textWriter.StepOut();
+
+            Assert.AreEqual("{'true':ion::'null'}", sw.ToString());
+        }
+
+
+        [TestMethod]
+        [DataRow("+inf", "nan", "s1 '+inf' 'nan' $13")]
+        [DataRow("s2", "abc", "s1 s2 abc $13")]
+        public void WriteSymbolWithSymbolTable(String tableSym, String newSym, String expectedText)
+        {
+            var symbol = "symbols:[\"s1\", \"" + tableSym + "\"]";
+
+                var text =
                 SystemSymbols.IonSymbolTable + "::" +
                 "{" +
-                "   symbols:[\"s1\", \"s2\"]" +
+                symbol +
                 "}\n" +
                 "$10\n" +
                 "$11\n";
             var ionValueFactory = new ValueFactory();
             var datagram = IonLoader.Default.Load(text);
-            datagram.Add(ionValueFactory.NewSymbol("abc"));
-            datagram.Add(ionValueFactory.NewSymbol(new SymbolToken(null, 13))); // s3.
+            datagram.Add(ionValueFactory.NewSymbol(newSym));
+            datagram.Add(ionValueFactory.NewSymbol(new SymbolToken(null, 13))); 
+
             // Text.
             var textOutput = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(textOutput);
             datagram.WriteTo(textWriter);
             textWriter.Finish();
-            var expected = "s1 s2 abc $13";
+            var expected = expectedText;
             var actual = textOutput.ToString();
             Assert.AreEqual(expected, actual);
         }
