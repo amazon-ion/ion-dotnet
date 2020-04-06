@@ -22,42 +22,42 @@ namespace Amazon.IonDotnet.Builders
         public static readonly IonTextOptions Default = new IonTextOptions();
 
         /// <summary>
-        /// Indented format
+        /// Gets or Sets a value indicating whether to use indented format.
         /// </summary>
         public bool PrettyPrint { get; set; }
 
         /// <summary>
-        /// New-line sequence, default to system-specific sequence
+        /// Gets or sets new-line sequence, default to system-specific sequence.
         /// </summary>
         public string LineSeparator { get; set; } = Environment.NewLine;
 
         /// <summary>
-        /// Write symbols as strings
+        /// Gets or sets a value indicating whether to write symbols as strings.
         /// </summary>
         public bool SymbolAsString { get; set; }
 
         /// <summary>
-        /// Do we skip annotations?
+        /// Gets or sets a value indicating whether to skip annotations.
         /// </summary>
         public bool SkipAnnotations { get; set; }
 
         /// <summary>
-        /// All null values are written as 'null'
+        /// Gets or sets a value indicating whether all null values are written as 'null'.
         /// </summary>
         public bool UntypedNull { get; set; }
 
         /// <summary>
-        /// Timestamps are written as milliseconds since Epoch
+        /// Gets or sets a value indicating whether Timestamps are written as milliseconds since Epoch.
         /// </summary>
         public bool TimestampAsMillis { get; set; }
 
         /// <summary>
-        /// Maximum string length before it is wrapped.
+        /// Gets or sets the maximum string length before it is wrapped.
         /// </summary>
         public int LongStringThreshold { get; set; } = int.MaxValue;
 
         /// <summary>
-        /// Do we write the Ion version marker
+        /// Gets or sets a value indicating whether to write the Ion version marker.
         /// </summary>
         public bool WriteVersionMarker { get; set; }
     }

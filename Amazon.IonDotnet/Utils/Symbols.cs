@@ -73,7 +73,7 @@ namespace Amazon.IonDotnet.Utils
         /// <param name="readerTable">The reader's local symbol table. Typically obtained by calling <see cref="IIonReader.GetSymbolTable"/>.</param>
         /// <remarks>
         /// Normally when a text or binary Ion data with shared symbol tables is read, the materialized object (such as
-        /// a .Net POCO object or an <see cref="Tree.IonDatagram"/> does not have the reference to these tables.
+        /// a .Net POCO object or an <see cref="Tree.IIonDatagram"/> does not have the reference to these tables.
         /// As such, systems that want to reuse those shared tables should extract them after reading through all the values.
         /// This method provides a shortcut to do get a catalog that contains those tables.
         /// </remarks>

@@ -59,11 +59,9 @@ namespace Amazon.IonDotnet
         /// <param name="importLocation">ImportLocation.</param>
         public SymbolToken(string text, int sid, ImportLocation importLocation = default)
         {
-            /**
-             * Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
-             * Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
-             * returned value
-             */
+            // Note: due to the fact that C# structs are initialized 'blank' (all fields 0), and we want the default
+            // Sid to be Unknown(-1), the actual field value is shifted by +1 compared to the publicly
+            // returned value
             this.Text = text;
             this.sid = sid + 1;
             this.ImportLocation = importLocation;
