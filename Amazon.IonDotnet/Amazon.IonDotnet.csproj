@@ -17,6 +17,11 @@
     <PackageLicenseUrl>https://github.com/amzn/ion-dotnet/blob/master/LICENSE.md</PackageLicenseUrl>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <NoWarn>$(NoWarn),1591</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' != 'true'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <Target Name="TestMessage" AfterTargets="Build">
     <Message Text="'$(TargetFramework)'" Importance="high" />

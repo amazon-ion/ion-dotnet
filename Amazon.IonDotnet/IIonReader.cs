@@ -69,7 +69,7 @@ namespace Amazon.IonDotnet
         /// <summary>
         /// Positions the reader just before the contents of the current value, which must be a container (list, sexp, or struct).
         /// </summary>
-        /// <exception cref="InvalidOperationException">When the current value is not an <see cref="IonDotnet.Tree.IonContainer"/>.</exception>
+        /// <exception cref="InvalidOperationException">When the current value is not an <see cref="Tree.IIonContainer"/>.</exception>
         /// <remarks>
         /// There's no current value immediately after stepping in, so the next thing you'll want to do is call <see cref="MoveNext"/>
         /// to move onto the first child value (or learn that there's not one).

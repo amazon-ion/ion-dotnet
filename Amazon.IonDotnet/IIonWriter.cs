@@ -93,7 +93,7 @@ namespace Amazon.IonDotnet
         void WriteNull();
 
         /// <summary>
-        /// Write a <see cref="type" /> null value of a certain type.
+        /// Write a <see cref="IonType" /> null value of a certain type.
         /// </summary>
         /// <param name="type">The IonType.</param>
         void WriteNull(IonType type);

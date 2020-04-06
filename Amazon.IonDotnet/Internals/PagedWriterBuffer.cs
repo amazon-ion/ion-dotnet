@@ -505,6 +505,7 @@ namespace Amazon.IonDotnet.Internals
         /// </summary>
         /// <param name="chars">Char sequence.</param>
         /// <param name="bytesToWrite">Total bytes needed to utf8-encode the string.</param>
+        /// <param name="alloc">The allocation.</param>
         private void WriteCharsSlow(ReadOnlySpan<char> chars, int bytesToWrite, Span<byte> alloc)
         {
             if (bytesToWrite <= BinaryConstants.ShortStringLength)

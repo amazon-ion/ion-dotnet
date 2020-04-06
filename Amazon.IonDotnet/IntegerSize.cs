@@ -1,7 +1,7 @@
 ﻿namespace Amazon.IonDotnet
 {
     /// <summary>
-    /// Indicates the smallest-possible C# type of an IonInt value
+    /// Indicates the smallest-possible C# type of an IonInt value.
     /// </summary>
     public enum IntegerSize
     {
