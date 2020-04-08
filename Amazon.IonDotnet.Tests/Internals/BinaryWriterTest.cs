@@ -20,6 +20,8 @@ using System.Linq;
 using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Internals.Binary;
 using Amazon.IonDotnet.Tests.Common;
+using Amazon.IonDotnet.Tree;
+using Amazon.IonDotnet.Tree.Impl;
 using Amazon.IonDotnet.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -449,6 +451,37 @@ namespace Amazon.IonDotnet.Tests.Internals
             writeAndAdd("double", 231345.325667d * 133.346432d, writer.WriteFloat);
 
             return kvps;
+        }
+
+        [TestMethod]
+        public void WriteValuesWithAnnotation()
+        {
+            var ionValues = new List<IIonValue>();
+            var valueFactory = new ValueFactory();
+            ionValues.Add(valueFactory.NewBool(true));
+            ionValues.Add(valueFactory.NewString("string"));
+            ionValues.Add(valueFactory.NewFloat(22.22f));
+            ionValues.Add(valueFactory.NewDecimal(3.4m));
+            ionValues.Add(valueFactory.NewInt(3));
+            ionValues.Add(valueFactory.NewNull());
+            ionValues.Add(valueFactory.NewSymbol("symbol"));
+            ionValues.Add(valueFactory.NewTimestamp(new Timestamp(DateTime.Now)));
+            var arrayOfbytes = Enumerable.Repeat<byte>(1, 10).ToArray();
+            ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(arrayOfbytes);
+            ionValues.Add(valueFactory.NewClob(bytes));
+            ionValues.Add(valueFactory.NewBlob(bytes));
+
+            foreach (var ionValue in ionValues)
+            {
+                ionValue.AddTypeAnnotation("annotation");
+            }
+
+            using var writer = IonBinaryWriterBuilder.Build(new MemoryStream());
+            foreach (var ionValue in ionValues)
+            {
+                ionValue.WriteTo(writer);
+            }
+            writer.Finish();
         }
     }
 }
