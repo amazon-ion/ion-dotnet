@@ -229,6 +229,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.PrepareValue();
             this.containerStack.IncreaseCurrentContainerLength(1);
             this.dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
+            this.FinishValue();
         }
 
         public void WriteInt(long value)
