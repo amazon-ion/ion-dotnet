@@ -17,8 +17,9 @@ namespace Amazon.IonDotnet.Utils
 {
     using System;
     using System.IO;
+    using System.Threading.Tasks;
 
-    public static class StreamExtension
+    public static class StreamExtensions
     {
         /// <summary>
         /// Attempts to get the data written to a <see cref="MemoryStream"/> as efficiently as possible.
@@ -51,6 +52,24 @@ namespace Amazon.IonDotnet.Utils
             {
                 throw new ArgumentException("Output stream must be writable", nameof(outputStream));
             }
+        }
+
+        public static int Read(this Stream stream, Span<byte> dest)
+        {
+            var buf = new byte[dest.Length];
+            var r = stream.Read(buf, 0, buf.Length);
+            buf.AsSpan(0, r).CopyTo(dest);
+            return r;
+        }
+
+        public static void Write(this Stream stream, ReadOnlySpan<byte> src)
+        {
+            stream.Write(src.ToArray(), 0, src.Length);
+        }
+
+        public static Task WriteAsync(this Stream stream, Memory<byte> src)
+        {
+            return stream.WriteAsync(src.ToArray(), 0, src.Length);
         }
     }
 }

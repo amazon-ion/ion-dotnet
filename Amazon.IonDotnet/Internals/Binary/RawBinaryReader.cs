@@ -24,10 +24,7 @@ namespace Amazon.IonDotnet.Internals.Binary
     using System.Runtime.CompilerServices;
     using System.Text;
     using Amazon.IonDotnet.Internals.Conversions;
-
-#if !(NETSTANDARD2_0 || NET45)
-    using BitConverterEx = System.BitConverter;
-#endif
+    using Amazon.IonDotnet.Utils;
 
     /// <inheritdoc />
     /// <summary>

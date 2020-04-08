@@ -22,6 +22,7 @@ namespace Amazon.IonDotnet.Builders
     using Amazon.IonDotnet.Internals.Text;
     using Amazon.IonDotnet.Internals.Tree;
     using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Utils;
 
     public enum ReaderFormat
     {

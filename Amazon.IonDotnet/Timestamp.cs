@@ -549,11 +549,8 @@ namespace Amazon.IonDotnet
                 output = 0;
                 return false;
             }
-#if NETCOREAPP2_1
-            return decimal.TryParse(s.AsSpan().Slice(offset, length), out output);
-#else
+
             return decimal.TryParse(s.Substring(offset, length), out output);
-#endif
         }
 
         /// <summary>
@@ -566,9 +563,7 @@ namespace Amazon.IonDotnet
                 output = 0;
                 return false;
             }
-#if NETCOREAPP2_1
-            return int.TryParse(s.AsSpan().Slice(offset, length), out output) && (!largerThanZero || output > 0);
-#else
+
             output = 0;
             for (var i = 0; i < length; i++)
             {
@@ -582,7 +577,6 @@ namespace Amazon.IonDotnet
             }
 
             return !largerThanZero || output > 0;
-#endif
         }
     }
 }

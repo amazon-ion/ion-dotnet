@@ -233,11 +233,7 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             this.StartValue();
 
-#if NET45 || NETSTANDARD2_0
             var base64 = Convert.ToBase64String(value.ToArray());
-#else
-            var base64 = Convert.ToBase64String(value);
-#endif
 
             this.textWriter.Write("{{");
             if (this.options.PrettyPrint)
