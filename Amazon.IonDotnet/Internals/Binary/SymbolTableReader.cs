@@ -28,41 +28,41 @@ namespace Amazon.IonDotnet.Internals.Binary
     /// </summary>
     internal class SymbolTableReader : IIonReader
     {
-        private const int S_BOF = 0;
-        private const int S_STRUCT = 1;
-        private const int S_IN_STRUCT = 2;
-        private const int S_NAME = 3;
-        private const int S_VERSION = 4;
-        private const int S_MAX_ID = 5;
-        private const int S_IMPORT_LIST = 6;
-        private const int S_IN_IMPORTS = 7;
-        private const int S_IMPORT_STRUCT = 8;
-        private const int S_IN_IMPORT_STRUCT = 9;
-        private const int S_IMPORT_NAME = 10;
-        private const int S_IMPORT_VERSION = 11;
-        private const int S_IMPORT_MAX_ID = 12;
-        private const int S_IMPORT_STRUCT_CLOSE = 13;
-        private const int S_IMPORT_LIST_CLOSE = 14;
-        private const int S_AFTER_IMPORT_LIST = 15;
-        private const int S_SYMBOL_LIST = 16;
-        private const int S_IN_SYMBOLS = 17;
-        private const int S_SYMBOL = 18;
-        private const int S_SYMBOL_LIST_CLOSE = 19;
-        private const int S_STRUCT_CLOSE = 20;
-        private const int S_EOF = 21;
+        private const int Bof = 0;
+        private const int Struct = 1;
+        private const int InStruct = 2;
+        private const int Name = 3;
+        private const int Version = 4;
+        private const int MaxId = 5;
+        private const int ImportList = 6;
+        private const int InImports = 7;
+        private const int ImportStruct = 8;
+        private const int InImportStruct = 9;
+        private const int ImportName = 10;
+        private const int ImportVersion = 11;
+        private const int ImportMaxId = 12;
+        private const int ImportStructClose = 13;
+        private const int ImportListClose = 14;
+        private const int AfterImportList = 15;
+        private const int SymbolList = 16;
+        private const int InSymbols = 17;
+        private const int Symbol = 18;
+        private const int SymbolListClose = 19;
+        private const int StructClose = 20;
+        private const int Eof = 21;
 
-        private const int HAS_NAME = 0x01;
-        private const int HAS_VERSION = 0x02;
-        private const int HAS_MAX_ID = 0x04;
-        private const int HAS_IMPORT_LIST = 0x08;
-        private const int HAS_SYMBOL_LIST = 0x10;
+        private const int HasNameFlag = 0x01;
+        private const int HasVersionFlag = 0x02;
+        private const int HasMaxIdFlag = 0x04;
+        private const int HasImportListFlag = 0x08;
+        private const int HasSymbolListFlag = 0x10;
 
         private readonly ISymbolTable symbolTable;
         private readonly int maxId;
         private readonly ISymbolTable[] importedTables;
         private readonly IEnumerator<string> localSymbolsEnumerator;
 
-        private int currentState = S_BOF;
+        private int currentState = Bof;
         private int flags;
         private string stringValue;
         private int intValue;
@@ -81,24 +81,24 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             if (!this.symbolTable.IsLocal)
             {
-                this.SetFlag(HAS_NAME, true);
-                this.SetFlag(HAS_VERSION, true);
+                this.SetFlag(HasNameFlag, true);
+                this.SetFlag(HasVersionFlag, true);
             }
 
             if (this.maxId > 0)
             {
-                this.SetFlag(HAS_MAX_ID, true);
+                this.SetFlag(HasMaxIdFlag, true);
             }
 
             this.importedTables = symbolTable.GetImportedTables().ToArray();
             if (this.importedTables != null && this.importedTables.Length > 0)
             {
-                this.SetFlag(HAS_IMPORT_LIST, true);
+                this.SetFlag(HasImportListFlag, true);
             }
 
             if (this.symbolTable.GetImportedMaxId() < this.maxId)
             {
-                this.SetFlag(HAS_SYMBOL_LIST, true);
+                this.SetFlag(HasSymbolListFlag, true);
             }
         }
 
@@ -124,37 +124,37 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 switch (this.currentState)
                 {
-                    case S_STRUCT:
-                    case S_IN_STRUCT:
-                    case S_IN_IMPORTS:
-                    case S_IMPORT_STRUCT:
-                    case S_IN_IMPORT_STRUCT:
-                    case S_IMPORT_STRUCT_CLOSE:
-                    case S_IMPORT_LIST_CLOSE:
-                    case S_AFTER_IMPORT_LIST:
-                    case S_IN_SYMBOLS:
-                    case S_SYMBOL:
-                    case S_SYMBOL_LIST_CLOSE:
-                    case S_STRUCT_CLOSE:
-                    case S_EOF:
+                    case Struct:
+                    case InStruct:
+                    case InImports:
+                    case ImportStruct:
+                    case InImportStruct:
+                    case ImportStructClose:
+                    case ImportListClose:
+                    case AfterImportList:
+                    case InSymbols:
+                    case Symbol:
+                    case SymbolListClose:
+                    case StructClose:
+                    case Eof:
                         return null;
 
-                    case S_NAME:
-                    case S_IMPORT_NAME:
+                    case Name:
+                    case ImportName:
                         return SystemSymbols.Name;
 
-                    case S_VERSION:
-                    case S_IMPORT_VERSION:
+                    case Version:
+                    case ImportVersion:
                         return SystemSymbols.Version;
 
-                    case S_MAX_ID:
-                    case S_IMPORT_MAX_ID:
+                    case MaxId:
+                    case ImportMaxId:
                         return SystemSymbols.MaxId;
 
-                    case S_IMPORT_LIST:
+                    case ImportList:
                         return SystemSymbols.Imports;
 
-                    case S_SYMBOL_LIST:
+                    case SymbolList:
                         return SystemSymbols.Symbols;
 
                     default:
@@ -169,29 +169,29 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 switch (this.currentState)
                 {
-                    case S_STRUCT:
-                    case S_IN_STRUCT:
-                    case S_NAME:
-                    case S_VERSION:
-                    case S_MAX_ID:
-                    case S_IMPORT_LIST:
-                    case S_IN_IMPORTS:
-                    case S_IMPORT_STRUCT:
-                    case S_IN_IMPORT_STRUCT:
-                    case S_IMPORT_NAME:
-                    case S_IMPORT_VERSION:
-                    case S_IMPORT_MAX_ID:
-                    case S_IN_SYMBOLS:
-                    case S_SYMBOL:
+                    case Struct:
+                    case InStruct:
+                    case Name:
+                    case Version:
+                    case MaxId:
+                    case ImportList:
+                    case InImports:
+                    case ImportStruct:
+                    case InImportStruct:
+                    case ImportName:
+                    case ImportVersion:
+                    case ImportMaxId:
+                    case InSymbols:
+                    case Symbol:
                         // These values are either present and non-null or entirely absent
                         return false;
-                    case S_IMPORT_STRUCT_CLOSE:
-                    case S_IMPORT_LIST_CLOSE:
-                    case S_AFTER_IMPORT_LIST:
-                    case S_SYMBOL_LIST:
-                    case S_SYMBOL_LIST_CLOSE:
-                    case S_STRUCT_CLOSE:
-                    case S_EOF:
+                    case ImportStructClose:
+                    case ImportListClose:
+                    case AfterImportList:
+                    case SymbolList:
+                    case SymbolListClose:
+                    case StructClose:
+                    case Eof:
                         // Here we're not really on a value, so we're not on a value that is a null
                         return false;
                     default:
@@ -206,33 +206,33 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 switch (this.currentState)
                 {
-                    case S_STRUCT:
-                    case S_IN_IMPORTS:
-                    case S_IMPORT_STRUCT:
-                    case S_IN_SYMBOLS:
-                    case S_SYMBOL:
+                    case Struct:
+                    case InImports:
+                    case ImportStruct:
+                    case InSymbols:
+                    case Symbol:
                         // These values are either not contained, or contained in a list
                         return false;
-                    case S_IN_STRUCT:
-                    case S_NAME:
-                    case S_VERSION:
-                    case S_MAX_ID:
-                    case S_IMPORT_LIST:
-                    case S_IN_IMPORT_STRUCT:
-                    case S_IMPORT_NAME:
-                    case S_IMPORT_VERSION:
-                    case S_IMPORT_MAX_ID:
-                    case S_AFTER_IMPORT_LIST:
-                    case S_SYMBOL_LIST:
+                    case InStruct:
+                    case Name:
+                    case Version:
+                    case MaxId:
+                    case ImportList:
+                    case InImportStruct:
+                    case ImportName:
+                    case ImportVersion:
+                    case ImportMaxId:
+                    case AfterImportList:
+                    case SymbolList:
                         // The values above are all members of a struct
                         return true;
-                    case S_IMPORT_STRUCT_CLOSE:
-                    case S_STRUCT_CLOSE:
+                    case ImportStructClose:
+                    case StructClose:
                         // If we're closing a struct we're in a struct
                         return true;
-                    case S_IMPORT_LIST_CLOSE:
-                    case S_SYMBOL_LIST_CLOSE:
-                    case S_EOF:
+                    case ImportListClose:
+                    case SymbolListClose:
+                    case Eof:
                         // If we're closing a list we in a list, not a struct
                         // and EOF is not in a struct
                         return false;
@@ -261,98 +261,98 @@ namespace Amazon.IonDotnet.Internals.Binary
                     ThrowUnrecognizedState(this.currentState);
                     newState = -1;
                     break;
-                case S_BOF:
-                    newState = S_STRUCT;
+                case Bof:
+                    newState = Struct;
                     break;
-                case S_STRUCT:
-                    newState = S_EOF;
+                case Struct:
+                    newState = Eof;
                     break;
-                case S_IN_STRUCT:
+                case InStruct:
                     newState = this.StateFirstInStruct();
                     this.LoadStateData(newState);
                     break;
-                case S_NAME:
+                case Name:
                     Debug.Assert(this.HasVersion(), "No version found");
-                    newState = S_VERSION;
+                    newState = Version;
                     this.LoadStateData(newState);
                     break;
-                case S_VERSION:
+                case Version:
                     if (this.HasMaxId())
                     {
-                        newState = S_MAX_ID;
+                        newState = MaxId;
                         this.LoadStateData(newState);
                         break;
                     }
 
                     newState = this.StateFollowingMaxId();
                     break;
-                case S_MAX_ID:
+                case MaxId:
                     newState = this.StateFollowingMaxId();
                     break;
-                case S_IMPORT_LIST:
+                case ImportList:
                     newState = this.StateFollowingImportList(Op.Next);
                     break;
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
+                case InImports:
+                case ImportStruct:
                     // We only need to get the import list once, which we
                     // do as we step into the import list, so it should
                     // be waiting for us here.
                     newState = this.NextImport();
                     break;
-                case S_IN_IMPORT_STRUCT:
+                case InImportStruct:
                     // Shared tables have to have a name
-                    newState = S_IMPORT_NAME;
+                    newState = ImportName;
                     this.LoadStateData(newState);
                     break;
-                case S_IMPORT_NAME:
+                case ImportName:
                     // Shared tables have to have a version
-                    newState = S_IMPORT_VERSION;
+                    newState = ImportVersion;
                     this.LoadStateData(newState);
                     break;
-                case S_IMPORT_VERSION:
+                case ImportVersion:
                     // And they also always have a max id, so we set up for it
-                    newState = S_IMPORT_MAX_ID;
+                    newState = ImportMaxId;
                     this.LoadStateData(newState);
                     break;
-                case S_IMPORT_MAX_ID:
-                    newState = S_IMPORT_STRUCT_CLOSE;
+                case ImportMaxId:
+                    newState = ImportStructClose;
                     break;
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
+                case ImportStructClose:
+                case ImportListClose:
                     // No change here - we just bump up against this local eof
                     break;
-                case S_AFTER_IMPORT_LIST:
+                case AfterImportList:
                     Debug.Assert(this.symbolTable.GetImportedMaxId() < this.maxId, "maxId exceeded");
-                    newState = S_SYMBOL_LIST;
+                    newState = SymbolList;
                     break;
-                case S_SYMBOL_LIST:
+                case SymbolList:
                     Debug.Assert(this.symbolTable.GetImportedMaxId() < this.maxId, "maxId exceeded");
                     newState = StateFollowingLocalSymbols();
                     break;
-                case S_IN_SYMBOLS:
+                case InSymbols:
                 // We have some symbols - so we'll set up to read them, which we *have* to do once and *need* to do only once.
                 // Since we only get into the symbol list if there are some symbols, our next state
                 // is at the first symbol so we just fall through to and let the S_SYMBOL
                 // state do it's thing (which it will do every time we move to the next symbol)
-                case S_SYMBOL:
+                case Symbol:
                     Debug.Assert(this.localSymbolsEnumerator != null, "localSymbolsEnumerator is null");
                     if (this.localSymbolsEnumerator.MoveNext())
                     {
                         this.stringValue = this.localSymbolsEnumerator.Current;
 
                         // null means this symbol isn't defined
-                        newState = S_SYMBOL;
+                        newState = Symbol;
                         break;
                     }
 
-                    newState = S_SYMBOL_LIST_CLOSE;
+                    newState = SymbolListClose;
                     break;
-                case S_SYMBOL_LIST_CLOSE:
+                case SymbolListClose:
                     // No change here - we just bump up against this local eof
-                    newState = S_SYMBOL_LIST_CLOSE;
+                    newState = SymbolListClose;
                     break;
-                case S_STRUCT_CLOSE:
-                case S_EOF:
+                case StructClose:
+                case Eof:
                     // No change here - we just bump up against this local eof
                     break;
             }
@@ -365,18 +365,18 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             switch (this.currentState)
             {
-                case S_STRUCT:
-                    this.currentState = S_IN_STRUCT;
+                case Struct:
+                    this.currentState = InStruct;
                     break;
-                case S_IMPORT_LIST:
-                    this.currentState = S_IN_IMPORTS;
+                case ImportList:
+                    this.currentState = InImports;
                     break;
-                case S_IMPORT_STRUCT:
+                case ImportStruct:
                     Debug.Assert(this.currentImportTable != null, "currentImportTable is null");
-                    this.currentState = S_IN_IMPORT_STRUCT;
+                    this.currentState = InImportStruct;
                     break;
-                case S_SYMBOL_LIST:
-                    this.currentState = S_IN_SYMBOLS;
+                case SymbolList:
+                    this.currentState = InSymbols;
                     break;
                 default:
                     throw new InvalidOperationException("Current value is not a container");
@@ -391,37 +391,37 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 default:
                     throw new InvalidOperationException("Current value is not in a container");
-                case S_IN_STRUCT:
-                case S_NAME:
-                case S_VERSION:
-                case S_MAX_ID:
-                case S_IMPORT_LIST:
-                case S_AFTER_IMPORT_LIST:
-                case S_SYMBOL_LIST:
-                case S_STRUCT_CLOSE:
+                case InStruct:
+                case Name:
+                case Version:
+                case MaxId:
+                case ImportList:
+                case AfterImportList:
+                case SymbolList:
+                case StructClose:
                     // These are all top level so StepOut() ends up at the end of our data
-                    newState = S_EOF;
+                    newState = Eof;
                     break;
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                case S_IMPORT_LIST_CLOSE:
+                case InImports:
+                case ImportStruct:
+                case ImportListClose:
                     // If we're outside a struct, and we're in the import list StepOut() will be whatever follows the import list
                     // Close and we're done with these
                     this.currentImportTable = null;
                     newState = this.StateFollowingImportList(Op.StepOut);
                     break;
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_NAME:
-                case S_IMPORT_VERSION:
-                case S_IMPORT_MAX_ID:
-                case S_IMPORT_STRUCT_CLOSE:
+                case InImportStruct:
+                case ImportName:
+                case ImportVersion:
+                case ImportMaxId:
+                case ImportStructClose:
                     // If there is a next import the next state will be its struct open
                     // Otherwise next will be the list close
-                    newState = this.importTablesIdx < this.importedTables.Length - 1 ? S_IMPORT_STRUCT : S_IMPORT_LIST_CLOSE;
+                    newState = this.importTablesIdx < this.importedTables.Length - 1 ? ImportStruct : ImportListClose;
                     break;
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                case S_SYMBOL_LIST_CLOSE:
+                case InSymbols:
+                case Symbol:
+                case SymbolListClose:
                     // Done with our local symbol references.
                     this.stringValue = null;
                     this.localSymbolsEnumerator.Dispose();
@@ -440,37 +440,37 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             switch (this.currentState)
             {
-                case S_STRUCT:
-                case S_IN_STRUCT:
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
-                case S_AFTER_IMPORT_LIST:
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
-                case S_SYMBOL_LIST_CLOSE:
-                case S_STRUCT_CLOSE:
-                case S_EOF:
+                case Struct:
+                case InStruct:
+                case InImports:
+                case ImportStruct:
+                case InImportStruct:
+                case ImportStructClose:
+                case ImportListClose:
+                case AfterImportList:
+                case InSymbols:
+                case Symbol:
+                case SymbolListClose:
+                case StructClose:
+                case Eof:
                     return SymbolToken.None;
 
-                case S_NAME:
-                case S_IMPORT_NAME:
+                case Name:
+                case ImportName:
                     return new SymbolToken(SystemSymbols.Name, SystemSymbols.NameSid);
 
-                case S_VERSION:
-                case S_IMPORT_VERSION:
+                case Version:
+                case ImportVersion:
                     return new SymbolToken(SystemSymbols.Version, SystemSymbols.VersionSid);
 
-                case S_MAX_ID:
-                case S_IMPORT_MAX_ID:
+                case MaxId:
+                case ImportMaxId:
                     return new SymbolToken(SystemSymbols.MaxId, SystemSymbols.MaxIdSid);
 
-                case S_IMPORT_LIST:
+                case ImportList:
                     return new SymbolToken(SystemSymbols.Imports, SystemSymbols.ImportsSid);
 
-                case S_SYMBOL_LIST:
+                case SymbolList:
                     return new SymbolToken(SystemSymbols.Symbols, SystemSymbols.SymbolsSid);
 
                 default:
@@ -527,35 +527,35 @@ namespace Amazon.IonDotnet.Internals.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int StateFollowingLocalSymbols() => S_STRUCT_CLOSE;
+        private static int StateFollowingLocalSymbols() => StructClose;
 
         private static string GetStateName(int state)
         {
             switch (state)
             {
                 default: return $"UnrecognizedState:{state}";
-                case S_BOF: return "S_BOF";
-                case S_STRUCT: return "S_STRUCT";
-                case S_IN_STRUCT: return "S_IN_STRUCT";
-                case S_NAME: return "S_NAME";
-                case S_VERSION: return "S_VERSION";
-                case S_MAX_ID: return "S_MAX_ID";
-                case S_IMPORT_LIST: return "S_IMPORT_LIST";
-                case S_IN_IMPORTS: return "S_IN_IMPORTS";
-                case S_IMPORT_STRUCT: return "S_IMPORT_STRUCT";
-                case S_IN_IMPORT_STRUCT: return "S_IN_IMPORT_STRUCT";
-                case S_IMPORT_NAME: return "S_IMPORT_NAME";
-                case S_IMPORT_VERSION: return "S_IMPORT_VERSION";
-                case S_IMPORT_MAX_ID: return "S_IMPORT_MAX_ID";
-                case S_IMPORT_STRUCT_CLOSE: return "S_IMPORT_STRUCT_CLOSE";
-                case S_IMPORT_LIST_CLOSE: return "S_IMPORT_LIST_CLOSE";
-                case S_AFTER_IMPORT_LIST: return "S_AFTER_IMPORT_LIST";
-                case S_SYMBOL_LIST: return "S_SYMBOL_LIST";
-                case S_IN_SYMBOLS: return "S_IN_SYMBOLS";
-                case S_SYMBOL: return "S_SYMBOL";
-                case S_SYMBOL_LIST_CLOSE: return "S_SYMBOL_LIST_CLOSE";
-                case S_STRUCT_CLOSE: return "S_STRUCT_CLOSE";
-                case S_EOF: return "S_EOF";
+                case Bof: return "Bof";
+                case Struct: return "Struct";
+                case InStruct: return "InStruct";
+                case Name: return "Name";
+                case Version: return "Version";
+                case MaxId: return "MaxId";
+                case ImportList: return "ImportList";
+                case InImports: return "InImports";
+                case ImportStruct: return "ImportStruct";
+                case InImportStruct: return "InImportStruct";
+                case ImportName: return "ImportName";
+                case ImportVersion: return "ImportVersion";
+                case ImportMaxId: return "ImportMaxId";
+                case ImportStructClose: return "ImportStructClose";
+                case ImportListClose: return "ImportListClose";
+                case AfterImportList: return "AfterImportList";
+                case SymbolList: return "SymbolList";
+                case InSymbols: return "InSymbols";
+                case Symbol: return "Symbol";
+                case SymbolListClose: return "SymbolListClose";
+                case StructClose: return "StructClose";
+                case Eof: return "Eof";
             }
         }
 
@@ -563,28 +563,28 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             switch (state)
             {
-                case S_BOF: return IonType.None;
-                case S_STRUCT: return IonType.Struct;
-                case S_IN_STRUCT: return IonType.None;
-                case S_NAME: return IonType.String;
-                case S_VERSION: return IonType.Int;
-                case S_MAX_ID: return IonType.Int;
-                case S_IMPORT_LIST: return IonType.List;
-                case S_IN_IMPORTS: return IonType.None;
-                case S_IMPORT_STRUCT: return IonType.Struct;
-                case S_IN_IMPORT_STRUCT: return IonType.None;
-                case S_IMPORT_NAME: return IonType.String;
-                case S_IMPORT_VERSION: return IonType.Int;
-                case S_IMPORT_MAX_ID: return IonType.Int;
-                case S_IMPORT_STRUCT_CLOSE: return IonType.None;
-                case S_IMPORT_LIST_CLOSE: return IonType.None;
-                case S_AFTER_IMPORT_LIST: return IonType.None;
-                case S_SYMBOL_LIST: return IonType.List;
-                case S_IN_SYMBOLS: return IonType.None;
-                case S_SYMBOL: return IonType.String;
-                case S_SYMBOL_LIST_CLOSE: return IonType.None;
-                case S_STRUCT_CLOSE: return IonType.None;
-                case S_EOF: return IonType.None;
+                case Bof: return IonType.None;
+                case Struct: return IonType.Struct;
+                case InStruct: return IonType.None;
+                case Name: return IonType.String;
+                case Version: return IonType.Int;
+                case MaxId: return IonType.Int;
+                case ImportList: return IonType.List;
+                case InImports: return IonType.None;
+                case ImportStruct: return IonType.Struct;
+                case InImportStruct: return IonType.None;
+                case ImportName: return IonType.String;
+                case ImportVersion: return IonType.Int;
+                case ImportMaxId: return IonType.Int;
+                case ImportStructClose: return IonType.None;
+                case ImportListClose: return IonType.None;
+                case AfterImportList: return IonType.None;
+                case SymbolList: return IonType.List;
+                case InSymbols: return IonType.None;
+                case Symbol: return IonType.String;
+                case SymbolListClose: return IonType.None;
+                case StructClose: return IonType.None;
+                case Eof: return IonType.None;
                 default:
                     ThrowUnrecognizedState(state);
                     return IonType.None;
@@ -595,28 +595,28 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             switch (state)
             {
-                case S_BOF: return 0;
-                case S_STRUCT: return 0;
-                case S_IN_STRUCT: return 1;
-                case S_NAME: return 1;
-                case S_VERSION: return 1;
-                case S_MAX_ID: return 1;
-                case S_IMPORT_LIST: return 1;
-                case S_IN_IMPORTS: return 2;
-                case S_IMPORT_STRUCT: return 2;
-                case S_IN_IMPORT_STRUCT: return 3;
-                case S_IMPORT_NAME: return 3;
-                case S_IMPORT_VERSION: return 3;
-                case S_IMPORT_MAX_ID: return 3;
-                case S_IMPORT_STRUCT_CLOSE: return 3;
-                case S_IMPORT_LIST_CLOSE: return 2;
-                case S_AFTER_IMPORT_LIST: return 1;
-                case S_SYMBOL_LIST: return 1;
-                case S_IN_SYMBOLS: return 2;
-                case S_SYMBOL: return 2;
-                case S_SYMBOL_LIST_CLOSE: return 2;
-                case S_STRUCT_CLOSE: return 1;
-                case S_EOF: return 0;
+                case Bof: return 0;
+                case Struct: return 0;
+                case InStruct: return 1;
+                case Name: return 1;
+                case Version: return 1;
+                case MaxId: return 1;
+                case ImportList: return 1;
+                case InImports: return 2;
+                case ImportStruct: return 2;
+                case InImportStruct: return 3;
+                case ImportName: return 3;
+                case ImportVersion: return 3;
+                case ImportMaxId: return 3;
+                case ImportStructClose: return 3;
+                case ImportListClose: return 2;
+                case AfterImportList: return 1;
+                case SymbolList: return 1;
+                case InSymbols: return 2;
+                case Symbol: return 2;
+                case SymbolListClose: return 2;
+                case StructClose: return 1;
+                case Eof: return 0;
                 default:
                     ThrowUnrecognizedState(state);
                     return -1;
@@ -631,22 +631,22 @@ namespace Amazon.IonDotnet.Internals.Binary
             if (this.importTablesIdx < this.importedTables.Length - 1)
             {
                 this.currentImportTable = this.importedTables[++this.importTablesIdx];
-                return S_IMPORT_STRUCT;
+                return ImportStruct;
             }
 
             // The import list is empty, so we jump to the close list and null out our current
             this.currentImportTable = null;
-            return S_IMPORT_LIST_CLOSE;
+            return ImportListClose;
         }
 
         private int StateFollowingImportList(Op op)
         {
             if (!this.HasLocalSymbols())
             {
-                return S_STRUCT_CLOSE;
+                return StructClose;
             }
 
-            return op == Op.Next ? S_SYMBOL_LIST : S_AFTER_IMPORT_LIST;
+            return op == Op.Next ? SymbolList : AfterImportList;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -665,19 +665,19 @@ namespace Amazon.IonDotnet.Internals.Binary
         private bool TestFlag(int flagBit) => (this.flags & flagBit) != 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasName() => this.TestFlag(HAS_NAME);
+        private bool HasName() => this.TestFlag(HasNameFlag);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasVersion() => this.TestFlag(HAS_VERSION);
+        private bool HasVersion() => this.TestFlag(HasVersionFlag);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasMaxId() => this.TestFlag(HAS_MAX_ID);
+        private bool HasMaxId() => this.TestFlag(HasMaxIdFlag);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasImports() => this.TestFlag(HAS_IMPORT_LIST);
+        private bool HasImports() => this.TestFlag(HasImportListFlag);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HasLocalSymbols() => this.TestFlag(HAS_SYMBOL_LIST);
+        private bool HasLocalSymbols() => this.TestFlag(HasSymbolListFlag);
 
         /// <summary>
         /// Determine whether or not more values are coming at the current scanning depth.
@@ -690,53 +690,53 @@ namespace Amazon.IonDotnet.Internals.Binary
                 default:
                     ThrowUnrecognizedState(this.currentState);
                     return false;
-                case S_BOF:
+                case Bof:
                     return true;
-                case S_STRUCT:
+                case Struct:
                     return false;
-                case S_IN_STRUCT:
-                    return this.StateFirstInStruct() != S_STRUCT_CLOSE;
-                case S_NAME:
+                case InStruct:
+                    return this.StateFirstInStruct() != StructClose;
+                case Name:
                     return true;
-                case S_VERSION:
+                case Version:
                     if (this.HasMaxId())
                     {
                         return true;
                     }
 
-                    return this.StateFollowingMaxId() != S_STRUCT_CLOSE;
-                case S_IMPORT_LIST:
+                    return this.StateFollowingMaxId() != StructClose;
+                case ImportList:
                     return this.HasLocalSymbols();
-                case S_IN_IMPORTS:
-                case S_IMPORT_STRUCT:
+                case InImports:
+                case ImportStruct:
                     // We have more if there is
                     return this.importTablesIdx < this.importedTables.Length - 1;
-                case S_IN_IMPORT_STRUCT:
-                case S_IMPORT_NAME:
+                case InImportStruct:
+                case ImportName:
                     // We always have a name and version
                     return true;
-                case S_IMPORT_VERSION:
+                case ImportVersion:
                     // We always have a max_id on imports
                     return true;
-                case S_IMPORT_MAX_ID:
-                case S_IMPORT_STRUCT_CLOSE:
-                case S_IMPORT_LIST_CLOSE:
+                case ImportMaxId:
+                case ImportStructClose:
+                case ImportListClose:
                     return false;
-                case S_AFTER_IMPORT_LIST:
+                case AfterImportList:
                     // LocalSymbols are the only thing that might follow imports
                     return this.HasLocalSymbols();
-                case S_SYMBOL_LIST:
+                case SymbolList:
                     // The symbol list is the last member, so it has no "next sibling",
                     // but just in case we put something after the local symbol list
-                    Debug.Assert(StateFollowingLocalSymbols() == S_STRUCT_CLOSE, "Symbol list is not the last member");
+                    Debug.Assert(StateFollowingLocalSymbols() == StructClose, "Symbol list is not the last member");
                     return false;
-                case S_IN_SYMBOLS:
-                case S_SYMBOL:
+                case InSymbols:
+                case Symbol:
                     // Return true here, and MoveNext() will figure out whether we still have symbols
                     return true;
-                case S_SYMBOL_LIST_CLOSE:
-                case S_STRUCT_CLOSE:
-                case S_EOF:
+                case SymbolListClose:
+                case StructClose:
+                case Eof:
                     // These are all at the end of their respective containers
                     return false;
             }
@@ -751,32 +751,32 @@ namespace Amazon.IonDotnet.Internals.Binary
             {
                 default:
                     throw new IonException($"{nameof(SymbolTableReader)} in state {GetStateName(newState)} has no state to load");
-                case S_NAME:
+                case Name:
                     Debug.Assert(this.HasName(), "No name found");
                     this.stringValue = this.symbolTable.Name;
                     Debug.Assert(this.stringValue != null, "stringValue is null");
                     break;
-                case S_VERSION:
+                case Version:
                     this.intValue = this.symbolTable.Version;
                     Debug.Assert(this.intValue != 0, "intValue is 0");
                     break;
-                case S_MAX_ID:
+                case MaxId:
                     this.intValue = this.maxId;
                     break;
-                case S_IMPORT_LIST:
-                case S_SYMBOL_LIST:
+                case ImportList:
+                case SymbolList:
                     // no op to simplify the initial fields logic in next()
                     break;
-                case S_IMPORT_NAME:
+                case ImportName:
                     Debug.Assert(this.currentImportTable != null, "currentImporTable is null");
                     this.stringValue = this.currentImportTable.Name;
                     break;
-                case S_IMPORT_VERSION:
+                case ImportVersion:
                     // shared tables have to have a version
                     this.stringValue = null;
                     this.intValue = this.currentImportTable.Version;
                     break;
-                case S_IMPORT_MAX_ID:
+                case ImportMaxId:
                     // and they also always have a max id - so we set up
                     // for it
                     this.intValue = this.currentImportTable.MaxId;
@@ -788,30 +788,30 @@ namespace Amazon.IonDotnet.Internals.Binary
         {
             if (this.HasImports())
             {
-                return S_IMPORT_LIST;
+                return ImportList;
             }
 
             if (this.HasLocalSymbols())
             {
-                return S_SYMBOL_LIST;
+                return SymbolList;
             }
 
-            return S_STRUCT_CLOSE;
+            return StructClose;
         }
 
         private int StateFirstInStruct()
         {
             if (this.HasName())
             {
-                return S_NAME;
+                return Name;
             }
 
             if (this.HasImports())
             {
-                return S_IMPORT_LIST;
+                return ImportList;
             }
 
-            return this.HasLocalSymbols() ? S_SYMBOL_LIST : S_STRUCT_CLOSE;
+            return this.HasLocalSymbols() ? SymbolList : StructClose;
         }
     }
 }

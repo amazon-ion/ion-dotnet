@@ -21,7 +21,7 @@ namespace Amazon.IonDotnet.Internals.Tree
     internal class UserTreeReader : SystemTreeReader
     {
         // The ID of system symbol {@value #ION_1_0}, as defined by Ion 1.0.
-        private const int ION_1_0_SID = 2;
+        private const int Ion10Sid = 2;
         private readonly ICatalog catalog;
         private int symbolTableTop = 0;
         private ISymbolTable[] symbolTableStack = new ISymbolTable[3]; // 3 is rare, IVM followed by a local sym tab with open content
@@ -106,7 +106,7 @@ namespace Amazon.IonDotnet.Internals.Tree
                             }
                         }
 
-                        if (sid == ION_1_0_SID && this.next.GetTypeAnnotationSymbols().Count == 0)
+                        if (sid == Ion10Sid && this.next.GetTypeAnnotationSymbols().Count == 0)
                         {
                             // $ion_1_0 is read as an IVM only if it is not annotated
                             ISymbolTable symbols = this.systemSymbols;
