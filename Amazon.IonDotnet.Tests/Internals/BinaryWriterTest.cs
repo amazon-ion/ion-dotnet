@@ -476,12 +476,14 @@ namespace Amazon.IonDotnet.Tests.Internals
                 ionValue.AddTypeAnnotation("annotation");
             }
 
-            using var writer = IonBinaryWriterBuilder.Build(new MemoryStream());
-            foreach (var ionValue in ionValues)
+            using (var writer = IonBinaryWriterBuilder.Build(new MemoryStream()))
             {
-                ionValue.WriteTo(writer);
+                foreach (var ionValue in ionValues)
+                {
+                    ionValue.WriteTo(writer);
+                }
+                writer.Finish();
             }
-            writer.Finish();
         }
     }
 }
