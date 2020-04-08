@@ -297,15 +297,12 @@ namespace Amazon.IonDotnet.Internals.Text
             {
                 return;
             }
-#if NETCOREAPP2_1
-            writer.Write(s.AsSpan().Slice(start, length));
-#else
+
             var end = start + length;
             for (var i = start; i < end; i++)
             {
                 writer.Write(s[i]);
             }
-#endif
         }
 
         private void WriteStringWithEscapes(string text, string[] escapeTable)

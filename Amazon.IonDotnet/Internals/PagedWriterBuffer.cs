@@ -22,6 +22,7 @@ namespace Amazon.IonDotnet.Internals
     using System.Runtime.CompilerServices;
     using System.Text;
     using Amazon.IonDotnet.Internals.Binary;
+    using Amazon.IonDotnet.Utils;
 
     internal abstract class PagedWriterBuffer : IWriterBuffer
     {

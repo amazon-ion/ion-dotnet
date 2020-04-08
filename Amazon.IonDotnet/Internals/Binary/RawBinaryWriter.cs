@@ -25,10 +25,6 @@ namespace Amazon.IonDotnet.Internals.Binary
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Utils;
 
-#if !(NETSTANDARD2_0 || NET45)
-    using BitConverterEx = System.BitConverter;
-#endif
-
     internal class RawBinaryWriter : IPrivateWriter
     {
         internal readonly List<SymbolToken> Annotations = new List<SymbolToken>();
@@ -282,13 +278,8 @@ namespace Amazon.IonDotnet.Internals.Binary
                 value = BigInteger.Negate(value);
             }
 
-            // TODO: Is there a no-alloc way?
-#if NET45 || NETSTANDARD2_0
             var buffer = value.ToByteArray();
             Array.Reverse(buffer);
-#else
-            var buffer = value.ToByteArray(isBigEndian: true);
-#endif
             this.WriteTypedBytes(type, buffer);
 
             this.FinishValue();
@@ -365,12 +356,8 @@ namespace Amazon.IonDotnet.Internals.Binary
             var negative = value.IntVal < 0 || value.IsNegativeZero;
             var mag = BigInteger.Abs(value.IntVal);
 
-#if NET45 || NETSTANDARD2_0
             var bytes = mag.ToByteArray();
             Array.Reverse(bytes);
-#else
-            var bytes = mag.ToByteArray(isBigEndian: true);
-#endif
 
             if (negative)
             {
