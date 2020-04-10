@@ -26,6 +26,8 @@ namespace Amazon.IonDotnet.Internals
 
     internal abstract class PagedWriterBuffer : IWriterBuffer
     {
+        protected bool isDisposed = false;
+
         private const int Shift1Byte = 8;
         private const int Shift2Byte = 8 * 2;
         private const int Shift3Byte = 8 * 3;
@@ -99,8 +101,15 @@ namespace Amazon.IonDotnet.Internals
             this.blockSize = this.currentBlock.Length;
         }
 
+        ~PagedWriterBuffer()
+        {
+            this.Dispose(false);
+        }
+
         public int WriteUtf8(ReadOnlySpan<char> chars, int length)
         {
+            this.ThrowIfDisposed();
+
             // get the byteCount first
             var byteCount = length == -1 ? Encoding.UTF8.GetByteCount(chars) : length;
             Debug.Assert(length == -1 || length == Encoding.UTF8.GetByteCount(chars), "length is not -1 or matches chars ByteCount");
@@ -120,6 +129,7 @@ namespace Amazon.IonDotnet.Internals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteByte(byte octet)
         {
+            this.ThrowIfDisposed();
             if (this.runningIndex == this.currentBlock.Length)
             {
                 this.AllocateNewBlock();
@@ -134,6 +144,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint16(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 2)
             {
                 this.WriteByte((byte)(value >> Shift1Byte));
@@ -148,6 +159,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint24(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 3)
             {
                 this.WriteByte((byte)(value >> Shift2Byte));
@@ -164,6 +176,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint32(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 4)
             {
                 this.WriteByte((byte)(value >> Shift3Byte));
@@ -182,6 +195,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint40(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 5)
             {
                 this.WriteByte((byte)(value >> Shift4Byte));
@@ -202,6 +216,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint48(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 6)
             {
                 this.WriteByte((byte)(value >> Shift5Byte));
@@ -224,6 +239,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint56(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 7)
             {
                 this.WriteByte((byte)(value >> Shift6Byte));
@@ -248,6 +264,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteUint64(long value)
         {
+            this.ThrowIfDisposed();
             if (this.currentBlock.Length - this.runningIndex < 8)
             {
                 this.WriteByte((byte)(value >> Shift7Byte));
@@ -274,6 +291,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteBytes(ReadOnlySpan<byte> bytes)
         {
+            this.ThrowIfDisposed();
             var bytesToWrite = bytes.Length;
             while (bytesToWrite > 0)
             {
@@ -301,6 +319,7 @@ namespace Amazon.IonDotnet.Internals
 
         public int WriteVarUint(long value)
         {
+            this.ThrowIfDisposed();
             if (value < VarUintShift1UnitMinValue)
             {
                 // fits in 1 byte
@@ -341,6 +360,8 @@ namespace Amazon.IonDotnet.Internals
 
         public int WriteAnnotationsWithLength(IList<SymbolToken> annotations)
         {
+            this.ThrowIfDisposed();
+
             // remember the current position to write the length
             // annotation length MUST fit in 1 byte
             if (this.runningIndex == this.currentBlock.Length)
@@ -375,6 +396,7 @@ namespace Amazon.IonDotnet.Internals
         /// <returns>Number of bytes written.</returns>
         public int WriteVarInt(long value)
         {
+            this.ThrowIfDisposed();
             Debug.Assert(value != long.MinValue, "value is long.MinValue");
 
             const int varIntBitsPerSignedOctet = 6;
@@ -419,6 +441,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void StartStreak(IList<Memory<byte>> sequence)
         {
+            this.ThrowIfDisposed();
             this.currentSequence = sequence;
             if (this.currentBlock == null)
             {
@@ -428,6 +451,7 @@ namespace Amazon.IonDotnet.Internals
 
         public IList<Memory<byte>> Wrapup()
         {
+            this.ThrowIfDisposed();
             Debug.Assert(this.currentSequence != null, "currentSequence is null");
 
             if (this.writtenSoFar == 0)
@@ -460,6 +484,7 @@ namespace Amazon.IonDotnet.Internals
 
         public void Reset()
         {
+            this.ThrowIfDisposed();
             this.currentBlock = null;
             this.writtenSoFar = 0;
             this.runningIndex = 0;
@@ -476,13 +501,27 @@ namespace Amazon.IonDotnet.Internals
 
         public void Dispose()
         {
-            this.currentBlock = null;
-            foreach (var block in this.bufferBlocks)
-            {
-                ArrayPool<byte>.Shared.Return(block);
-            }
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-            this.bufferBlocks.Clear();
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                this.isDisposed = true;
+                this.currentBlock = null;
+                foreach (var block in this.bufferBlocks)
+                {
+                    ArrayPool<byte>.Shared.Return(block);
+                }
+
+                this.bufferBlocks.Clear();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -499,6 +538,14 @@ namespace Amazon.IonDotnet.Internals
             }
 
             return b;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this.isDisposed)
+            {
+                throw new ObjectDisposedException("PagedWriterBuffer");
+            }
         }
 
         /// <summary>

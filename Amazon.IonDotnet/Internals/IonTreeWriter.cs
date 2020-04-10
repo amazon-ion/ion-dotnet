@@ -34,6 +34,11 @@ namespace Amazon.IonDotnet.Internals
             this.containers.Push(root);
         }
 
+        ~IonTreeWriter()
+        {
+            this.Dispose(false);
+        }
+
         public override bool IsInStruct => ((IIonValue)this.currentContainer).Type() == IonType.Struct;
 
         public override void WriteNull()
@@ -152,11 +157,6 @@ namespace Amazon.IonDotnet.Internals
             this.AppendValue(new IonClob(value));
         }
 
-        public override void Dispose()
-        {
-            // nothing to do here
-        }
-
         public override void Flush()
         {
             // nothing to do here
@@ -206,6 +206,25 @@ namespace Amazon.IonDotnet.Internals
         public override int GetDepth()
         {
             return this.containers.Count;
+        }
+
+        public override void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                // Intentionally do nothing
+                this.isDisposed = true;
+            }
         }
 
         protected override void WriteSymbolAsIs(SymbolToken symbolToken)

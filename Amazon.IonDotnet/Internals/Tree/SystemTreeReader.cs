@@ -32,6 +32,8 @@ namespace Amazon.IonDotnet.Internals.Tree
         protected bool eof;
         protected int top;
 
+        protected bool isDisposed = false;
+
         // Holds pairs: IonValue parent (parent), Iterator<IIonValue> cursor (iter)
         private object[] stack = new object[10];
         private int pos = 0;
@@ -53,6 +55,11 @@ namespace Amazon.IonDotnet.Internals.Tree
                 this.parent = null;
                 this.next = value;
             }
+        }
+
+        ~SystemTreeReader()
+        {
+            this.Dispose(false);
         }
 
         public int CurrentDepth => this.top / 2;
@@ -261,9 +268,23 @@ namespace Amazon.IonDotnet.Internals.Tree
         /// <summary>
         /// Dispose SystemTreeReader.
         /// </summary>
-        public virtual void Dispose()
+        public void Dispose()
         {
-            return;
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                // Intentionally do nothing
+                this.isDisposed = true;
+            }
         }
 
         protected IonType NextHelperSystem()

@@ -28,6 +28,8 @@ namespace Amazon.IonDotnet.Internals.Binary
     /// </summary>
     internal class SymbolTableReader : IIonReader
     {
+        protected bool isDisposed = false;
+
         private const int Bof = 0;
         private const int Struct = 1;
         private const int InStruct = 2;
@@ -102,10 +104,9 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
         }
 
-        // TODO: Revisit Finalize
         ~SymbolTableReader()
         {
-            this.localSymbolsEnumerator?.Dispose();
+            this.Dispose(false);
         }
 
         private enum Op
@@ -249,6 +250,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         /// </summary>
         public IonType MoveNext()
         {
+            this.ThrowIfDisposed();
             if (!this.HasNext())
             {
                 return IonType.None;
@@ -363,6 +365,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void StepIn()
         {
+            this.ThrowIfDisposed();
             switch (this.currentState)
             {
                 case Struct:
@@ -385,6 +388,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void StepOut()
         {
+            this.ThrowIfDisposed();
             int newState;
 
             switch (this.currentState)
@@ -523,7 +527,21 @@ namespace Amazon.IonDotnet.Internals.Binary
         /// </summary>
         public void Dispose()
         {
-            return;
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                this.isDisposed = true;
+                this.localSymbolsEnumerator?.Dispose();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -625,6 +643,14 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         private static void ThrowUnrecognizedState(int state)
             => throw new IonException($"SymbolTableReader is in an unrecognize state: {state}");
+
+        private void ThrowIfDisposed()
+        {
+            if (this.isDisposed)
+            {
+                throw new ObjectDisposedException("This IIonReader has been disposed");
+            }
+        }
 
         private int NextImport()
         {

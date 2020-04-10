@@ -25,6 +25,8 @@ namespace Amazon.IonDotnet.Internals
     /// </summary>
     internal abstract class PrivateIonWriterBase : IPrivateWriter
     {
+        protected bool isDisposed = false;
+
         public bool IsStreamCopyOptimized => false;
 
         public abstract ISymbolTable SymbolTable { get; }

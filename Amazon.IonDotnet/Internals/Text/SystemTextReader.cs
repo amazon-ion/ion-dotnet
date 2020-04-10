@@ -32,6 +32,11 @@ namespace Amazon.IonDotnet.Internals.Text
             this.systemSymbols = SharedSymbolTable.GetSystem(1);
         }
 
+        ~SystemTextReader()
+        {
+            this.Dispose(false);
+        }
+
         public override bool CurrentIsNull => this.valueVariant.TypeSet.HasFlag(ScalarType.Null);
 
         public override string CurrentFieldName
@@ -327,6 +332,25 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             return false;
+        }
+
+        public override void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                // Intentionally do nothing
+                this.isDisposed = true;
+            }
         }
 
         private void PrepareValue()
