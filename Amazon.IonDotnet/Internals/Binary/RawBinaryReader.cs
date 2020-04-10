@@ -52,6 +52,8 @@ namespace Amazon.IonDotnet.Internals.Binary
         protected bool moveNextNeeded;
         protected bool hasSymbolTableAnnotation;
 
+        protected bool isDisposed = false;
+
         private const int NoLimit = int.MinValue;
 
         private const int DefaultContainerStackSize = 6;
@@ -121,10 +123,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         /// <summary>
         /// Dispose RawBinaryReader.
         /// </summary>
-        public void Dispose()
-        {
-            return;
-        }
+        public abstract void Dispose();
 
         public int GetBytes(Span<byte> buffer)
         {

@@ -52,14 +52,6 @@ namespace Amazon.IonDotnet.Internals.Tree
             return this.current.Type();
         }
 
-        /// <summary>
-        /// Dispose UserTreeReader.
-        /// </summary>
-        public override void Dispose()
-        {
-            return;
-        }
-
         private bool NextHelperUser()
         {
             if (this.eof)

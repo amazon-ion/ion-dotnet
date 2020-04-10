@@ -41,6 +41,11 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.SymbolTable = symboltable;
         }
 
+        ~SystemBinaryReader()
+        {
+            this.Dispose(false);
+        }
+
         public override string CurrentFieldName
         {
             get
@@ -256,6 +261,25 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
 
             return false;
+        }
+
+        public override void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                // Intentionally do nothing
+                this.isDisposed = true;
+            }
         }
 
         protected void LoadOnce()

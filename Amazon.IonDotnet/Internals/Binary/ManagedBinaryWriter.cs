@@ -64,6 +64,11 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.locals = new Dictionary<string, int>();
         }
 
+        ~ManagedBinaryWriter()
+        {
+            this.Dispose(false);
+        }
+
         private enum SymbolState
         {
             SystemSymbols,
@@ -82,20 +87,9 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.userWriter.AddTypeAnnotationSymbol(token);
         }
 
-        public override void ClearTypeAnnotations() => this.userWriter.ClearTypeAnnotations();
-
-        /// <inheritdoc />
-        /// <summary>
-        /// This is supposed to close the writer and release all their resources.
-        /// </summary>
-        public override void Dispose()
+        public override void ClearTypeAnnotations()
         {
-            var lengthBuffer = this.userWriter?.GetLengthBuffer();
-            Debug.Assert(lengthBuffer == this.symbolsWriter.GetLengthBuffer(), "lengthBuffers do not match");
-            lengthBuffer?.Dispose();
-
-            this.userWriter?.Dispose();
-            this.symbolsWriter?.Dispose();
+            this.userWriter.ClearTypeAnnotations();
         }
 
         /// <summary>
@@ -250,12 +244,19 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.userWriter.WriteString(value);
         }
 
-        public override void WriteBlob(ReadOnlySpan<byte> value) => this.userWriter.WriteBlob(value);
+        public override void WriteBlob(ReadOnlySpan<byte> value)
+        {
+            this.userWriter.WriteBlob(value);
+        }
 
-        public override void WriteClob(ReadOnlySpan<byte> value) => this.userWriter.WriteClob(value);
+        public override void WriteClob(ReadOnlySpan<byte> value)
+        {
+            this.userWriter.WriteClob(value);
+        }
 
         public override void SetTypeAnnotations(IEnumerable<string> annotations)
         {
+            this.ThrowIfDisposed();
             if (annotations == null)
             {
                 throw new ArgumentNullException(nameof(annotations));
@@ -269,14 +270,52 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
         }
 
-        public override bool IsFieldNameSet() => this.userWriter.IsFieldNameSet();
+        public override bool IsFieldNameSet()
+        {
+            return this.userWriter.IsFieldNameSet();
+        }
 
-        public override int GetDepth() => this.userWriter.GetDepth();
+        public override int GetDepth()
+        {
+            return this.userWriter.GetDepth();
+        }
 
         public override void AddTypeAnnotation(string annotation)
         {
             var token = this.Intern(annotation);
             this.userWriter.AddTypeAnnotationSymbol(token);
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// This is supposed to close the writer and release all their resources.
+        /// </summary>
+        public override void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                this.isDisposed = true;
+                this.userWriter?.Dispose();
+                this.symbolsWriter?.Dispose();
+            }
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this.isDisposed)
+            {
+                throw new ObjectDisposedException("This IIonWriter has been disposed");
+            }
         }
 
         /// <summary>

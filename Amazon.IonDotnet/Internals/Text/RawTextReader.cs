@@ -42,6 +42,8 @@ namespace Amazon.IonDotnet.Internals.Text
         protected int lobValuePosition;
         protected byte[] lobBuffer;
 
+        protected bool isDisposed = false;
+
 #pragma warning disable IDE0051 // Remove unused private members
         private const int StateBeforeAnnotationDatagram = 0;
         private const int StateBeforeAnnotationContained = 1;
@@ -234,19 +236,16 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public abstract int GetBytes(Span<byte> buffer);
 
-        /// <summary>
-        /// Dispose RawTextReader.
-        /// </summary>
-        public virtual void Dispose()
-        {
-            return;
-        }
-
         public abstract string[] GetTypeAnnotations();
 
         public abstract IEnumerable<SymbolToken> GetTypeAnnotationSymbols();
 
         public abstract bool HasAnnotation(string annotation);
+
+        /// <summary>
+        /// Dispose RawTextReader.
+        /// </summary>
+        public abstract void Dispose();
 
         protected void ClearValueBuffer()
         {

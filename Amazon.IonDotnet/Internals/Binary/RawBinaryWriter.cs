@@ -28,6 +28,7 @@ namespace Amazon.IonDotnet.Internals.Binary
     internal class RawBinaryWriter : IPrivateWriter
     {
         internal readonly List<SymbolToken> Annotations = new List<SymbolToken>();
+        protected bool isDisposed;
 
         private const int IntZeroByte = 0x20;
 
@@ -71,6 +72,11 @@ namespace Amazon.IonDotnet.Internals.Binary
             // Top-level writing also requires a tracker
             var pushedContainer = this.containerStack.PushContainer(ContainerType.Datagram);
             this.dataBuffer.StartStreak(pushedContainer.Sequence);
+        }
+
+        ~RawBinaryWriter()
+        {
+            this.Dispose(false);
         }
 
         private enum ContainerType
@@ -152,6 +158,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void StepIn(IonType type)
         {
+            this.ThrowIfDisposed();
             if (!type.IsContainer())
             {
                 throw new IonException($"Cannot step into {type}");
@@ -172,6 +179,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void StepOut()
         {
+            this.ThrowIfDisposed();
             if (this.currentFieldSymbolToken != default)
             {
                 throw new IonException("Cannot step out with field name set");
@@ -204,6 +212,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteNull()
         {
+            this.ThrowIfDisposed();
             const byte nullNull = 0x0F;
             this.PrepareValue();
             this.containerStack.IncreaseCurrentContainerLength(1);
@@ -213,6 +222,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteNull(IonType type)
         {
+            this.ThrowIfDisposed();
             var nullByte = BinaryConstants.GetNullByte(type);
             this.PrepareValue();
             this.containerStack.IncreaseCurrentContainerLength(1);
@@ -222,6 +232,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteBool(bool value)
         {
+            this.ThrowIfDisposed();
             this.PrepareValue();
             this.containerStack.IncreaseCurrentContainerLength(1);
             this.dataBuffer.WriteByte(value ? BoolTrueByte : BoolFalseByte);
@@ -230,6 +241,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteInt(long value)
         {
+            this.ThrowIfDisposed();
             this.PrepareValue();
             if (value == 0)
             {
@@ -264,6 +276,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteInt(BigInteger value)
         {
+            this.ThrowIfDisposed();
             if (value >= long.MinValue && value <= long.MaxValue)
             {
                 this.WriteInt((long)value);
@@ -288,6 +301,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteFloat(double value)
         {
+            this.ThrowIfDisposed();
             this.PrepareValue();
 
             // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -320,6 +334,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteDecimal(decimal value)
         {
+            this.ThrowIfDisposed();
             this.PrepareValue();
 
             if (value == 0)
@@ -337,6 +352,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteDecimal(BigDecimal value)
         {
+            this.ThrowIfDisposed();
             if (value.IntVal == 0 && value.Scale == 0 && !value.IsNegativeZero)
             {
                 this.WriteDecimal(value.ToDecimal());
@@ -390,6 +406,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteTimestamp(Timestamp value)
         {
+            this.ThrowIfDisposed();
             const byte varintNegZero = 0xC0;
 
             DateTime dateTimeValue = value.DateTimeValue.Kind == DateTimeKind.Local
@@ -458,6 +475,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteSymbolToken(SymbolToken token)
         {
+            this.ThrowIfDisposed();
             if (token == default)
             {
                 this.WriteNull(IonType.Symbol);
@@ -472,6 +490,8 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteString(string value)
         {
+            this.ThrowIfDisposed();
+
             if (value == null)
             {
                 this.WriteNull(IonType.String);
@@ -506,6 +526,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteBlob(ReadOnlySpan<byte> value)
         {
+            this.ThrowIfDisposed();
             this.PrepareValue();
             this.WriteTypedBytes(TidBlobByte, value);
             this.FinishValue();
@@ -513,6 +534,7 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void WriteClob(ReadOnlySpan<byte> value)
         {
+            this.ThrowIfDisposed();
             this.PrepareValue();
             this.WriteTypedBytes(TidClobType, value);
             this.FinishValue();
@@ -524,19 +546,21 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         public void AddTypeAnnotation(string annotation) => throw new NotSupportedException("raw writer does not support adding Annotations");
 
-        public void Dispose()
-        {
-            this.dataBuffer.Dispose();
-        }
-
         public bool IsFieldNameSet() => this.currentFieldSymbolToken != default;
 
         public int GetDepth() => this.containerStack.Count - 1;
 
         public void WriteIonVersionMarker()
         {
+            this.ThrowIfDisposed();
             this.dataBuffer.WriteUint32(0xE0_01_00_EA);
             this.containerStack.IncreaseCurrentContainerLength(4);
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -545,6 +569,7 @@ namespace Amazon.IonDotnet.Internals.Binary
         /// <returns>Total size of the bytes to be flushed.</returns>
         internal int PrepareFlush()
         {
+            this.ThrowIfDisposed();
             var topContainer = this.containerStack.Peek();
 
             // Wrapup to append all data to the sequence,
@@ -563,6 +588,8 @@ namespace Amazon.IonDotnet.Internals.Binary
 
         internal void Reset()
         {
+            this.ThrowIfDisposed();
+
             // Reset the states
             this.dataBuffer.Reset();
 
@@ -575,9 +602,39 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.dataBuffer.StartStreak(pushedContainer.Sequence);
         }
 
-        internal IWriterBuffer GetLengthBuffer() => this.lengthBuffer;
+        internal IWriterBuffer GetLengthBuffer()
+        {
+            this.ThrowIfDisposed();
+            return this.lengthBuffer;
+        }
 
-        internal IWriterBuffer GetDataBuffer() => this.dataBuffer;
+        internal IWriterBuffer GetDataBuffer()
+        {
+            this.ThrowIfDisposed();
+            return this.dataBuffer;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                this.isDisposed = true;
+                this.lengthBuffer.Dispose();
+                this.dataBuffer.Dispose();
+            }
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (this.isDisposed)
+            {
+                throw new ObjectDisposedException("This IIonWriter has been disposed");
+            }
+        }
 
         /// <summary>
         /// Prepare the field name and annotations (if any).

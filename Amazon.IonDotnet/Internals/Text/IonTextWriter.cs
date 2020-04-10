@@ -52,6 +52,11 @@ namespace Amazon.IonDotnet.Internals.Text
             this.separatorCharacter = this.options.PrettyPrint ? '\n' : ' ';
         }
 
+        ~IonTextWriter()
+        {
+            this.Dispose(false);
+        }
+
         private enum SymbolVariant
         {
             Unknown,
@@ -273,10 +278,6 @@ namespace Amazon.IonDotnet.Internals.Text
             this.CloseValue();
         }
 
-        public override void Dispose()
-        {
-        }
-
         public override void Finish()
         {
         }
@@ -388,6 +389,25 @@ namespace Amazon.IonDotnet.Internals.Text
         }
 
         public override int GetDepth() => this.containerStack.Count;
+
+        public override void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.isDisposed)
+            {
+                return;
+            }
+            else if (disposing)
+            {
+                // Intentionally do nothing
+                this.isDisposed = true;
+            }
+        }
 
         protected override void WriteSymbolAsIs(SymbolToken symbolToken)
         {
