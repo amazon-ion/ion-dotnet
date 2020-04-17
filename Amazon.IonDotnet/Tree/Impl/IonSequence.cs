@@ -220,14 +220,43 @@ namespace Amazon.IonDotnet.Tree.Impl
                 writer.StepIn(type);
             }
 
+            var ownSymbolsCount = 0;
+            List<IIonValue> symbolTokens = new List<IIonValue>();
             foreach (var val in this.children)
             {
-                val.WriteTo(writer);
+                if (val.Type() == IonType.Symbol)
+                {
+                    this.HandleSymbols(val, symbolTokens, ref ownSymbolsCount);
+                }
+                else
+                {
+                    val.WriteTo(writer);
+                }
+            }
+
+            var maxSymbolCount = SystemSymbols.Ion10MaxId + ownSymbolsCount;
+            foreach (var symbol in symbolTokens)
+            {
+                if (symbol.SymbolValue.Text == null && symbol.SymbolValue.Sid > maxSymbolCount)
+                {
+                    throw new UnknownSymbolException(symbol.SymbolValue.Sid);
+                }
+
+                symbol.WriteTo(writer);
             }
 
             if (type != IonType.Datagram)
             {
                 writer.StepOut();
+            }
+        }
+
+        private void HandleSymbols(IIonValue val, List<IIonValue> symbolTokens, ref int ownSymbolsCount)
+        {
+            symbolTokens.Add(val);
+            if (val.SymbolValue.Text != null && val.SymbolValue.Sid > 0)
+            {
+                ownSymbolsCount++;
             }
         }
     }
