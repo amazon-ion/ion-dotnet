@@ -81,5 +81,28 @@ namespace Amazon.IonDotnet.Tests.Internals
             var actual = sw.ToString();
             Assert.AreEqual(expected, actual);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
+        public void WriteSymbolWithSymbolTableOutOfRange()
+        {
+            var text =
+                SystemSymbols.IonSymbolTable + "::" +
+                "{" +
+                "symbols:[\"s1\"]" +
+                "}\n" +
+                "$10\n";
+
+            var ionValueFactory = new ValueFactory();
+            var datagram = IonLoader.Default.Load(text);
+            datagram.Add(ionValueFactory.NewSymbol("with_unknown_sid"));
+            datagram.Add(ionValueFactory.NewSymbol(new SymbolToken(null, 12)));
+
+            var sw = new StringWriter();
+            var textWriter = IonTextWriterBuilder.Build(sw);
+            // Should trhow exception as sid 12 exceeds the max ID of the symbol table currently in scope 
+            datagram.WriteTo(textWriter);
+            textWriter.Finish();
+        }
     }
 }

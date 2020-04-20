@@ -26,8 +26,8 @@ namespace Amazon.IonDotnet.Internals
     internal class ReaderLocalTable : ISymbolTable
     {
         internal readonly List<ISymbolTable> Imports;
+        internal readonly List<string> OwnSymbols = new List<string>();
 
-        private readonly List<string> ownSymbols = new List<string>();
         private int importedMaxId;
 
         internal ReaderLocalTable(ISymbolTable systemTable)
@@ -52,13 +52,13 @@ namespace Amazon.IonDotnet.Internals
 
         public string IonVersionId => this.GetSystemTable().IonVersionId;
 
-        public int MaxId => this.importedMaxId + this.ownSymbols.Count;
+        public int MaxId => this.importedMaxId + this.OwnSymbols.Count;
 
         public static ISymbolTable ImportReaderTable(IIonReader reader, ICatalog catalog, bool isOnStruct)
         {
             var table = reader.GetSymbolTable() as ReaderLocalTable ?? new ReaderLocalTable(reader.GetSymbolTable());
             var imports = table.Imports;
-            var symbols = table.ownSymbols;
+            var symbols = table.OwnSymbols;
             var newSymbols = new List<string>();
 
             if (!isOnStruct)
@@ -192,7 +192,7 @@ namespace Amazon.IonDotnet.Internals
                 }
             }
 
-            if (this.ownSymbols.Contains(text))
+            if (this.OwnSymbols.Contains(text))
             {
                 return new SymbolToken(text, SymbolToken.UnknownSid);
             }
@@ -214,9 +214,9 @@ namespace Amazon.IonDotnet.Internals
                 offset += import.MaxId;
             }
 
-            for (var i = 0; i < this.ownSymbols.Count; i++)
+            for (var i = 0; i < this.OwnSymbols.Count; i++)
             {
-                if (this.ownSymbols[i] == text)
+                if (this.OwnSymbols[i] == text)
                 {
                     return i + 1 + this.importedMaxId;
                 }
@@ -234,7 +234,7 @@ namespace Amazon.IonDotnet.Internals
 
             if (sid > this.importedMaxId)
             {
-                return this.ownSymbols[sid - this.importedMaxId - 1];
+                return this.OwnSymbols[sid - this.importedMaxId - 1];
             }
 
             var offset = 0;
@@ -254,11 +254,11 @@ namespace Amazon.IonDotnet.Internals
 
         public void WriteTo(IIonWriter writer) => writer.WriteValue(new SymbolTableReader(this));
 
-        public IEnumerable<string> GetDeclaredSymbolNames() => this.ownSymbols;
+        public IEnumerable<string> GetDeclaredSymbolNames() => this.OwnSymbols;
 
         /// <summary>
         /// Refresh the local symbol table to a valid state. Typically called after <see cref="Imports"/>
-        /// and <see cref="ownSymbols"/> has been mutated.
+        /// and <see cref="OwnSymbols"/> has been mutated.
         /// </summary>
         internal void Refresh()
         {
