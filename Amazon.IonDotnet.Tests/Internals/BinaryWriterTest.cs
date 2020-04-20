@@ -494,5 +494,18 @@ namespace Amazon.IonDotnet.Tests.Internals
                 Assert.AreEqual("annotation", annotation[0]);
             }
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
+        public void WriteSymbolWithSymbolTableOutOfRange()
+        {
+            var datagram = SymTabUtils.DatagramWithOutOfRangeSymbolsInSymbolTable();
+
+            var memStream = new MemoryStream();
+            var binaryWriter = IonBinaryWriterBuilder.Build(memStream);
+            // Should throw exception as sid 12 in datagram exceeds the max ID of the symbol table currently in scope 
+            datagram.WriteTo(binaryWriter);
+            binaryWriter.Finish();
+        }
     }
 }

@@ -16,6 +16,7 @@
 using System;
 using System.IO;
 using Amazon.IonDotnet.Builders;
+using Amazon.IonDotnet.Tests.Common;
 using Amazon.IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -86,21 +87,11 @@ namespace Amazon.IonDotnet.Tests.Internals
         [ExpectedException(typeof(UnknownSymbolException))]
         public void WriteSymbolWithSymbolTableOutOfRange()
         {
-            var text =
-                SystemSymbols.IonSymbolTable + "::" +
-                "{" +
-                "symbols:[\"s1\"]" +
-                "}\n" +
-                "$10\n";
-
-            var ionValueFactory = new ValueFactory();
-            var datagram = IonLoader.Default.Load(text);
-            datagram.Add(ionValueFactory.NewSymbol("with_unknown_sid"));
-            datagram.Add(ionValueFactory.NewSymbol(new SymbolToken(null, 12)));
+            var datagram = SymTabUtils.DatagramWithOutOfRangeSymbolsInSymbolTable();
 
             var sw = new StringWriter();
             var textWriter = IonTextWriterBuilder.Build(sw);
-            // Should trhow exception as sid 12 exceeds the max ID of the symbol table currently in scope 
+            // Should throw exception as sid 12 in datagram exceeds the max ID of the symbol table currently in scope 
             datagram.WriteTo(textWriter);
             textWriter.Finish();
         }
