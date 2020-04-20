@@ -16,6 +16,7 @@
 using System;
 using System.IO;
 using Amazon.IonDotnet.Builders;
+using Amazon.IonDotnet.Tests.Common;
 using Amazon.IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -80,6 +81,19 @@ namespace Amazon.IonDotnet.Tests.Internals
             var expected = expectedText;
             var actual = sw.ToString();
             Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(UnknownSymbolException))]
+        public void WriteSymbolWithSymbolTableOutOfRange()
+        {
+            var datagram = SymTabUtils.DatagramWithOutOfRangeSymbolsInSymbolTable();
+
+            var sw = new StringWriter();
+            var textWriter = IonTextWriterBuilder.Build(sw);
+            // Should throw exception as sid 12 in datagram exceeds the max ID of the symbol table currently in scope 
+            datagram.WriteTo(textWriter);
+            textWriter.Finish();
         }
     }
 }

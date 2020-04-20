@@ -411,6 +411,8 @@ namespace Amazon.IonDotnet.Internals.Text
 
         protected override void WriteSymbolAsIs(SymbolToken symbolToken)
         {
+            this.ValidateSymbolToken(symbolToken);
+
             if (symbolToken == default)
             {
                 this.WriteNull(IonType.Symbol);
@@ -421,12 +423,18 @@ namespace Amazon.IonDotnet.Internals.Text
             if (symbolToken.Text is null)
             {
                 this.WriteSidLiteral(symbolToken.Sid);
+                this.symbolTable.OwnSymbols.Add(symbolToken.Sid.ToString());
             }
             else
             {
                 this.WriteSymbolText(symbolToken.Text);
+                if (symbolToken.Sid > 0)
+                {
+                    this.symbolTable.OwnSymbols.Add(symbolToken.Text);
+                }
             }
 
+            this.symbolTable.Refresh();
             this.CloseValue();
         }
 
@@ -679,6 +687,7 @@ namespace Amazon.IonDotnet.Internals.Text
         {
             if (imports == null)
             {
+                this.symbolTable.Refresh();
                 return;
             }
 
@@ -871,6 +880,14 @@ namespace Amazon.IonDotnet.Internals.Text
             this.followingLongString = false;
 
             // TODO: Flush if a top-level-value was written
+        }
+
+        private void ValidateSymbolToken(SymbolToken symbolToken)
+        {
+            if (symbolToken.Text is null && symbolToken.Sid > this.symbolTable.MaxId)
+            {
+                throw new UnknownSymbolException(symbolToken.Sid);
+            }
         }
     }
 }

@@ -134,7 +134,7 @@ namespace Amazon.IonDotnet
         /// <returns>Current string value.</returns>
         string StringValue();
 
-        /// <summary>Returns th current value as a SymbolToken.</summary>
+        /// <summary>Returns the current value as a SymbolToken.</summary>
         /// <returns>Current symbol value.</returns>
         SymbolToken SymbolValue();
 

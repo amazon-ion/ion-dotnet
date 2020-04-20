@@ -13,6 +13,9 @@
  * permissions and limitations under the License.
  */
 
+using Amazon.IonDotnet.Builders;
+using Amazon.IonDotnet.Tree;
+using Amazon.IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Amazon.IonDotnet.Tests.Common
@@ -43,6 +46,23 @@ namespace Amazon.IonDotnet.Tests.Common
             token = symbolTable.Intern(text);
             Assert.AreEqual(SymbolToken.UnknownSid, token.Sid);
             Assert.AreEqual(text, token.Text);
+        }
+
+        public static IIonValue DatagramWithOutOfRangeSymbolsInSymbolTable()
+        {
+            var text =
+                SystemSymbols.IonSymbolTable + "::" +
+                "{" +
+                "symbols:[\"s1\"]" +
+                "}\n" +
+                "$10\n";
+
+            var ionValueFactory = new ValueFactory();
+            var datagram = IonLoader.Default.Load(text);
+            datagram.Add(ionValueFactory.NewSymbol("with_unknown_sid"));
+            datagram.Add(ionValueFactory.NewSymbol(new SymbolToken(null, 12)));
+
+            return datagram;
         }
     }
 }
