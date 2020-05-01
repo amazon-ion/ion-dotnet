@@ -688,6 +688,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             this.valueVariant.Clear();
             this.valueFieldId = SymbolToken.UnknownSid;
             this.hasSymbolTableAnnotation = false;
+            this.valueLobReady = false;
         }
 
         private void MoveNextRaw()
@@ -848,11 +849,6 @@ namespace Amazon.IonDotnet.Internals.Binary
             }
 
             var tid = BinaryConstants.GetTypeCode(tdRead);
-            if (tid == BinaryConstants.TidClob)
-            {
-                Console.WriteLine("trouble");
-            }
-
             var len = BinaryConstants.GetLowNibble(tdRead);
             if (tid == BinaryConstants.TidNull && len != BinaryConstants.LnIsNull)
             {

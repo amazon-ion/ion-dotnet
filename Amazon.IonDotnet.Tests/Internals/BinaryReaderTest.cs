@@ -15,6 +15,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using Amazon.IonDotnet.Builders;
 using Amazon.IonDotnet.Internals.Binary;
 using Amazon.IonDotnet.Tests.Common;
@@ -258,6 +259,50 @@ namespace Amazon.IonDotnet.Tests.Internals
             var reader = new UserBinaryReader(new MemoryStream(data));
             ReaderTestCommon.Struct_OneBlob(reader);
         }
+
+        [TestMethod]
+        public void MultipleClobs()
+        {
+            IIonReader binReader;
+            using (var ms = new MemoryStream())
+            {
+                ReadOnlySpan<byte> firstClob = new ReadOnlySpan<byte>(new byte[] { 97, 98, 99, 32, 100, 101 });
+                ReadOnlySpan<byte> secondClob = new ReadOnlySpan<byte>(new byte[] { 65, 32, 66, 32, 67 });
+                ReadOnlySpan<byte> thirdClob = new ReadOnlySpan<byte>(new byte[] { 50, 51, 32, 54, 55 });
+
+                var binWriter = IonBinaryWriterBuilder.Build(ms);
+                binWriter.WriteClob(firstClob);  // {{ "abc de" }}
+                binWriter.WriteClob(secondClob); // {{ "A B\tC" }}
+                binWriter.WriteClob(thirdClob);  // {{ "23 56" }}
+                binWriter.Finish();
+
+                ms.Seek(0, SeekOrigin.Begin);
+                binReader = IonReaderBuilder.Build(ms);
+
+
+                var type = binReader.MoveNext();
+                var array = new byte[binReader.GetLobByteSize()];
+                Span<byte> buffer = new Span<byte>(array);
+                binReader.GetBytes(buffer);
+                Assert.AreEqual(IonType.Clob, type);
+                Assert.AreEqual("abc de", Encoding.ASCII.GetString(buffer));
+
+                type = binReader.MoveNext();
+                array = new byte[binReader.GetLobByteSize()];
+                buffer = new Span<byte>(array);
+                binReader.GetBytes(buffer);
+                Assert.AreEqual(IonType.Clob, type);
+                Assert.AreEqual("A B C", Encoding.ASCII.GetString(buffer));
+
+                type = binReader.MoveNext();
+                array = new byte[binReader.GetLobByteSize()];
+                buffer = new Span<byte>(array);
+                binReader.GetBytes(buffer);
+                Assert.AreEqual(IonType.Clob, type);
+                Assert.AreEqual("23 67", Encoding.ASCII.GetString(buffer));
+            }
+        }
+
 
         /// <summary>
         /// Aims to test the correctness of skipping with step in-out in the middle
