@@ -281,28 +281,59 @@ namespace Amazon.IonDotnet.Tests.Internals
 
 
                 var type = binReader.MoveNext();
-                var array = new byte[binReader.GetLobByteSize()];
-                Span<byte> buffer = new Span<byte>(array);
-                binReader.GetBytes(buffer);
+                var buffer = binReader.NewByteArray();
                 Assert.AreEqual(IonType.Clob, type);
                 Assert.AreEqual("abc de", Encoding.ASCII.GetString(buffer));
 
                 type = binReader.MoveNext();
-                array = new byte[binReader.GetLobByteSize()];
-                buffer = new Span<byte>(array);
-                binReader.GetBytes(buffer);
+                 buffer = binReader.NewByteArray();
                 Assert.AreEqual(IonType.Clob, type);
                 Assert.AreEqual("A B C", Encoding.ASCII.GetString(buffer));
 
                 type = binReader.MoveNext();
-                array = new byte[binReader.GetLobByteSize()];
-                buffer = new Span<byte>(array);
-                binReader.GetBytes(buffer);
+                 buffer = binReader.NewByteArray();
                 Assert.AreEqual(IonType.Clob, type);
                 Assert.AreEqual("23 67", Encoding.ASCII.GetString(buffer));
             }
         }
 
+
+        [TestMethod]
+        public void MultipleBlobs()
+        {
+            IIonReader binReader;
+            using (var ms = new MemoryStream())
+            {
+                ReadOnlySpan<byte> firstBlob = new ReadOnlySpan<byte>(new byte[] { 68, 65, 72, 72, 75 });
+                ReadOnlySpan<byte> secondBlob = new ReadOnlySpan<byte>(new byte[] { 68, 69 });
+                ReadOnlySpan<byte> thirdBlob = new ReadOnlySpan<byte>(new byte[] { 68, 65, 85 });
+
+                var binWriter = IonBinaryWriterBuilder.Build(ms);
+                binWriter.WriteBlob(firstBlob);
+                binWriter.WriteBlob(secondBlob);
+                binWriter.WriteBlob(thirdBlob);
+                binWriter.Finish();
+
+                ms.Seek(0, SeekOrigin.Begin);
+                binReader = IonReaderBuilder.Build(ms);
+
+
+                var type = binReader.MoveNext();
+                var buffer = binReader.NewByteArray();
+                Assert.AreEqual(IonType.Blob, type);
+                Assert.AreEqual("68 65 72 72 75 ", BytesToHex(buffer));
+
+                type = binReader.MoveNext();
+                buffer = binReader.NewByteArray();
+                Assert.AreEqual(IonType.Blob, type);
+                Assert.AreEqual("68 69 ", BytesToHex(buffer));
+
+                type = binReader.MoveNext();
+                buffer = binReader.NewByteArray();
+                Assert.AreEqual(IonType.Blob, type);
+                Assert.AreEqual("68 65 85 ", BytesToHex(buffer));
+            }
+        }
 
         /// <summary>
         /// Aims to test the correctness of skipping with step in-out in the middle
@@ -337,6 +368,18 @@ namespace Amazon.IonDotnet.Tests.Internals
             var output = memStream.ToArray();
             var reader = IonReaderBuilder.Build(new MemoryStream(output));
             ReaderTestCommon.Blob_PartialRead(size, step, reader);
+        }
+
+        public string BytesToHex(byte[] bytes)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in bytes)
+            {
+                sb.Append(b.ToString("d2"));
+                sb.Append(" ");
+            }
+
+            return sb.ToString();
         }
     }
 }
