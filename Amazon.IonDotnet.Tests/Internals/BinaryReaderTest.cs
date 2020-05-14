@@ -286,12 +286,12 @@ namespace Amazon.IonDotnet.Tests.Internals
                 Assert.AreEqual("abc de", Encoding.ASCII.GetString(buffer));
 
                 type = binReader.MoveNext();
-                 buffer = binReader.NewByteArray();
+                buffer = binReader.NewByteArray();
                 Assert.AreEqual(IonType.Clob, type);
                 Assert.AreEqual("A B C", Encoding.ASCII.GetString(buffer));
 
                 type = binReader.MoveNext();
-                 buffer = binReader.NewByteArray();
+                buffer = binReader.NewByteArray();
                 Assert.AreEqual(IonType.Clob, type);
                 Assert.AreEqual("23 67", Encoding.ASCII.GetString(buffer));
             }
