@@ -438,11 +438,8 @@ namespace Amazon.IonDotnet.Internals.Binary
                 }
 
                 Array.Reverse(bytes);
-                mag = new BigInteger(bytes);
-                if (negative)
-                {
-                    mag = BigInteger.Negate(mag);
-                }
+                mag = new BigInteger(new ReadOnlySpan<byte>(bytes), true);
+                mag = negative ? BigInteger.Negate(mag) : mag;
             }
 
             this.localRemaining = saveLimit;
@@ -594,7 +591,7 @@ namespace Amazon.IonDotnet.Internals.Binary
             var bytes = new byte[length];
             this.ReadAll(bytes, length);
             Array.Reverse(bytes);
-            var bigInt = new BigInteger(bytes);
+            var bigInt = new BigInteger(new ReadOnlySpan<byte>(bytes), true);
             return isNegative ? BigInteger.Negate(bigInt) : bigInt;
         }
 
