@@ -28,8 +28,6 @@ namespace Amazon.IonDotnet.Internals.Binary
     /// </summary>
     internal class SystemBinaryReader : RawBinaryReader
     {
-        private static readonly BigInteger TwoPow63 = BigInteger.Multiply(1L << 62, 2);
-
         internal SystemBinaryReader(Stream input)
             : this(input, SharedSymbolTable.GetSystem(1))
         {
@@ -335,10 +333,19 @@ namespace Amazon.IonDotnet.Internals.Binary
                         var longVal = this.ReadUlong(this.valueLength);
                         if (longVal < 0)
                         {
-                            // this might not fit in a long
-                            longVal = (longVal << 1) >> 1;
-                            var big = BigInteger.Add(TwoPow63, longVal);
-                            this.valueVariant.BigIntegerValue = big;
+                            // value wrapped around (overflow), so read it into a BigInteger
+                            byte[] magnitude =
+                            {
+                                (byte)((longVal >> 56) & 0xFF),
+                                (byte)((longVal >> 48) & 0xFF),
+                                (byte)((longVal >> 40) & 0xFF),
+                                (byte)((longVal >> 32) & 0xFF),
+                                (byte)((longVal >> 24) & 0xFF),
+                                (byte)((longVal >> 16) & 0xFF),
+                                (byte)((longVal >> 8) & 0xFF),
+                                (byte)(longVal & 0xFF),
+                            };
+                            this.valueVariant.BigIntegerValue = this.ToBigInteger(magnitude, isNegative);
                         }
                         else
                         {

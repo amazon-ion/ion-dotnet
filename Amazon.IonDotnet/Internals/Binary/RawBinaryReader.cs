@@ -585,7 +585,6 @@ namespace Amazon.IonDotnet.Internals.Binary
         /// <param name="isNegative">Sign of the value.</param>
         protected BigInteger ReadBigInteger(int length, bool isNegative)
         {
-            // TODO: Improve this
             if (length == 0)
             {
                 return BigInteger.Zero;
@@ -593,6 +592,38 @@ namespace Amazon.IonDotnet.Internals.Binary
 
             var bytes = new byte[length];
             this.ReadAll(bytes, length);
+
+            return this.ToBigInteger(bytes, isNegative);
+        }
+
+        /// <summary>
+        /// Convert <paramref name="bytes"/> into a <see cref="BigInteger"/>.
+        /// </summary>
+        /// <returns>The big integer.</returns>
+        /// <param name="bytes">The bytes corresponding to the UInt magnitude of the int.</param>
+        /// <param name="isNegative">Sign of the int.</param>
+        protected BigInteger ToBigInteger(byte[] bytes, bool isNegative)
+        {
+            if ((bytes[0] & 0x80) > 0)
+            {
+                // The .NET framework currently supported by this library (netstandard2.0)
+                // does not provide a <code>BigInteger(ReadOnlySpan<Byte>, Boolean, Boolean)</code>
+                // (https://docs.microsoft.com/en-us/dotnet/api/system.numerics.biginteger.-ctor?view=netcore-3.1#System_Numerics_BigInteger__ctor_System_ReadOnlySpan_System_Byte__System_Boolean_System_Boolean_)
+                // constructor, so we currently use <code>BigInteger(Byte[])</code>
+                // (https://docs.microsoft.com/en-us/dotnet/api/system.numerics.biginteger.-ctor?view=netcore-3.1#System_Numerics_BigInteger__ctor_System_Byte___)
+                // instead.  This constructor expects the bytes to include a sign bit, whereas
+                // the Ion binary representation is unsigned.
+                //
+                // In cases where the high-order bit of the UInt will be interpreted as a negative sign,
+                // this block prepends a 0x00 byte to force <code>BigInteger(Byte[])</code> to interpret
+                // the bytes as a positive value.  Then we simply call <code>BigInteger.Negate()</code>
+                // if appropriate.
+                byte[] newBytes = new byte[bytes.Length + 1];
+                newBytes[0] = 0x00;
+                Array.Copy(bytes, 0, newBytes, 1, bytes.Length);
+                bytes = newBytes;
+            }
+
             Array.Reverse(bytes);
             var bigInt = new BigInteger(bytes);
             return isNegative ? BigInteger.Negate(bigInt) : bigInt;
