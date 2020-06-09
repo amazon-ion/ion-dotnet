@@ -1,6 +1,7 @@
 ## Ion.net
 
 [![Build Status](https://travis-ci.com/amzn/ion-dotnet.svg?branch=master)](https://travis-ci.com/amzn/ion-dotnet)
+[![nuget version](https://img.shields.io/nuget/v/Amazon.IonDotnet)](https://www.nuget.org/packages/Amazon.IonDotnet)
 
 Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for .NET
 
