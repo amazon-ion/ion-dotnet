@@ -1,11 +1,9 @@
-## Ion.net
+## Ion .NET
 
 [![Build Status](https://travis-ci.com/amzn/ion-dotnet.svg?branch=master)](https://travis-ci.com/amzn/ion-dotnet)
 [![nuget version](https://img.shields.io/nuget/v/Amazon.IonDotnet)](https://www.nuget.org/packages/Amazon.IonDotnet)
 
 Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for .NET
-
-**Note**: This project is still in early development and not ready for production use.
 
 This package is based on work from Huy Hoang ([dhhoang](https://github.com/dhhoang)) on https://github.com/dhhoang/IonDotnet. The Ion team greatly appreciates Huy's contributions to the Ion community.
 
