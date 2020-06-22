@@ -92,66 +92,6 @@ using (IIonWriter writer = IonTextWriterBuilder.Build(new StreamWriter(stream)))
 }
 ```
 
-### Serialization
-IonDotnet can (de)serialize any POCO object
-
-```csharp
-private class Experiment
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public DateTimeOffset StartDate { get; set; }
-    public bool IsActive { get; set; }
-    public byte[] SampleData { get; set; }
-    public decimal Budget { get; set; }
-    public ExperimentResult Result { get; set; }
-    public int[] Outputs { get; set; }
-}
-
-var experiment = new Experiment
-{
-    Id = 233,
-    Name = "Measure performance impact of boxing",
-    StartDate = new DateTimeOffset(2018, 07, 21, 11, 11, 11, TimeSpan.Zero),
-    IsActive = true,
-    Result = ExperimentResult.Failure,
-    SampleData = new byte[10],
-    Budget = decimal.Parse("12345.01234567890123456789"),
-    Outputs = new[] {1, 2, 3}
-};
-
-//Serialize an object to byte array
-byte[] ionBytes = IonSerialization.Binary.Serialize(experiment);
-
-//Deserialize a byte array to an object
-Experiment deserialized = IonSerialization.Binary.Deserialize<Experiment>(ionBytes);
-
-//Serialize an object to string
-string text = IonSerialization.Text.Serialize(experiment, new IonTextOptions {PrettyPrint = true});
-
-//Deserialize a string to an object
-deserialized = IonSerialization.Text.Deserialize<Experiment>(text);
-
-Console.WriteLine(text);
-/* Output
-{
-  Id: 233,
-  Name: "Boxing Perftest",
-  Description: "Measure performance impact of boxing",
-  StartDate: 2018-07-21T11:11:11.0000000+00:00,
-  IsActive: true,
-  SampleData: {{ AAAAAAAAAAAAAA== }},
-  Budget: 12345.01234567890123456789,
-  Result: 'Failure',
-  Outputs: [
-    1.2e0,
-    2.3e0,
-    3.1e0
-  ]
-}
-*/
-```
-
 ### Setup
 This repository contains a git submodule called ion-tests, which holds test data used by ion-dotnet's unit tests.
 Clone the whole repository and initialize the submodule by:
