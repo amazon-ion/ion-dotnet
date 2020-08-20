@@ -1,6 +1,6 @@
 ## Ion .NET
 
-[![Build Status](https://travis-ci.com/amzn/ion-dotnet.svg?branch=master)](https://travis-ci.com/amzn/ion-dotnet)
+[![Build Status](https://github.com/therapon/ion-dotnet/workflows/Ion%20DotNet%20CI/badge.svg)](h`ttps://github.com/therapon/ion-dotnet/workflows/Ion%20DotNet%20CI)
 [![nuget version](https://img.shields.io/nuget/v/Amazon.IonDotnet)](https://www.nuget.org/packages/Amazon.IonDotnet)
 
 Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for .NET
@@ -9,7 +9,7 @@ This package is based on work from Huy Hoang ([dhhoang](https://github.com/dhhoa
 
 ### Manual read/write
 
-You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default. There are two different `reader`s that you can create, binary and text. Four `reader` objects are created below with different inputs. 
+You can create a `reader` that can read from a (input) stream. You can specify text encoding in the `ReaderOptions`, otherwise Utf8 will be used by default. There are two different `reader`s that you can create, binary and text. Four `reader` objects are created below with different inputs.
 ```csharp
 Stream stream;  //input stream
 String text;    //text form
@@ -52,7 +52,7 @@ using (IIonReader reader = IonReaderBuilder.Build(stream))
 }
 ```
 
-Similarly you can create a writer that write to a (output) stream. There are two different `writer`s that you can create, binary and text. Three `writer` objects are created below with different inputs. 
+Similarly you can create a writer that write to a (output) stream. There are two different `writer`s that you can create, binary and text. Three `writer` objects are created below with different inputs.
 ```csharp
 Stream stream; //output stream
 var stringWriter = new StringWriter();
