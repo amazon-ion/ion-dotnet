@@ -12,8 +12,9 @@
     <RepositoryType>git</RepositoryType>
     <Description>A .NET implementation of Amazon Ion. http://amzn.github.io/ion-docs/</Description>
     <PackageTags>ion;amazon;json;serialization;parser</PackageTags>
+    <PackageIcon>amazon.png</PackageIcon>
     <PackageIconUrl>https://avatars0.githubusercontent.com/u/8594673?s=200&amp;v=4</PackageIconUrl>
-    <PackageLicenseUrl>https://github.com/amzn/ion-dotnet/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageLicense>LICENSE.md</PackageLicense>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -32,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tree\Impl\" />
+    <None Include="../amazon.png" Pack="true" PackagePath="" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
