@@ -1,6 +1,6 @@
 ## Ion .NET
 
-[![Build Status](https://github.com/amzn/ion-dotnet/workflows/Ion%20DotNet%20CI/badge.svg)](https://github.com/amzn/ion-dotnet/workflows/Ion%20DotNet%20CI)
+[![Build Status](https://github.com/amzn/ion-dotnet/workflows/Ion%20DotNet%20CI/badge.svg)](https://github.com/amzn/ion-dotnet/actions?query=workflow%3A%22Ion+DotNet+CI%22)
 [![nuget version](https://img.shields.io/nuget/v/Amazon.IonDotnet)](https://www.nuget.org/packages/Amazon.IonDotnet)
 
 Amazon Ion ( http://amzn.github.io/ion-docs/ ) library for .NET
