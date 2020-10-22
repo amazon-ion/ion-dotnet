@@ -17,7 +17,10 @@ using System;
 using System.IO;
 using Amazon.IonDotnet.Internals.Text;
 using Amazon.IonDotnet.Tests.Common;
+using Amazon.IonDotnet.Builders;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Globalization;
+using System.Collections.Generic;
 
 namespace Amazon.IonDotnet.Tests.Internals
 {
@@ -46,6 +49,41 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.IsTrue(date.LocalOffset >= -14 * 60 && date.LocalOffset <= 14 * 60);
             Assert.IsTrue(date.Equals(expectedDate));
         }
+        
+        /// <summary>
+        /// Verify that timestamp parsing is not affected by the runtime's configured locale.
+        /// </summary>
+        /// <param name="dateString"></param>
+        [DataRow("2020-10-21T12:37:52.086Z"),
+         DataRow("2020-10-21T12:37:52.186Z"),
+         DataRow("2020-10-21T12:37:00.086Z"),
+         DataRow("2020-10-21T13:18:46.911Z"),
+         DataRow("2020-10-21T13:18:00.911Z")]
+        [TestMethod]
+        public void Date_IgnoreCultureInfo(string dateString)
+        {
+            // Take note of the system's default culture setting so we can restore it after this test is complete
+            CultureInfo initialCulture = CultureInfo.CurrentCulture;
+
+            // Parse the timestamp using the runtime's InvariantCulture. InvariantCulture is a stable, non-customizable locale 
+            // that can be used for formatting and parsing operations that require culture-independent results.
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            var invariantCultureTimestamp = Timestamp.Parse(dateString);
+
+            // Parse the timestamp again for each of the following cultures, verifying that the result is the same as it was
+            // when we parsed it using the InvariantCulture.
+            List<string> cultureNames = new List<string>() {"af-ZA", "en-GB", "en-US", "es-CL", "es-MX", "es-US", "ko-KR", "nl-NL", "zh-CN"};
+
+            cultureNames.ForEach(cultureName => {
+                CultureInfo.CurrentCulture = new CultureInfo(cultureName, false);
+                var variantCultureTimestamp = Timestamp.Parse(dateString);
+                Assert.AreEqual(invariantCultureTimestamp, variantCultureTimestamp);
+            });
+
+            // Restore the original culture setting so the output of subsequent tests will be written using the expected
+            // localization.
+            CultureInfo.CurrentCulture = initialCulture;
+        }
 
         /// <summary>
         /// Test local timezone offset
@@ -53,19 +91,19 @@ namespace Amazon.IonDotnet.Tests.Internals
         /// <param name="dateString"></param>
         /// <param name="expectedLocalOffset"> Time zone offset in minutes</param>
         /// <param name="expectedTimeOffset"></param>
-        [DataRow("2010-10-10T03:20+02:12", +(2 * 60 + 12), "3:20:00 AM +02:12")]
-        [DataRow("2010-10-10T03:20-02:12", -(2 * 60 + 12), "3:20:00 AM -02:12")]
-        [DataRow("2010-10-10T03:20+00:12", +(0 * 60 + 12), "3:20:00 AM +00:12")]
-        [DataRow("2010-10-10T03:20+02:00", +(2 * 60 + 00), "3:20:00 AM +02:00")]
+        [DataRow("2010-10-10T03:20+02:12", +(2 * 60 + 12), 3, 20)]
+        [DataRow("2010-10-10T03:20-02:12", -(2 * 60 + 12), 3, 20)]
+        [DataRow("2010-10-10T03:20+00:12", +(0 * 60 + 12), 3, 20)]
+        [DataRow("2010-10-10T03:20+02:00", +(2 * 60 + 00), 3, 20)]
         [TestMethod]
-        public void TimeZone_Hour_Minute(string dateString, int expectedLocalOffset, string expectedTimeOffset)
+        public void TimeZone_Hour_Minute(string dateString, int expectedOffset, int expectedHour, int expectedMinute)
         {
             var date = Timestamp.Parse(dateString);
-            var localOffset = date.LocalOffset;
-            var LocalDateTime = ExtractTimeAndTimeZone(date.AsDateTimeOffset());
+            var dateTimeOffset = date.AsDateTimeOffset();
 
-            Assert.AreEqual(expectedLocalOffset, localOffset); 
-            Assert.AreEqual(expectedTimeOffset, LocalDateTime);
+            Assert.AreEqual(expectedOffset, date.LocalOffset);
+            Assert.AreEqual(expectedHour, dateTimeOffset.Hour);
+            Assert.AreEqual(expectedMinute, dateTimeOffset.Minute);
         }
          
         [DataRow("2010-10-10T03:20")]
@@ -76,12 +114,6 @@ namespace Amazon.IonDotnet.Tests.Internals
         public void Invalid_Timestamps_Missing_Offset(string dateString)
         {
             Timestamp.Parse(dateString);
-        }
-
-        private string ExtractTimeAndTimeZone(System.DateTimeOffset localDateTime)
-        {
-            var value = localDateTime.ToString();
-            return value.Substring(value.Length - 17);
         }
     }
 }

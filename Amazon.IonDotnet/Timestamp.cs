@@ -17,6 +17,7 @@ namespace Amazon.IonDotnet
 {
     using System;
     using System.Diagnostics;
+    using System.Globalization;
 
     /// <inheritdoc cref="IEquatable{T}" />
     /// <summary>
@@ -550,7 +551,8 @@ namespace Amazon.IonDotnet
                 return false;
             }
 
-            return decimal.TryParse(s.Substring(offset, length), out output);
+            string decimalText = s.Substring(offset, length);
+            return decimal.TryParse(decimalText, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out output);
         }
 
         /// <summary>
