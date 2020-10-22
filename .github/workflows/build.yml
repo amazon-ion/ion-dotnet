@@ -23,4 +23,4 @@ jobs:
       - name: Project Build
         run: dotnet build --configuration Release
       - name: Project Test
-        run: dotnet test --configuration Release --no-build --no-restore --verbosity normal
+        run: dotnet test --configuration Release --no-build --no-restore --verbosity normal --framework ${{ matrix.dotnet }}
