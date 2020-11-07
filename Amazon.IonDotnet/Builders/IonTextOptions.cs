@@ -30,6 +30,7 @@ namespace Amazon.IonDotnet.Builders
             TimestampAsString = true,
         };
 
+        // Todo: Possibly remove this in the future with a comprehensive property list to implicitly support JSON
         internal bool JsonDowngrade = false;
 
         /// <summary>

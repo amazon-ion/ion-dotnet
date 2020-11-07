@@ -118,6 +118,13 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void TestWriteDecimal()
+        {
+            jsonWriter.WriteDecimal(123.456m);
+            Assert.AreEqual("123.456", this.sw.ToString());
+        }
+
+        [TestMethod]
         public void TestTimestamp()
         {
             DateTime time = new DateTime(2010, 6, 15, 3, 30, 45);
