@@ -20,6 +20,18 @@ namespace Amazon.IonDotnet.Builders
     public class IonTextOptions
     {
         public static readonly IonTextOptions Default = new IonTextOptions();
+        public static readonly IonTextOptions Json = new IonTextOptions
+        {
+            JsonDowngrade = true,
+            SymbolAsString = true,
+            SkipAnnotations = true,
+            UntypedNull = true,
+            BlobAsString = true,
+            TimestampAsString = true,
+        };
+
+        // Todo: Possibly remove this in the future with a comprehensive property list to implicitly support JSON
+        internal bool JsonDowngrade = false;
 
         /// <summary>
         /// Gets or Sets a value indicating whether to use indented format.
@@ -60,5 +72,15 @@ namespace Amazon.IonDotnet.Builders
         /// Gets or sets a value indicating whether to write the Ion version marker.
         /// </summary>
         public bool WriteVersionMarker { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Blobs are written in string format.
+        /// </summary>
+        public bool BlobAsString { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Timestamps are written in string format.
+        /// </summary>
+        public bool TimestampAsString { get; set; }
     }
 }

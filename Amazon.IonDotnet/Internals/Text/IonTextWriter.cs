@@ -17,6 +17,7 @@ namespace Amazon.IonDotnet.Internals.Text
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Numerics;
     using Amazon.IonDotnet.Builders;
@@ -180,22 +181,50 @@ namespace Amazon.IonDotnet.Internals.Text
 
         public override void WriteFloat(double value)
         {
-            this.StartValue();
-            this.textWriter.Write(value);
-            this.CloseValue();
+            if (this.options.JsonDowngrade && (double.IsNaN(value) || double.IsInfinity(value)))
+            {
+                this.WriteNull();
+            }
+            else
+            {
+                this.StartValue();
+                this.textWriter.Write(value);
+                this.CloseValue();
+            }
         }
 
         public override void WriteDecimal(decimal value)
         {
             this.StartValue();
-            this.textWriter.Write(value);
+
+            if (this.options.JsonDowngrade)
+            {
+                var dString = value.ToString(CultureInfo.InvariantCulture);
+                this.textWriter.Write(dString);
+            }
+            else
+            {
+                this.textWriter.Write(value);
+            }
+
             this.CloseValue();
         }
 
         public override void WriteDecimal(BigDecimal value)
         {
             this.StartValue();
-            this.textWriter.Write(value);
+
+            if (this.options.JsonDowngrade)
+            {
+                var decimalString = value.ToString();
+                decimalString = decimalString.Replace('d', 'e');
+                this.textWriter.Write(decimalString);
+            }
+            else
+            {
+                this.textWriter.Write(value);
+            }
+
             this.CloseValue();
         }
 
@@ -206,6 +235,12 @@ namespace Amazon.IonDotnet.Internals.Text
             if (this.options.TimestampAsMillis)
             {
                 this.textWriter.Write(value.Milliseconds);
+            }
+            else if (this.options.TimestampAsString)
+            {
+                this.textWriter.Write('"');
+                this.textWriter.Write(value.ToString());
+                this.textWriter.Write('"');
             }
             else
             {
@@ -225,13 +260,13 @@ namespace Amazon.IonDotnet.Internals.Text
 
                 // CloseValue sets followingLongString = false so we must overwrite
                 this.followingLongString = true;
-                return;
             }
-
-            // double-quoted
-            this.textWriter.WriteString(value);
-
-            this.CloseValue();
+            else
+            {
+                // double-quoted
+                this.textWriter.WriteString(value);
+                this.CloseValue();
+            }
         }
 
         public override void WriteBlob(ReadOnlySpan<byte> value)
@@ -240,25 +275,46 @@ namespace Amazon.IonDotnet.Internals.Text
 
             var base64 = Convert.ToBase64String(value.ToArray());
 
-            this.textWriter.Write("{{");
-            if (this.options.PrettyPrint)
+            if (this.options.BlobAsString)
             {
-                this.textWriter.Write(' ');
+                this.textWriter.Write('"');
+            }
+            else
+            {
+                this.textWriter.Write("{{");
+
+                if (this.options.PrettyPrint)
+                {
+                    this.textWriter.Write(' ');
+                }
             }
 
             this.textWriter.Write(base64);
-            if (this.options.PrettyPrint)
-            {
-                this.textWriter.Write(' ');
-            }
 
-            this.textWriter.Write("}}");
+            if (this.options.BlobAsString)
+            {
+                this.textWriter.Write('"');
+            }
+            else
+            {
+                if (this.options.PrettyPrint)
+                {
+                    this.textWriter.Write(' ');
+                }
+
+                this.textWriter.Write("}}");
+            }
 
             this.CloseValue();
         }
 
         public override void WriteClob(ReadOnlySpan<byte> value)
         {
+            if (this.options.JsonDowngrade)
+            {
+                throw new NotSupportedException("JSON downgrading Clob is not yet supported");
+            }
+
             this.StartValue();
 
             this.textWriter.Write("{{");
@@ -294,6 +350,11 @@ namespace Amazon.IonDotnet.Internals.Text
                     break;
                 case IonType.Sexp:
                     // TODO: handle sexp as list option
+                    if (this.options.JsonDowngrade)
+                    {
+                        throw new NotSupportedException("JSON downgrading Sexp is not yet supported");
+                    }
+
                     opener = '(';
                     this.isInStruct = false;
                     break;
