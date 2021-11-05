@@ -218,6 +218,16 @@ namespace Amazon.IonDotnet.Internals.Text
             {
                 var decimalString = value.ToString();
                 decimalString = decimalString.Replace('d', 'e');
+
+                // Since Ion Decimal allows an exponent integer following '.' (e.g. 2.d-1) while JSON doesn't, we
+                // should make sure JSON down converter doesn't write any decimal number with '.' immediately
+                // followed by 'e'.
+                var index = decimalString.IndexOf(".e", 0);
+                if (index != -1)
+                {
+                    decimalString = decimalString.Remove(index, 1);
+                }
+
                 this.textWriter.Write(decimalString);
             }
             else
