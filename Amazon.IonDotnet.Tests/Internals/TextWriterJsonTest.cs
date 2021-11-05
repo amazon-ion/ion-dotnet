@@ -50,7 +50,7 @@ namespace Amazon.IonDotnet.Tests.Internals
         [DataRow("0.2")]
         [DataRow("2.d-1")]
         [DataRow("2d-1")]
-        public void TestMismatchDecimal(string decimalString)
+        public void TestInvalidJsonDecimalFromIon(string decimalString)
         {
             var bigDecimal = BigDecimal.Parse(decimalString);
             
