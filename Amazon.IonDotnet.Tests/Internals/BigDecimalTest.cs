@@ -244,7 +244,6 @@ namespace Amazon.IonDotnet.Tests.Internals
 
             System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
             Assert.AreEqual(expected, parsed);
-
         }
 
         [TestMethod]
