@@ -243,8 +243,8 @@ namespace Amazon.IonDotnet.Tests.Internals
             var reader = IonReaderBuilder.Build(value);
             jsonWriter.WriteValues(reader);
 
-            Assert.AreEqual("{\"value\":6.5e-1}", this.sw.ToString());
             System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+            Assert.AreEqual("{\"value\":6.5e-1}", this.sw.ToString());
         }
     }
 }
