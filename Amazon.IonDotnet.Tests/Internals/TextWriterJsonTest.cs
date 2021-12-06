@@ -18,6 +18,7 @@ using Amazon.IonDotnet.Tree;
 using Amazon.IonDotnet.Tree.Impl;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -225,6 +226,25 @@ namespace Amazon.IonDotnet.Tests.Internals
             var reader = IonReaderBuilder.Build(value);
             jsonWriter.WriteValues(reader);
             Assert.AreEqual("{\"value\":\"symbol\"}", this.sw.ToString());
+        }
+
+        [TestMethod]
+        [DataRow("0.65", "en-US")]
+        [DataRow("6.5d-1", "en-US")]
+        [DataRow("0.65", "sv-SE")]
+        [DataRow("6.5d-1", "sv-SE")]
+        public void TestInvalidJsonDecimalFromIonWithDifferentCultures(string decimalString, string culture)
+        {
+            CultureInfo originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+            System.Threading.Thread.CurrentThread.CurrentCulture = new CultureInfo(culture);
+            var bigDecimal = BigDecimal.Parse(decimalString);
+
+            value.SetField("value", factory.NewDecimal(bigDecimal));
+            var reader = IonReaderBuilder.Build(value);
+            jsonWriter.WriteValues(reader);
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+            Assert.AreEqual("{\"value\":6.5e-1}", this.sw.ToString());
         }
     }
 }

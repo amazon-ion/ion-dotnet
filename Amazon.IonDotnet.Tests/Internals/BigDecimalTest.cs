@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -229,6 +230,20 @@ namespace Amazon.IonDotnet.Tests.Internals
         {
             var parsed = BigDecimal.Parse(text);
             Assert.AreEqual(expected, parsed.ToString());
+        }
+
+        [TestMethod]
+        [DataRow("0.65", "6.5d-1", "en-US")]
+        [DataRow("0.65", "6.5d-1", "sv-SE")]
+        public void ToString_Different_Cultures(string text, string expected, string culture)
+        {
+            CultureInfo originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+            System.Threading.Thread.CurrentThread.CurrentCulture = new CultureInfo(culture);
+
+            var parsed = BigDecimal.Parse(text).ToString();
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+            Assert.AreEqual(expected, parsed);
         }
 
         [TestMethod]

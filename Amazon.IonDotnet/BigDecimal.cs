@@ -452,7 +452,7 @@ namespace Amazon.IonDotnet
                     var d = this.Scale - (sb.Length - smallestDotIdx);
                     sb.Insert(smallestDotIdx, '.');
                     sb.Append('d');
-                    sb.Append(-d);
+                    sb.Append((-d).ToString(CultureInfo.InvariantCulture));
                 }
             }
 
