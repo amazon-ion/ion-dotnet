@@ -4,7 +4,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>7.3</LangVersion>
     <PackageId>Amazon.IonDotnet</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Authors>amazon-ion</Authors>
     <Company>Amazon.com</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
