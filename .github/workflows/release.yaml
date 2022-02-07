@@ -20,17 +20,16 @@ jobs:
     steps:
       - name: Git Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ matrix.dotnet }}
-
-      - name: Install dependencies
-        run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release
       - name: Unit test
-        run: dotnet test Amazon.IonDotnet.Test
+        run: dotnet test --configuration Release --no-build --no-restore --verbosity normal --framework ${{ matrix.dotnet }}
 
   release:
     name: Release
