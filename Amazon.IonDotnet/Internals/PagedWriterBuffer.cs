@@ -73,9 +73,9 @@ namespace Amazon.IonDotnet.Internals
         private readonly List<byte[]> bufferBlocks;
 
         /// <summary>
-        /// This is only a reference to the 'estimated' primary block size.
+        /// The minimum size for blocks rented from the ArrayPool.
         /// </summary>
-        private readonly int blockSize;
+        private readonly int intendedBlockSize;
 
         private byte[] currentBlock;
         private IList<Memory<byte>> currentSequence;
@@ -98,7 +98,7 @@ namespace Amazon.IonDotnet.Internals
 
             this.currentBlock = ArrayPool<byte>.Shared.Rent(intendedBlockSize);
             this.bufferBlocks = new List<byte[]> { this.currentBlock };
-            this.blockSize = this.currentBlock.Length;
+            this.intendedBlockSize = intendedBlockSize;
         }
 
         ~PagedWriterBuffer()
@@ -296,20 +296,20 @@ namespace Amazon.IonDotnet.Internals
             while (bytesToWrite > 0)
             {
                 // first, write what we can
-                var left = this.blockSize - this.runningIndex;
+                var left = this.currentBlock.Length - this.runningIndex;
                 var bytesWritten = bytesToWrite > left ? left : bytesToWrite;
                 bytes.Slice(0, bytesWritten).CopyTo(new Span<byte>(this.currentBlock, this.runningIndex, bytesWritten));
                 this.runningIndex += bytesWritten;
                 this.writtenSoFar += bytesWritten;
                 bytesToWrite -= bytesWritten;
 
-                Debug.Assert(this.runningIndex <= this.blockSize, "runningIndex is greater than blockSize");
+                Debug.Assert(this.runningIndex <= this.currentBlock.Length, "runningIndex is greater than currentBlock size");
                 if (bytesToWrite == 0)
                 {
                     break;
                 }
 
-                Debug.Assert(this.runningIndex == this.blockSize, "runningIndex does not match blockSize");
+                Debug.Assert(this.runningIndex == this.currentBlock.Length, "runningIndex does not match currentBlock size");
 
                 // new allocation needed
                 this.AllocateNewBlock();
@@ -605,7 +605,7 @@ namespace Amazon.IonDotnet.Internals
                 return;
             }
 
-            var newBlock = ArrayPool<byte>.Shared.Rent(this.blockSize);
+            var newBlock = ArrayPool<byte>.Shared.Rent(this.intendedBlockSize);
             this.bufferBlocks.Add(newBlock);
             this.currentBlock = newBlock;
         }
