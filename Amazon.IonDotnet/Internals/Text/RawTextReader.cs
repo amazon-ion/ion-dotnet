@@ -152,6 +152,8 @@ namespace Amazon.IonDotnet.Internals.Text
 
             this.state = GetStateAtContainerStart(this.valueType);
             this.containerStack.PushContainer(this.valueType);
+            var closeSymbol = this.GetClosingTokenForContainerType(this.valueType);
+            this.expectedContainerClosingSymbol.Push(closeSymbol);
             this.scanner.MarkTokenFinished();
 
             this.FinishValue();
@@ -605,17 +607,14 @@ namespace Amazon.IonDotnet.Internals.Text
                         break;
                     case ActionStartStruct:
                         this.valueType = IonType.Struct;
-                        this.expectedContainerClosingSymbol.Push(TextConstants.TokenCloseBrace);
                         this.state = StateBeforeFieldName;
                         return;
                     case ActionStartList:
                         this.valueType = IonType.List;
-                        this.expectedContainerClosingSymbol.Push(TextConstants.TokenCloseSquare);
                         this.state = StateBeforeAnnotationContained;
                         return;
                     case ActionStartSexp:
                         this.valueType = IonType.Sexp;
-                        this.expectedContainerClosingSymbol.Push(TextConstants.TokenCloseParen);
                         this.state = StateBeforeAnnotationSexp;
                         return;
                     case ActionStartLob:
@@ -754,6 +753,18 @@ namespace Amazon.IonDotnet.Internals.Text
                 case TextConstants.TokenCloseBrace: return '}';
                 case TextConstants.TokenCloseSquare: return ']';
                 default: return ' ';
+            }
+        }
+
+        private int GetClosingTokenForContainerType(IonType containerType)
+        {
+            switch (containerType)
+            {
+                case IonType.Struct: return TextConstants.TokenCloseBrace;
+                case IonType.List: return TextConstants.TokenCloseSquare;
+                case IonType.Sexp: return TextConstants.TokenCloseParen;
+                default:
+                    throw new Exception("Invalid value type while determining expectedContainerClosingSymbol");
             }
         }
 
