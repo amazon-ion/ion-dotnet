@@ -350,5 +350,32 @@ namespace Amazon.IonDotnet.Tests.Internals
             var reader = new UserTextReader(text);
             ReaderTestCommon.Blob_PartialRead(size, step, reader);
         }
+
+        [TestMethod()]
+        public void SkipOverListInStruct()
+        {
+            var reader = new UserTextReader("{ somelist: [ 1 ] }");
+            Assert.AreEqual(IonType.Struct, reader.MoveNext());
+            reader.StepIn();
+            Assert.AreEqual(IonType.List, reader.MoveNext());
+            Assert.AreEqual("somelist", reader.CurrentFieldName);
+            // Now skip over the list instead of stepping into it
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+            reader.StepOut(); // Step out of struct
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+        }
+
+        [TestMethod()]
+        public void SkipOverStructInList()
+        {
+            var reader = new UserTextReader("[{}]");
+            Assert.AreEqual(IonType.List, reader.MoveNext());
+            reader.StepIn();
+            Assert.AreEqual(IonType.Struct, reader.MoveNext());
+            // Skip over the struct instead of stepping in
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+            reader.StepOut(); // Step out of list
+            Assert.AreEqual(IonType.None, reader.MoveNext());
+        }
     }
 }
