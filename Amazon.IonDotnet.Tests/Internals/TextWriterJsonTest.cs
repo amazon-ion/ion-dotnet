@@ -151,6 +151,43 @@ namespace Amazon.IonDotnet.Tests.Internals
             Assert.AreEqual("{\"value\":\"2010-06-15T03:30:45.0000000-00:00\"}", this.sw.ToString());
         }
 
+        [DataTestMethod]
+        [DataRow(Timestamp.Precision.Year, "{\"value\":\"2010T\"}")]
+        [DataRow(Timestamp.Precision.Month, "{\"value\":\"2010-06T\"}")]
+        [DataRow(Timestamp.Precision.Day, "{\"value\":\"2010-06-15\"}")]
+        [DataRow(Timestamp.Precision.Minute, "{\"value\":\"2010-06-15T03:30-00:00\"}")]
+        public void TestTimestampPrecision(Timestamp.Precision p, string expected)
+        {
+            Timestamp ts = new Timestamp(2010, 6, 15, 3, 30, 45, p);
+            value.SetField("value", factory.NewTimestamp(ts));
+            var reader = IonReaderBuilder.Build(value);
+            jsonWriter.WriteValues(reader);
+            Assert.AreEqual(expected, this.sw.ToString());
+        }
+
+        [TestMethod]
+        public void TestMinutePrecisionTimestamp()
+        {
+            var p = Timestamp.Precision.Minute;
+            Timestamp ts = new Timestamp(2010, 6, 15, 3, 30, 45, 5 * 60, 0, p);
+            value.SetField("value", factory.NewTimestamp(ts));
+            var reader = IonReaderBuilder.Build(value);
+            jsonWriter.WriteValues(reader);
+            Assert.AreEqual("{\"value\":\"2010-06-15T03:30+05:00\"}", this.sw.ToString());
+        }
+
+        [TestMethod]
+        public void TestMinutePrecisionTimestampUtc()
+        {
+            var p = Timestamp.Precision.Minute;
+            Timestamp ts =
+                new Timestamp(2010, 6, 15, 3, 30, 45, 0, 0, p, DateTimeKind.Utc);
+            value.SetField("value", factory.NewTimestamp(ts));
+            var reader = IonReaderBuilder.Build(value);
+            jsonWriter.WriteValues(reader);
+            Assert.AreEqual("{\"value\":\"2010-06-15T03:30Z\"}", this.sw.ToString());
+        }
+
         [TestMethod]
         [ExpectedException(typeof(NotSupportedException))]
         public void TestClob()

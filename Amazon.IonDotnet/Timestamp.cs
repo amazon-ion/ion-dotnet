@@ -473,9 +473,44 @@ namespace Amazon.IonDotnet
 
         public override string ToString()
         {
-            return this.DateTimeValue.Kind == DateTimeKind.Unspecified
-                ? this.DateTimeValue.ToString("O") + "-00:00"
-                : this.AsDateTimeOffset().ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+            var culture = System.Globalization.CultureInfo.InvariantCulture;
+            switch (this.TimestampPrecision)
+            {
+                case Precision.Year:
+                    return this.DateTimeValue.ToString("yyyyT", culture);
+                case Precision.Month:
+                    return this.DateTimeValue.ToString("yyyy-MMT", culture);
+                case Precision.Day:
+                    return this.DateTimeValue.ToString("yyyy-MM-dd", culture);
+                case Precision.Minute:
+                    switch (this.DateTimeValue.Kind)
+                    {
+                        case DateTimeKind.Utc:
+                            return this.DateTimeValue.ToString("yyyy-MM-ddTHH:mmK", culture);
+                        case DateTimeKind.Unspecified:
+                            return this.DateTimeValue.ToString("yyyy-MM-ddTHH:mm", culture) + "-00:00";
+                        case DateTimeKind.Local:
+                            return this.AsDateTimeOffset().ToString("yyyy-MM-ddTHH:mmK", culture);
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                case Precision.Second:
+                    switch (this.DateTimeValue.Kind)
+                    {
+                        case DateTimeKind.Utc:
+                            return this.DateTimeValue.ToString("O", culture);
+                        case DateTimeKind.Unspecified:
+                            return this.DateTimeValue.ToString("O", culture) + "-00:00";
+                        case DateTimeKind.Local:
+                            return this.AsDateTimeOffset().ToString("yyyy-MM-ddTHH:mmK", culture);
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         public bool Equals(Timestamp other)
