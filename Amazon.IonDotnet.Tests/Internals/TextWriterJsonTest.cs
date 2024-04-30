@@ -189,6 +189,16 @@ namespace Amazon.IonDotnet.Tests.Internals
         }
 
         [TestMethod]
+        public void TestStringEscapingDoesntUseShortForm()
+        {
+            value.SetField("value", factory.NewString("--" + (char)0x1f + "--"));
+            var reader = IonReaderBuilder.Build(value);
+            jsonWriter.WriteValues(reader);
+            // Json doesn't support the shorter \xNN form, only \uNNNN
+            Assert.AreEqual("{\"value\":\"--\\u001f--\"}", this.sw.ToString());
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(NotSupportedException))]
         public void TestClob()
         {
