@@ -263,7 +263,12 @@ namespace Amazon.IonDotnet.Internals.Text
         public override void WriteString(string value)
         {
             this.StartValue();
-            if (value != null && !this.followingLongString && this.options.LongStringThreshold < value.Length)
+            if (this.options.JsonDowngrade)
+            {
+                this.textWriter.WriteJsonString(value);
+                this.CloseValue();
+            }
+            else if (value != null && !this.followingLongString && this.options.LongStringThreshold < value.Length)
             {
                 this.textWriter.WriteLongString(value);
                 this.CloseValue();
