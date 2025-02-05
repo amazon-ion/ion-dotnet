@@ -1167,6 +1167,13 @@ namespace Amazon.IonDotnet.Internals.Binary
             while (length > 0)
             {
                 var amount = this.input.Read(bufferSpan.Slice(0, length));
+
+                // length > 0 (because we didn't stop)
+                if (amount == 0)
+                {
+                   throw new UnexpectedEofException();
+                }
+
                 length -= amount;
                 bufferSpan = bufferSpan.Slice(amount);
                 this.localRemaining -= amount;

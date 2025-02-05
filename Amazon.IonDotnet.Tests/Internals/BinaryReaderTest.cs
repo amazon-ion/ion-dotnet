@@ -335,6 +335,25 @@ namespace Amazon.IonDotnet.Tests.Internals
             }
         }
 
+        [TestMethod]
+        public void ReadAll_FailOnTruncatedData()
+        {
+            IIonReader binReader;
+            using (var ms = new MemoryStream()) {
+                ReadOnlySpan<byte> fullString = new ReadOnlySpan<byte>(new byte[] {
+                        0xE0, 0x01, 0x00, 0xEA, 0x85, 0x31, 0x32, 0x33, 0x34, 0x35
+                });
+                ms.Write(fullString.Slice(0, 9));
+
+                ms.Seek(0, SeekOrigin.Begin);
+                binReader = IonReaderBuilder.Build(ms);
+
+                var type = binReader.MoveNext();
+                Assert.AreEqual(IonType.String, type);
+                Assert.ThrowsException<UnexpectedEofException>(() => binReader.StringValue());
+            }
+        }
+
         /// <summary>
         /// Aims to test the correctness of skipping with step in-out in the middle
         /// of container
