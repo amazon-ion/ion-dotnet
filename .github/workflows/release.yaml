@@ -23,13 +23,15 @@ jobs:
         with:
           submodules: recursive
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet }}
+          dotnet-version: |
+            ${{ matrix.dotnet }}
+            7.0.x
       - name: Build
         run: dotnet build --configuration Release
       - name: Unit test
-        run: dotnet test --configuration Release --no-build --no-restore --verbosity normal --framework ${{ matrix.dotnet }}
+        run: dotnet test --configuration Release --no-build --no-restore --verbosity normal --framework net7.0
 
   release:
     name: Release
@@ -58,9 +60,11 @@ jobs:
           submodules: recursive
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: ${{ matrix.dotnet }}
+          dotnet-version: |
+            ${{ matrix.dotnet }}
+            7.0.x
 
       - name: Sign
         run: |
