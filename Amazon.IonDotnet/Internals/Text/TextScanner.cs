@@ -202,7 +202,7 @@ namespace Amazon.IonDotnet.Internals.Text
             var c = this.SkipOverWhiteSpace(CommentStrategy.Break);
             while (true)
             {
-                if (c == TextConstants.TokenEof)
+                if (c == CharacterSequence.CharSeqEof)
                 {
                     throw new UnexpectedEofException();
                 }
@@ -217,7 +217,7 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             c = this.ReadChar();
-            if (c == TextConstants.TokenEof)
+            if (c == CharacterSequence.CharSeqEof)
             {
                 throw new UnexpectedEofException();
             }
@@ -1006,7 +1006,7 @@ namespace Amazon.IonDotnet.Internals.Text
             var c = this.SkipOverWhiteSpace(CommentStrategy.Break);
             while (true)
             {
-                if (c == TextConstants.TokenEof)
+                if (c == CharacterSequence.CharSeqEof)
                 {
                     throw new UnexpectedEofException();
                 }
@@ -1020,7 +1020,8 @@ namespace Amazon.IonDotnet.Internals.Text
             }
 
             c = this.ReadChar();
-            if (c == TextConstants.TokenEof)
+
+            if (c == CharacterSequence.CharSeqEof)
             {
                 throw new UnexpectedEofException();
             }
@@ -1038,21 +1039,40 @@ namespace Amazon.IonDotnet.Internals.Text
                 var c = this.ReadChar();
                 switch (c)
                 {
-                    case -1:
+                    case CharacterSequence.CharSeqEof:
                         throw new UnexpectedEofException();
                     case '\\':
-                        this.ReadChar();
+                        var escaped = this.ReadChar();
+                        if (escaped == CharacterSequence.CharSeqEof)
+                        {
+                            throw new UnexpectedEofException();
+                        }
+
                         break;
                     case '\'':
                         c = this.ReadChar();
+                        if (c == CharacterSequence.CharSeqEof)
+                        {
+                            throw new UnexpectedEofException();
+                        }
 
                         // the 2nd '
                         if (c == '\'')
                         {
                             c = this.ReadChar();
+                            if (c == CharacterSequence.CharSeqEof)
+                            {
+                                throw new UnexpectedEofException();
+                            }
 
                             // the 3rd
-                            if (c == this.ReadChar())
+                            var next = this.ReadChar();
+                            if (next == CharacterSequence.CharSeqEof)
+                            {
+                                throw new UnexpectedEofException();
+                            }
+
+                            if (c == next)
                             {
                                 c = this.SkipOverWhiteSpace(commentStrategy);
                                 if (c == '\'' && this.Is2SingleQuotes())
@@ -1515,12 +1535,23 @@ namespace Amazon.IonDotnet.Internals.Text
                 var c = this.ReadStringChar(Characters.ProhibitionContext.None);
                 switch (c)
                 {
-                    case -1:
+                    case CharacterSequence.CharSeqEof:
                         throw new UnexpectedEofException();
                     case '\'':
-                        return this.ReadChar();
+                        var next = this.ReadChar();
+                        if (next == CharacterSequence.CharSeqEof)
+                        {
+                            throw new UnexpectedEofException();
+                        }
+
+                        return next;
                     case '\\':
-                        this.ReadChar();
+                        var escaped = this.ReadChar();
+                        if (escaped == CharacterSequence.CharSeqEof)
+                        {
+                            throw new UnexpectedEofException();
+                        }
+
                         break;
                 }
             }
@@ -1537,7 +1568,7 @@ namespace Amazon.IonDotnet.Internals.Text
                 var c = this.ReadStringChar(Characters.ProhibitionContext.None);
                 switch (c)
                 {
-                    case -1:
+                    case CharacterSequence.CharSeqEof:
                         throw new UnexpectedEofException();
                     case CharacterSequence.CharSeqEscapedNewlineSequence1:
                     case CharacterSequence.CharSeqEscapedNewlineSequence2:
@@ -1547,7 +1578,12 @@ namespace Amazon.IonDotnet.Internals.Text
                     case '"':
                         return;
                     case '\\':
-                        this.ReadChar();
+                        var escaped = this.ReadChar();
+                        if (escaped == CharacterSequence.CharSeqEof)
+                        {
+                            throw new UnexpectedEofException();
+                        }
+
                         break;
                 }
             }
