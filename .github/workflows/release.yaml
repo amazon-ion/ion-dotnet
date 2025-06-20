@@ -76,7 +76,7 @@ jobs:
 
           # Extract version ID with raw output
           version_id=$(echo "$put_response" | jq -r '.VersionId')
-          echo "Version ID: ${version_id}
+          echo "Version ID: ${version_id}"
 
           job_id=""
           # Attempt to get Job ID from bucket tagging, will retry up to 3 times before exiting with a failure code.
