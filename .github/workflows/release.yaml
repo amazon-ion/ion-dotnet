@@ -70,8 +70,14 @@ jobs:
         run: |
           dotnet build --configuration Release
 
-          # Push unsigned DLL to S3
-          version_id=$( aws s3api put-object --bucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" --key "${{ secrets.AWS_KEY }}" --body Amazon.IonDotnet/bin/Release/netstandard2.0/Amazon.IonDotnet.dll  --acl bucket-owner-full-control | jq '.VersionId' )
+          # # Push unsigned DLL to S3 and capture full output
+          put_response=$(aws s3api put-object --bucket "${{ secrets.AWS_UNSIGNED_BUCKET }}" --key "${{ secrets.AWS_KEY }}" --body Amazon.IonDotnet/bin/Release/netstandard2.0/Amazon.IonDotnet.dll --acl bucket-owner-full-control)
+          echo "Put response: ${put_response}"
+
+          # Extract version ID with raw output
+          version_id=$(echo "$put_response" | jq -r '.VersionId')
+          echo "Version ID: ${version_id}"
+
           job_id=""
           # Attempt to get Job ID from bucket tagging, will retry up to 3 times before exiting with a failure code.
           # Will sleep for 5 seconds between retries.
